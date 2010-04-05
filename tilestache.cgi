@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from TileStache import cgiHandler
+import TileStache
 
 if __name__ == '__main__':
-    cgiHandler(True)
+    TileStache.IO.cgiHandler(True)

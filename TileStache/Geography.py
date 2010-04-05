@@ -1,4 +1,4 @@
-""" The Geography bits of TileStache.
+""" The geography bits of TileStache.
 """
 
 from ModestMaps.Core import Point

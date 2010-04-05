@@ -3,6 +3,33 @@ import os
 from sys import stderr, stdout
 from os.path import isdir, exists, dirname, join as pathjoin
 
+class Test:
+
+    def __init__(self, logerror):
+        self.logerror = logerror
+
+    def description(self, layer, coord, format, query):
+        """
+        """
+        name = layer.name()
+        tile = '%(zoom)d/%(column)d/%(row)d' % coord.__dict__
+        
+        return ' '.join( (name, tile, format, str(query)) )
+    
+    def read(self, layer, coord, format, query):
+        """
+        """
+        name = self.description(layer, coord, format, query)
+        self.logerror('Test cache read: ' + name)
+
+        return None
+    
+    def save(self, body, layer, coord, format, query):
+        """
+        """
+        name = self.description(layer, coord, format, query)
+        self.logerror('Test cache save: %d bytes to %s' % (len(body), name))
+
 class Disk:
     
     def __init__(self, cachepath, umask=0022):
