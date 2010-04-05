@@ -25,7 +25,8 @@ except ImportError:
 class Configuration:
     """ A complete site configuration, with a collection of Layer objects.
     """
-    def __init__(self):
+    def __init__(self, cache):
+        self.cache = cache
         self.layers = {}
 
 class Layer:
@@ -35,6 +36,15 @@ class Layer:
         self.config = config
         self.provider = provider
         self.projection = Geography.getProjectionByName(projection)
+
+    def name(self):
+        """ Figure out what I'm called, return a name if there is one.
+        """
+        for (name, layer) in self.config.layers.items():
+            if layer is self:
+                return name
+
+        return None
 
     def render(self, coord):
         """ Render an image for a coordinate, return a PIL Image instance.
@@ -62,13 +72,20 @@ def parseConfigfile(configpath):
     """
     raw = loadjson(open(configpath, 'r'))
     
-    config = Configuration()
-    
     cache = raw.get('cache', {})
     
     if cache['type'] == 'Disk':
         cachepath = realpath(pathjoin(dirname(configpath), cache['path']))
-        cache = Caches.Disk(cachepath)
+        kwargs = {}
+        
+        if cache.has_key('umask'):
+            kwargs['umask'] = int(cache['umask'], 8)
+
+        cache = Caches.Disk(cachepath, **kwargs)
+    else:
+        raise Exception('Unknown cache type: %s' % cache['type'])
+    
+    config = Configuration(cache)
     
     for (name, layer) in raw.get('layers', {}).items():
         projection = layer.get('projection', '')
@@ -102,11 +119,17 @@ def handleRequest(layer, coord, extension, query):
     """
     mimetype, format = getTypeByExtension(extension)
     
-    out = StringIO()
-    img = layer.render(coord)
-    img.save(out, format)
+    body = layer.config.cache.read(layer, coord, format, query)
     
-    return mimetype, out.getvalue()
+    if body is None:
+        out = StringIO()
+        img = layer.render(coord)
+        img.save(out, format)
+        body = out.getvalue()
+        
+        layer.config.cache.save(body, layer, coord, format, query)
+
+    return mimetype, body
 
 # regular expression for PATH_INFO
 pathinfo_pat = re.compile(r'^/(?P<l>.+)/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)\.(?P<e>\w+)$')
