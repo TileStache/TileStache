@@ -19,6 +19,25 @@ class SphericalMercator(ModestMaps.Geo.MercatorProjection):
 
         ModestMaps.Geo.MercatorProjection.__init__(self, 26, t)
 
+    def coordinateProj(self, coord):
+        """ Convert from Coordinate object to a Point object in EPSG:900913
+        """
+        # the zoom at which we're dealing with meters on the ground
+        diameter = 2 * pi * 6378137
+        zoom = log(diameter) / log(2)
+        coord = coord.zoomTo(zoom)
+        
+        # global offsets
+        coord.column -= diameter/2
+        coord.row = diameter/2 - coord.row
+
+        return ModestMaps.Core.Point(coord.column, coord.row)
+
+    def locationProj(self, location):
+        """ Convert from Location object to a Point object in EPSG:900913
+        """
+        return self.coordinateProj(self.locationCoordinate(location))
+
 class Configuration:
     """
     """
@@ -28,7 +47,8 @@ class Configuration:
 class Layer:
     """
     """
-    def __init__(self, name, projection):
+    def __init__(self, config, name, projection):
+        self.config = config
         self.name = name
         self.projection = getProjectionByName(projection)
 
@@ -57,13 +77,21 @@ def parseConfigfile(path):
     
     for (name, data) in raw.get('layers', {}).items():
         projection = data.get('projection', '')
-        config.layers[name] = Layer(name, projection)
+        config.layers[name] = Layer(config, name, projection)
 
     return config
 
-def handleRequest(config, layer, coord, query):
+def handleRequest(layer, coord, query):
     """
     """
+    print layer
+    print coord
+    
+    print layer.projection.coordinateLocation(coord)
+    print layer.projection.coordinateProj(coord)
+    
+    print layer.projection.coordinateProj(ModestMaps.Core.Coordinate(0, 0, 0))
+    print layer.projection.coordinateProj(ModestMaps.Core.Coordinate(1, 1, 0))
     
     pass
 
@@ -82,7 +110,7 @@ def cgiHandler(debug=False):
     
     coord = ModestMaps.Core.Coordinate(int(row), int(column), int(zoom))
     query = parse_qs(environ['QUERY_STRING'])
+    layer = parseConfigfile('tilestache.cfg').layers[layer]
     
     print 'Content-Type: text/plain\n'
-    config = parseConfigfile('tilestache.cfg')
-    return handleRequest(config, config.layers[layer], coord, query)
+    return handleRequest(layer, coord, query)
