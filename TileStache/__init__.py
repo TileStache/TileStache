@@ -32,9 +32,9 @@ class Configuration:
 class Layer:
     """ A Layer, with its own provider and projection.
     """
-    def __init__(self, config, provider, projection):
+    def __init__(self, config, projection):
+        self.provider = None
         self.config = config
-        self.provider = provider
         self.projection = Geography.getProjectionByName(projection)
 
     def name(self):
@@ -89,6 +89,8 @@ def parseConfigfile(configpath):
     
     for (name, layer) in raw.get('layers', {}).items():
         projection = layer.get('projection', '')
+    
+        config.layers[name] = Layer(config, projection)
         
         provider = layer['provider']
         classpath = provider['class'].split('.')
@@ -96,9 +98,9 @@ def parseConfigfile(configpath):
         module = __import__( '.'.join(classpath[:-1]) )
         _class = getattr(module, classpath[-1])
         kwargs = provider.get('kwargs', {})
-        provider = _class(**kwargs)
-    
-        config.layers[name] = Layer(config, provider, projection)
+        provider = _class(layer, **kwargs)
+        
+        config.layers[name].provider = provider
 
     return config
 

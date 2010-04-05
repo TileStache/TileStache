@@ -3,8 +3,8 @@ import PIL.Image
 
 class Mapnik:
 
-    def __init__(self):
-        pass
+    def __init__(self, layer):
+        self.layer = layer
 
     def renderEnvelope(self, width, height, srs, xmin, ymin, xmax, ymax):
         
