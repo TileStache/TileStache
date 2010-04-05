@@ -74,15 +74,28 @@ def parseConfigfile(path):
 
     return config
 
+def getTypeByExtension(extension):
+    """ Get mime-type and PIL format by file extension.
+    """
+    if extension.lower() == 'png':
+        return 'image/png', 'PNG'
+
+    elif extension.lower() == 'jpg':
+        return 'image/jpeg', 'JPEG'
+
+    else:
+        raise Exception('Unknown extension: "%s"' % extension)
+
 def handleRequest(layer, coord, extension, query):
     """ Get a type string and image binary for a given request layer, coordinate, file extension, and query string.
     """
+    mimetype, format = getTypeByExtension(extension)
+    
     out = StringIO()
     img = layer.render(coord)
+    img.save(out, format)
     
-    img.save(out, 'PNG')
-    
-    return 'image/png', out.getvalue()
+    return mimetype, out.getvalue()
 
 # regular expression for PATH_INFO
 pathinfo_pat = re.compile(r'^/(?P<l>.+)/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)\.(?P<e>\w+)$')
@@ -96,12 +109,14 @@ def cgiHandler(debug=False):
     
     path = pathinfo_pat.match(environ['PATH_INFO'])
     layer, row, column, zoom, extension = [path.group(p) for p in 'lyxze']
+    config = parseConfigfile('tilestache.cfg')
     
     coord = Coordinate(int(row), int(column), int(zoom))
     query = parse_qs(environ['QUERY_STRING'])
-    layer = parseConfigfile('tilestache.cfg').layers[layer]
+    layer = config.layers[layer]
     
     mimetype, content = handleRequest(layer, coord, extension, query)
     
-    print >> stdout, 'Content-Type: %(mimetype)s\n' % locals()
+    print >> stdout, 'Content-Length: %d' % len(content)
+    print >> stdout, 'Content-Type: %s\n' % mimetype
     print >> stdout, content
