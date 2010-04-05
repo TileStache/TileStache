@@ -12,6 +12,9 @@ except ImportError:
 class SphericalMercator(ModestMaps.Geo.MercatorProjection):
     """
     """
+    srs = '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0' \
+        + ' +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs'
+    
     def __init__(self):
         # these numbers are slightly magic.
         t = ModestMaps.Geo.Transformation(1.068070779e7, 0, 3.355443185e7,
@@ -47,10 +50,18 @@ class Configuration:
 class Layer:
     """
     """
-    def __init__(self, config, name, projection):
+    def __init__(self, config, provider, projection):
         self.config = config
-        self.name = name
+        self.provider = provider
         self.projection = getProjectionByName(projection)
+
+    def envelope(self, coord):
+        """ Projected rendering envelope (xmin, ymin, xmax, ymax) for a Coordinate.
+        """
+        ul = self.projection.coordinateProj(coord)
+        lr = self.projection.coordinateProj(coord.down().right())
+        
+        return min(ul.x, lr.x), min(ul.y, lr.y), max(ul.x, lr.x), max(ul.y, lr.y)
 
 def getProjectionByName(name):
     """
@@ -77,7 +88,18 @@ def parseConfigfile(path):
     
     for (name, data) in raw.get('layers', {}).items():
         projection = data.get('projection', '')
-        config.layers[name] = Layer(config, name, projection)
+        
+        try:
+            path = data['provider']['class'].split('.')
+        except KeyError:
+            raise
+        else:
+            module = __import__('.'.join(path[:-1]))
+            _class = getattr(module, path[-1])
+            kwargs = data['provider'].get('kwargs', {})
+            provider = _class(**kwargs)
+        
+        config.layers[name] = Layer(config, provider, projection)
 
     return config
 
@@ -92,6 +114,8 @@ def handleRequest(layer, coord, query):
     
     print layer.projection.coordinateProj(ModestMaps.Core.Coordinate(0, 0, 0))
     print layer.projection.coordinateProj(ModestMaps.Core.Coordinate(1, 1, 0))
+    
+    print layer.envelope(coord)
     
     pass
 
