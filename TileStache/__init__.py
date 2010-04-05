@@ -1,5 +1,6 @@
 import re
 import ModestMaps
+from sys import stderr, stdout
 from os import environ
 from cgi import parse_qs
 from math import log, pi
@@ -43,13 +44,13 @@ class SphericalMercator(ModestMaps.Geo.MercatorProjection):
         return self.coordinateProj(self.locationCoordinate(location))
 
 class Configuration:
-    """
+    """ A complete site configuration, with a collection of Layer objects.
     """
     def __init__(self):
         self.layers = {}
 
 class Layer:
-    """
+    """ A Layer, with its own provider and projection.
     """
     def __init__(self, config, provider, projection):
         self.config = config
@@ -57,12 +58,17 @@ class Layer:
         self.projection = getProjectionByName(projection)
 
     def render(self, coord):
-        """
+        """ Render an image for a coordinate, return a PIL Image instance.
         """
         srs = self.projection.srs
         xmin, ymin, xmax, ymax = self.envelope(coord)
         
-        return self.provider.renderEnvelope(256, 256, srs, xmin, ymin, xmax, ymax)
+        img = self.provider.renderEnvelope(256, 256, srs, xmin, ymin, xmax, ymax)
+        
+        assert hasattr(img, 'size') and hasattr(img, 'save'), \
+               'Return value of provider.renderEnvelope() must look like an image.'
+        
+        return img
 
     def envelope(self, coord):
         """ Projected rendering envelope (xmin, ymin, xmax, ymax) for a Coordinate.
@@ -73,7 +79,9 @@ class Layer:
         return min(ul.x, lr.x), min(ul.y, lr.y), max(ul.x, lr.x), max(ul.y, lr.y)
 
 def getProjectionByName(name):
-    """
+    """ Retrieve a projection object by name.
+    
+        Raise an exception if the name doesn't work out.
     """
     if name == 'spherical mercator':
         return SphericalMercator()
@@ -90,7 +98,7 @@ def getProjectionByName(name):
         raise Exception('Unknown projection: "%s"' % name)
 
 def parseConfigfile(path):
-    """
+    """ Parse a configuration file path and return a Configuration object.
     """
     config = Configuration()
     raw = loadjson(open(path, 'r'))
@@ -113,7 +121,7 @@ def parseConfigfile(path):
     return config
 
 def handleRequest(layer, coord, query):
-    """
+    """ Get a type string and image binary for a given request layer, coordinate and query string.
     """
     out = StringIO()
     img = layer.render(coord)
@@ -126,7 +134,7 @@ def handleRequest(layer, coord, query):
 pathinfo_pat = re.compile(r'^/(?P<l>.+)/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)\.(?P<e>\w+)$')
 
 def cgiHandler(debug=False):
-    """
+    """ 
     """
     if debug:
         import cgitb
@@ -141,5 +149,5 @@ def cgiHandler(debug=False):
     
     mimetype, content = handleRequest(layer, coord, query)
     
-    print 'Content-Type: %(mimetype)s\n' % locals()
-    print content
+    print >> stdout, 'Content-Type: %(mimetype)s\n' % locals()
+    print >> stdout, content
