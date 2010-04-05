@@ -4,17 +4,23 @@
 """
 
 import re
-import Geography
-from os import environ
+
 from cgi import parse_qs
 from sys import stderr, stdout
 from ModestMaps.Core import Coordinate
 from StringIO import StringIO
+from os.path import realpath, dirname, join as pathjoin
+from os import environ
+
+import Caches
+import Geography
 
 try:
     from json import load as loadjson
+    from json import dumps as dumpjsons
 except ImportError:
     from simplejson import load as loadjson
+    from simplejson import dumps as dumpjsons
 
 class Configuration:
     """ A complete site configuration, with a collection of Layer objects.
@@ -51,23 +57,28 @@ class Layer:
         
         return min(ul.x, lr.x), min(ul.y, lr.y), max(ul.x, lr.x), max(ul.y, lr.y)
 
-def parseConfigfile(path):
+def parseConfigfile(configpath):
     """ Parse a configuration file path and return a Configuration object.
     """
-    config = Configuration()
-    raw = loadjson(open(path, 'r'))
+    raw = loadjson(open(configpath, 'r'))
     
-    for (name, data) in raw.get('layers', {}).items():
-        projection = data.get('projection', '')
+    config = Configuration()
+    
+    cache = raw.get('cache', {})
+    
+    if cache['type'] == 'Disk':
+        cachepath = realpath(pathjoin(dirname(configpath), cache['path']))
+        cache = Caches.Disk(cachepath)
+    
+    for (name, layer) in raw.get('layers', {}).items():
+        projection = layer.get('projection', '')
         
-        try:
-            path = data['provider']['class'].split('.')
-        except KeyError:
-            raise
+        provider = layer['provider']
+        classpath = provider['class'].split('.')
 
-        module = __import__('.'.join(path[:-1]))
-        _class = getattr(module, path[-1])
-        kwargs = data['provider'].get('kwargs', {})
+        module = __import__( '.'.join(classpath[:-1]) )
+        _class = getattr(module, classpath[-1])
+        kwargs = provider.get('kwargs', {})
         provider = _class(**kwargs)
     
         config.layers[name] = Layer(config, provider, projection)
