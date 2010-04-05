@@ -14,6 +14,7 @@ from os import environ
 
 import Caches
 import Geography
+import Providers
 
 try:
     from json import load as loadjson
@@ -93,10 +94,14 @@ def parseConfigfile(configpath):
         config.layers[name] = Layer(config, projection)
         
         provider = layer['provider']
-        classpath = provider['class'].split('.')
+        
+        if provider.has_key('name'):
+            _class = Providers.getProviderByName(provider['name'])
+        elif provider.has_key('class'):
+            _class = Providers.loadProviderByClass(provider['class'])
+        else:
+            raise Exception('Missing required provider name or class: %s' % dumpjsons(provider))
 
-        module = __import__( '.'.join(classpath[:-1]) )
-        _class = getattr(module, classpath[-1])
         kwargs = provider.get('kwargs', {})
         provider = _class(layer, **kwargs)
         
