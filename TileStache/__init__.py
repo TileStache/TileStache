@@ -3,6 +3,7 @@ import ModestMaps
 from os import environ
 from cgi import parse_qs
 from math import log, pi
+from StringIO import StringIO
 
 try:
     from json import load as loadjson
@@ -55,6 +56,14 @@ class Layer:
         self.provider = provider
         self.projection = getProjectionByName(projection)
 
+    def render(self, coord):
+        """
+        """
+        srs = self.projection.srs
+        xmin, ymin, xmax, ymax = self.envelope(coord)
+        
+        return self.provider.renderEnvelope(256, 256, srs, xmin, ymin, xmax, ymax)
+
     def envelope(self, coord):
         """ Projected rendering envelope (xmin, ymin, xmax, ymax) for a Coordinate.
         """
@@ -93,12 +102,12 @@ def parseConfigfile(path):
             path = data['provider']['class'].split('.')
         except KeyError:
             raise
-        else:
-            module = __import__('.'.join(path[:-1]))
-            _class = getattr(module, path[-1])
-            kwargs = data['provider'].get('kwargs', {})
-            provider = _class(**kwargs)
-        
+
+        module = __import__('.'.join(path[:-1]))
+        _class = getattr(module, path[-1])
+        kwargs = data['provider'].get('kwargs', {})
+        provider = _class(**kwargs)
+    
         config.layers[name] = Layer(config, provider, projection)
 
     return config
@@ -106,18 +115,12 @@ def parseConfigfile(path):
 def handleRequest(layer, coord, query):
     """
     """
-    print layer
-    print coord
+    out = StringIO()
+    img = layer.render(coord)
     
-    print layer.projection.coordinateLocation(coord)
-    print layer.projection.coordinateProj(coord)
+    img.save(out, 'PNG')
     
-    print layer.projection.coordinateProj(ModestMaps.Core.Coordinate(0, 0, 0))
-    print layer.projection.coordinateProj(ModestMaps.Core.Coordinate(1, 1, 0))
-    
-    print layer.envelope(coord)
-    
-    pass
+    return 'image/png', out.getvalue()
 
 # regular expression for PATH_INFO
 pathinfo_pat = re.compile(r'^/(?P<l>.+)/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)\.(?P<e>\w+)$')
@@ -136,5 +139,7 @@ def cgiHandler(debug=False):
     query = parse_qs(environ['QUERY_STRING'])
     layer = parseConfigfile('tilestache.cfg').layers[layer]
     
-    print 'Content-Type: text/plain\n'
-    return handleRequest(layer, coord, query)
+    mimetype, content = handleRequest(layer, coord, query)
+    
+    print 'Content-Type: %(mimetype)s\n' % locals()
+    print content
