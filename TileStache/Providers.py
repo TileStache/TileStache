@@ -28,6 +28,9 @@ Example external provider, for JSON configuration file:
   args. If your defined class doesn't accept any of these keyword arguments,
   TileStache will throw an exception.
 
+A provider must signal that its rendered tiles can be cut up as images and
+metatiles with the boolean property metatileOK.
+
 The only method that a provider currently needs to implement is renderArea(),
 with the following seven arguments:
 
@@ -62,6 +65,8 @@ class Mapnik:
         - http://trac.mapnik.org/wiki/XMLGettingStarted
         - http://trac.mapnik.org/wiki/XMLConfigReference
     """
+    metatileOK = True
+    
     def __init__(self, layer, mapfile):
         """ Initialize Mapnik provider with layer and mapfile.
             

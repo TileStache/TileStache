@@ -56,6 +56,16 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     """ Used by parseConfigfile() to parse just the layer parts of a config.
     """
     projection = layer_dict.get('projection', '')
+
+    meta_dict = layer_dict.get('metatile', {})
+    kwargs = {}
+    
+    for k in ('buffer', 'rows', 'columns'):
+        if meta_dict.has_key(k):
+            kwargs[k] = int(meta_dict[k])
+    
+    metatile = Core.Metatile(**kwargs)
+    
     provider_dict = layer_dict['provider']
 
     if provider_dict.has_key('name'):
@@ -74,7 +84,7 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     else:
         raise Exception('Missing required provider name or class: %s' % json_dumps(provider_dict))
     
-    layer = Core.Layer(config, projection)
+    layer = Core.Layer(config, projection, metatile)
     layer.provider = _class(layer, **kwargs)
     
     return layer
