@@ -12,13 +12,13 @@ class Metatile:
         - buffer: pixel width of outer edge.
     """
     def __init__(self, buffer=0, rows=1, columns=1):
-        self.rows = int(rows)
-        self.columns = int(columns)
-        self.buffer = int(buffer)
+        assert rows >= 1
+        assert columns >= 1
+        assert buffer >= 0
 
-        assert self.buffer >= 0
-        assert self.columns >= 1
-        assert self.rows >= 1
+        self.rows = rows
+        self.columns = columns
+        self.buffer = buffer
 
     def isForReal(self):
         """ Return True if this is really a metatile with a buffer or multiple tiles.

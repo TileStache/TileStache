@@ -47,6 +47,7 @@ def _parseConfigfileCache(cache_dict, dirpath):
             kwargs['umask'] = int(cache_dict['umask'], 8)
 
         cache = Caches.Disk(cachepath, **kwargs)
+
     else:
         raise Exception('Unknown cache: %s' % cache_dict['name'])
 
@@ -56,6 +57,10 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     """ Used by parseConfigfile() to parse just the layer parts of a config.
     """
     projection = layer_dict.get('projection', '')
+    
+    #
+    # Do the metatile
+    #
 
     meta_dict = layer_dict.get('metatile', {})
     kwargs = {}
@@ -66,6 +71,10 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     
     metatile = Core.Metatile(**kwargs)
     
+    #
+    # Do the provider
+    #
+
     provider_dict = layer_dict['provider']
 
     if provider_dict.has_key('name'):
@@ -84,6 +93,10 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     else:
         raise Exception('Missing required provider name or class: %s' % json_dumps(provider_dict))
     
+    #
+    # Finish him!
+    #
+
     layer = Core.Layer(config, projection, metatile)
     layer.provider = _class(layer, **kwargs)
     
