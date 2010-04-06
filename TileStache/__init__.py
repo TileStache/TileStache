@@ -24,7 +24,7 @@ import Config
 _pathinfo_pat = re.compile(r'^/(?P<l>.+)/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)\.(?P<e>\w+)$')
 
 def handleRequest(layer, coord, extension):
-    """ Get a type string and image binary for a given request layer tile.
+    """ Get a type string and tile binary for a given request layer tile.
     
         Arguments:
         - layer: instance of Core.Layer to render.

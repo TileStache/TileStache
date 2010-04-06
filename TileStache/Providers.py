@@ -28,7 +28,7 @@ Example external provider, for JSON configuration file:
   args. If your defined class doesn't accept any of these keyword arguments,
   TileStache will throw an exception.
 
-The only method that a provider currently needs to implement is renderEnvelope(),
+The only method that a provider currently needs to implement is renderArea(),
 with the following seven arguments:
 
 - width, height: in pixels
@@ -72,7 +72,7 @@ class Mapnik:
         self.mapfile = str(mapfile)
         self.mapnik = None
 
-    def renderEnvelope(self, width, height, srs, xmin, ymin, xmax, ymax):
+    def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax):
         """
         """
         if self.mapnik is None:

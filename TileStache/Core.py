@@ -21,17 +21,19 @@ class Layer:
         return None
 
     def render(self, coord):
-        """ Render an image for a coordinate, return a PIL Image instance.
+        """ Render a tile for a coordinate, return PIL Image-like object.
+        
+            
         """
         srs = self.projection.srs
         xmin, ymin, xmax, ymax = self.envelope(coord)
         
-        img = self.provider.renderEnvelope(256, 256, srs, xmin, ymin, xmax, ymax)
+        tile = self.provider.renderArea(256, 256, srs, xmin, ymin, xmax, ymax)
         
-        assert hasattr(img, 'size') and hasattr(img, 'save'), \
-               'Return value of provider.renderEnvelope() must look like an image.'
+        assert hasattr(tile, 'save'), \
+               'Return value of provider.renderArea() must act like an image.'
         
-        return img
+        return tile
 
     def envelope(self, coord):
         """ Projected rendering envelope (xmin, ymin, xmax, ymax) for a Coordinate.
