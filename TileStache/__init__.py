@@ -18,7 +18,7 @@ except ImportError:
 
 from ModestMaps.Core import Coordinate
 
-import IO
+import Config
 
 # regular expression for PATH_INFO
 _pathinfo_pat = re.compile(r'^/(?P<l>.+)/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)\.(?P<e>\w+)$')
@@ -29,7 +29,7 @@ def handleRequest(layer, coord, extension):
         This is the main entry point, after site configuration has been loaded
         and individual tiles need to be rendered.
     """
-    mimetype, format = IO.getTypeByExtension(extension)
+    mimetype, format = Config.getTypeByExtension(extension)
     
     body = layer.config.cache.read(layer, coord, format)
     
@@ -49,7 +49,7 @@ def parseConfigfile(configpath):
     config_dict = json_load(open(configpath, 'r'))
     dirpath = dirname(configpath)
 
-    return IO.buildConfiguration(config_dict, dirpath)
+    return Config.buildConfiguration(config_dict, dirpath)
 
 def cgiHandler(debug=False):
     """ Load up configuration and talk to stdout by CGI.

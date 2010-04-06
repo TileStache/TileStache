@@ -12,13 +12,20 @@ import Core
 import Caches
 import Providers
 
+class Configuration:
+    """ A complete site configuration, with a collection of Layer objects.
+    """
+    def __init__(self, cache):
+        self.cache = cache
+        self.layers = {}
+
 def buildConfiguration(config_dict, dirpath):
     """ Build a configuration dictionary into a Configuration object.
     """
     cache_dict = config_dict.get('cache', {})
     cache = _parseConfigfileCache(cache_dict, dirpath)
     
-    config = Core.Configuration(cache)
+    config = Configuration(cache)
     
     for (name, layer_dict) in config_dict.get('layers', {}).items():
         config.layers[name] = _parseConfigfileLayer(layer_dict, config, dirpath)

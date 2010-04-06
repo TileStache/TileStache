@@ -2,14 +2,6 @@
 """
 
 import Geography
-import Providers
-
-class Configuration:
-    """ A complete site configuration, with a collection of Layer objects.
-    """
-    def __init__(self, cache):
-        self.cache = cache
-        self.layers = {}
 
 class Layer:
     """ A Layer, with its own provider and projection.
