@@ -114,6 +114,7 @@ def parseConfigfileLayer(rawlayer, config, configpath):
     elif rawprovider.has_key('class'):
         _class = Providers.loadProviderByClass(rawprovider['class'])
         kwargs = rawprovider.get('kwargs', {})
+        kwargs = dict( [(str(k), v) for (k, v) in kwargs.items()] )
 
     else:
         raise Exception('Missing required provider name or class: %s' % dumpjsons(rawprovider))
