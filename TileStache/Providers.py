@@ -7,18 +7,18 @@ TileStache dynamically by class name.
 Built-in providers:
 - mapnik
 
-Example built-in provider:
+Example built-in provider, for JSON configuration file:
 
     "layer-name": {
         "provider": {"name": "mapnik", "mapfile": "style.xml"},
-        "projection": "spherical mercator"
+        ...
     }
 
 Example external provider, for JSON configuration file:
 
     "layer-name": {
         "provider": {"class": "Module.Classname", "kwargs": {"frob": "yes"}},
-        "projection": "spherical mercator"
+        ...
     }
 
 - The "class" value is split up into module and classname, and dynamically

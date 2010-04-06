@@ -8,7 +8,7 @@ Built-in providers:
 - test
 - disk
 
-Example built-in cache:
+Example built-in cache, for JSON configuration file:
 
     "cache": {
       "name": "Disk",
