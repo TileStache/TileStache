@@ -9,8 +9,7 @@ Built-in providers:
 
 Example internal provider:
 
-    "layer-name":
-    {
+    "layer-name": {
         "provider": {"name": "mapnik", "mapfile": "style.xml"},
         "projection": "spherical mercator"
     }

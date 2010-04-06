@@ -9,8 +9,7 @@ Built-in projections:
 
 Example use projection in a layer definition:
 
-    "layer-name":
-    {
+    "layer-name": {
         "projection": "spherical mercator",
         "provider": {"name": "mapnik", "mapfile": "style.xml"}
     }

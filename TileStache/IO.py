@@ -84,10 +84,10 @@ def parseConfigfile(configpath):
 def _parseConfigfileCache(rawcache, configpath):
     """ Used by parseConfigfile() to parse just the cache parts of a config.
     """
-    if rawcache['type'].lower() == 'test':
+    if rawcache['name'].lower() == 'test':
         cache = Caches.Test(lambda msg: stderr.write(msg + '\n'))
 
-    elif rawcache['type'].lower() == 'disk':
+    elif rawcache['name'].lower() == 'disk':
         cachepath = realpath(pathjoin(dirname(configpath), rawcache['path']))
         kwargs = {}
         
@@ -96,7 +96,7 @@ def _parseConfigfileCache(rawcache, configpath):
 
         cache = Caches.Disk(cachepath, **kwargs)
     else:
-        raise Exception('Unknown cache type: %s' % rawcache['type'])
+        raise Exception('Unknown cache: %s' % rawcache['name'])
 
     return cache
 
