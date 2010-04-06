@@ -1,78 +1,70 @@
 """ The input/output bits of TileStache.
 """
 
-from os.path import realpath, dirname, join as pathjoin
+from os.path import realpath, join as pathjoin
 
 try:
-    from json import load as loadjson
-    from json import dumps as dumpjsons
+    from json import dumps as json_dumps
 except ImportError:
-    from simplejson import load as loadjson
-    from simplejson import dumps as dumpjsons
+    from simplejson import dumps as json_dumps
 
 import Core
 import Caches
 import Providers
 
-def parseConfigfile(configpath):
-    """ Parse a configuration file path and return a Configuration object.
+def buildConfiguration(config_dict, dirpath):
+    """ Build a configuration dictionary into a Configuration object.
     """
-    raw = loadjson(open(configpath, 'r'))
-    return buildConfiguration(raw, dirname(configpath))
-
-def buildConfiguration(raw, dirpath):
-    """
-    """
-    rawcache = raw.get('cache', {})
-    cache = _parseConfigfileCache(rawcache, dirpath)
+    cache_dict = config_dict.get('cache', {})
+    cache = _parseConfigfileCache(cache_dict, dirpath)
     
     config = Core.Configuration(cache)
     
-    for (name, rawlayer) in raw.get('layers', {}).items():
-        config.layers[name] = _parseConfigfileLayer(rawlayer, config, dirpath)
+    for (name, layer_dict) in config_dict.get('layers', {}).items():
+        config.layers[name] = _parseConfigfileLayer(layer_dict, config, dirpath)
 
     return config
 
-def _parseConfigfileCache(rawcache, dirpath):
+def _parseConfigfileCache(cache_dict, dirpath):
     """ Used by parseConfigfile() to parse just the cache parts of a config.
     """
-    if rawcache['name'].lower() == 'test':
+    if cache_dict['name'].lower() == 'test':
         cache = Caches.Test(lambda msg: stderr.write(msg + '\n'))
 
-    elif rawcache['name'].lower() == 'disk':
-        cachepath = realpath(pathjoin(dirpath, rawcache['path']))
+    elif cache_dict['name'].lower() == 'disk':
+        cachepath = realpath(pathjoin(dirpath, cache_dict['path']))
         kwargs = {}
         
-        if rawcache.has_key('umask'):
-            kwargs['umask'] = int(rawcache['umask'], 8)
+        if cache_dict.has_key('umask'):
+            kwargs['umask'] = int(cache_dict['umask'], 8)
 
         cache = Caches.Disk(cachepath, **kwargs)
     else:
-        raise Exception('Unknown cache: %s' % rawcache['name'])
+        raise Exception('Unknown cache: %s' % cache_dict['name'])
 
     return cache
 
-def _parseConfigfileLayer(rawlayer, config, dirpath):
+def _parseConfigfileLayer(layer_dict, config, dirpath):
     """ Used by parseConfigfile() to parse just the layer parts of a config.
     """
-    projection = rawlayer.get('projection', '')
-    rawprovider = rawlayer['provider']
+    projection = layer_dict.get('projection', '')
+    provider_dict = layer_dict['provider']
 
-    if rawprovider.has_key('name'):
-        _class = Providers.getProviderByName(rawprovider['name'])
+    if provider_dict.has_key('name'):
+        _class = Providers.getProviderByName(provider_dict['name'])
         kwargs = {}
         
         if _class is Providers.Mapnik:
-            mapfile = rawprovider['mapfile']
+            mapfile = provider_dict['mapfile']
             kwargs['mapfile'] = realpath(pathjoin(dirpath, mapfile))
         
-    elif rawprovider.has_key('class'):
-        _class = Providers.loadProviderByClass(rawprovider['class'])
-        kwargs = rawprovider.get('kwargs', {})
+    elif provider_dict.has_key('class'):
+        _class = Providers.loadProviderByClass(provider_dict['class'])
+        kwargs = provider_dict.get('kwargs', {})
         kwargs = dict( [(str(k), v) for (k, v) in kwargs.items()] )
 
     else:
-        raise Exception('Missing required provider name or class: %s' % dumpjsons(rawprovider))
+        raise Exception('Missing required provider name or class: %s' % json_dumps(provider_dict))
     
     layer = Core.Layer(config, projection)
     layer.provider = _class(layer, **kwargs)

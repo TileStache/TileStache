@@ -9,6 +9,12 @@ from os import environ
 from cgi import parse_qs
 from sys import stderr, stdout
 from StringIO import StringIO
+from os.path import dirname
+
+try:
+    from json import load as json_load
+except ImportError:
+    from simplejson import load as json_load
 
 from ModestMaps.Core import Coordinate
 
@@ -37,6 +43,14 @@ def handleRequest(layer, coord, extension):
 
     return mimetype, body
 
+def parseConfigfile(configpath):
+    """ Parse a configuration file and return a Configuration object.
+    """
+    config_dict = json_load(open(configpath, 'r'))
+    dirpath = dirname(configpath)
+
+    return IO.buildConfiguration(config_dict, dirpath)
+
 def cgiHandler(debug=False):
     """ Load up configuration and talk to stdout by CGI.
     """
@@ -46,7 +60,7 @@ def cgiHandler(debug=False):
     
     path = _pathinfo_pat.match(environ['PATH_INFO'])
     layer, row, column, zoom, extension = [path.group(p) for p in 'lyxze']
-    config = IO.parseConfigfile('tilestache.cfg')
+    config = parseConfigfile('tilestache.cfg')
     
     coord = Coordinate(int(row), int(column), int(zoom))
     query = parse_qs(environ['QUERY_STRING'])
