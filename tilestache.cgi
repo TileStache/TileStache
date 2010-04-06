@@ -3,4 +3,4 @@
 import TileStache
 
 if __name__ == '__main__':
-    TileStache.IO.cgiHandler(True)
+    TileStache.cgiHandler(True)
