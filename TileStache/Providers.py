@@ -38,8 +38,14 @@ with the following seven arguments:
 - xmin, ymin, xmax, ymax: coordinates of bounding box in projected coordinates.
 """
 
-import mapnik
 import PIL.Image
+
+try:
+    import mapnik
+except ImportError:
+    # It's possible to get by without mapnik,
+    # if you don't plan to use the mapnik provider.
+    pass
 
 class Mapnik:
     """ Built-in Mapnik provider. Renders map images from Mapnik XML files.
