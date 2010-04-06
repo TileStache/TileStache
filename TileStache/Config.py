@@ -1,6 +1,7 @@
 """ The input/output bits of TileStache.
 """
 
+from sys import stderr
 from os.path import realpath, join as pathjoin
 
 try:
@@ -19,7 +20,7 @@ class Configuration:
         self.cache = cache
         self.layers = {}
 
-def buildConfiguration(config_dict, dirpath):
+def buildConfiguration(config_dict, dirpath='.'):
     """ Build a configuration dictionary into a Configuration object.
     """
     cache_dict = config_dict.get('cache', {})

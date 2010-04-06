@@ -6,8 +6,8 @@
 import re
 
 from os import environ
+from sys import stdout
 from cgi import parse_qs
-from sys import stderr, stdout
 from StringIO import StringIO
 from os.path import dirname
 
