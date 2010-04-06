@@ -23,14 +23,17 @@ import Caches
 import Providers
 
 # regular expression for PATH_INFO
-pathinfo_pat = re.compile(r'^/(?P<l>.+)/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)\.(?P<e>\w+)$')
+_pathinfo_pat = re.compile(r'^/(?P<l>.+)/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)\.(?P<e>\w+)$')
 
-def handleRequest(layer, coord, extension, query):
-    """ Get a type string and image binary for a given request layer, coordinate, file extension, and query string.
+def handleRequest(layer, coord, extension):
+    """ Get a type string and image binary for a given request layer, coordinate, and file extension.
+    
+        This is the main entry point, after site configuration have been loaded
+        and individual tiles need to be rendered.
     """
     mimetype, format = getTypeByExtension(extension)
     
-    body = layer.config.cache.read(layer, coord, format, query)
+    body = layer.config.cache.read(layer, coord, format)
     
     if body is None:
         out = StringIO()
@@ -38,18 +41,18 @@ def handleRequest(layer, coord, extension, query):
         img.save(out, format)
         body = out.getvalue()
         
-        layer.config.cache.save(body, layer, coord, format, query)
+        layer.config.cache.save(body, layer, coord, format)
 
     return mimetype, body
 
 def cgiHandler(debug=False):
-    """ 
+    """ Load up configuration and talk to stdout by CGI.
     """
     if debug:
         import cgitb
         cgitb.enable()
     
-    path = pathinfo_pat.match(environ['PATH_INFO'])
+    path = _pathinfo_pat.match(environ['PATH_INFO'])
     layer, row, column, zoom, extension = [path.group(p) for p in 'lyxze']
     config = parseConfigfile('tilestache.cfg')
     
@@ -57,7 +60,7 @@ def cgiHandler(debug=False):
     query = parse_qs(environ['QUERY_STRING'])
     layer = config.layers[layer]
     
-    mimetype, content = handleRequest(layer, coord, extension, query)
+    mimetype, content = handleRequest(layer, coord, extension)
     
     print >> stdout, 'Content-Length: %d' % len(content)
     print >> stdout, 'Content-Type: %s\n' % mimetype
@@ -69,17 +72,17 @@ def parseConfigfile(configpath):
     raw = loadjson(open(configpath, 'r'))
     
     rawcache = raw.get('cache', {})
-    cache = parseConfigfileCache(rawcache, configpath)
+    cache = _parseConfigfileCache(rawcache, configpath)
     
     config = Core.Configuration(cache)
     
     for (name, rawlayer) in raw.get('layers', {}).items():
-        config.layers[name] = parseConfigfileLayer(rawlayer, config, configpath)
+        config.layers[name] = _parseConfigfileLayer(rawlayer, config, configpath)
 
     return config
 
-def parseConfigfileCache(rawcache, configpath):
-    """
+def _parseConfigfileCache(rawcache, configpath):
+    """ Used by parseConfigfile() to parse just the cache parts of a config.
     """
     if rawcache['type'].lower() == 'test':
         cache = Caches.Test(lambda msg: stderr.write(msg + '\n'))
@@ -97,8 +100,8 @@ def parseConfigfileCache(rawcache, configpath):
 
     return cache
 
-def parseConfigfileLayer(rawlayer, config, configpath):
-    """
+def _parseConfigfileLayer(rawlayer, config, configpath):
+    """ Used by parseConfigfile() to parse just the layer parts of a config.
     """
     projection = rawlayer.get('projection', '')
     rawprovider = rawlayer['provider']

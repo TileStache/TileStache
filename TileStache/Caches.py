@@ -8,26 +8,26 @@ class Test:
     def __init__(self, logerror):
         self.logerror = logerror
 
-    def description(self, layer, coord, format, query):
+    def description(self, layer, coord, format):
         """
         """
         name = layer.name()
         tile = '%(zoom)d/%(column)d/%(row)d' % coord.__dict__
         
-        return ' '.join( (name, tile, format, str(query)) )
+        return ' '.join( (name, tile, format) )
     
-    def read(self, layer, coord, format, query):
+    def read(self, layer, coord, format):
         """
         """
-        name = self.description(layer, coord, format, query)
+        name = self.description(layer, coord, format)
         self.logerror('Test cache read: ' + name)
 
         return None
     
-    def save(self, body, layer, coord, format, query):
+    def save(self, body, layer, coord, format):
         """
         """
-        name = self.description(layer, coord, format, query)
+        name = self.description(layer, coord, format)
         self.logerror('Test cache save: %d bytes to %s' % (len(body), name))
 
 class Disk:
@@ -36,7 +36,7 @@ class Disk:
         self.cachepath = cachepath
         self.umask = umask
 
-    def filepath(self, layer, coord, format, query):
+    def filepath(self, layer, coord, format):
         """
         """
         l = layer.name()
@@ -52,28 +52,28 @@ class Disk:
 
         return filepath
 
-    def fullpath(self, layer, coord, format, query):
+    def fullpath(self, layer, coord, format):
         """
         """
-        filepath = self.filepath(layer, coord, format, query)
+        filepath = self.filepath(layer, coord, format)
         fullpath = pathjoin(self.cachepath, filepath)
 
         return fullpath
     
-    def read(self, layer, coord, format, query):
+    def read(self, layer, coord, format):
         """
         """
-        fullpath = self.fullpath(layer, coord, format, query)
+        fullpath = self.fullpath(layer, coord, format)
         
         if exists(fullpath):
             return open(fullpath, 'r').read()
 
         return None
     
-    def save(self, body, layer, coord, format, query):
+    def save(self, body, layer, coord, format):
         """
         """
-        fullpath = self.fullpath(layer, coord, format, query)
+        fullpath = self.fullpath(layer, coord, format)
         
         if not isdir(dirname(fullpath)):
             umask_old = os.umask(self.umask)
