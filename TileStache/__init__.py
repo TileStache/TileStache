@@ -24,7 +24,12 @@ import Config
 _pathinfo_pat = re.compile(r'^/(?P<l>.+)/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)\.(?P<e>\w+)$')
 
 def handleRequest(layer, coord, extension):
-    """ Get a type string and image binary for a given request layer, coordinate, and file extension.
+    """ Get a type string and image binary for a given request layer tile.
+    
+        Arguments:
+        - layer: instance of Core.Layer to render.
+        - coord: one ModestMaps.Core.Coordinate corresponding to a single tile.
+        - extension: filename extension to choose response type, e.g. "png" or "jpg".
     
         This is the main entry point, after site configuration has been loaded
         and individual tiles need to be rendered.
@@ -45,6 +50,24 @@ def handleRequest(layer, coord, extension):
 
 def parseConfigfile(configpath):
     """ Parse a configuration file and return a Configuration object.
+    
+        Configuration file is formatted as JSON, and has two sections:
+        
+          {
+            "cache": { ... },
+            "layers": {
+              "layer-1": { ... },
+              "layer-2": { ... },
+              ...
+            }
+          }
+        
+        The full filesystem path to the file is significant, used
+        to resolve any relative paths found in the configuration.
+        
+        See the Caches module for more information on the "caches" section,
+        and the Core and Providers modules for more information on the
+        "layers" section.
     """
     config_dict = json_load(open(configpath, 'r'))
     dirpath = dirname(configpath)

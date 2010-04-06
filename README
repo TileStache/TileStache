@@ -1,4 +1,4 @@
-A stylish alternative for caching your tiles.
+TileStache: a stylish alternative for caching your tiles.
 
 TileStache is a Python-based server application that can serve up map tiles
 based on rendered geographic data. You might be familiar with TileCache
@@ -6,9 +6,36 @@ based on rendered geographic data. You might be familiar with TileCache
 TileStache is similar, but we hope simpler and better-suited to the needs of
 designers and cartographers.
 
----- License ----
+---- Synopsis ----
 
-BSD? (decide!)
+    import TileStache
+    import ModestMaps
+    
+    config = {
+      "cache": {"name": "Test"},
+      "layers": {
+        "ex": {
+            "provider": {"name": "mapnik", "mapfile": "style.xml"},
+            "projection": "spherical mercator"
+        } 
+      }
+    }
+    
+    # like http://tile.openstreetmap.org/12/656/1582.png
+    coord = ModestMaps.Core.Coordinate(1582, 656, 12)
+    config = TileStache.Config.buildConfiguration(config)
+    type, bytes = TileStache.handleRequest(config.layers['ex'], coord, 'png')
+    
+    open('tile.png', 'w').write(bytes)
+
+---- Features ----
+
+Rendering providers:
+- Mapnik
+
+Caching backends:
+- Local disk
+- Test
 
 ---- Design Goals ----
 
@@ -42,20 +69,48 @@ Yahoo! and others. It should be possible to make TileStache do whatever is
 necessary to support any external system, but we eschew complex, impenetrable
 standards in favor of pragmatic, fast utility with basic web clients.
 
----- Features ----
+---- Functions ----
 
-Rendering providers:
-- Mapnik
+cgiHandler(debug=False)
+    Load up configuration and talk to stdout by CGI.
 
-Caching backends:
-- Local disk
-- Test
+handleRequest(layer, coord, extension)
+    Get a type string and image binary for a given request layer tile.
+    
+    Arguments:
+    - layer: instance of Core.Layer to render.
+    - coord: one ModestMaps.Core.Coordinate corresponding to a single tile.
+    - extension: filename extension to choose response type, e.g. "png" or "jpg".
+    
+    This is the main entry point, after site configuration has been loaded
+    and individual tiles need to be rendered.
 
----- Intentional Omissions ----
-
-(write me)
+parseConfigfile(configpath)
+    Parse a configuration file and return a Configuration object.
+    
+    Configuration file is formatted as JSON, and has two sections:
+    
+      {
+        "cache": { ... },
+        "layers": {
+          "layer-1": { ... },
+          "layer-2": { ... },
+          ...
+        }
+      }
+    
+    The full filesystem path to the file is significant, used
+    to resolve any relative paths found in the configuration.
+    
+    See the Caches module for more information on the "caches" section,
+    and the Core and Providers modules for more information on the
+    "layers" section.
 
 ---- Dependencies ----
 
 - ModestMaps: http://modestmaps.com, http://github.com/migurski/modestmaps-py
 - mapnik: http://mapnik.org (optional)
+
+---- License ----
+
+BSD? (decide!)
