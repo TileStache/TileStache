@@ -12,11 +12,44 @@ BSD? (decide!)
 
 ---- Design Goals ----
 
-(write me)
+The design of TileStache focuses on approachability at the expense of
+cleverness or completeness. Our hope is to make it easy for anyone to design
+a new map of their city, publish a fresh view of their world, or even build
+the next 8-Bit NYC (http://8bitnyc.com).
+
+* Small
+
+The core of TileStache is intended to have a small code footprint.
+It should be quick and easy to to understand what the library is doing and
+why, based on common entry points like included CGI scripts. Where possible,
+dynamic programming "magic" is to be avoided, in favor of basic, procedural
+and copiously-documented Python.
+
+* Pluggable
+
+We want to accept plug-ins and extensions from outside TileStache, and offer
+TileStache itself as an extension for other systems. It must be possible to
+write and use additional caches or renderers without having to modify the
+core package itself, extend classes from inside the package, or navigate
+chains of class dependencies. Duck typing and stable interfaces win.
+
+* Sensible Defaults
+
+The default action of a configured TileStache instance should permit the most
+common form of interaction: a worldwide, spherical-mercator upper-left oriented
+tile layout compatible with those used by OpenStreetMap, Google, Bing Maps,
+Yahoo! and others. It should be possible to make TileStache do whatever is
+necessary to support any external system, but we eschew complex, impenetrable
+standards in favor of pragmatic, fast utility with basic web clients.
 
 ---- Features ----
 
-(write me)
+Rendering providers:
+- Mapnik
+
+Caching backends:
+- Local disk
+- Test
 
 ---- Intentional Omissions ----
 
