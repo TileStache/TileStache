@@ -7,7 +7,7 @@ TileStache dynamically by class name.
 Built-in providers:
 - mapnik
 
-Example internal provider:
+Example built-in provider:
 
     "layer-name": {
         "provider": {"name": "mapnik", "mapfile": "style.xml"},
