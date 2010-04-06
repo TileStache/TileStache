@@ -69,7 +69,18 @@ def parseConfigfile(configpath):
     raw = loadjson(open(configpath, 'r'))
     
     rawcache = raw.get('cache', {})
+    cache = parseConfigfileCache(rawcache, configpath)
     
+    config = Core.Configuration(cache)
+    
+    for (name, rawlayer) in raw.get('layers', {}).items():
+        config.layers[name] = parseConfigfileLayer(rawlayer, config, configpath)
+
+    return config
+
+def parseConfigfileCache(rawcache, configpath):
+    """
+    """
     if rawcache['type'].lower() == 'test':
         cache = Caches.Test(lambda msg: stderr.write(msg + '\n'))
 
@@ -83,28 +94,34 @@ def parseConfigfile(configpath):
         cache = Caches.Disk(cachepath, **kwargs)
     else:
         raise Exception('Unknown cache type: %s' % rawcache['type'])
-    
-    config = Core.Configuration(cache)
-    
-    for (name, rawlayer) in raw.get('layers', {}).items():
-        projection = rawlayer.get('projection', '')
-        rawprovider = rawlayer['provider']
 
-        if rawprovider.has_key('name'):
-            _class = Providers.getProviderByName(rawprovider['name'])
-        elif rawprovider.has_key('class'):
-            _class = Providers.loadProviderByClass(rawprovider['class'])
-        else:
-            raise Exception('Missing required provider name or class: %s' % dumpjsons(rawprovider))
+    return cache
+
+def parseConfigfileLayer(rawlayer, config, configpath):
+    """
+    """
+    projection = rawlayer.get('projection', '')
+    rawprovider = rawlayer['provider']
+
+    if rawprovider.has_key('name'):
+        _class = Providers.getProviderByName(rawprovider['name'])
+        kwargs = {}
         
+        if _class is Providers.Mapnik:
+            mapfile = rawprovider['mapfile']
+            kwargs['mapfile'] = realpath(pathjoin(dirname(configpath), mapfile))
+        
+    elif rawprovider.has_key('class'):
+        _class = Providers.loadProviderByClass(rawprovider['class'])
         kwargs = rawprovider.get('kwargs', {})
 
-        layer = Core.Layer(config, projection)
-        layer.provider = _class(layer, **kwargs)
-
-        config.layers[name] = layer
-
-    return config
+    else:
+        raise Exception('Missing required provider name or class: %s' % dumpjsons(rawprovider))
+    
+    layer = Core.Layer(config, projection)
+    layer.provider = _class(layer, **kwargs)
+    
+    return layer
 
 def getTypeByExtension(extension):
     """ Get mime-type and PIL format by file extension.

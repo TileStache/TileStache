@@ -3,32 +3,26 @@ import PIL.Image
 
 class Mapnik:
 
-    def __init__(self, layer):
+    def __init__(self, layer, mapfile):
         self.layer = layer
+        self.mapfile = str(mapfile)
+        self.mapnik = None
 
     def renderEnvelope(self, width, height, srs, xmin, ymin, xmax, ymax):
+        """
+        """
+        if self.mapnik is None:
+            self.mapnik = mapnik.Map(0, 0)
+            mapnik.load_map(self.mapnik, self.mapfile)
         
-        m = mapnik.Map(width, height, srs)
+        self.mapnik.width = width
+        self.mapnik.height = height
+        self.mapnik.zoom_to_box(mapnik.Envelope(xmin, ymin, xmax, ymax))
         
-        m.background = mapnik.Color('black')
+        img = mapnik.Image(width, height)
+        mapnik.render(self.mapnik, img)
         
-        s = mapnik.Style()
-        r = mapnik.Rule()
-        r.symbols.append(mapnik.PolygonSymbolizer(mapnik.Color('white')))
-        s.rules.append(r)
-
-        m.append_style('coastline', s)
-        l = mapnik.Layer('coastline', m.srs)
-        l.datasource = mapnik.PostGIS(dbname='planet_osm', host='localhost', user='osm', table='coastline')
-        l.styles.append('coastline')
-        m.layers.append(l)
-
-        m.zoom_to_box(mapnik.Envelope(xmin, ymin, xmax, ymax))
-        
-        i = mapnik.Image(width, height)
-        mapnik.render(m, i)
-        
-        img = PIL.Image.fromstring('RGBA', (width, height), i.tostring())
+        img = PIL.Image.fromstring('RGBA', (width, height), img.tostring())
         
         return img
 
