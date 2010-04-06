@@ -1,11 +1,19 @@
 """ The provider bits of TileStache.
 
-A Provider the part of TileStache that actually renders imagery. A few default
+A Provider is the part of TileStache that actually renders imagery. A few default
 providers are found here, but it's possible to define your own and pull them into
 TileStache dynamically by class name.
 
 Built-in providers:
 - mapnik
+
+Example internal provider:
+
+    "layer-name":
+    {
+        "provider": {"name": "mapnik", "mapfile": "style.xml"},
+        "projection": "spherical mercator"
+    }
 
 Example external provider, for JSON configuration file:
 

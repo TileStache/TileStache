@@ -1,12 +1,32 @@
 """ The geography bits of TileStache.
+
+A Projection defines the relationship between the rendered tiles and the
+underlying geographic data. Generally, just one popular projection is used
+for most web maps, "spherical mercator".
+
+Built-in projections:
+- spherical mercator
+
+Example use projection in a layer definition:
+
+    "layer-name":
+    {
+        "projection": "spherical mercator",
+        "provider": {"name": "mapnik", "mapfile": "style.xml"}
+    }
+
 """
 
 from ModestMaps.Core import Point
 from ModestMaps.Geo import Transformation, MercatorProjection
-from math import log, pi
+from math import log as _log, pi as _pi
 
 class SphericalMercator(MercatorProjection):
-    """
+    """ Spherical mercator projection for most commonly-used web map tile scheme.
+    
+        This projection is identified by the name "spherical mercator" in the
+        TileStache config. The simplified projection used here is described in
+        greater detail at: http://trac.openlayers.org/wiki/SphericalMercator
     """
     srs = '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0' \
         + ' +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs'
@@ -22,8 +42,8 @@ class SphericalMercator(MercatorProjection):
         """ Convert from Coordinate object to a Point object in EPSG:900913
         """
         # the zoom at which we're dealing with meters on the ground
-        diameter = 2 * pi * 6378137
-        zoom = log(diameter) / log(2)
+        diameter = 2 * _pi * 6378137
+        zoom = _log(diameter) / _log(2)
         coord = coord.zoomTo(zoom)
         
         # global offsets
