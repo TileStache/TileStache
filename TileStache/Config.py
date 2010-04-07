@@ -88,7 +88,10 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
             kwargs['mapfile'] = realpath(pathjoin(dirpath, mapfile))
         
         elif _class is Providers.Proxy:
-            kwargs['url'] = provider_dict['url']
+            if provider_dict.has_key('url'):
+                kwargs['url'] = provider_dict['url']
+            if provider_dict.has_key('provider'):
+                kwargs['provider_name'] = provider_dict['provider']
         
     elif provider_dict.has_key('class'):
         _class = Providers.loadProviderByClass(provider_dict['class'])

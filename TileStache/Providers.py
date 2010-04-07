@@ -61,9 +61,8 @@ except ImportError:
     pass
 
 import PIL.Image
-from ModestMaps import mapByExtent
+import ModestMaps
 from ModestMaps.Core import Point, Coordinate
-from ModestMaps.Providers import TemplatedMercatorProvider
 
 import Geography
 
@@ -74,16 +73,39 @@ class Proxy:
         
         Additional arguments:
         
-        - url (required)
+        - url (optional)
             URL template for remote tiles, for example:
             "http://tile.openstreetmap.org/{Z}/{X}/{Y}.png"
+        - provider (optional)
+            Provider name string from Modest Maps built-ins.
+            See ModestMaps.builtinProviders.keys() for a list.
+            Example: "OPENSTREETMAP".
+
+        One of the above is required. When both are present, url wins.
+        
+        Example configuration:
+        
+        {
+            "name": "proxy",
+            "url": "http://tile.openstreetmap.org/{Z}/{X}/{Y}.png"
+        }
     """
     metatileOK = True
     
-    def __init__(self, layer, url):
+    def __init__(self, layer, url=None, provider_name=None):
         """ Initialize Proxy provider with layer and url.
         """
-        self.provider = TemplatedMercatorProvider(url)
+        if url:
+            self.provider = ModestMaps.Providers.TemplatedMercatorProvider(url)
+
+        elif provider_name:
+            if provider_name in ModestMaps.builtinProviders:
+                self.provider = ModestMaps.builtinProviders[provider_name]()
+            else:
+                raise Exception('Unkown Modest Maps provider: "%s"' % provider_name)
+
+        else:
+            raise Exception('Missing required url or provider parameter to Proxy provider')
 
     def renderTile(self, width, height, srs, coord):
         """
@@ -94,8 +116,11 @@ class Proxy:
         if (width, height) != (256, 256):
             raise Exception("Image dimensions don't match expected tile size: %(width)dx%(height)d" % locals())
 
-        url = self.provider.getTileUrls(coord)[0]
-        img = PIL.Image.open(StringIO(urlopen(url).read())).convert('RGBA')
+        img = PIL.Image.new('RGB', (width, height))
+        
+        for url in self.provider.getTileUrls(coord):
+            tile = PIL.Image.open(StringIO(urlopen(url).read())).convert('RGBA')
+            img.paste(tile, (0, 0), tile)
         
         return img
 
@@ -113,7 +138,7 @@ class Proxy:
         loc1 = proj.projLocation(Point(xmin, ymin))
         loc2 = proj.projLocation(Point(xmax, ymax))
         
-        mmap = mapByExtent(self.provider, loc1, loc2, dim)
+        mmap = ModestMaps.mapByExtent(self.provider, loc1, loc2, dim)
         img = mmap.draw().crop((1, 1, width + 1, height + 1))
         
         return img
