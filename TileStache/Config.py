@@ -12,6 +12,7 @@ except ImportError:
 import Core
 import Caches
 import Providers
+import Geography
 
 class Configuration:
     """ A complete site configuration, with a collection of Layer objects.
@@ -56,7 +57,8 @@ def _parseConfigfileCache(cache_dict, dirpath):
 def _parseConfigfileLayer(layer_dict, config, dirpath):
     """ Used by parseConfigfile() to parse just the layer parts of a config.
     """
-    projection = layer_dict.get('projection', '')
+    projection = layer_dict.get('projection', 'spherical mercator')
+    projection = Geography.getProjectionByName(projection)
     
     #
     # Do the metatile

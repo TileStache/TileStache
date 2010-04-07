@@ -1,8 +1,6 @@
 """ The core class bits of TileStache.
 """
 
-import Geography
-
 class Metatile:
     """ Some basic characteristics of a metatile.
     
@@ -39,7 +37,7 @@ class Layer:
     def __init__(self, config, projection, metatile):
         self.provider = None
         self.config = config
-        self.projection = Geography.getProjectionByName(projection)
+        self.projection = projection
         self.metatile = metatile
 
     def name(self):
