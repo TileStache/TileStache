@@ -62,8 +62,7 @@ except ImportError:
 
 import PIL.Image
 from ModestMaps import mapByExtent
-from ModestMaps.Core import Point, Coordinate
-from ModestMaps.Providers import TemplatedMercatorProvider
+from ModestMaps.Core import Point
 
 import Geography
 
@@ -81,9 +80,12 @@ class Proxy:
     metatileOK = True
     
     def __init__(self, layer, url):
-        """ Initialize Proxy provider with layer and mapfile.
+        """ Initialize Proxy provider with layer and url.
         """
-        self.provider = TemplatedMercatorProvider(url)
+        url = url.replace('{Y}', '%(row)d')
+        url = url.replace('{X}', '%(column)d')
+        url = url.replace('{Z}', '%(zoom)d')
+        self.url = url
 
     def renderTile(self, width, height, srs, coord):
         """
@@ -91,14 +93,11 @@ class Proxy:
         if srs != Geography.SphericalMercator.srs:
             raise Exception('Projection doesn\'t match EPSG:900913: "%(srs)s"' % locals())
     
-        if (width, height) != (256, 256):
-            raise Exception("Image dimensions don't match expected tile size: %(width)dx%(height)d" % locals())
-
-        img = PIL.Image.new('RGB', (width, height))
+        url = self.url % coord.__dict__
+        img = PIL.Image.open(StringIO(urlopen(url).read())).convert('RGBA')
         
-        for url in self.provider.getTileUrls(coord):
-            tile = PIL.Image.open(StringIO(urlopen(url).read())).convert('RGBA')
-            img.paste(tile, (0, 0), tile)
+        if img.size != (256, 256):
+            raise Exception("Image dimensions don't match expected tile size: %(width)dx%(height)d" % locals())
 
         return img
 
