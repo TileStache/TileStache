@@ -16,7 +16,7 @@ Example use projection in a layer definition:
 
 """
 
-from ModestMaps.Core import Point
+from ModestMaps.Core import Point, Coordinate
 from ModestMaps.Geo import Transformation, MercatorProjection
 from math import log as _log, pi as _pi
 
@@ -46,15 +46,35 @@ class SphericalMercator(MercatorProjection):
         coord = coord.zoomTo(zoom)
         
         # global offsets
-        coord.column -= diameter/2
-        coord.row = diameter/2 - coord.row
+        point = Point(coord.column, coord.row)
+        point.x = point.x - diameter/2
+        point.y = diameter/2 - point.y
 
-        return Point(coord.column, coord.row)
+        return point
+
+    def projCoordinate(self, point):
+        """ Convert from Point object in EPSG:900913 to a Coordinate object
+        """
+        # the zoom at which we're dealing with meters on the ground
+        diameter = 2 * _pi * 6378137
+        zoom = _log(diameter) / _log(2)
+
+        # global offsets
+        coord = Coordinate(point.y, point.x, zoom)
+        coord.column = coord.column + diameter/2
+        coord.row = diameter/2 - coord.row
+        
+        return coord
 
     def locationProj(self, location):
         """ Convert from Location object to a Point object in EPSG:900913
         """
         return self.coordinateProj(self.locationCoordinate(location))
+
+    def projLocation(self, point):
+        """ Convert from Point object in EPSG:900913 to a Location object
+        """
+        return self.coordinateLocation(self.projCoordinate(point))
 
 def getProjectionByName(name):
     """ Retrieve a projection object by name.

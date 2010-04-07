@@ -6,6 +6,7 @@ TileStache dynamically by class name.
 
 Built-in providers:
 - mapnik
+- proxy
 
 Example built-in provider, for JSON configuration file:
 
@@ -29,9 +30,17 @@ Example external provider, for JSON configuration file:
   TileStache will throw an exception.
 
 A provider must signal that its rendered tiles can be cut up as images and
-metatiles with the boolean property metatileOK.
+metatiles with the boolean property metatileOK. A provider should optionally
+provide a renderTile() method for drawing single coordinates at a time, with
+the following four arguments:
 
-The only method that a provider currently needs to implement is renderArea(),
+- width, height: in pixels
+- srs: projection as Proj4 string.
+  "+proj=longlat +ellps=WGS84 +datum=WGS84" is an example, 
+  see http://spatialreference.org for more.
+- coord: Coordinate object representing a single tile.
+
+The only method that a provider currently must implement is renderArea(),
 with the following seven arguments:
 
 - width, height: in pixels
@@ -41,7 +50,8 @@ with the following seven arguments:
 - xmin, ymin, xmax, ymax: coordinates of bounding box in projected coordinates.
 """
 
-import PIL.Image
+from StringIO import StringIO
+from urllib import urlopen
 
 try:
     import mapnik
@@ -50,6 +60,67 @@ except ImportError:
     # if you don't plan to use the mapnik provider.
     pass
 
+import PIL.Image
+from ModestMaps import mapByExtent
+from ModestMaps.Core import Point, Coordinate
+from ModestMaps.Providers import TemplatedMercatorProvider
+
+import Geography
+
+class Proxy:
+    """ Proxy provider, to pass through and cache tiles from other places.
+    
+        This provider is identified by the name "proxy" in the TileStache config.
+        
+        Additional arguments:
+        
+        - url (required)
+            URL template for remote tiles, for example:
+            "http://tile.openstreetmap.org/{Z}/{X}/{Y}.png"
+    """
+    metatileOK = True
+    
+    def __init__(self, layer, url):
+        """ Initialize Proxy provider with layer and mapfile.
+        """
+        self.provider = TemplatedMercatorProvider(url)
+
+    def renderTile(self, width, height, srs, coord):
+        """
+        """
+        if srs != Geography.SphericalMercator.srs:
+            raise Exception('Projection doesn\'t match EPSG:900913: "%(srs)s"' % locals())
+    
+        if (width, height) != (256, 256):
+            raise Exception("Image dimensions don't match expected tile size: %(width)dx%(height)d" % locals())
+
+        img = PIL.Image.new('RGB', (width, height))
+        
+        for url in self.provider.getTileUrls(coord):
+            tile = PIL.Image.open(StringIO(urlopen(url).read())).convert('RGBA')
+            img.paste(tile, (0, 0), tile)
+
+        return img
+
+    def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax):
+        """
+        """
+        if srs != Geography.SphericalMercator.srs:
+            raise Exception('Bad SRS')
+    
+        # Add a single pixel around the edges to solve floating point
+        # problem where mapByExtent() accidentally zooms out by one level.
+        dim = Point(width + 2, height + 2)
+        
+        proj = Geography.SphericalMercator()
+        loc1 = proj.projLocation(Point(xmin, ymin))
+        loc2 = proj.projLocation(Point(xmax, ymax))
+        
+        mmap = mapByExtent(self.provider, loc1, loc2, dim)
+        img = mmap.draw().crop((1, 1, width + 1, height + 1))
+        
+        return img
+            
 class Mapnik:
     """ Built-in Mapnik provider. Renders map images from Mapnik XML files.
     
@@ -102,6 +173,9 @@ def getProviderByName(name):
     """
     if name == 'mapnik':
         return Mapnik
+
+    elif name == 'proxy':
+        return Proxy
 
     raise Exception('Unknown provider name: "%s"' % name)
 

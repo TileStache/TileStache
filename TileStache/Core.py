@@ -59,13 +59,25 @@ class Layer:
         srs = self.projection.srs
         xmin, ymin, xmax, ymax = self.envelope(coord)
         
-        if self.metatile.isForReal() and self.provider.metatileOK:
+        provider = self.provider
+        metatile = self.metatile.isForReal() and provider.metatileOK
+        
+        if metatile:
             # do something here to expand the envelope or whatever.
             pass
         
-        tile = self.provider.renderArea(256, 256, srs, xmin, ymin, xmax, ymax)
+        if not metatile and hasattr(provider, 'renderTile'):
+            # draw a single tile
+            tile = provider.renderTile(256, 256, srs, coord)
 
-        if self.metatile.isForReal() and self.provider.metatileOK:
+        elif hasattr(provider, 'renderArea'):
+            # draw an area, defined in projected coordinates
+            tile = provider.renderArea(256, 256, srs, xmin, ymin, xmax, ymax)
+
+        else:
+            raise Exception('Your provider lacks renderTile and renderArea methods')
+
+        if metatile:
             # now do something to slice up the metatile, cache the rest, etc.
             pass
         

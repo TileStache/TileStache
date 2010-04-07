@@ -32,6 +32,7 @@ designers and cartographers.
 
 Rendering providers:
 - Mapnik
+- Proxy
 
 Caching backends:
 - Local disk
