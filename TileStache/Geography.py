@@ -33,7 +33,7 @@ class SphericalMercator(MercatorProjection):
     def __init__(self):
         # these numbers are slightly magic.
         t = Transformation(1.068070779e7, 0, 3.355443185e7,
-		                   0, -1.068070890e7, 3.355443057e7)
+                           0, -1.068070890e7, 3.355443057e7)
 
         MercatorProjection.__init__(self, 26, t)
 
