@@ -21,7 +21,7 @@ from ModestMaps.Core import Coordinate
 import Config
 
 # regular expression for PATH_INFO
-_pathinfo_pat = re.compile(r'^/(?P<l>.+)/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)\.(?P<e>\w+)$')
+_pathinfo_pat = re.compile(r'^/?(?P<l>\w.+)/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)\.(?P<e>\w+)$')
 
 def handleRequest(layer, coord, extension):
     """ Get a type string and tile binary for a given request layer tile.
@@ -91,6 +91,17 @@ def parseConfigfile(configpath):
 
     return Config.buildConfiguration(config_dict, dirpath)
 
+def _splitPathInfo(pathinfo):
+    """ Converts a PATH_INFO string to layer name, coordinate, and extension parts.
+        
+        Example: "/layer/0/0/0.png", leading "/" optional.
+    """
+    path = _pathinfo_pat.match(pathinfo)
+    layer, row, column, zoom, extension = [path.group(p) for p in 'lyxze']
+    coord = Coordinate(int(row), int(column), int(zoom))
+
+    return layer, coord, extension
+
 def cgiHandler(debug=False):
     """ Load up configuration and talk to stdout by CGI.
     """
@@ -98,13 +109,11 @@ def cgiHandler(debug=False):
         import cgitb
         cgitb.enable()
     
-    path = _pathinfo_pat.match(environ['PATH_INFO'])
-    layer, row, column, zoom, extension = [path.group(p) for p in 'lyxze']
     config = parseConfigfile('tilestache.cfg')
+    layername, coord, extension = _splitPathInfo(environ['PATH_INFO'])
     
-    coord = Coordinate(int(row), int(column), int(zoom))
     query = parse_qs(environ['QUERY_STRING'])
-    layer = config.layers[layer]
+    layer = config.layers[layername]
     
     mimetype, content = handleRequest(layer, coord, extension)
     
