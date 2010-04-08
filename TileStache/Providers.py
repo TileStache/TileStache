@@ -193,10 +193,10 @@ def getProviderByName(name):
     
         Raise an exception if the name doesn't work out.
     """
-    if name == 'mapnik':
+    if name.lower() == 'mapnik':
         return Mapnik
 
-    elif name == 'proxy':
+    elif name.lower() == 'proxy':
         return Proxy
 
     raise Exception('Unknown provider name: "%s"' % name)
