@@ -43,16 +43,15 @@ def handleRequest(layer, coord, extension):
         try:
             cache.lock(layer, coord, format)
             
-            if True:
-                # there's a chance that some other process has written the tile,
-                # see http://svn.tilecache.org/trunk/tilecache/TileCache/Layer.py
-                body = cache.read(layer, coord, format)
+            # There's a chance that some other process has
+            # written the tile while the lock was being acquired.
+            body = cache.read(layer, coord, format)
     
             if body is None:
-                out = StringIO()
-                img = layer.render(coord)
-                img.save(out, format)
-                body = out.getvalue()
+                buff = StringIO()
+                tile = layer.render(coord)
+                tile.save(buff, format)
+                body = buff.getvalue()
                 
                 cache.save(body, layer, coord, format)
 
