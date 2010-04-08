@@ -144,13 +144,15 @@ class Disk:
         while True:
             # try to acquire a directory lock, repeating if necessary.
             try:
-                os.makedirs(lockpath, 0777^self.umask)
+                umask_old = os.umask(self.umask)
+                os.makedirs(lockpath, 0777&~self.umask)
+                break
             except OSError, e:
                 if e.errno != 17:
                     raise
                 time.sleep(.2)
-            else:
-                break
+            finally:
+                os.umask(umask_old)
         
         #print _thread_id(), 'lock', layer.name(), coord, format, lockpath
     
@@ -180,20 +182,25 @@ class Disk:
         """
         fullpath = self._fullpath(layer, coord, format)
         
-        if not isdir(dirname(fullpath)):
+        try:
             umask_old = os.umask(self.umask)
-            os.makedirs(dirname(fullpath), 0777^self.umask)
+            os.makedirs(dirname(fullpath), 0777&~self.umask)
+        except OSError, e:
+            if e.errno != 17:
+                raise
+        finally:
             os.umask(umask_old)
 
         fh, tmp_path = mkstemp(dir=self.cachepath, suffix='.' + format.lower())
         os.write(fh, body)
         os.close(fh)
-        os.chmod(tmp_path, 0666^self.umask)
         
         try:
             os.rename(tmp_path, fullpath)
         except OSError:
             os.unlink(fullpath)
             os.rename(tmp_path, fullpath)
+
+        os.chmod(fullpath, 0666&~self.umask)
         
         #print _thread_id(), 'saved', len(body), 'bytes', layer.name(), coord, format
