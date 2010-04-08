@@ -37,16 +37,20 @@ def handleRequest(layer, coord, extension):
     mimetype, format = Config.getTypeByExtension(extension)
     cache = layer.config.cache
     
+    # Start by checking for a tile in the cache.
     body = cache.read(layer, coord, format)
     
+    # If no tile was found, dig deeper
     if body is None:
         try:
+            # We may need to write a new tile, so acquire a lock.
             cache.lock(layer, coord, format)
             
             # There's a chance that some other process has
             # written the tile while the lock was being acquired.
             body = cache.read(layer, coord, format)
     
+            # If no one else wrote the tile, do it here.
             if body is None:
                 buff = StringIO()
                 tile = layer.render(coord)
@@ -56,6 +60,7 @@ def handleRequest(layer, coord, extension):
                 cache.save(body, layer, coord, format)
 
         finally:
+            # Always clean up a lock when it's no longer being used.
             cache.unlock(layer, coord, format)
 
     return mimetype, body
