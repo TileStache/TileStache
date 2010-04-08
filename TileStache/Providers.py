@@ -123,9 +123,9 @@ class Proxy:
             s, host, path, p, query, f = urlparse(url)
             conn = HTTPConnection(host, 80)
             conn.request('GET', path+query)
-            resp = conn.getresponse()
 
-            tile = PIL.Image.open(StringIO(resp.read())).convert('RGBA')
+            body = conn.getresponse().read()
+            tile = PIL.Image.open(StringIO(body)).convert('RGBA')
             img.paste(tile, (0, 0), tile)
         
         return img
