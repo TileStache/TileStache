@@ -58,13 +58,13 @@ class Layer:
         xmin, ymin, xmax, ymax = self.envelope(coord)
         
         provider = self.provider
-        metatile = self.metatile.isForReal() and provider.metatileOK
+        doMetatile = self.metatile.isForReal() and provider.metatileOK
         
-        if metatile:
+        if doMetatile:
             # do something here to expand the envelope or whatever.
             pass
         
-        if not metatile and hasattr(provider, 'renderTile'):
+        if not doMetatile and hasattr(provider, 'renderTile'):
             # draw a single tile
             tile = provider.renderTile(256, 256, srs, coord)
 
@@ -75,7 +75,7 @@ class Layer:
         else:
             raise Exception('Your provider lacks renderTile and renderArea methods')
 
-        if metatile:
+        if doMetatile:
             # now do something to slice up the metatile, cache the rest, etc.
             pass
         
