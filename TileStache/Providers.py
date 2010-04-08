@@ -51,7 +51,8 @@ with the following seven arguments:
 """
 
 from StringIO import StringIO
-from urllib import urlopen
+from urlparse import urlparse
+from httplib import HTTPConnection
 
 try:
     import mapnik
@@ -119,7 +120,12 @@ class Proxy:
         img = PIL.Image.new('RGB', (width, height))
         
         for url in self.provider.getTileUrls(coord):
-            tile = PIL.Image.open(StringIO(urlopen(url).read())).convert('RGBA')
+            s, host, path, p, query, f = urlparse(url)
+            conn = HTTPConnection(host, 80)
+            conn.request('GET', path+query)
+            resp = conn.getresponse()
+
+            tile = PIL.Image.open(StringIO(resp.read())).convert('RGBA')
             img.paste(tile, (0, 0), tile)
         
         return img
