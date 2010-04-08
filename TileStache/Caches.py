@@ -23,8 +23,18 @@ Example external cache, for JSON configuration file:
 """
 
 import os
+import time
 
-from os.path import isdir, exists, dirname, join as pathjoin
+from tempfile import mkstemp
+from os.path import isdir, exists, dirname, basename, join as pathjoin
+
+from thread import get_ident
+from hashlib import md5
+
+def _thread_id():
+    """ Just for testing.
+    """
+    return md5(str(get_ident())).hexdigest()[:3]
 
 class Test:
     """ Simple cache that doesn't actually cache anything.
@@ -45,11 +55,23 @@ class Test:
         """
         name = layer.name()
         tile = '%(zoom)d/%(column)d/%(row)d' % coord.__dict__
-        
+
         return ' '.join( (name, tile, format) )
     
-    def read(self, layer, coord, format):
+    def lock(self, layer, coord, format):
+        """ Pretend to acquire a cache lock for this tile.
         """
+        name = self._description(layer, coord, format)
+        self.logfunc('Test cache lock: ' + name)
+    
+    def unlock(self, layer, coord, format):
+        """ Pretend to release a cache lock for this tile.
+        """
+        name = self._description(layer, coord, format)
+        self.logfunc('Test cache unlock: ' + name)
+    
+    def read(self, layer, coord, format):
+        """ Pretend to read a cached tile.
         """
         name = self._description(layer, coord, format)
         self.logfunc('Test cache read: ' + name)
@@ -57,7 +79,7 @@ class Test:
         return None
     
     def save(self, body, layer, coord, format):
-        """
+        """ Pretend to save a cached tile.
         """
         name = self._description(layer, coord, format)
         self.logfunc('Test cache save: %d bytes to %s' % (len(body), name))
@@ -105,19 +127,56 @@ class Disk:
         fullpath = pathjoin(self.cachepath, filepath)
 
         return fullpath
+
+    def _lockpath(self, layer, coord, format):
+        """
+        """
+        return self._fullpath(layer, coord, format) + '.lock'
+    
+    def lock(self, layer, coord, format):
+        """ Acquire a cache lock for this tile.
+        
+            Returns nothing, but blocks until the lock has been acquired.
+            Lock is implemented as an empty directory next to the tile file.
+        """
+        lockpath = self._lockpath(layer, coord, format)
+        
+        while True:
+            # try to acquire a directory lock, repeating if necessary.
+            try:
+                os.makedirs(lockpath, 0777^self.umask)
+            except OSError, e:
+                if e.errno != 17:
+                    raise
+                time.sleep(.2)
+            else:
+                break
+        
+        #print _thread_id(), 'lock', layer.name(), coord, format, lockpath
+    
+    def unlock(self, layer, coord, format):
+        """ Release a cache lock for this tile.
+
+            Lock is implemented as an empty directory next to the tile file.
+        """
+        lockpath = self._lockpath(layer, coord, format)
+        os.rmdir(lockpath)
+        
+        #print _thread_id(), 'unlock', layer.name(), coord, format
     
     def read(self, layer, coord, format):
-        """
+        """ Read a cached tile.
         """
         fullpath = self._fullpath(layer, coord, format)
         
         if exists(fullpath):
+            #print _thread_id(), 'found', layer.name(), coord, format
             return open(fullpath, 'r').read()
 
         return None
     
     def save(self, body, layer, coord, format):
-        """
+        """ Save a cached tile.
         """
         fullpath = self._fullpath(layer, coord, format)
         
@@ -125,6 +184,16 @@ class Disk:
             umask_old = os.umask(self.umask)
             os.makedirs(dirname(fullpath), 0777^self.umask)
             os.umask(umask_old)
+
+        fh, tmp_path = mkstemp(dir=self.cachepath, suffix='.' + format.lower())
+        os.write(fh, body)
+        os.close(fh)
+        os.chmod(tmp_path, 0666^self.umask)
         
-        open(fullpath, 'w').write(body)
-        os.chmod(fullpath, 0666^self.umask)
+        try:
+            os.rename(tmp_path, fullpath)
+        except OSError:
+            os.unlink(fullpath)
+            os.rename(tmp_path, fullpath)
+        
+        #print _thread_id(), 'saved', len(body), 'bytes', layer.name(), coord, format

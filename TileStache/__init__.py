@@ -35,16 +35,29 @@ def handleRequest(layer, coord, extension):
         and individual tiles need to be rendered.
     """
     mimetype, format = Config.getTypeByExtension(extension)
+    cache = layer.config.cache
     
-    body = layer.config.cache.read(layer, coord, format)
+    body = cache.read(layer, coord, format)
     
     if body is None:
-        out = StringIO()
-        img = layer.render(coord)
-        img.save(out, format)
-        body = out.getvalue()
-        
-        layer.config.cache.save(body, layer, coord, format)
+        try:
+            cache.lock(layer, coord, format)
+            
+            if True:
+                # there's a chance that some other process has written the tile,
+                # see http://svn.tilecache.org/trunk/tilecache/TileCache/Layer.py
+                body = cache.read(layer, coord, format)
+    
+            if body is None:
+                out = StringIO()
+                img = layer.render(coord)
+                img.save(out, format)
+                body = out.getvalue()
+                
+                cache.save(body, layer, coord, format)
+
+        finally:
+            cache.unlock(layer, coord, format)
 
     return mimetype, body
 
