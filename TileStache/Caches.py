@@ -28,14 +28,6 @@ import time
 from tempfile import mkstemp
 from os.path import isdir, exists, dirname, basename, join as pathjoin
 
-from thread import get_ident
-from hashlib import md5
-
-def _thread_id():
-    """ Just for testing.
-    """
-    return md5(str(get_ident())).hexdigest()[:3]
-
 class Test:
     """ Simple cache that doesn't actually cache anything.
     
@@ -153,8 +145,6 @@ class Disk:
                 time.sleep(.2)
             finally:
                 os.umask(umask_old)
-        
-        #print _thread_id(), 'lock', layer.name(), coord, format, lockpath
     
     def unlock(self, layer, coord, format):
         """ Release a cache lock for this tile.
@@ -163,8 +153,6 @@ class Disk:
         """
         lockpath = self._lockpath(layer, coord, format)
         os.rmdir(lockpath)
-        
-        #print _thread_id(), 'unlock', layer.name(), coord, format
     
     def read(self, layer, coord, format):
         """ Read a cached tile.
@@ -172,7 +160,6 @@ class Disk:
         fullpath = self._fullpath(layer, coord, format)
         
         if exists(fullpath):
-            #print _thread_id(), 'found', layer.name(), coord, format
             return open(fullpath, 'r').read()
 
         return None
@@ -202,5 +189,3 @@ class Disk:
             os.rename(tmp_path, fullpath)
 
         os.chmod(fullpath, 0666&~self.umask)
-        
-        #print _thread_id(), 'saved', len(body), 'bytes', layer.name(), coord, format
