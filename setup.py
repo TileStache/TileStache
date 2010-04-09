@@ -3,12 +3,12 @@
 from distutils.core import setup
 
 setup(name='TileStache',
-      version='0.1.0',
+      version='0.1.1',
       description='A stylish alternative for caching your tiles.',
       author='Michal Migurski',
       author_email='mike@stamen.com',
       url='http://tilestache.org',
       requires=['ModestMaps'],
       packages=['TileStache'],
-      download_url='http://tilestache.org/dist/TileStache-0.1.0.tar.gz',
+      download_url='http://tilestache.org/dist/TileStache-0.1.1.tar.gz',
       license='BSD')
