@@ -43,8 +43,11 @@ def handleRequest(layer, coord, extension):
     # If no tile was found, dig deeper
     if body is None:
         try:
+            # this is the coordinate that actually gets locked.
+            lockCoord = layer.metatile.firstCoord(coord)
+            
             # We may need to write a new tile, so acquire a lock.
-            cache.lock(layer, coord, format)
+            cache.lock(layer, lockCoord, format)
             
             # There's a chance that some other process has
             # written the tile while the lock was being acquired.
@@ -53,7 +56,7 @@ def handleRequest(layer, coord, extension):
             # If no one else wrote the tile, do it here.
             if body is None:
                 buff = StringIO()
-                tile = layer.render(coord)
+                tile = layer.render(coord, format)
                 tile.save(buff, format)
                 body = buff.getvalue()
                 
@@ -61,7 +64,7 @@ def handleRequest(layer, coord, extension):
 
         finally:
             # Always clean up a lock when it's no longer being used.
-            cache.unlock(layer, coord, format)
+            cache.unlock(layer, lockCoord, format)
 
     return mimetype, body
 
