@@ -37,20 +37,31 @@ def buildConfiguration(config_dict, dirpath='.'):
 def _parseConfigfileCache(cache_dict, dirpath):
     """ Used by parseConfigfile() to parse just the cache parts of a config.
     """
-    if cache_dict['name'].lower() == 'test':
-        cache = Caches.Test(lambda msg: stderr.write(msg + '\n'))
-
-    elif cache_dict['name'].lower() == 'disk':
-        cachepath = realpath(pathjoin(dirpath, cache_dict['path']))
+    if cache_dict.has_key('name'):
+        _class = Caches.getCacheByName(cache_dict['name'])
         kwargs = {}
         
-        if cache_dict.has_key('umask'):
-            kwargs['umask'] = int(cache_dict['umask'], 8)
-
-        cache = Caches.Disk(cachepath, **kwargs)
+        if _class is Caches.Test:
+            kwargs['logfunc'] = lambda msg: stderr.write(msg + '\n')
+    
+        elif _class is Caches.Disk:
+            kwargs['path'] = realpath(pathjoin(dirpath, cache_dict['path']))
+            
+            if cache_dict.has_key('umask'):
+                kwargs['umask'] = int(cache_dict['umask'], 8)
+    
+        else:
+            raise Exception('Unknown cache: %s' % cache_dict['name'])
+        
+    elif cache_dict.has_key('class'):
+        _class = loadClassPath(cache_dict['class'])
+        kwargs = cache_dict.get('kwargs', {})
+        kwargs = dict( [(str(k), v) for (k, v) in kwargs.items()] )
 
     else:
-        raise Exception('Unknown cache: %s' % cache_dict['name'])
+        raise Exception('Missing required cache name or class: %s' % json_dumps(cache_dict))
+
+    cache = _class(**kwargs)
 
     return cache
 
@@ -94,7 +105,7 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
                 kwargs['provider_name'] = provider_dict['provider']
         
     elif provider_dict.has_key('class'):
-        _class = Providers.loadProviderByClass(provider_dict['class'])
+        _class = loadClassPath(provider_dict['class'])
         kwargs = provider_dict.get('kwargs', {})
         kwargs = dict( [(str(k), v) for (k, v) in kwargs.items()] )
 
@@ -121,3 +132,14 @@ def getTypeByExtension(extension):
 
     else:
         raise Exception('Unknown extension: "%s"' % extension)
+
+def loadClassPath(classpath):
+    """ Load external class based on a path.
+    
+        Example classpath: "Module.Submodule.Classname",
+    """
+    classpath = classpath.split('.')
+    module = __import__( '.'.join(classpath[:-1]) )
+    _class = getattr(module, classpath[-1])
+    
+    return _class

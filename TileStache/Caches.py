@@ -18,8 +18,28 @@ Example built-in cache, for JSON configuration file:
 
 Example external cache, for JSON configuration file:
 
-    *** NOT YET IMPLEMENTED ***
+    "cache": {
+      "class": "Module.Classname",
+      "kwargs": {"frob": "yes"}
+    }
 
+- The "class" value is split up into module and classname, and dynamically
+  included. If this doesn't work for some reason, TileStache will fail loudly
+  to let you know.
+- The "kwargs" value is fed to the class constructor as a dictionary of keyword
+  args. If your defined class doesn't accept any of these keyword arguments,
+  TileStache will throw an exception.
+
+A cache must provide these methods: lock(), unlock(), read(), and save().
+Each method accepts three arguments:
+
+- layer: instance of a Layer.
+- coord: single Coordinate that represents a tile.
+- format: string like "png" or "jpg" that is used as a filename extension.
+
+The save() method accepts an additional argument before the others:
+
+- body: raw content to save to the cache.
 """
 
 import os
@@ -27,6 +47,19 @@ import time
 
 from tempfile import mkstemp
 from os.path import isdir, exists, dirname, basename, join as pathjoin
+
+def getCacheByName(name):
+    """ Retrieve a cache object by name.
+    
+        Raise an exception if the name doesn't work out.
+    """
+    if name.lower() == 'test':
+        return Test
+
+    elif name.lower() == 'disk':
+        return Disk
+
+    raise Exception('Unknown cache name: "%s"' % name)
 
 class Test:
     """ Simple cache that doesn't actually cache anything.

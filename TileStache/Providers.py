@@ -67,6 +67,19 @@ from ModestMaps.Core import Point, Coordinate
 
 import Geography
 
+def getProviderByName(name):
+    """ Retrieve a provider object by name.
+    
+        Raise an exception if the name doesn't work out.
+    """
+    if name.lower() == 'mapnik':
+        return Mapnik
+
+    elif name.lower() == 'proxy':
+        return Proxy
+
+    raise Exception('Unknown provider name: "%s"' % name)
+
 class Proxy:
     """ Proxy provider, to pass through and cache tiles from other places.
     
@@ -193,27 +206,3 @@ class Mapnik:
         img = PIL.Image.fromstring('RGBA', (width, height), img.tostring())
         
         return img
-
-def getProviderByName(name):
-    """ Retrieve a provider object by name.
-    
-        Raise an exception if the name doesn't work out.
-    """
-    if name.lower() == 'mapnik':
-        return Mapnik
-
-    elif name.lower() == 'proxy':
-        return Proxy
-
-    raise Exception('Unknown provider name: "%s"' % name)
-
-def loadProviderByClass(classpath):
-    """ Load external provider based on a class path.
-    
-        Example classpath: "Module.Submodule.Classname",
-    """
-    classpath = classpath.split('.')
-    module = __import__( '.'.join(classpath[:-1]) )
-    _class = getattr(module, classpath[-1])
-    
-    return _class
