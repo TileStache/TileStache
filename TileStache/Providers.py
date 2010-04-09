@@ -122,7 +122,7 @@ class Proxy:
         for url in self.provider.getTileUrls(coord):
             s, host, path, p, query, f = urlparse(url)
             conn = HTTPConnection(host, 80)
-            conn.request('GET', path+query)
+            conn.request('GET', path+'?'+query)
 
             body = conn.getresponse().read()
             tile = PIL.Image.open(StringIO(body)).convert('RGBA')
