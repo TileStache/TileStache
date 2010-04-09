@@ -1,4 +1,4 @@
-""" The input/output bits of TileStache.
+""" The configuration bits of TileStache.
 """
 
 from sys import stderr
