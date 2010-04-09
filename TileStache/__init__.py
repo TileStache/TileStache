@@ -5,7 +5,6 @@
 
 import re
 
-from os import environ
 from sys import stdout
 from cgi import parse_qs
 from StringIO import StringIO
@@ -105,8 +104,8 @@ def _splitPathInfo(pathinfo):
 
     return layer, coord, extension
 
-def cgiHandler(debug=False):
-    """ Load up configuration and talk to stdout by CGI.
+def cgiHandler(environ, config='./tilestache.cfg', debug=False):
+    """ Read environment PATH_INFO, load up configuration, talk to stdout by CGI.
     """
     if debug:
         import cgitb
