@@ -31,6 +31,9 @@ class Metatile:
 
     def firstCoord(self, coord):
         """ Return a new coordinate for the upper-left corner of a metatile.
+        
+            This is useful as a predictable way to refer to an entire metatile
+            by one of its sub-tiles, currently needed to do locking correctly.
         """
         return self.allCoords(coord)[0]
 
@@ -78,56 +81,29 @@ class Layer:
         return None
 
     def doMetatile(self):
-        """
+        """ Return True if we have a real metatile and the provider is OK with it.
         """
         return self.metatile.isForReal() and self.provider.metatileOK
     
     def render(self, coord, format):
         """ Render a tile for a coordinate, return PIL Image-like object.
         
-            Perform metatile slicing here *** NOT YET IMPLEMENTED ***
+            Perform metatile slicing here as well, if required, writing the
+            full set of rendered tiles to cache as we go.
         """
         srs = self.projection.srs
-        width, height = 256, 256
         xmin, ymin, xmax, ymax = self.envelope(coord)
+        width, height = 256, 256
         
         provider = self.provider
         metatile = self.metatile
         
         if self.doMetatile():
-            coords = metatile.allCoords(coord)
-            
-            # size of buffer expressed as fraction of tile size
-            buffer = float(metatile.buffer) / 256
-            
-            # new master image render size
-            width = int(256 * (buffer * 2 + metatile.columns))
-            height = int(256 * (buffer * 2 + metatile.rows))
-            
-            ul = coords[0].left(buffer).up(buffer)
-            lr = coords[-1].right(1 + buffer).down(1 + buffer)
+            # adjust render size and coverage for metatile
+            xmin, ymin, xmax, ymax = self.metaEnvelope(coord)
+            width, height = self.metaSize(coord)
 
-            ul = self.projection.coordinateProj(ul)
-            lr = self.projection.coordinateProj(lr)
-            
-            # new render area coverage in projected coordinates
-            xmin, ymin, xmax, ymax = min(ul.x, lr.x), min(ul.y, lr.y), max(ul.x, lr.x), max(ul.y, lr.y)
-            
-            subtiles = []
-            
-            for other in coords:
-                r = other.row - coords[0].row
-                c = other.column - coords[0].column
-                
-                x = c * 256 + metatile.buffer
-                y = r * 256 + metatile.buffer
-                
-                
-                subtiles.append((other, x, y))
-        
-        
-            # do something here to expand the envelope or whatever.
-            pass
+            subtiles = self.metaSubtiles(coord)
         
         if not self.doMetatile() and hasattr(provider, 'renderTile'):
             # draw a single tile
@@ -144,26 +120,21 @@ class Layer:
                'Return value of provider.renderArea() must act like an image.'
         
         if self.doMetatile():
-            
-            
-            surtile = tile.copy()
+            # tile will be set again later
+            tile, surtile = None, tile
             
             for (other, x, y) in subtiles:
-                
-                bbox = (x, y, x + 256, y + 256)
                 buff = StringIO()
-                subtile = surtile.crop(bbox).copy()
+                bbox = (x, y, x + 256, y + 256)
+                subtile = surtile.crop(bbox)
                 subtile.save(buff, format)
                 body = buff.getvalue()
-
                 
                 self.config.cache.save(body, self, other, format)
                 
                 if other == coord:
-                    tile = subtile.copy()
-
-            # now do something to slice up the metatile, cache the rest, etc.
-            pass
+                    # the one that actually gets returned
+                    tile = subtile
         
         return tile
 
@@ -174,3 +145,53 @@ class Layer:
         lr = self.projection.coordinateProj(coord.down().right())
         
         return min(ul.x, lr.x), min(ul.y, lr.y), max(ul.x, lr.x), max(ul.y, lr.y)
+    
+    def metaEnvelope(self, coord):
+        """ Projected rendering envelope (xmin, ymin, xmax, ymax) for a metatile.
+        """
+        # size of buffer expressed as fraction of tile size
+        buffer = float(self.metatile.buffer) / 256
+        
+        # full set of metatile coordinates
+        coords = self.metatile.allCoords(coord)
+        
+        # upper-left and lower-right expressed as fractional coordinates
+        ul = coords[0].left(buffer).up(buffer)
+        lr = coords[-1].right(1 + buffer).down(1 + buffer)
+
+        # upper-left and lower-right expressed as projected coordinates
+        ul = self.projection.coordinateProj(ul)
+        lr = self.projection.coordinateProj(lr)
+        
+        # new render area coverage in projected coordinates
+        return min(ul.x, lr.x), min(ul.y, lr.y), max(ul.x, lr.x), max(ul.y, lr.y)
+    
+    def metaSize(self, coord):
+        """ Pixel width and height of full rendered image for a metatile.
+        """
+        # size of buffer expressed as fraction of tile size
+        buffer = float(self.metatile.buffer) / 256
+        
+        # new master image render size
+        width = int(256 * (buffer * 2 + self.metatile.columns))
+        height = int(256 * (buffer * 2 + self.metatile.rows))
+        
+        return width, height
+
+    def metaSubtiles(self, coord):
+        """ List of all coords in a metatile and their x, y offsets in a parent image.
+        """
+        subtiles = []
+
+        coords = self.metatile.allCoords(coord)
+
+        for other in coords:
+            r = other.row - coords[0].row
+            c = other.column - coords[0].column
+            
+            x = c * 256 + self.metatile.buffer
+            y = r * 256 + self.metatile.buffer
+            
+            subtiles.append((other, x, y))
+
+        return subtiles
