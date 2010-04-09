@@ -111,7 +111,7 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
         import cgitb
         cgitb.enable()
     
-    config = parseConfigfile('tilestache.cfg')
+    config = parseConfigfile(config)
     layername, coord, extension = _splitPathInfo(environ['PATH_INFO'])
     
     query = parse_qs(environ['QUERY_STRING'])
