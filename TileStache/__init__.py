@@ -70,7 +70,7 @@ def handleRequest(layer, coord, extension):
 def parseConfigfile(configpath):
     """ Parse a configuration file and return a Configuration object.
     
-        Configuration file is formatted as JSON, and has two sections:
+        Configuration file is formatted as JSON with two sections, "cache" and "layers":
         
           {
             "cache": { ... },
