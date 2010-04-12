@@ -21,6 +21,27 @@
         </Datasource>
     </Layer>
 
+    <Style name="grass">
+        <Rule>
+            <PolygonSymbolizer>
+                <CssParameter name="fill">#bbe2b3</CssParameter>
+                <CssParameter name="fill-opacity">1</CssParameter>
+            </PolygonSymbolizer>
+        </Rule>
+    </Style>
+    <Layer name="grass" srs="+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs">
+        <StyleName>grass</StyleName>
+        <Datasource>
+            <Parameter name="type">postgis</Parameter>
+            <Parameter name="user">osm</Parameter>
+            <Parameter name="host">localhost</Parameter>
+            <Parameter name="dbname">planet_osm</Parameter>
+            <Parameter name="table">(SELECT * FROM planet_osm_polygon WHERE leisure IN ('park', 'water_park', 'marina', 'nature_reserve', 'playground', 'garden', 'common') OR amenity IN ('graveyard') OR landuse IN ('cemetery') OR leisure IN ('sports_centre', 'golf_course', 'stadium', 'track', 'pitch') OR landuse IN ('recreation_ground') OR landuse IN ('forest', 'wood')) AS grass</Parameter>
+            <Parameter name="estimate_extent">false</Parameter>
+            <Parameter name="extent">-20037507.58,-20037507.58,20037507.58,20037507.58</Parameter>
+        </Datasource>
+    </Layer>
+
     <Style name="water">
         <Rule>
             <PolygonSymbolizer>

@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<Map bgcolor="transparent" srs="+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs">
+    <Style name="outlines">
+        <Rule>
+            <LineSymbolizer>
+                <CssParameter name="stroke">#6f6b58</CssParameter>
+                <CssParameter name="stroke-width">8</CssParameter>
+                <CssParameter name="stroke-linejoin">round</CssParameter>
+                <CssParameter name="stroke-linecap">round</CssParameter>
+            </LineSymbolizer>
+        </Rule>
+    </Style>
+    <Layer name="outlines" srs="+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs">
+        <StyleName>outlines</StyleName>
+        <Datasource>
+            <Parameter name="type">postgis</Parameter>
+            <Parameter name="user">osm</Parameter>
+            <Parameter name="host">localhost</Parameter>
+            <Parameter name="dbname">planet_osm</Parameter>
+            <Parameter name="table">(SELECT * FROM planet_osm_line WHERE highway IN ('motorway', 'motorway_link', 'trunk', 'trunk_link', 'primary', 'primary_link', 'secondary', 'secondary_link', 'tertiary', 'residential', 'unclassified', 'service')) AS streets</Parameter>
+            <Parameter name="estimate_extent">false</Parameter>
+            <Parameter name="extent">-20037507.58,-20037507.58,20037507.58,20037507.58</Parameter>
+        </Datasource>
+    </Layer>
+</Map>

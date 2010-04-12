@@ -10,6 +10,11 @@
 </stack>
 """
 
+from StringIO import StringIO
+
+import PIL.Image
+import TileStache
+
 class Stack:
 
     def __init__(self, layers):
@@ -28,8 +33,42 @@ class Layer:
 
 class Composite:
 
-    def __init__(self, stackfile):
+    metatileOK = False
+
+    def __init__(self, layer, stackfile=None):
+        self.layer = layer
         self.stackfile = stackfile
+
+    def renderTile(self, width, height, srs, coord):
+    
+        layer = self.layer.config.layers['base']
+        mime, body = TileStache.handleRequest(layer, coord, 'png')
+        img_base = PIL.Image.open(StringIO(body))
+
+        layer = self.layer.config.layers['outlines']
+        mime, body = TileStache.handleRequest(layer, coord, 'png')
+        img_outlines = PIL.Image.open(StringIO(body))
+        
+        layer = self.layer.config.layers['halos']
+        mime, body = TileStache.handleRequest(layer, coord, 'png')
+        img_halos = PIL.Image.open(StringIO(body))
+        
+        img_outlinesmask = PIL.Image.new('RGBA', img_outlines.size, (0, 0, 0, 0))
+        img_outlinesmask.paste(img_outlines, None, img_halos.convert('L'))
+
+        layer = self.layer.config.layers['streets']
+        mime, body = TileStache.handleRequest(layer, coord, 'png')
+        img_streets = PIL.Image.open(StringIO(body))
+        
+        img = PIL.Image.new('RGBA', (256, 256))
+        
+        img.paste(img_base, (0, 0), img_base)
+        img.paste(img_outlines, None, img_outlinesmask)
+        img.paste(img_streets, (0, 0), img_streets)
+        
+        return img
+    
+        pass
 
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax):
         pass
