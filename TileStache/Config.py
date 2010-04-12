@@ -139,7 +139,7 @@ def loadClassPath(classpath):
         Example classpath: "Module.Submodule.Classname",
     """
     classpath = classpath.split('.')
-    module = __import__( '.'.join(classpath[:-1]) )
+    module = __import__('.'.join(classpath[:-1]), fromlist=classpath[-1])
     _class = getattr(module, classpath[-1])
     
     return _class
