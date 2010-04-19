@@ -10,6 +10,8 @@
 </stack>
 """
 
+from os.path import join as pathjoin
+from xml.dom.minidom import parse as parseXML
 from StringIO import StringIO
 
 import PIL.Image
@@ -37,9 +39,18 @@ class Composite:
 
     def __init__(self, layer, stackfile=None):
         self.layer = layer
-        self.stackfile = stackfile
+        
+        stackfile = pathjoin(self.layer.config.dirpath, stackfile)
+        stack = parseXML(stackfile).firstChild
+        
+        assert stack.tagName == 'stack', \
+               'Expecting root element "stack" but got "%s"' % stack.tagName
+
+        self.stack = stack
 
     def renderTile(self, width, height, srs, coord):
+    
+        raise Exception(self.stack)
     
         layer = self.layer.config.layers['base']
         mime, body = TileStache.handleRequest(layer, coord, 'png')
