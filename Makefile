@@ -1,4 +1,4 @@
-VERSION=0.1.2
+VERSION=0.1.3
 PACKAGE=TileStache-$(VERSION)
 TARBALL=$(PACKAGE).tar.gz
 
@@ -27,6 +27,28 @@ $(PACKAGE):
 
 	mkdir $(PACKAGE)/examples
 	ln examples/*.py $(PACKAGE)/examples/
+
+	mkdir $(PACKAGE)/doc
+
+	pydoc -w TileStache
+	pydoc -w TileStache.Core
+	pydoc -w TileStache.Caches
+	pydoc -w TileStache.Config
+	pydoc -w TileStache.Geography
+	pydoc -w TileStache.Providers
+	pydoc -w TileStache.Goodies
+	pydoc -w TileStache.Goodies.Providers
+	pydoc -w TileStache.Goodies.Providers.Grid
+
+	mv TileStache.html $(PACKAGE)/doc/
+	mv TileStache.Core.html $(PACKAGE)/doc/
+	mv TileStache.Caches.html $(PACKAGE)/doc/
+	mv TileStache.Config.html $(PACKAGE)/doc/
+	mv TileStache.Geography.html $(PACKAGE)/doc/
+	mv TileStache.Providers.html $(PACKAGE)/doc/
+	mv TileStache.Goodies.html $(PACKAGE)/doc/
+	mv TileStache.Goodies.Providers.html $(PACKAGE)/doc/
+	mv TileStache.Goodies.Providers.Grid.html $(PACKAGE)/doc/
 
 clean:
 	rm -rf $(PACKAGE) $(TARBALL)
