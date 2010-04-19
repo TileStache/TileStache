@@ -1,3 +1,6 @@
 *.pyc
+doc
+dist
+build
 TileStache-*.*
 TileStache-*.*.tar.gz
