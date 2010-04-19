@@ -26,16 +26,72 @@ class Layer:
         self.colorname = colorname
         self.maskname = maskname
 
-    def render(self):
-        pass
+    def render(self, config, input_img, coord):
+        
+        layer_img, color_img, mask_img = None, None, None
+        
+        if self.layername:
+            layer = config.layers[self.layername]
+            mime, body = TileStache.handleRequest(layer, coord, 'png')
+            layer_img = PIL.Image.open(StringIO(body))
+        
+        if self.maskname:
+            layer = config.layers[self.maskname]
+            mime, body = TileStache.handleRequest(layer, coord, 'png')
+            mask_img = PIL.Image.open(StringIO(body)).convert('L')
+
+        if self.colorname:
+            color = makeColor(self.colorname)
+            color_img = PIL.Image.new('RGBA', input_img.size, color)
+
+        output_img = input_img.copy()
+
+        if layer_img and color_img and mask_img:
+            raise Exception('could be ugly')
+        
+        elif layer_img and color_img:
+            output_img.paste(color_img, None, color_img)
+            output_img.paste(layer_img, None, layer_img)
+
+        elif layer_img and mask_img:
+            # need to combine the masks here
+            layermask_img = PIL.Image.new('RGBA', layer_img.size, (0, 0, 0, 0))
+            layermask_img.paste(layer_img, None, mask_img)
+            output_img.paste(layermask_img, None, layermask_img)
+
+        elif color_img and mask_img:
+            output_img.paste(color_img, None, mask_img)
+        
+        elif layer_img:
+            output_img.paste(layer_img, None, layer_img)
+        
+        elif color_img:
+            output_img.paste(color_img, None, color_img)
+
+        elif mask_img:
+            raise Exception('nothing')
+
+        else:
+            raise Exception('nothing')
+
+        return output_img
 
 class Stack:
 
     def __init__(self, layers):
         self.layers = layers
 
-    def render(self):
-        pass
+    def render(self, config, input_img, coord):
+    
+        stack_img = PIL.Image.new('RGBA', input_img.size, (0, 0, 0, 0))
+        
+        for layer in self.layers:
+            stack_img = layer.render(config, stack_img, coord)
+
+        output_img = input_img.copy()
+        output_img.paste(stack_img, (0, 0), stack_img)
+        
+        return output_img
 
 def makeColor(color):
     """
@@ -69,7 +125,7 @@ def makeLayer(element):
     for child in element.childNodes:
         if child.nodeType == child.ELEMENT_NODE:
             if child.tagName == 'mask' and child.hasAttribute('src'):
-                kwargs['maskname'] = element.getAttribute('src')
+                kwargs['maskname'] = child.getAttribute('src')
 
     print >> sys.stderr, 'Making a layer from', kwargs
     
@@ -110,11 +166,15 @@ class Composite:
         assert stack.tagName == 'stack', \
                'Expecting root element "stack" but got "%s"' % stack.tagName
 
-        self.stack = stack
+        self.stack = makeStack(stack)
 
     def renderTile(self, width, height, srs, coord):
     
-        makeStack(self.stack)
+        image = PIL.Image.new('RGBA', (width, height), (0, 0, 0, 0))
+        
+        image = self.stack.render(self.layer.config, image, coord)
+        
+        return image
     
         layer = self.layer.config.layers['base']
         mime, body = TileStache.handleRequest(layer, coord, 'png')
