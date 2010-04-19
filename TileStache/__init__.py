@@ -8,7 +8,7 @@ import re
 from sys import stdout
 from cgi import parse_qs
 from StringIO import StringIO
-from os.path import dirname
+from os.path import dirname, join as pathjoin, realpath
 
 try:
     from json import load as json_load
@@ -122,3 +122,40 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     print >> stdout, 'Content-Length: %d' % len(content)
     print >> stdout, 'Content-Type: %s\n' % mimetype
     print >> stdout, content
+
+def modpythonHandler(request):
+    """ Handle a mod_python request.
+    
+        Example Apache configuration for TileStache:
+
+        <Directory /home/migurski/public_html/TileStache>
+            AddHandler mod_python .py
+            PythonHandler TileStache::modpythonHandler
+            PythonOption config /etc/tilestache.cfg
+        </Directory>
+        
+        Configuration options, using PythonOption directive:
+        - config: path to configuration file, defaults to "tilestache.cfg",
+            using request.filename as the current working directory.
+    """
+    from mod_python import apache
+    
+    config = request.get_options().get('config', 'tilestache.cfg')
+    config = realpath(pathjoin(dirname(request.filename), config))
+    config = parseConfigfile(config)
+
+    layername, coord, extension = _splitPathInfo(request.path_info)
+    
+    query = request.args
+    layer = config.layers[layername]
+    
+    mimetype, content = handleRequest(layer, coord, extension)
+    
+    request.status = apache.HTTP_OK
+    request.content_type = mimetype
+    request.set_content_length(len(content))
+    request.send_http_header()
+
+    request.write(content)
+
+    return apache.OK
