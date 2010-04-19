@@ -8,7 +8,7 @@ all: $(TARBALL)
 $(TARBALL): $(PACKAGE)
 	tar -czvf $(TARBALL) $(PACKAGE)
 
-$(PACKAGE):
+$(PACKAGE): doc
 	mkdir $(PACKAGE)
 	ln setup.py $(PACKAGE)/
 	ln README $(PACKAGE)/
@@ -29,6 +29,10 @@ $(PACKAGE):
 	ln examples/*.py $(PACKAGE)/examples/
 
 	mkdir $(PACKAGE)/doc
+	ln doc/*.html $(PACKAGE)/doc/
+
+doc:
+	mkdir doc
 
 	pydoc -w TileStache
 	pydoc -w TileStache.Core
@@ -41,16 +45,8 @@ $(PACKAGE):
 	pydoc -w TileStache.Goodies.Providers.Composite
 	pydoc -w TileStache.Goodies.Providers.Grid
 
-	mv TileStache.html $(PACKAGE)/doc/
-	mv TileStache.Core.html $(PACKAGE)/doc/
-	mv TileStache.Caches.html $(PACKAGE)/doc/
-	mv TileStache.Config.html $(PACKAGE)/doc/
-	mv TileStache.Geography.html $(PACKAGE)/doc/
-	mv TileStache.Providers.html $(PACKAGE)/doc/
-	mv TileStache.Goodies.html $(PACKAGE)/doc/
-	mv TileStache.Goodies.Providers.html $(PACKAGE)/doc/
-	mv TileStache.Goodies.Providers.Composite.html $(PACKAGE)/doc/
-	mv TileStache.Goodies.Providers.Grid.html $(PACKAGE)/doc/
+	mv TileStache.html doc/
+	mv TileStache.*.html doc/
 
 clean:
-	rm -rf $(PACKAGE) $(TARBALL)
+	rm -rf $(PACKAGE) $(TARBALL) doc
