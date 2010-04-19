@@ -21,8 +21,10 @@ import TileStache
 
 class Layer:
 
-    def __init__(self):
-        pass
+    def __init__(self, layername=None, colorname=None, maskname=None):
+        self.layername = layername
+        self.colorname = colorname
+        self.maskname = maskname
 
     def render(self):
         pass
@@ -35,19 +37,50 @@ class Stack:
     def render(self):
         pass
 
-def makeLayer(node):
+def makeColor(color):
     """
     """
-    print >> sys.stderr, 'Making a layer.'
+    if type(color) not in (str, unicode):
+        raise Exception('Color must be a string: %s' % repr(color))
 
-    return Layer()
+    if color[0] != '#':
+        raise Exception('Color must start with hash: "%s"' % color)
 
-def makeStack(node):
+    if len(color) not in (4, 7):
+        raise Exception('Color must have three or six hex chars: "%s"' % color)
+
+    r = int(len(color) == 7 and color[1:3] or color[1]+color[1], 16)
+    g = int(len(color) == 7 and color[3:5] or color[2]+color[2], 16)
+    b = int(len(color) == 7 and color[5:7] or color[3]+color[3], 16)
+
+    return r, g, b, 0xFF
+    
+def makeLayer(element):
+    """
+    """
+    kwargs = {}
+    
+    if element.hasAttribute('src'):
+        kwargs['layername'] = element.getAttribute('src')
+
+    if element.hasAttribute('color'):
+        kwargs['colorname'] = element.getAttribute('color')
+    
+    for child in element.childNodes:
+        if child.nodeType == child.ELEMENT_NODE:
+            if child.tagName == 'mask' and child.hasAttribute('src'):
+                kwargs['maskname'] = element.getAttribute('src')
+
+    print >> sys.stderr, 'Making a layer from', kwargs
+    
+    return Layer(**kwargs)
+
+def makeStack(element):
     """
     """
     layers = []
     
-    for child in node.childNodes:
+    for child in element.childNodes:
         if child.nodeType == child.ELEMENT_NODE:
             if child.tagName == 'stack':
                 stack = makeStack(child)
