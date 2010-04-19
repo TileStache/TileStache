@@ -17,9 +17,9 @@ import Geography
 class Configuration:
     """ A complete site configuration, with a collection of Layer objects.
     """
-    def __init__(self, cache, path):
+    def __init__(self, cache, dirpath):
         self.cache = cache
-        self.path = path
+        self.dirpath = dirpath
         self.layers = {}
 
 def buildConfiguration(config_dict, dirpath='.'):
