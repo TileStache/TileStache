@@ -10,12 +10,22 @@
 </stack>
 """
 
+import sys
+
 from os.path import join as pathjoin
 from xml.dom.minidom import parse as parseXML
 from StringIO import StringIO
 
 import PIL.Image
 import TileStache
+
+class Layer:
+
+    def __init__(self):
+        pass
+
+    def render(self):
+        pass
 
 class Stack:
 
@@ -25,13 +35,34 @@ class Stack:
     def render(self):
         pass
 
-class Layer:
+def makeLayer(node):
+    """
+    """
+    print >> sys.stderr, 'Making a layer.'
 
-    def __init__(self):
-        pass
+    return Layer()
 
-    def render(self):
-        pass
+def makeStack(node):
+    """
+    """
+    layers = []
+    
+    for child in node.childNodes:
+        if child.nodeType == child.ELEMENT_NODE:
+            if child.tagName == 'stack':
+                stack = makeStack(child)
+                layers.append(stack)
+            
+            elif child.tagName == 'layer':
+                layer = makeLayer(child)
+                layers.append(layer)
+
+            else:
+                raise Exception('Unknown element "%s"' % child.tagName)
+
+    print >> sys.stderr, 'Making a stack with %d layers' % len(layers)
+
+    return Stack(layers)
 
 class Composite:
 
@@ -50,7 +81,7 @@ class Composite:
 
     def renderTile(self, width, height, srs, coord):
     
-        raise Exception(self.stack)
+        makeStack(self.stack)
     
         layer = self.layer.config.layers['base']
         mime, body = TileStache.handleRequest(layer, coord, 'png')
