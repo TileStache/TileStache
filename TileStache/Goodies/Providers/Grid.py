@@ -20,7 +20,11 @@ import PIL.ImageFont
 
 import TileStache
 
-from pyproj import Proj
+try:
+    from pyproj import Proj
+except ImportError:
+    # well I guess we can't do any more things now.
+    pass
 
 def lat2hemi(lat):
     """ Convert latitude to single-letter hemisphere, "N" or "S".
