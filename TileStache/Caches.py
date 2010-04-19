@@ -129,8 +129,6 @@ class Disk:
     def __init__(self, path, umask=0022):
         self.cachepath = path
         self.umask = umask
-        
-        self.stale_timeout = 15
 
     def _filepath(self, layer, coord, format):
         """
@@ -168,7 +166,7 @@ class Disk:
             Lock is implemented as an empty directory next to the tile file.
         """
         lockpath = self._lockpath(layer, coord, format)
-        due = time.time() + self.stale_timeout
+        due = time.time() + layer.stale_lock_timeout
         
         while True:
             # try to acquire a directory lock, repeating if necessary.

@@ -64,12 +64,15 @@ class Layer:
         - config: Configuration instance, see Config module.
         - projection: geographic projection, see Geography module.
         - metatile: some information on drawing many tiles at once.
+        - stale_lock_timeout: number of seconds until a cache lock is forced.
     """
-    def __init__(self, config, projection, metatile):
+    def __init__(self, config, projection, metatile, stale_lock_timeout=15):
         self.provider = None
         self.config = config
         self.projection = projection
         self.metatile = metatile
+        
+        self.stale_lock_timeout = stale_lock_timeout
 
     def name(self):
         """ Figure out what I'm called, return a name if there is one.

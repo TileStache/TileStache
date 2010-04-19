@@ -72,17 +72,26 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     projection = Geography.getProjectionByName(projection)
     
     #
+    # Add cache lock timeouts
+    #
+    
+    layer_kwargs = {}
+    
+    if layer_dict.has_key('stale lock timeout'):
+        layer_kwargs['stale_lock_timeout'] = int(layer_dict['stale lock timeout'])
+    
+    #
     # Do the metatile
     #
 
     meta_dict = layer_dict.get('metatile', {})
-    kwargs = {}
-    
+    metatile_kwargs = {}
+
     for k in ('buffer', 'rows', 'columns'):
         if meta_dict.has_key(k):
-            kwargs[k] = int(meta_dict[k])
+            metatile_kwargs[k] = int(meta_dict[k])
     
-    metatile = Core.Metatile(**kwargs)
+    metatile = Core.Metatile(**metatile_kwargs)
     
     #
     # Do the provider
@@ -92,22 +101,22 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
 
     if provider_dict.has_key('name'):
         _class = Providers.getProviderByName(provider_dict['name'])
-        kwargs = {}
+        provider_kwargs = {}
         
         if _class is Providers.Mapnik:
             mapfile = provider_dict['mapfile']
-            kwargs['mapfile'] = realpath(pathjoin(dirpath, mapfile))
+            provider_kwargs['mapfile'] = realpath(pathjoin(dirpath, mapfile))
         
         elif _class is Providers.Proxy:
             if provider_dict.has_key('url'):
-                kwargs['url'] = provider_dict['url']
+                provider_kwargs['url'] = provider_dict['url']
             if provider_dict.has_key('provider'):
-                kwargs['provider_name'] = provider_dict['provider']
+                provider_kwargs['provider_name'] = provider_dict['provider']
         
     elif provider_dict.has_key('class'):
         _class = loadClassPath(provider_dict['class'])
-        kwargs = provider_dict.get('kwargs', {})
-        kwargs = dict( [(str(k), v) for (k, v) in kwargs.items()] )
+        provider_kwargs = provider_dict.get('kwargs', {})
+        provider_kwargs = dict( [(str(k), v) for (k, v) in provider_kwargs.items()] )
 
     else:
         raise Exception('Missing required provider name or class: %s' % json_dumps(provider_dict))
@@ -116,8 +125,8 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     # Finish him!
     #
 
-    layer = Core.Layer(config, projection, metatile)
-    layer.provider = _class(layer, **kwargs)
+    layer = Core.Layer(config, projection, metatile, **layer_kwargs)
+    layer.provider = _class(layer, **provider_kwargs)
     
     return layer
 
