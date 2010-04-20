@@ -3,6 +3,7 @@
 <head>
 	<title>TileStache</title>
     <link rel="stylesheet" href="style.css" type="text/css">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
 </head>
 <body>
 
@@ -28,12 +29,39 @@
     <h1>
         <img src="mustaches.jpg" alt="TileStache" width="500" height="321">
     </h1>
+
     <p style="color: #666;">
         <small>Mustaches:
         <a href="http://www.flickr.com/photos/locaburg/4416312808/in/faves-mmigurski/">IMG_7531</a>
         by <a href="http://www.flickr.com/photos/locaburg/">locaburg</a>, on Flickr.</small>
     </p>
+    
+    <h2>Features</h2>
+    
+    <p>
+        Things TileStache does now:
+    </p>
+    
+    <ul>
+        <li>Renders <a href="http://mapnik.org/">Mapnik</a> maps</li>
+        <li>Caches to disk</li>
+        <li>Serves tiles in Google-style spherical mercator projection</li>
+        <li>Runs from CGI, mod_python, or <a href="http://github.com/benoitc/gunicorn">gunicorn</a> WSGI</li>
+        <li>Uses metatiles</li>
+    </ul>
 
+    <p>
+        Things TileStache might do in the near future:
+    </p>
+    
+    <ul>
+        <li>Render <a href="http://www.gdal.org/">GDAL</a> datasources</li>
+        <li>Cache to <a href="http://aws.amazon.com/s3/">Amazon S3</a></li>
+        <li>Serve tiles in WGS84 lat/lon projection</li>
+    </ul>
+
+    <h2>Design</h2>
+    
     <p>
         The design of TileStache focuses on approachability at the expense of
         cleverness or completeness. Our hope is to make it easy for anyone to
@@ -47,7 +75,7 @@
         The core of TileStache is intended to have a small code footprint. It
         should be quick and easy to to understand what the library is doing and
         why, based on common entry points like included CGI scripts. Where
-        possible, dynamic programming "magic" is to be avoided, in favor of
+        possible, dynamic programming “magic” is to be avoided, in favor of
         basic, procedural and copiously-documented Python.
     </p>
 
