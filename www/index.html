@@ -8,30 +8,64 @@
 
 <div id="content">
     <p>
-        TileStache <a href="#">blah blah blah</a> blah blah blah blah blah blah blah blah blah
-        blah blah blah blah blah blah blah blah blah blah blah blah blah blah
-        blah blah blah blah blah blah blah blah blah blah blah blah blah blah
-        blah blah blah blah blah blah blah blah blah blah blah blah blah blah
-        blah blah blah blah blah blah blah blah blah blah blah blah blah blah
-        blah blah blah blah blah blah blah blah blah blah blah blah blah blah
+        <strong><i>TileStache</i> is a Python-based server application that can
+        serve up map tiles based on rendered geographic data.</strong>
+    </p>
+
+    <p>
+        You might be familiar with <a
+        href="http://tilecache.org">TileCache</a>, the venerable open source
+        WMS server from MetaCarta. TileStache is similar, but we hope simpler
+        and better-suited to the needs of designers and cartographers.
     </p>
 
     <h1>
         <img src="mustaches.jpg" alt="TileStache" width="500" height="321">
     </h1>
-    <p>
-        <small>(mustaches:
+    <p style="color: #666;">
+        <small>Mustaches:
         <a href="http://www.flickr.com/photos/locaburg/4416312808/in/faves-mmigurski/">IMG_7531</a>
-        by <a href="http://www.flickr.com/photos/locaburg/">locaburg</a>, on Flickr)</small>
+        by <a href="http://www.flickr.com/photos/locaburg/">locaburg</a>, on Flickr.</small>
     </p>
 
     <p>
-        TileStache <a href="#">blah blah blah</a> blah blah blah blah blah blah blah blah blah
-        blah blah blah blah blah blah blah blah blah blah blah blah blah blah
-        blah blah blah blah blah blah blah blah blah blah blah blah blah blah
-        blah blah blah blah blah blah blah blah blah blah blah blah blah blah
-        blah blah blah blah blah blah blah blah blah blah blah blah blah blah
-        blah blah blah blah blah blah blah blah blah blah blah blah blah blah
+        The design of TileStache focuses on approachability at the expense of
+        cleverness or completeness. Our hope is to make it easy for anyone to
+        design a new map of their city, publish a fresh view of their world, or
+        even build the next <a href="http://8bitnyc.com">8-Bit NYC</a>.
+    </p>
+
+    <h3>Small</h3>
+
+    <p>
+        The core of TileStache is intended to have a small code footprint. It
+        should be quick and easy to to understand what the library is doing and
+        why, based on common entry points like included CGI scripts. Where
+        possible, dynamic programming "magic" is to be avoided, in favor of
+        basic, procedural and copiously-documented Python.
+    </p>
+
+    <h3>Pluggable</h3>
+
+    <p>
+        We want to accept plug-ins and extensions from outside TileStache, and
+        offer TileStache itself as an extension for other systems. It must be
+        possible to write and use additional caches or renderers without having
+        to modify the core package itself, extend classes from inside the
+        package, or navigate chains of class dependencies. Duck typing and
+        stable interfaces win.
+    </p>
+
+    <h3>Sensible Defaults</h3>
+
+    <p>
+        The default action of a configured TileStache instance should permit
+        the most common form of interaction: a worldwide, spherical-mercator
+        upper-left oriented tile layout compatible with those used by
+        OpenStreetMap, Google, Bing Maps, Yahoo! and others. It should be
+        possible to make TileStache do whatever is necessary to support any
+        external system, but we eschew complex, impenetrable standards in favor
+        of pragmatic, fast utility with basic web clients.
     </p>
 </div>
 
