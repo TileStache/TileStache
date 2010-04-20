@@ -1,4 +1,58 @@
 """ The core class bits of TileStache.
+
+Two important classes can be found here.
+
+Layer represents a set of tiles in TileStache. It keeps references to
+providers, projections, a Configuration instance, and other details required
+for to the storage and rendering of a tile set. Layers are represented in the
+configuration file as a dictionary:
+
+    {
+      "cache": ...,
+      "layers": 
+      {
+        "example-name":
+        {
+            "provider": { ... },
+            "metatile": { ... },
+            "stale lock timeout": ...,
+            "projection": ...
+        }
+      }
+    }
+
+- "provider" refers to a Provider, explained in detail in TileStache.Providers.
+- "metatile" optionally makes it possible for multiple individual tiles to be
+  rendered at one time, for greater speed and efficiency. This is commonly used
+  for the Mapnik provider. See below for more information on metatiles.
+- "projection" names a geographic projection, explained in TileStache.Geography.
+  If omitted, defaults to spherical mercator.
+- "stale lock timeout" is an optional number of seconds to wait before forcing
+  a lock that might be stuck. This is defined on a per-layer basis, rather than
+  for an entire cache at one time, because you may have different expectations
+  for the rendering speeds of different layer configurations. Defaults to 15.
+
+The public-facing URL of a single tile for this layer might look like this:
+
+    http://example.com/tilestache.cgi/example-name/0/0/0.png
+
+Metatile represents a larger area to be rendered at one time. Metatiles are
+represented in the configuration file as a dictionary:
+
+    {
+        "rows": 4,
+        "columns": 4,
+        "buffer": 64
+    }
+
+- "rows" and "columns" are the height and width of the metatile measured in
+  tiles. This example metatile is four rows tall and four columns wide, so it
+  will render sixteen tiles simultaneously.
+- "buffer" is a buffer area around the metatile, measured in pixels. This is
+  useful for providers with labels or icons, where it's necessary to draw a
+  bit extra around the edges to ensure that text is not cut off. This example
+  metatile has a buffer of 64 pixels, so the resulting metatile will be 1152
+  pixels square: 4 rows x 256 pixels + 2 x 64 pixel buffer.
 """
 
 from StringIO import StringIO
