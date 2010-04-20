@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<stack>
+    <layer src="base" />
+
+    <stack>
+        <layer src="outlines">
+            <mask src="halos" />
+        </layer>
+        <layer src="streets" />
+    </stack>
+</stack>
