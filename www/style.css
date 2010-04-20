@@ -1,0 +1,42 @@
+body
+{
+    font-family: Arial, Helvetica, sans;
+    font-size: 14px;
+    line-height: 16px;
+    color: black;
+    background-color: white;
+}
+
+a { color: blue; }
+
+i.title,
+a.credit
+{
+    white-space: nowrap;
+}
+
+em { background-color: #ff3; }
+
+#content
+{
+    width: 500px;
+    margin: 3em auto;
+    padding: 0;
+}
+
+#content p,
+#content h1,
+#content ul
+{
+    margin: 1em 0;
+}
+
+#content ul { padding-left: 2em; }
+#content li { margin: .5em 0; }
+
+#content h1
+{
+    padding: 0;
+    position: relative;
+    left: -65px;
+}
