@@ -1,13 +1,57 @@
-"""
+""" Layered, composite rendering for TileStache.
 
-<stack> 
-	<layer src="road-names" /> 
-	<layer src="road-inlines" /> 
-	<layer src="road-outlines"> 
-		<mask src="road-name-halos" /> 
-	</layer> 
-	<layer color="#ccc"/> 
-</stack>
+Example configuration:
+
+    {
+      "cache":
+      {
+        "name": "Test"
+      },
+      "layers": 
+      {
+        "base":
+        {
+            "provider": {"name": "mapnik", "mapfile": "mapnik-base.xml"}
+        },
+        "halos":
+        {
+            "provider": {"name": "mapnik", "mapfile": "mapnik-halos.xml"},
+            "metatile": {"buffer": 128}
+        },
+        "outlines":
+        {
+            "provider": {"name": "mapnik", "mapfile": "mapnik-outlines.xml"},
+            "metatile": {"buffer": 16}
+        },
+        "streets":
+        {
+            "provider": {"name": "mapnik", "mapfile": "mapnik-streets.xml"},
+            "metatile": {"buffer": 128}
+        },
+        "composite":
+        {
+            "provider": {"class": "TileStache.Goodies.Providers.Composite.Composite",
+                         "kwargs": {"stackfile": "composite-stack.xml"}}
+        }
+      }
+    }
+
+Corresponding example composite-stack.xml:
+
+    <?xml version="1.0"?>
+    <stack>
+        <layer src="base" />
+    
+        <stack>
+            <layer src="outlines">
+                <mask src="halos" />
+            </layer>
+            <layer src="streets" />
+        </stack>
+    </stack>
+
+Note that each layer in this file refers to a TileStache layer by name.
+This complete example can be found in the included examples directory.
 """
 
 import sys
