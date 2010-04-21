@@ -1,4 +1,48 @@
 """ The configuration bits of TileStache.
+
+TileStache configuration is stored in JSON files, and is composed of two main
+top-level sections: "cache" and "layers". There are examples of both in this
+minimal sample configuration:
+
+    {
+      "cache": {"name": "Test"},
+      "layers": {
+        "ex": {
+            "provider": {"name": "mapnik", "mapfile": "style.xml"},
+            "projection": "spherical mercator"
+        } 
+      }
+    }
+
+The contents of the "cache" section are described in greater detail in the
+TileStache.Caches module documentation. Here is a different sample:
+
+    "cache": {
+      "name": "Disk",
+      "path": "/tmp/stache",
+      "umask": "0000"
+    }
+
+The "layers" section is a dictionary of layer names which are specified in the
+URL of an individual tile. More detail on the configuration of individual layers
+can be found in the TileStache.Core module documentation. Another sample:
+
+    {
+      "cache": ...,
+      "layers": 
+      {
+        "example-name":
+        {
+            "provider": { ... },
+            "metatile": { ... },
+            "stale lock timeout": ...,
+            "projection": ...
+        }
+      }
+    }
+
+In-depth explanations of the layer components can be found in the module
+documentation for TileStache.Providers, TileStache.Core, and TileStache.Geography.
 """
 
 from sys import stderr
@@ -23,6 +67,10 @@ class Configuration:
 
 def buildConfiguration(config_dict, dirpath='.'):
     """ Build a configuration dictionary into a Configuration object.
+    
+        The second argument is an optional dirpath that specifies where in the
+        local filesystem the parsed dictionary originated, to make it possible
+        to resolve relative paths.
     """
     cache_dict = config_dict.get('cache', {})
     cache = _parseConfigfileCache(cache_dict, dirpath)
