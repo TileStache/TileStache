@@ -43,6 +43,7 @@ The save() method accepts an additional argument before the others:
 """
 
 import os
+import sys
 import time
 
 from tempfile import mkstemp
@@ -165,11 +166,17 @@ class Disk:
             Lock is implemented as an empty directory next to the tile file.
         """
         lockpath = self._lockpath(layer, coord, format)
+        due = time.time() + layer.stale_lock_timeout
         
         while True:
             # try to acquire a directory lock, repeating if necessary.
             try:
                 umask_old = os.umask(self.umask)
+                
+                if time.time() > due:
+                    # someone left the door locked.
+                    os.rmdir(lockpath)
+                
                 os.makedirs(lockpath, 0777&~self.umask)
                 break
             except OSError, e:
