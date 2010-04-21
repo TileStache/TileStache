@@ -128,7 +128,7 @@ class UTM:
         self.spacing = int(spacing)
         self.tick = int(tick)
 
-    def renderArea(self, width_, height_, srs, xmin_, ymin_, xmax_, ymax_):
+    def renderArea(self, width_, height_, srs, xmin_, ymin_, xmax_, ymax_, zoom):
         """
         """
         merc = Proj(srs)

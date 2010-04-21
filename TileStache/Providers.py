@@ -47,6 +47,8 @@ metatiles. It has these arguments:
   "+proj=longlat +ellps=WGS84 +datum=WGS84" is an example, 
   see http://spatialreference.org for more.
 - xmin, ymin, xmax, ymax: coordinates of bounding box in projected coordinates.
+- zoom: zoom level of final map. Technically this can be derived from the other
+  arguments, but that's a hassle so we'll pass it in explicitly.
 """
 
 from StringIO import StringIO
@@ -166,7 +168,7 @@ class Mapnik:
         self.mapfile = str(mapfile)
         self.mapnik = None
 
-    def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax):
+    def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """
         """
         if self.mapnik is None:

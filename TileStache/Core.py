@@ -164,7 +164,7 @@ class Layer:
         
         if self.doMetatile():
             # draw an area, defined in projected coordinates
-            tile = provider.renderArea(width, height, srs, xmin, ymin, xmax, ymax)
+            tile = provider.renderArea(width, height, srs, xmin, ymin, xmax, ymax, coord.zoom)
         
         elif hasattr(provider, 'renderTile'):
             # draw a single tile
