@@ -123,8 +123,6 @@ class UTM:
             Pixel length of 1/10 grid tick marks.
     """
     
-    metatileOK = True
-    
     def __init__(self, layer, display='UTM', spacing=128, tick=8):
         self.display = display.lower()
         self.spacing = int(spacing)

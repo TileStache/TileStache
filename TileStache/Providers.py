@@ -29,10 +29,9 @@ Example external provider, for JSON configuration file:
   args. If your defined class doesn't accept any of these keyword arguments,
   TileStache will throw an exception.
 
-A provider must signal that its rendered tiles can be cut up as images and
-metatiles with the boolean property metatileOK. A provider should optionally
-provide a renderTile() method for drawing single coordinates at a time, with
-the following four arguments:
+A provider must offer one of two methods for rendering map areas.
+
+The renderTile() method draws a single tile at a time, and has these arguments:
 
 - width, height: in pixels
 - srs: projection as Proj4 string.
@@ -40,8 +39,8 @@ the following four arguments:
   see http://spatialreference.org for more.
 - coord: Coordinate object representing a single tile.
 
-The only method that a provider currently must implement is renderArea(),
-with the following seven arguments:
+The renderArea() method draws a variably-sized area, and is used when drawing
+metatiles. It has these arguments:
 
 - width, height: in pixels
 - srs: projection as Proj4 string.
@@ -104,8 +103,6 @@ class Proxy:
             "url": "http://tile.openstreetmap.org/{Z}/{X}/{Y}.png"
         }
     """
-    metatileOK = True
-    
     def __init__(self, layer, url=None, provider_name=None):
         """ Initialize Proxy provider with layer and url.
         """
@@ -142,25 +139,6 @@ class Proxy:
             img.paste(tile, (0, 0), tile)
         
         return img
-
-    def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax):
-        """
-        """
-        if srs != Geography.SphericalMercator.srs:
-            raise Exception('Bad SRS')
-    
-        # Add a single pixel around the edges to solve floating point
-        # problem where mapByExtent() accidentally zooms out by one level.
-        dim = Point(width + 2, height + 2)
-        
-        proj = Geography.SphericalMercator()
-        loc1 = proj.projLocation(Point(xmin, ymin))
-        loc2 = proj.projLocation(Point(xmax, ymax))
-        
-        mmap = ModestMaps.mapByExtent(self.provider, loc1, loc2, dim)
-        img = mmap.draw().crop((1, 1, width + 1, height + 1))
-        
-        return img
             
 class Mapnik:
     """ Built-in Mapnik provider. Renders map images from Mapnik XML files.
@@ -177,7 +155,6 @@ class Mapnik:
         - http://trac.mapnik.org/wiki/XMLGettingStarted
         - http://trac.mapnik.org/wiki/XMLConfigReference
     """
-    metatileOK = True
     
     def __init__(self, layer, mapfile):
         """ Initialize Mapnik provider with layer and mapfile.

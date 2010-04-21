@@ -199,8 +199,6 @@ def makeStack(element):
 
 class Composite:
 
-    metatileOK = False
-
     def __init__(self, layer, stackfile=None):
         self.layer = layer
         
@@ -247,7 +245,4 @@ class Composite:
         
         return img
     
-        pass
-
-    def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax):
         pass

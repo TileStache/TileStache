@@ -140,7 +140,7 @@ class Layer:
     def doMetatile(self):
         """ Return True if we have a real metatile and the provider is OK with it.
         """
-        return self.metatile.isForReal() and self.provider.metatileOK
+        return self.metatile.isForReal() and hasattr(self.provider, 'renderArea')
     
     def render(self, coord, format):
         """ Render a tile for a coordinate, return PIL Image-like object.
@@ -162,13 +162,13 @@ class Layer:
 
             subtiles = self.metaSubtiles(coord)
         
-        if not self.doMetatile() and hasattr(provider, 'renderTile'):
-            # draw a single tile
-            tile = provider.renderTile(256, 256, srs, coord)
-
-        elif hasattr(provider, 'renderArea'):
+        if self.doMetatile():
             # draw an area, defined in projected coordinates
             tile = provider.renderArea(width, height, srs, xmin, ymin, xmax, ymax)
+        
+        elif hasattr(provider, 'renderTile'):
+            # draw a single tile
+            tile = provider.renderTile(256, 256, srs, coord)
 
         else:
             raise Exception('Your provider lacks renderTile and renderArea methods')
