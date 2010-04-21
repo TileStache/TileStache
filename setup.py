@@ -12,5 +12,5 @@ setup(name='TileStache',
       packages=['TileStache',
                 'TileStache.Goodies',
                 'TileStache.Goodies.Providers'],
-      download_url='http://tilestache.org/dist/TileStache-0.1.3.tar.gz',
+      download_url='http://tilestache.org/dist/TileStache-0.1.4.tar.gz',
       license='BSD')
