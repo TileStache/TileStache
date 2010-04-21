@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='TileStache',
-      version='0.1.3',
+      version='0.1.4',
       description='A stylish alternative for caching your tiles.',
       author='Michal Migurski',
       author_email='mike@stamen.com',

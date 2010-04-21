@@ -1,14 +1,11 @@
-VERSION=0.1.3
+VERSION=0.1.4
 PACKAGE=TileStache-$(VERSION)
 TARBALL=$(PACKAGE).tar.gz
 
 all: $(TARBALL)
 	#
 
-$(TARBALL): $(PACKAGE)
-	tar -czvf $(TARBALL) $(PACKAGE)
-
-$(PACKAGE): doc
+$(TARBALL): doc
 	mkdir $(PACKAGE)
 	ln setup.py $(PACKAGE)/
 	ln README $(PACKAGE)/
@@ -31,6 +28,9 @@ $(PACKAGE): doc
 	mkdir $(PACKAGE)/doc
 	ln doc/*.html $(PACKAGE)/doc/
 
+	tar -czf $(TARBALL) $(PACKAGE)
+	rm -rf $(PACKAGE)
+
 doc:
 	mkdir doc
 
@@ -49,4 +49,4 @@ doc:
 	mv TileStache.*.html doc/
 
 clean:
-	rm -rf $(PACKAGE) $(TARBALL) doc
+	rm -rf $(TARBALL) doc
