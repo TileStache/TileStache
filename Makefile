@@ -38,6 +38,7 @@ $(PACKAGE):
 	pydoc -w TileStache.Providers
 	pydoc -w TileStache.Goodies
 	pydoc -w TileStache.Goodies.Providers
+	pydoc -w TileStache.Goodies.Providers.Composite
 	pydoc -w TileStache.Goodies.Providers.Grid
 
 	mv TileStache.html $(PACKAGE)/doc/
@@ -48,6 +49,7 @@ $(PACKAGE):
 	mv TileStache.Providers.html $(PACKAGE)/doc/
 	mv TileStache.Goodies.html $(PACKAGE)/doc/
 	mv TileStache.Goodies.Providers.html $(PACKAGE)/doc/
+	mv TileStache.Goodies.Providers.Composite.html $(PACKAGE)/doc/
 	mv TileStache.Goodies.Providers.Grid.html $(PACKAGE)/doc/
 
 clean:
