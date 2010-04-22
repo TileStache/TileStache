@@ -11,9 +11,12 @@ from ModestMaps.Geo import Location
 
 parser = OptionParser(usage="""%prog [options] [zoom...]
 
-Configuration and layer options are required; see `%prog --help` for info.
+Seeds a single layer in your TileStache configuration - no images are returned,
+but TileStache ends up with a pre-filled cache. Bounding box is given as a pair
+of lon/lat coordinates, e.g. "-122.349 37.788 -122.246 37.833". Output is a list
+of tile paths as they are created.
 
-""")
+Configuration, bbox, and layer options are required; see `%prog --help` for info.""")
 
 parser.set_defaults(extension='png')
 

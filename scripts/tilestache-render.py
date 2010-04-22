@@ -12,11 +12,11 @@ from ModestMaps.Core import Coordinate
 
 parser = OptionParser(usage="""%prog [options] [coord...]
 
-Configuration and layer options are required; see `%prog --help` for info.
-
 Each coordinate in the argument list should look like "12/656/1582.png", similar
 to URL paths in web server usage. Coordinates are processed in order, each one
-rendered to an image file in a temporary location and output to stdout in order.""")
+rendered to an image file in a temporary location and output to stdout in order.
+
+Configuration and layer options are required; see `%prog --help` for info.""")
 
 parser.add_option('-c', '--config', dest='config',
                   help='Path to configuration file.')
