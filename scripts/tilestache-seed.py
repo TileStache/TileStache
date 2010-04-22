@@ -12,6 +12,11 @@ See `tilestache-seed.py --help` for more information.
 from sys import stderr
 from optparse import OptionParser
 
+try:
+    from json import dump as json_dump
+except ImportError:
+    from simplejson import dump as json_dump
+
 from TileStache import parseConfigfile, handleRequest
 from TileStache.Core import KnownUnknown
 
@@ -27,7 +32,7 @@ of tile paths as they are created.
 
 Configuration, bbox, and layer options are required; see `%prog --help` for info.""")
 
-parser.set_defaults(extension='png')
+parser.set_defaults(extension='png', verbose=True)
 
 parser.add_option('-c', '--config', dest='config',
                   help='Path to configuration file.')
@@ -41,6 +46,12 @@ parser.add_option('-b', '--bbox', dest='bbox',
 
 parser.add_option('-e', '--extension', dest='extension',
                   help='Optional file type for rendered tiles. Default value is "png".')
+
+parser.add_option('-p', '--progress-file', dest='progressfile',
+                  help="Optional JSON progress file that gets written on each iteration, so you don't have to pay close attention.")
+
+parser.add_option('-q', action='store_false', dest='verbose',
+                  help='Suppress chatty output, --progress-file works well with this.')
 
 if __name__ == '__main__':
     options, zooms = parser.parse_args()
@@ -59,7 +70,9 @@ if __name__ == '__main__':
         
         layer = config.layers[options.layer]
         
+        verbose = options.verbose
         extension = options.extension
+        progressfile = options.progressfile
 
         lat1, lon1, lat2, lon2 = options.bbox
         south, west = min(lat1, lat2), min(lon1, lon2)
@@ -94,9 +107,22 @@ if __name__ == '__main__':
                 coords.append(coord)
     
     for (i, coord) in enumerate(coords):
-        print >> stderr, '%d of %d...' % (i + 1, len(coords)),
+        path = '%s/%d/%d/%d.%s' % (layer.name(), coord.zoom, coord.column, coord.row, extension)
+
+        progress = {"tile": path,
+                    "offset": i + 1,
+                    "total": len(coords)}
+    
+        if options.verbose:
+            print >> stderr, '%(offset)d of %(total)d...' % progress,
     
         mimetype, content = handleRequest(layer, coord, extension)
-        path = '%s/%d/%d/%d.%s' % (layer.name(), coord.zoom, coord.column, coord.row, extension)
+        progress['size'] = '%dKB' % (len(content) / 1024)
         
-        print >> stderr, '%s (%dKB)' % (path, len(content) / 1024)
+        if options.verbose:
+            print >> stderr, '%(tile)s (%(size)s)' % progress
+    
+        if progressfile:
+            fp = open(progressfile, 'w')
+            json_dump(progress, fp)
+            fp.close()
