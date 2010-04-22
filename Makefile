@@ -9,7 +9,7 @@ all: $(TARBALL) dist/$(TARBALL)
 live: $(TARBALL) dist/$(TARBALL) doc
 	scp $(TARBALL) $(DOCROOT)/download/
 	scp dist/$(TARBALL) $(DOCROOT)/dist/
-	rsync -Cur doc/ $(DOCROOT)/doc/
+	rsync -Cr doc/ $(DOCROOT)/doc/
 	python setup.py register
 
 dist/$(TARBALL):
