@@ -3,8 +3,8 @@
 from distutils.core import setup
 
 setup(name='TileStache',
-      version='0.1.4',
-      description='A stylish alternative for caching your tiles.',
+      version='0.1.5',
+      description='A stylish alternative for caching your map tiles.',
       author='Michal Migurski',
       author_email='mike@stamen.com',
       url='http://tilestache.org',
@@ -12,5 +12,5 @@ setup(name='TileStache',
       packages=['TileStache',
                 'TileStache.Goodies',
                 'TileStache.Goodies.Providers'],
-      download_url='http://tilestache.org/dist/TileStache-0.1.4.tar.gz',
+      download_url='http://tilestache.org/dist/TileStache-0.1.5.tar.gz',
       license='BSD')

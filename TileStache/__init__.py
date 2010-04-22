@@ -1,4 +1,4 @@
-""" A stylish alternative for caching your tiles.
+""" A stylish alternative for caching your map tiles.
 
 
 """

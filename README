@@ -1,4 +1,4 @@
-TileStache: a stylish alternative for caching your tiles.
+TileStache: a stylish alternative for caching your map tiles.
 
 TileStache is a Python-based server application that can serve up map tiles
 based on rendered geographic data. You might be familiar with TileCache

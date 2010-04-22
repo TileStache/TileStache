@@ -1,9 +1,19 @@
-VERSION=0.1.4
+VERSION=0.1.5
 PACKAGE=TileStache-$(VERSION)
 TARBALL=$(PACKAGE).tar.gz
+DOCROOT=tilestache.org:public_html/tilestache/www
 
-all: $(TARBALL)
+all: $(TARBALL) dist/$(TARBALL)
 	#
+
+live: $(TARBALL) dist/$(TARBALL) doc
+	scp $(TARBALL) $(DOCROOT)/download/
+	scp dist/$(TARBALL) $(DOCROOT)/dist/
+	rsync -Cur doc/ $(DOCROOT)/doc/
+	python setup.py register
+
+dist/$(TARBALL):
+	python setup.py sdist
 
 $(TARBALL): doc
 	mkdir $(PACKAGE)
@@ -49,4 +59,4 @@ doc:
 	mv TileStache.*.html doc/
 
 clean:
-	rm -rf $(TARBALL) doc
+	rm -rf $(TARBALL) dist/$(TARBALL) doc
