@@ -43,22 +43,30 @@ if __name__ == '__main__':
         
         layer = config.layers[options.layer]
         
+        coords = []
+        
         for path in paths:
-            # prepare
-            path = pathinfo_pat.match(path)
-            row, column, zoom, extension = [path.group(p) for p in 'yxze']
+            path_ = pathinfo_pat.match(path)
+            
+            if path_ is None:
+                raise KnownUnknown('"%s" is not a path I understand. I was expecting something more like "0/0/0.png".' % path)
+            
+            row, column, zoom, extension = [path_.group(p) for p in 'yxze']
             coord = Coordinate(int(row), int(column), int(zoom))
-            
-            # render
-            mimetype, content = handleRequest(layer, coord, extension)
-            
-            # save
-            handle, filename = mkstemp(prefix='tile-', suffix='.'+extension)
-            os.write(handle, content)
-            os.close(handle)
-            
-            # inform
-            print filename
+
+            coords.append(coord)
 
     except KnownUnknown, e:
         parser.error(str(e))
+    
+    for coord in coords:
+        # render
+        mimetype, content = handleRequest(layer, coord, extension)
+        
+        # save
+        handle, filename = mkstemp(prefix='tile-', suffix='.'+extension)
+        os.write(handle, content)
+        os.close(handle)
+        
+        # inform
+        print filename

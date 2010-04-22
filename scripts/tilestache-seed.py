@@ -46,7 +46,6 @@ if __name__ == '__main__':
             raise KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (options.layer, ', '.join(config.layers.keys())))
         
         layer = config.layers[options.layer]
-        project = layer.projection.locationCoordinate
         
         extension = options.extension
         west, south, east, north = options.bbox
@@ -54,29 +53,32 @@ if __name__ == '__main__':
         northwest = Location(north, west)
         southeast = Location(south, east)
         
-        coords = []
-        
-        for zoom in zooms:
-            if not zoom.isdigit():
-                raise KnownUnknown('"%s" is not a valid numeric zoom level.' % zoom)
-
-            zoom = int(zoom)
-            
-            ul = project(northwest).zoomTo(zoom).container()
-            lr = project(southeast).zoomTo(zoom).container()
-            
-            for row in range(int(ul.row), int(lr.row + 1)):
-                for column in range(int(ul.column), int(lr.column + 1)):
-                    coord = Coordinate(row, column, zoom)
-                    coords.append(coord)
-        
-        for (i, coord) in enumerate(coords):
-            print >> stderr, '%d of %d...' % (i + 1, len(coords)),
-        
-            mimetype, content = handleRequest(layer, coord, extension)
-            path = '%s/%d/%d/%d.%s' % (layer.name(), coord.zoom, coord.column, coord.row, extension)
-            
-            print >> stderr, '%s (%dKB)' % (path, len(content) / 1024)
+        ul = layer.projection.locationCoordinate(northwest)
+        lr = layer.projection.locationCoordinate(southeast)
 
     except KnownUnknown, e:
         parser.error(str(e))
+    
+    coords = []
+    
+    for zoom in zooms:
+        if not zoom.isdigit():
+            raise KnownUnknown('"%s" is not a valid numeric zoom level.' % zoom)
+
+        zoom = int(zoom)
+        
+        ul_ = ul.zoomTo(zoom).container()
+        lr_ = lr.zoomTo(zoom).container()
+        
+        for row in range(int(ul_.row), int(lr_.row + 1)):
+            for column in range(int(ul_.column), int(lr_.column + 1)):
+                coord = Coordinate(row, column, zoom)
+                coords.append(coord)
+    
+    for (i, coord) in enumerate(coords):
+        print >> stderr, '%d of %d...' % (i + 1, len(coords)),
+    
+        mimetype, content = handleRequest(layer, coord, extension)
+        path = '%s/%d/%d/%d.%s' % (layer.name(), coord.zoom, coord.column, coord.row, extension)
+        
+        print >> stderr, '%s (%dKB)' % (path, len(content) / 1024)
