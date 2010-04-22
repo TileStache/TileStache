@@ -12,6 +12,6 @@ setup(name='TileStache',
       packages=['TileStache',
                 'TileStache.Goodies',
                 'TileStache.Goodies.Providers'],
-      scripts=['scripts/tilestache-render.py'],
+      scripts=['scripts/tilestache-render.py', 'scripts/tilestache-seed.py'],
       download_url='http://tilestache.org/dist/TileStache-0.1.5.tar.gz',
       license='BSD')
