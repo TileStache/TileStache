@@ -1,4 +1,13 @@
 #!/usr/bin/env python
+"""tilestache-seed.py will warm your cache.
+
+This script is intended to be run directly. This example seeds the area around
+West Oakland (http://sta.mn/ck) in the "osm" layer, for zoom levels 12-15:
+
+    tilestache-seed.py -c ./config.json -l osm -b 37.79 -122.35 37.83 -122.25 -e png 12 13 14 15
+
+See `tilestache-seed.py --help` for more information.
+"""
 
 from sys import stderr
 from optparse import OptionParser
@@ -13,7 +22,7 @@ parser = OptionParser(usage="""%prog [options] [zoom...]
 
 Seeds a single layer in your TileStache configuration - no images are returned,
 but TileStache ends up with a pre-filled cache. Bounding box is given as a pair
-of lon/lat coordinates, e.g. "-122.349 37.788 -122.246 37.833". Output is a list
+of lat/lon coordinates, e.g. "37.788 -122.349 37.833 -122.246". Output is a list
 of tile paths as they are created.
 
 Configuration, bbox, and layer options are required; see `%prog --help` for info.""")
@@ -27,7 +36,7 @@ parser.add_option('-l', '--layer', dest='layer',
                   help='Layer name from configuration.')
 
 parser.add_option('-b', '--bbox', dest='bbox',
-                  help='Bounding box in floating point geographic coordinates: west south east north.',
+                  help='Bounding box in floating point geographic coordinates: south west north east.',
                   type='float', nargs=4)
 
 parser.add_option('-e', '--extension', dest='extension',
@@ -51,7 +60,10 @@ if __name__ == '__main__':
         layer = config.layers[options.layer]
         
         extension = options.extension
-        west, south, east, north = options.bbox
+
+        lat1, lon1, lat2, lon2 = options.bbox
+        south, west = min(lat1, lat2), min(lon1, lon2)
+        north, east = max(lat1, lat2), max(lon1, lon2)
         
         northwest = Location(north, west)
         southeast = Location(south, east)
@@ -68,6 +80,8 @@ if __name__ == '__main__':
     except KnownUnknown, e:
         parser.error(str(e))
     
+    # this list might get long, but we want to know how many
+    # total tiles there are to render so progress can be shown.
     coords = []
     
     for zoom in zooms:

@@ -1,4 +1,22 @@
 #!/usr/bin/env python
+"""tilestache-render.py will warm your cache.
+
+This script is intended to be run directly. This example will save two tiles
+for San Francisco and Oakland to local temporary files:
+
+    tilestache-render.py -c ./config.json -l osm 12/655/1582.png 12/656/1582.png
+
+Output for this sample might look like this:
+
+    /tmp/tile-_G3uHX.png
+    /tmp/tile-pWNfQQ.png
+
+...where each line corresponds to one of the given coordinates, in order.
+You are expected to use these files and then dispose of them.
+
+See `tilestache-render.py --help` for more information.
+"""
+
 
 import re
 import os
