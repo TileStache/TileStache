@@ -91,7 +91,8 @@ def _parseConfigfileCache(cache_dict, dirpath):
         kwargs = {}
         
         if _class is Caches.Test:
-            kwargs['logfunc'] = lambda msg: stderr.write(msg + '\n')
+            if cache_dict.get('verbose', False):
+                kwargs['logfunc'] = lambda msg: stderr.write(msg + '\n')
     
         elif _class is Caches.Disk:
             kwargs['path'] = realpath(pathjoin(dirpath, cache_dict['path']))

@@ -65,15 +65,20 @@ def getCacheByName(name):
 class Test:
     """ Simple cache that doesn't actually cache anything.
     
-        Activity is logged, though.
+        Activity is optionally logged, though.
     
         Example configuration:
 
             "cache": {
-              "name": "Test"
+              "name": "Test",
+              "verbose": True
             }
+
+        Extra configuration parameters:
+        - verbose: optional boolean flag to write cache activities to a logging
+          function, defaults to False if omitted.
     """
-    def __init__(self, logfunc):
+    def __init__(self, logfunc=None):
         self.logfunc = logfunc
 
     def _description(self, layer, coord, format):
@@ -88,19 +93,25 @@ class Test:
         """ Pretend to acquire a cache lock for this tile.
         """
         name = self._description(layer, coord, format)
-        self.logfunc('Test cache lock: ' + name)
+        
+        if self.logfunc:
+            self.logfunc('Test cache lock: ' + name)
     
     def unlock(self, layer, coord, format):
         """ Pretend to release a cache lock for this tile.
         """
         name = self._description(layer, coord, format)
-        self.logfunc('Test cache unlock: ' + name)
+
+        if self.logfunc:
+            self.logfunc('Test cache unlock: ' + name)
     
     def read(self, layer, coord, format):
         """ Pretend to read a cached tile.
         """
         name = self._description(layer, coord, format)
-        self.logfunc('Test cache read: ' + name)
+        
+        if self.logfunc:
+            self.logfunc('Test cache read: ' + name)
 
         return None
     
@@ -108,7 +119,9 @@ class Test:
         """ Pretend to save a cached tile.
         """
         name = self._description(layer, coord, format)
-        self.logfunc('Test cache save: %d bytes to %s' % (len(body), name))
+        
+        if self.logfunc:
+            self.logfunc('Test cache save: %d bytes to %s' % (len(body), name))
 
 class Disk:
     """ Caches files to disk.
