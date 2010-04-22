@@ -56,17 +56,18 @@ if __name__ == '__main__':
         ul = layer.projection.locationCoordinate(northwest)
         lr = layer.projection.locationCoordinate(southeast)
 
+        for (i, zoom) in enumerate(zooms):
+            if not zoom.isdigit():
+                raise KnownUnknown('"%s" is not a valid numeric zoom level.' % zoom)
+    
+            zooms[i] = int(zoom)
+    
     except KnownUnknown, e:
         parser.error(str(e))
     
     coords = []
     
     for zoom in zooms:
-        if not zoom.isdigit():
-            raise KnownUnknown('"%s" is not a valid numeric zoom level.' % zoom)
-
-        zoom = int(zoom)
-        
         ul_ = ul.zoomTo(zoom).container()
         lr_ = lr.zoomTo(zoom).container()
         
