@@ -1,7 +1,7 @@
 """
 Usage: gunicorn --options tilestache_gunicorn:app
 
-tilecache_gunicorn is a wsgi wrapper, using gunicorn, for TileStache that proxies
+tilestache_gunicorn is a wsgi wrapper, using gunicorn, for TileStache that proxies
 and caches tile from OpenStreetMaps. For example:
 
 	http://localhost:8000/osm/14/2620/6333.png
