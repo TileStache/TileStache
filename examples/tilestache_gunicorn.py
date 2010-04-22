@@ -41,7 +41,7 @@ def app(environ, start_response):
 
         except Exception, e:
             status = '500 SERVER ERROR'
-            data = e
+            data = str(e)
 
     response_headers = [
         ('Content-type', type),
