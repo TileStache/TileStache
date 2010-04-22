@@ -2,7 +2,7 @@
 
 from distutils.core import setup
 
-verion = '0.1.6'
+version = '0.1.6'
 
 setup(name='TileStache',
       version=version,
