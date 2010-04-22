@@ -12,6 +12,8 @@ Example TileStache provider configuration:
 }
 """
 
+import sys
+
 from math import log as _log, pow as _pow, hypot as _hypot, ceil as _ceil
 from os.path import dirname, join as pathjoin
 
@@ -129,6 +131,22 @@ class UTM:
         self.spacing = int(spacing)
         self.tick = int(tick)
 
+        file = 'DejaVuSansMono-alphanumeric.ttf'
+        dirs = [dirname(__file__), sys.prefix + '/local/share/tilestache']
+
+        for dir in dirs:
+            try:
+                font = PIL.ImageFont.truetype(pathjoin(dir, file), 14)
+            except IOError:
+                font = None
+            else:
+                break
+
+        if font is None:
+            raise Exception("Couldn't find %s after looking in %s." % (file, ', '.join(dirs)))
+
+        self.font = font
+        
     def renderArea(self, width_, height_, srs, xmin_, ymin_, xmax_, ymax_, zoom):
         """
         """
@@ -163,8 +181,6 @@ class UTM:
         # start doing things in pixels
         img = PIL.Image.new('RGBA', (width_, height_), (0xEE, 0xEE, 0xEE, 0x00))
         draw = PIL.ImageDraw.ImageDraw(img)
-        font = pathjoin(dirname(__file__), 'DejaVuSansMono-alphanumeric.ttf')
-        font = PIL.ImageFont.truetype(font, 14)
         xform = transform(width_, height_, xmin_, ymax_, xmax_, ymin_)
         
         lines = []
@@ -213,7 +229,7 @@ class UTM:
         # do the drawing bits
         for ((x, y), text) in labels:
             x, y = x + 2, y - 18
-            w, h = font.getsize(text)
+            w, h = self.font.getsize(text)
             draw.rectangle((x - 2, y, x + w + 2, y + h), fill=(0xFF, 0xFF, 0xFF, 0x99))
 
         for line in lines:
@@ -224,6 +240,6 @@ class UTM:
 
         for ((x, y), text) in labels:
             x, y = x + 2, y - 18
-            draw.text((x, y), text, fill=(0x00, 0x00, 0x00), font=font)
+            draw.text((x, y), text, fill=(0x00, 0x00, 0x00), font=self.font)
 
         return img
