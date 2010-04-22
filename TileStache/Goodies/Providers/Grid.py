@@ -13,6 +13,7 @@ Example TileStache provider configuration:
 """
 
 from math import log as _log, pow as _pow, hypot as _hypot, ceil as _ceil
+from os.path import dirname, join as pathjoin
 
 import PIL.Image
 import PIL.ImageDraw
@@ -162,7 +163,8 @@ class UTM:
         # start doing things in pixels
         img = PIL.Image.new('RGBA', (width_, height_), (0xEE, 0xEE, 0xEE, 0x00))
         draw = PIL.ImageDraw.ImageDraw(img)
-        font = PIL.ImageFont.truetype('DejaVuSansMono.ttf', 14)
+        font = pathjoin(dirname(__file__), 'DejaVuSansMono-alphanumeric.ttf')
+        font = PIL.ImageFont.truetype(font, 14)
         xform = transform(width_, height_, xmin_, ymax_, xmax_, ymin_)
         
         lines = []
