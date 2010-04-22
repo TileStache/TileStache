@@ -16,8 +16,8 @@ except ImportError:
     from simplejson import load as json_load
 
 from ModestMaps.Core import Coordinate
-from Core import KnownUnknown, _rummy
 
+import Core
 import Config
 
 # regular expression for PATH_INFO
@@ -105,7 +105,7 @@ def _splitPathInfo(pathinfo):
         coord = Coordinate(int(row), int(column), int(zoom))
 
     except AttributeError:
-        raise KnownUnknown('Bad path: "%s". I was expecting something more like "/example/0/0/0.png"' % pathinfo)
+        raise Core.KnownUnknown('Bad path: "%s". I was expecting something more like "/example/0/0/0.png"' % pathinfo)
 
     else:
         return layer, coord, extension
@@ -119,26 +119,26 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     
     try:
         if not environ.has_key('PATH_INFO'):
-            raise KnownUnknown('Missing PATH_INFO in TileStache.cgiHandler().')
+            raise Core.KnownUnknown('Missing PATH_INFO in TileStache.cgiHandler().')
     
         config = parseConfigfile(config)
         layername, coord, extension = _splitPathInfo(environ['PATH_INFO'])
         
         if layername not in config.layers:
-            raise KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (layername, ', '.join(config.layers.keys())))
+            raise Core.KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (layername, ', '.join(config.layers.keys())))
         
         query = parse_qs(environ['QUERY_STRING'])
         layer = config.layers[layername]
         
         mimetype, content = handleRequest(layer, coord, extension)
 
-    except KnownUnknown, e:
+    except Core.KnownUnknown, e:
         out = StringIO()
         
         print >> out, 'Known unknown!'
         print >> out, e
         print >> out, ''
-        print >> out, '\n'.join(_rummy())
+        print >> out, '\n'.join(Core._rummy())
         
         mimetype, content = 'text/plain', out.getvalue()
 
@@ -171,20 +171,20 @@ def modpythonHandler(request):
         layername, coord, extension = _splitPathInfo(request.path_info)
         
         if layername not in config.layers:
-            raise KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (layername, ', '.join(config.layers.keys())))
+            raise Core.KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (layername, ', '.join(config.layers.keys())))
         
         query = request.args
         layer = config.layers[layername]
         
         mimetype, content = handleRequest(layer, coord, extension)
 
-    except KnownUnknown, e:
+    except Core.KnownUnknown, e:
         out = StringIO()
         
         print >> out, 'Known unknown!'
         print >> out, e
         print >> out, ''
-        print >> out, '\n'.join(_rummy())
+        print >> out, '\n'.join(Core._rummy())
         
         mimetype, content = 'text/plain', out.getvalue()
 
