@@ -53,9 +53,12 @@ doc:
 	pydoc -w TileStache.Goodies.Providers
 	pydoc -w TileStache.Goodies.Providers.Composite
 	pydoc -w TileStache.Goodies.Providers.Grid
+	
+	pydoc -w scripts/tilestache-*.py
 
 	mv TileStache.html doc/
 	mv TileStache.*.html doc/
+	mv tilestache-*.html doc/
 
 clean:
 	rm -rf $(TARBALL) doc
