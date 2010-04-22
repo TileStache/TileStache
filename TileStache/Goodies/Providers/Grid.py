@@ -132,7 +132,9 @@ class UTM:
         self.tick = int(tick)
 
         file = 'DejaVuSansMono-alphanumeric.ttf'
-        dirs = [dirname(__file__), sys.prefix + '/local/share/tilestache']
+        dirs = [dirname(__file__),
+                sys.prefix + '/local/share/tilestache',
+                sys.prefix + '/share/tilestache']
 
         for dir in dirs:
             try:
