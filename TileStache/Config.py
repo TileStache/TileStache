@@ -190,7 +190,7 @@ def getTypeByExtension(extension):
         return 'image/jpeg', 'JPEG'
 
     else:
-        raise Exception('Unknown extension: "%s"' % extension)
+        raise Core.KnownUnknown('Unknown extension: "%s"' % extension)
 
 def loadClassPath(classpath):
     """ Load external class based on a path.
