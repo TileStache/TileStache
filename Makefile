@@ -3,17 +3,13 @@ PACKAGE=TileStache-$(VERSION)
 TARBALL=$(PACKAGE).tar.gz
 DOCROOT=tilestache.org:public_html/tilestache/www
 
-all: $(TARBALL) dist/$(TARBALL)
+all: $(TARBALL)
 	#
 
-live: $(TARBALL) dist/$(TARBALL) doc
+live: $(TARBALL) doc
 	scp $(TARBALL) $(DOCROOT)/download/
-	scp dist/$(TARBALL) $(DOCROOT)/dist/
 	rsync -Cr doc/ $(DOCROOT)/doc/
 	python setup.py register
-
-dist/$(TARBALL):
-	python setup.py sdist
 
 $(TARBALL): doc
 	mkdir $(PACKAGE)
@@ -31,6 +27,9 @@ $(TARBALL): doc
 	mkdir $(PACKAGE)/TileStache/Goodies/Providers
 	ln TileStache/Goodies/Providers/*.py $(PACKAGE)/TileStache/Goodies/Providers/
 	ln TileStache/Goodies/Providers/*.ttf $(PACKAGE)/TileStache/Goodies/Providers/
+
+	mkdir $(PACKAGE)/scripts
+	ln scripts/*.py $(PACKAGE)/scripts/
 
 	mkdir $(PACKAGE)/examples
 	ln examples/*.py $(PACKAGE)/examples/
@@ -59,4 +58,4 @@ doc:
 	mv TileStache.*.html doc/
 
 clean:
-	rm -rf $(TARBALL) dist/$(TARBALL) doc
+	rm -rf $(TARBALL) doc
