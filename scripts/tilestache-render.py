@@ -24,12 +24,12 @@ parser.add_option('-c', '--config', dest='config',
 parser.add_option('-l', '--layer', dest='layer',
                   help='Layer name from configuration.')
 
+pathinfo_pat = re.compile(r'^(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)\.(?P<e>\w+)$')
+
 if __name__ == '__main__':
-    try:
-        pathinfo_pat = re.compile(r'^(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)\.(?P<e>\w+)$')
+    options, paths = parser.parse_args()
     
-        options, paths = parser.parse_args()
-        
+    try:
         if options.config is None:
             raise KnownUnknown('Missing required configuration (--config) parameter.')
     
