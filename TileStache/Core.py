@@ -162,7 +162,7 @@ class Layer:
 
             subtiles = self.metaSubtiles(coord)
         
-        if self.doMetatile():
+        if self.doMetatile() or hasattr(provider, 'renderArea'):
             # draw an area, defined in projected coordinates
             tile = provider.renderArea(width, height, srs, xmin, ymin, xmax, ymax, coord.zoom)
         
