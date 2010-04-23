@@ -21,6 +21,8 @@ from ModestMaps.Core import Point, Coordinate
 from ModestMaps.Geo import deriveTransformation, MercatorProjection, LinearProjection
 from math import log as _log, pi as _pi
 
+import Core
+
 class SphericalMercator(MercatorProjection):
     """ Spherical mercator projection for most commonly-used web map tile scheme.
     
@@ -125,4 +127,4 @@ def getProjectionByName(name):
         return WGS84()
         
     else:
-        raise Exception('Unknown projection: "%s"' % name)
+        raise Core.KnownUnknown('Unknown projection in configuration: "%s"' % name)
