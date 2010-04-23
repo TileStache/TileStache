@@ -6,6 +6,7 @@ for most web maps, "spherical mercator".
 
 Built-in projections:
 - spherical mercator
+- WGS84
 
 Example use projection in a layer definition:
 
@@ -17,7 +18,7 @@ Example use projection in a layer definition:
 """
 
 from ModestMaps.Core import Point, Coordinate
-from ModestMaps.Geo import Transformation, MercatorProjection
+from ModestMaps.Geo import deriveTransformation, MercatorProjection, LinearProjection
 from math import log as _log, pi as _pi
 
 class SphericalMercator(MercatorProjection):
@@ -31,11 +32,12 @@ class SphericalMercator(MercatorProjection):
         + ' +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs'
     
     def __init__(self):
-        # these numbers are slightly magic.
-        t = Transformation(1.068070779e7, 0, 3.355443185e7,
-                           0, -1.068070890e7, 3.355443057e7)
+        pi = _pi
 
-        MercatorProjection.__init__(self, 26, t)
+        # Transform from raw mercator projection to tile coordinates
+        t = deriveTransformation(-pi, pi, 0, 0, pi, pi, 1, 0, -pi, -pi, 0, 1)
+
+        MercatorProjection.__init__(self, 0, t)
 
     def coordinateProj(self, coord):
         """ Convert from Coordinate object to a Point object in EPSG:900913
@@ -76,13 +78,51 @@ class SphericalMercator(MercatorProjection):
         """
         return self.coordinateLocation(self.projCoordinate(point))
 
+class WGS84(LinearProjection):
+    """ Unprojected projection for the other commonly-used web map tile scheme.
+    
+        This projection is identified by the name "WGS84" in the TileStache config.
+    """
+    srs = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs'
+    
+    def __init__(self):
+        p = _pi
+
+        # Transform from geography in radians to tile coordinates
+        t = deriveTransformation(-p, p/2, 0, 0, p, p/2, 2, 0, -p, -p/2, 0, 1)
+
+        LinearProjection.__init__(self, 0, t)
+
+    def coordinateProj(self, coord):
+        """ Convert from Coordinate object to a Point object in EPSG:4326
+        """
+        return self.locationProj(self.coordinateLocation(coord))
+
+    def projCoordinate(self, point):
+        """ Convert from Point object in EPSG:4326 to a Coordinate object
+        """
+        return self.locationCoordinate(self.projLocation(point))
+
+    def locationProj(self, location):
+        """ Convert from Location object to a Point object in EPSG:4326
+        """
+        return Point(location.lon, location.lat)
+
+    def projLocation(self, point):
+        """ Convert from Point object in EPSG:4326 to a Location object
+        """
+        return Location(point.y, point.x)
+
 def getProjectionByName(name):
     """ Retrieve a projection object by name.
     
         Raise an exception if the name doesn't work out.
     """
-    if name == 'spherical mercator':
+    if name.lower() == 'spherical mercator':
         return SphericalMercator()
+        
+    elif name.lower() == 'wgs84':
+        return WGS84()
         
     else:
         raise Exception('Unknown projection: "%s"' % name)
