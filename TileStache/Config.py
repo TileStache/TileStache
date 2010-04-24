@@ -84,6 +84,40 @@ def buildConfiguration(config_dict, dirpath='.'):
 
     return config
 
+def enforcedLocalPath(relpath, dirpath, context='Path'):
+    """ Return a forced local path, relative to a directory.
+    
+        Throw an error if the combination of path and directory seems to
+        specify a remote path, e.g. "/path" and "http://example.com".
+    
+        Although a configuration file can be parsed from a remote URL, some
+        paths (e.g. the location of a disk cache) must be local to the server.
+        In cases where we mix a remote configuration location with a local
+        cache location, e.g. "http://example.com/tilestache.cfg", the disk path
+        must include the "file://" prefix instead of an ambiguous absolute
+        path such as "/tmp/tilestache".
+    """
+    parsed_dir = urlparse(dirpath)
+    parsed_rel = urlparse(relpath)
+    
+    if parsed_rel.scheme not in ('file', ''):
+        raise Core.KnownUnknown('%s path must be a local file path, absolute or "file://", not "%s".' % (context, relpath))
+    
+    if parsed_dir.scheme not in ('file', '') and parsed_rel.scheme != 'file':
+        raise Core.KnownUnknown('%s path must start with "file://" in a remote configuration ("%s" relative to %s)' % (context, relpath, dirpath))
+    
+    if parsed_rel.scheme == 'file':
+        # file:// is an absolute local reference for the disk cache.
+        return parsed_rel.path
+
+    if parsed_dir.scheme == 'file':
+        # file:// is an absolute local reference for the directory.
+        return urljoin(parsed_dir.path, parsed_rel.path)
+    
+    # nothing has a scheme, it's probably just a bunch of
+    # dumb local paths, so let's see what happens next.
+    return pathjoin(dirpath, relpath)
+
 def _parseConfigfileCache(cache_dict, dirpath):
     """ Used by parseConfigfile() to parse just the cache parts of a config.
     """
@@ -96,29 +130,7 @@ def _parseConfigfileCache(cache_dict, dirpath):
                 kwargs['logfunc'] = lambda msg: stderr.write(msg + '\n')
     
         elif _class is Caches.Disk:
-            parsed_dir = urlparse(dirpath)
-            parsed_path = urlparse(cache_dict['path'])
-            
-            if parsed_path.scheme not in ('file', ''):
-                raise Core.KnownUnknown('Disk cache path must be a local file path, absolute or "file://", not "%s".' % cache_dict['path'])
-            
-            if parsed_dir.scheme not in ('file', '') and parsed_path.scheme != 'file':
-                raise Core.KnownUnknown('Disk cache path must start with "file://" with a remote configuration ("%s" relative to %s)' % (cache_dict['path'], dirpath))
-            
-            if parsed_path.scheme == 'file':
-                # file:// is an absolute local reference for the disk cache.
-                diskpath = parsed_path.path
-
-            elif parsed_dir.scheme == 'file':
-                # file:// is an absolute local reference for the directory.
-                diskpath = urljoin(parsed_dir.path, parsed_path.path)
-            
-            else:
-                # nothing has a scheme, it's probably just a bunch of
-                # dumb local paths, so let's see what happens next.
-                diskpath = pathjoin(dirpath, cache_dict['path'])
-        
-            kwargs['path'] = diskpath
+            kwargs['path'] = enforcedLocalPath(cache_dict['path'], dirpath, 'Disk cache path')
             
             if cache_dict.has_key('umask'):
                 kwargs['umask'] = int(cache_dict['umask'], 8)
