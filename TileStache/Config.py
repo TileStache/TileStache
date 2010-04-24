@@ -47,7 +47,7 @@ documentation for TileStache.Providers, TileStache.Core, and TileStache.Geograph
 
 from sys import stderr
 from os.path import realpath, join as pathjoin
-from urlparse import urljoin
+from urlparse import urljoin, urlparse
 
 try:
     from json import dumps as json_dumps
@@ -96,7 +96,29 @@ def _parseConfigfileCache(cache_dict, dirpath):
                 kwargs['logfunc'] = lambda msg: stderr.write(msg + '\n')
     
         elif _class is Caches.Disk:
-            kwargs['path'] = realpath(pathjoin(dirpath, cache_dict['path']))
+            parsed_dir = urlparse(dirpath)
+            parsed_path = urlparse(cache_dict['path'])
+            
+            if parsed_path.scheme not in ('file', ''):
+                raise Core.KnownUnknown('Disk cache path must be a local file path, absolute or "file://", not "%s".' % cache_dict['path'])
+            
+            if parsed_dir.scheme not in ('file', '') and parsed_path.scheme != 'file':
+                raise Core.KnownUnknown('Disk cache path must start with "file://" with a remote configuration ("%s" relative to %s)' % (cache_dict['path'], dirpath))
+            
+            if parsed_path.scheme == 'file':
+                # file:// is an absolute local reference for the disk cache.
+                diskpath = parsed_path.path
+
+            elif parsed_dir.scheme == 'file':
+                # file:// is an absolute local reference for the directory.
+                diskpath = urljoin(parsed_dir.path, parsed_path.path)
+            
+            else:
+                # nothing has a scheme, it's probably just a bunch of
+                # dumb local paths, so let's see what happens next.
+                diskpath = pathjoin(dirpath, cache_dict['path'])
+        
+            kwargs['path'] = diskpath
             
             if cache_dict.has_key('umask'):
                 kwargs['umask'] = int(cache_dict['umask'], 8)
