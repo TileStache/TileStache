@@ -94,7 +94,10 @@ def parseConfigfile(configpath):
     config_dict = json_load(urlopen(configpath))
     
     scheme, host, path, p, q, f = urlparse(configpath)
-    scheme = scheme or 'file'
+    
+    if scheme == '':
+        scheme = 'file'
+        path = realpath(path)
     
     dirpath = '%s://%s%s' % (scheme, host, dirname(path).rstrip('/') + '/')
 
