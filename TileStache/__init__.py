@@ -96,7 +96,7 @@ def parseConfigfile(configpath):
     scheme, host, path, p, q, f = urlparse(configpath)
     scheme = scheme or 'file'
     
-    dirpath = '%s://%s%s' % (scheme, host, dirname(path))
+    dirpath = '%s://%s%s' % (scheme, host, dirname(path).rstrip('/') + '/')
 
     return Config.buildConfiguration(config_dict, dirpath)
 

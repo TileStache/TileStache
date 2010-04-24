@@ -47,6 +47,7 @@ documentation for TileStache.Providers, TileStache.Core, and TileStache.Geograph
 
 from sys import stderr
 from os.path import realpath, join as pathjoin
+from urlparse import urljoin
 
 try:
     from json import dumps as json_dumps
@@ -155,7 +156,7 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         
         if _class is Providers.Mapnik:
             mapfile = provider_dict['mapfile']
-            provider_kwargs['mapfile'] = realpath(pathjoin(dirpath, mapfile))
+            provider_kwargs['mapfile'] = urljoin(dirpath, mapfile)
         
         elif _class is Providers.Proxy:
             if provider_dict.has_key('url'):
