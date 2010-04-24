@@ -76,7 +76,7 @@ def buildConfiguration(config_dict, dirpath='.'):
     cache_dict = config_dict.get('cache', {})
     cache = _parseConfigfileCache(cache_dict, dirpath)
     
-    config = Configuration(cache, realpath(dirpath))
+    config = Configuration(cache, dirpath)
     
     for (name, layer_dict) in config_dict.get('layers', {}).items():
         config.layers[name] = _parseConfigfileLayer(layer_dict, config, dirpath)

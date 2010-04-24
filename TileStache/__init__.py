@@ -9,6 +9,8 @@ from sys import stdout
 from cgi import parse_qs
 from StringIO import StringIO
 from os.path import dirname, join as pathjoin, realpath
+from urlparse import urljoin, urlparse
+from urllib import urlopen
 
 try:
     from json import load as json_load
@@ -82,15 +84,19 @@ def parseConfigfile(configpath):
             }
           }
         
-        The full filesystem path to the file is significant, used
-        to resolve any relative paths found in the configuration.
+        The full path to the file is significant, used to
+        resolve any relative paths found in the configuration.
         
         See the Caches module for more information on the "caches" section,
         and the Core and Providers modules for more information on the
         "layers" section.
     """
-    config_dict = json_load(open(configpath, 'r'))
-    dirpath = dirname(configpath)
+    config_dict = json_load(urlopen(configpath))
+    
+    scheme, host, path, p, q, f = urlparse(configpath)
+    scheme = scheme or 'file'
+    
+    dirpath = '%s://%s%s' % (scheme, host, dirname(path))
 
     return Config.buildConfiguration(config_dict, dirpath)
 
