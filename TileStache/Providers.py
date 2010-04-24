@@ -51,9 +51,13 @@ metatiles. It has these arguments:
   arguments, but that's a hassle so we'll pass it in explicitly.
 """
 
+import os
+
 from StringIO import StringIO
 from urlparse import urlparse
 from httplib import HTTPConnection
+from tempfile import mkstemp
+from urllib import urlopen
 
 try:
     import mapnik
@@ -173,7 +177,13 @@ class Mapnik:
         """
         if self.mapnik is None:
             self.mapnik = mapnik.Map(0, 0)
-            mapnik.load_map(self.mapnik, self.mapfile)
+            
+            handle, filename = mkstemp()
+            os.write(handle, urlopen(self.mapfile).read())
+            os.close(handle)
+
+            mapnik.load_map(self.mapnik, filename)
+            os.unlink(filename)
         
         self.mapnik.width = width
         self.mapnik.height = height

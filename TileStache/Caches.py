@@ -138,6 +138,10 @@ class Disk:
         - path: required local directory path where files should be stored.
         - umask: optional string representation of octal permission mask
           for stored files. Defaults to 0022.
+
+        If your configuration file is loaded from a remote location, e.g.
+        "http://example.com/tilestache.cfg", the path *must* be an unambiguous
+        filesystem path, e.g. "file:///tmp/cache"
     """
     def __init__(self, path, umask=0022):
         self.cachepath = path
