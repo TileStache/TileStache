@@ -49,6 +49,8 @@ import time
 from tempfile import mkstemp
 from os.path import isdir, exists, dirname, basename, join as pathjoin
 
+from Core import KnownUnknown
+
 def getCacheByName(name):
     """ Retrieve a cache object by name.
     
@@ -131,35 +133,52 @@ class Disk:
             "cache": {
               "name": "Disk",
               "path": "/tmp/stache",
-              "umask": "0000"
+              "umask": "0000",
+              "dirs": "portable"
             }
 
         Extra parameters:
         - path: required local directory path where files should be stored.
         - umask: optional string representation of octal permission mask
           for stored files. Defaults to 0022.
+        - dirs: optional string saying whether to create cache directories that
+          are safe or portable. For an example tile 12/656/1582.png, "portable"
+          creates matching directory trees while "portable" guarantees directories
+          with fewer files, e.g. 12/000/656/001/582.png. Defaults to safe.
 
         If your configuration file is loaded from a remote location, e.g.
         "http://example.com/tilestache.cfg", the path *must* be an unambiguous
         filesystem path, e.g. "file:///tmp/cache"
     """
-    def __init__(self, path, umask=0022):
+    def __init__(self, path, umask=0022, dirs='safe'):
         self.cachepath = path
         self.umask = umask
+        self.dirs = dirs
 
     def _filepath(self, layer, coord, format):
         """
         """
         l = layer.name()
         z = '%d' % coord.zoom
-        x = '%06d' % coord.column
-        y = '%06d' % coord.row
         e = format.lower()
         
-        x1, x2 = x[:3], x[3:]
-        y1, y2 = y[:3], y[3:]
-        
-        filepath = os.sep.join( (l, z, x1, x2, y1, y2 + '.' + e) )
+        if self.dirs == 'safe':
+            x = '%06d' % coord.column
+            y = '%06d' % coord.row
+
+            x1, x2 = x[:3], x[3:]
+            y1, y2 = y[:3], y[3:]
+            
+            filepath = os.sep.join( (l, z, x1, x2, y1, y2 + '.' + e) )
+            
+        elif self.dirs == 'portable':
+            x = '%d' % coord.column
+            y = '%d' % coord.row
+
+            filepath = os.sep.join( (l, z, x, y + '.' + e) )
+            
+        else:
+            raise KnownUnknown('Please provide a valid "dirs" parameter to the Disk cache, either "safe" or "portable" but not "%s"' % self.dirs)
 
         return filepath
 
