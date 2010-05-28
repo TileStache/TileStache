@@ -92,7 +92,7 @@ def utm2mgrs(e, n, grid, zeros=0):
     
     return ' '.join( [grid, square, easting[:-zeros], northing[:-zeros]] )
 
-def transform(w, h, xmin, ymax, xmax, ymin):
+def transform(w, h, xmin, ymin, xmax, ymax):
     """
     """
     xspan, yspan = (xmax - xmin), (ymax - ymin)
