@@ -9,7 +9,7 @@ West Oakland (http://sta.mn/ck) in the "osm" layer, for zoom levels 12-15:
 See `tilestache-seed.py --help` for more information.
 """
 
-from sys import stderr
+from sys import stderr, path
 from optparse import OptionParser
 
 try:
@@ -53,23 +53,31 @@ parser.add_option('-p', '--progress-file', dest='progressfile',
 parser.add_option('-q', action='store_false', dest='verbose',
                   help='Suppress chatty output, --progress-file works well with this.')
 
+parser.add_option('-i', '--include-path', dest='include',
+                  help="Add the following colon-separated list of paths to Python's include path (aka sys.path)")
+
 if __name__ == '__main__':
     options, zooms = parser.parse_args()
-    
+
+    if options.include:
+
+        for p in options.include.split(':'):
+            path.insert(0, p)
+
     try:
         if options.config is None:
             raise KnownUnknown('Missing required configuration (--config) parameter.')
-    
+
         if options.layer is None:
             raise KnownUnknown('Missing required layer (--layer) parameter.')
-    
+
         config = parseConfigfile(options.config)
-        
+
         if options.layer not in config.layers:
             raise KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (options.layer, ', '.join(config.layers.keys())))
-        
+
         layer = config.layers[options.layer]
-        
+
         verbose = options.verbose
         extension = options.extension
         progressfile = options.progressfile
@@ -77,51 +85,51 @@ if __name__ == '__main__':
         lat1, lon1, lat2, lon2 = options.bbox
         south, west = min(lat1, lat2), min(lon1, lon2)
         north, east = max(lat1, lat2), max(lon1, lon2)
-        
+
         northwest = Location(north, west)
         southeast = Location(south, east)
-        
+
         ul = layer.projection.locationCoordinate(northwest)
         lr = layer.projection.locationCoordinate(southeast)
 
         for (i, zoom) in enumerate(zooms):
             if not zoom.isdigit():
                 raise KnownUnknown('"%s" is not a valid numeric zoom level.' % zoom)
-    
+
             zooms[i] = int(zoom)
-    
+
     except KnownUnknown, e:
         parser.error(str(e))
-    
+
     # this list might get long, but we want to know how many
     # total tiles there are to render so progress can be shown.
     coords = []
-    
+
     for zoom in zooms:
         ul_ = ul.zoomTo(zoom).container()
         lr_ = lr.zoomTo(zoom).container()
-        
+
         for row in range(int(ul_.row), int(lr_.row + 1)):
             for column in range(int(ul_.column), int(lr_.column + 1)):
                 coord = Coordinate(row, column, zoom)
                 coords.append(coord)
-    
+
     for (i, coord) in enumerate(coords):
         path = '%s/%d/%d/%d.%s' % (layer.name(), coord.zoom, coord.column, coord.row, extension)
 
         progress = {"tile": path,
                     "offset": i + 1,
                     "total": len(coords)}
-    
+
         if options.verbose:
             print >> stderr, '%(offset)d of %(total)d...' % progress,
-    
+
         mimetype, content = handleRequest(layer, coord, extension)
         progress['size'] = '%dKB' % (len(content) / 1024)
-        
+
         if options.verbose:
             print >> stderr, '%(tile)s (%(size)s)' % progress
-    
+
         if progressfile:
             fp = open(progressfile, 'w')
             json_dump(progress, fp)
