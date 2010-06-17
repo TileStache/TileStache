@@ -27,7 +27,7 @@ config = TileStache.Config.buildConfiguration(config)
 
 def app(environ, start_response):
 
-    layer, coord, ext = TileStache._splitPathInfo(environ['PATH_INFO'])
+    layer, coord, ext = TileStache.splitPathInfo(environ['PATH_INFO'])
 
     if not config.layers.get(layer, False):
         status = '404 NOT FOUND'

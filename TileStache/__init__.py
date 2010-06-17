@@ -103,7 +103,7 @@ def parseConfigfile(configpath):
 
     return Config.buildConfiguration(config_dict, dirpath)
 
-def _splitPathInfo(pathinfo):
+def splitPathInfo(pathinfo):
     """ Converts a PATH_INFO string to layer name, coordinate, and extension parts.
         
         Example: "/layer/0/0/0.png", leading "/" optional.
@@ -131,7 +131,7 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
             raise Core.KnownUnknown('Missing PATH_INFO in TileStache.cgiHandler().')
     
         config = parseConfigfile(config)
-        layername, coord, extension = _splitPathInfo(environ['PATH_INFO'])
+        layername, coord, extension = splitPathInfo(environ['PATH_INFO'])
         
         if layername not in config.layers:
             raise Core.KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (layername, ', '.join(config.layers.keys())))
@@ -177,7 +177,7 @@ def modpythonHandler(request):
         config = realpath(pathjoin(dirname(request.filename), config))
         config = parseConfigfile(config)
     
-        layername, coord, extension = _splitPathInfo(request.path_info)
+        layername, coord, extension = splitPathInfo(request.path_info)
         
         if layername not in config.layers:
             raise Core.KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (layername, ', '.join(config.layers.keys())))
