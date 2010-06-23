@@ -260,6 +260,31 @@ class KnownUnknown(Exception):
     """
     pass
 
+def _preview(layername):
+    """ Get an HTML response for a given named layer.
+    """
+    return """<!DOCTYPE html>
+<html>
+<head>
+	<title>TileStache Preview: %(layername)s</title>
+    <script src="http://code.modestmaps.com/0.13.2/modestmaps.min.js" type="text/javascript"></script>
+</head>
+<body>
+    <script type="text/javascript">
+    <!--
+    
+        var template = '{Z}/{X}/{Y}.png';
+        var provider = new com.modestmaps.TemplatedMapProvider(template);
+        var map = new com.modestmaps.Map(document.body, provider);
+        map.setCenterZoom(new com.modestmaps.Location(37.80, -122.26), 10);
+        map.draw();
+    
+    //-->
+    </script>
+</body>
+</html>
+""" % locals()
+
 def _rummy():
     """ Draw Him.
     """

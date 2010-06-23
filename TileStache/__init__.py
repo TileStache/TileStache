@@ -24,6 +24,7 @@ import Config
 
 # regular expression for PATH_INFO
 _pathinfo_pat = re.compile(r'^/?(?P<l>\w.+)/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)\.(?P<e>\w+)$')
+_preview_pat = re.compile(r'^/?(?P<l>\w.+)/preview\.html$')
 
 def handleRequest(layer, coord, extension):
     """ Get a type string and tile binary for a given request layer tile.
@@ -70,6 +71,11 @@ def handleRequest(layer, coord, extension):
     
     return mimetype, body
 
+def handlePreview(layer):
+    """ Get a type string and dynamic map viewer HTML for a given layer.
+    """
+    return 'text/html', Core._preview(layer.name())
+
 def parseConfigfile(configpath):
     """ Parse a configuration file and return a Configuration object.
     
@@ -108,16 +114,20 @@ def splitPathInfo(pathinfo):
         
         Example: "/layer/0/0/0.png", leading "/" optional.
     """
-    try:
+    if _pathinfo_pat.match(pathinfo):
         path = _pathinfo_pat.match(pathinfo)
         layer, row, column, zoom, extension = [path.group(p) for p in 'lyxze']
         coord = Coordinate(int(row), int(column), int(zoom))
 
-    except AttributeError:
-        raise Core.KnownUnknown('Bad path: "%s". I was expecting something more like "/example/0/0/0.png"' % pathinfo)
+    elif _preview_pat.match(pathinfo):
+        path = _preview_pat.match(pathinfo)
+        layer, extension = path.group('l'), 'html'
+        coord = None
 
     else:
-        return layer, coord, extension
+        raise Core.KnownUnknown('Bad path: "%s". I was expecting something more like "/example/0/0/0.png"' % pathinfo)
+
+    return layer, coord, extension
 
 def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     """ Read environment PATH_INFO, load up configuration, talk to stdout by CGI.
@@ -129,7 +139,7 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     try:
         if not environ.has_key('PATH_INFO'):
             raise Core.KnownUnknown('Missing PATH_INFO in TileStache.cgiHandler().')
-    
+
         config = parseConfigfile(config)
         layername, coord, extension = splitPathInfo(environ['PATH_INFO'])
         
@@ -139,7 +149,11 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
         query = parse_qs(environ['QUERY_STRING'])
         layer = config.layers[layername]
         
-        mimetype, content = handleRequest(layer, coord, extension)
+        if extension == 'html' and coord is None:
+            mimetype, content = handlePreview(layer)
+
+        else:
+            mimetype, content = handleRequest(layer, coord, extension)
 
     except Core.KnownUnknown, e:
         out = StringIO()
