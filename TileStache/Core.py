@@ -173,8 +173,8 @@ class Layer:
         else:
             raise KnownUnknown('Your provider lacks renderTile and renderArea methods.')
 
-        assert hasattr(tile, 'save'), \
-               'Return value of provider.renderArea() must act like an image.'
+        if not hasattr(tile, 'save'):
+            raise KnownUnknown('Return value of provider.renderArea() must act like an image; e.g. have a "save" method.')
         
         if self.doMetatile():
             # tile will be set again later
