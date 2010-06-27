@@ -224,7 +224,15 @@ def loadClassPath(classpath):
         Example classpath: "Module.Submodule.Classname",
     """
     classpath = classpath.split('.')
-    module = __import__('.'.join(classpath[:-1]), fromlist=str(classpath[-1]))
-    _class = getattr(module, classpath[-1])
-    
+
+    try:
+        module = __import__('.'.join(classpath[:-1]), fromlist=str(classpath[-1]))
+    except ImportError, e:
+        raise Core.KnownUnknown('Tried to import %s, but: %s' % ('.'.join(classpath), e))
+
+    try:
+        _class = getattr(module, classpath[-1])
+    except AttributeError, e:
+        raise Core.KnownUnknown('Tried to import %s, but: %s' % ('.'.join(classpath), e))
+
     return _class
