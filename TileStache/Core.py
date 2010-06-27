@@ -256,7 +256,10 @@ class Layer:
     def getTypeByExtension(self, extension):
         """ Get mime-type and PIL format by file extension.
         """
-        if extension.lower() == 'png':
+        if hasattr(self.provider, 'getTypeByExtension'):
+            return self.provider.getTypeByExtension(extension)
+        
+        elif extension.lower() == 'png':
             return 'image/png', 'PNG'
     
         elif extension.lower() == 'jpg':
