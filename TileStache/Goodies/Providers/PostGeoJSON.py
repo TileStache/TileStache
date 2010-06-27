@@ -1,7 +1,9 @@
 """ Provider that returns GeoJSON data responses from PostGIS queries.
 """
 
-from json import dump
+from re import compile
+from json import JSONEncoder
+
 from psycopg2 import connect
 from TileStache.Core import KnownUnknown
 
@@ -13,11 +15,18 @@ class SaveableResponse:
     def __init__(self, content):
         self.content = content
 
-    def save(self, fp, format):
+    def save(self, out, format):
         if format != 'JSON':
-            raise KnownUnknown('PostGeoJSON only makes .json tiles, not "%s"' % extension)
-
-        dump(self.content, fp)
+            raise KnownUnknown('PostGeoJSON only saves .json tiles, not "%s"' % format)
+        
+        encoded = JSONEncoder().iterencode(self.content)
+        float_pat = compile(r'^-?\d+\.\d+$')
+        
+        for atom in encoded:
+            if float_pat.match(atom):
+                out.write('%.6f' % float(atom))
+            else:
+                out.write(atom)
 
 class Provider:
     """
@@ -35,4 +44,4 @@ class Provider:
         return 'text/json', 'JSON'
 
     def renderTile(self, width, height, srs, coord):
-        return SaveableResponse({'hello': 'world'})
+        return SaveableResponse({'hello': 'world', 'f': 1.23456789})
