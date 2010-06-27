@@ -52,6 +52,7 @@ doc:
 	pydoc -w TileStache.Goodies
 	pydoc -w TileStache.Goodies.Providers
 	pydoc -w TileStache.Goodies.Providers.Composite
+	pydoc -w TileStache.Goodies.Providers.PostGeoJSON
 	pydoc -w TileStache.Goodies.Providers.Grid
 	
 	pydoc -w scripts/tilestache-*.py
