@@ -253,6 +253,18 @@ class Layer:
 
         return subtiles
 
+    def getTypeByExtension(self, extension):
+        """ Get mime-type and PIL format by file extension.
+        """
+        if extension.lower() == 'png':
+            return 'image/png', 'PNG'
+    
+        elif extension.lower() == 'jpg':
+            return 'image/jpeg', 'JPEG'
+    
+        else:
+            raise KnownUnknown('Unknown extension in configuration: "%s"' % extension)
+
 class KnownUnknown(Exception):
     """ There are known unknowns. That is to say, there are things that we now know we don't know.
     

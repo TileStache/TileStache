@@ -218,18 +218,6 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     
     return layer
 
-def getTypeByExtension(extension):
-    """ Get mime-type and PIL format by file extension.
-    """
-    if extension.lower() == 'png':
-        return 'image/png', 'PNG'
-
-    elif extension.lower() == 'jpg':
-        return 'image/jpeg', 'JPEG'
-
-    else:
-        raise Core.KnownUnknown('Unknown extension in configuration: "%s"' % extension)
-
 def loadClassPath(classpath):
     """ Load external class based on a path.
     
