@@ -3,13 +3,25 @@
 
 from re import compile
 from json import JSONEncoder
-from binascii import unhexlify
+from copy import copy as _copy
+from binascii import unhexlify as _unhexlify
 
 from shapely.wkb import loads as _loadshape
 from psycopg2 import connect as _connect
 from psycopg2.extras import RealDictCursor
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
+
+def row2feature(row, id_field='id', geometry_field='geometry'):
+    """
+    """
+    feature = {'type': 'Feature', 'properties': _copy(row)}
+
+    geometry = feature['properties'].pop(geometry_field)
+    feature['geometry'] = str(_loadshape(_unhexlify(geometry)))
+    feature['id'] = feature['properties'].pop(id_field)
+    
+    return feature
 
 class SaveableResponse:
     """ Wrapper class for JSON response that makes it behave like a PIL.Image object.
@@ -56,21 +68,16 @@ class Provider:
         bbox = 'ST_SetSRID(ST_MakeBox2D(ST_MakePoint(%.6f, %.6f), ST_MakePoint(%.6f, %.6f)), 900913)' % (ul.x, ul.y, lr.x, lr.y)
 
         db = _connect(self.dbdsn).cursor(cursor_factory=RealDictCursor)
-        
-        query = self.query.replace('!bbox!', bbox)
-        
-        db.execute(query)
-        
+
+        db.execute(self.query.replace('!bbox!', bbox))
         rows = db.fetchall()
         
         db.close()
         
+        response = {'type': 'FeatureCollection', 'features': []}
+        
         for row in rows:
-            shape = _loadshape(unhexlify(row['geometry']))
-            row['geometry'] = str(shape)
+            feature = row2feature(row)
+            response['features'].append(feature)
     
-        return SaveableResponse({'w': width, 'h': height, 's': srs,
-                                 'ul': str(coord), 'lr': str(coord.down().right()),
-                                 'bbox': bbox,
-                                 'query': query,
-                                 'res': res})
+        return SaveableResponse(response)
