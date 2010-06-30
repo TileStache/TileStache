@@ -3,7 +3,9 @@
 
 from re import compile
 from json import JSONEncoder
+from binascii import unhexlify
 
+from shapely.wkb import loads as _loadshape
 from psycopg2 import connect as _connect
 from psycopg2.extras import RealDictCursor
 from TileStache.Core import KnownUnknown
@@ -59,9 +61,13 @@ class Provider:
         
         db.execute(query)
         
-        res = db.fetchone()
+        rows = db.fetchall()
         
         db.close()
+        
+        for row in rows:
+            shape = _loadshape(unhexlify(row['geometry']))
+            row['geometry'] = str(shape)
     
         return SaveableResponse({'w': width, 'h': height, 's': srs,
                                  'ul': str(coord), 'lr': str(coord.down().right()),
