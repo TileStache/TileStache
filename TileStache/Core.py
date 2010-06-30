@@ -173,8 +173,8 @@ class Layer:
         else:
             raise KnownUnknown('Your provider lacks renderTile and renderArea methods.')
 
-        assert hasattr(tile, 'save'), \
-               'Return value of provider.renderArea() must act like an image.'
+        if not hasattr(tile, 'save'):
+            raise KnownUnknown('Return value of provider.renderArea() must act like an image; e.g. have a "save" method.')
         
         if self.doMetatile():
             # tile will be set again later
@@ -252,6 +252,21 @@ class Layer:
             subtiles.append((other, x, y))
 
         return subtiles
+
+    def getTypeByExtension(self, extension):
+        """ Get mime-type and PIL format by file extension.
+        """
+        if hasattr(self.provider, 'getTypeByExtension'):
+            return self.provider.getTypeByExtension(extension)
+        
+        elif extension.lower() == 'png':
+            return 'image/png', 'PNG'
+    
+        elif extension.lower() == 'jpg':
+            return 'image/jpeg', 'JPEG'
+    
+        else:
+            raise KnownUnknown('Unknown extension in configuration: "%s"' % extension)
 
 class KnownUnknown(Exception):
     """ There are known unknowns. That is to say, there are things that we now know we don't know.

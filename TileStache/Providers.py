@@ -49,6 +49,21 @@ metatiles. It has these arguments:
 - xmin, ymin, xmax, ymax: coordinates of bounding box in projected coordinates.
 - zoom: zoom level of final map. Technically this can be derived from the other
   arguments, but that's a hassle so we'll pass it in explicitly.
+  
+A provider may offer a method for custom response type, getTypeByExtension().
+This method accepts a single argument, a filename extension string (e.g. "png",
+"json", etc.) and returns a tuple with twon strings: a mime-type and a format.
+Note that for image and non-image tiles alike, renderArea() and renderTile()
+methods on a provider class must return a object with a save() method that
+can accept a file-like object and a format name, e.g. this should word:
+    
+    provder.renderArea(...).save(fp, "TEXT")
+
+... if "TEXT" is a valid response format according to getTypeByExtension().
+
+Non-image providers and metatiles do not mix.
+
+For an example of a non-image provider, see TileStache.Goodies.Provider.PostGeoJSON.
 """
 
 import os

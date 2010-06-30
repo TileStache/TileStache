@@ -37,7 +37,7 @@ def handleRequest(layer, coord, extension):
         This is the main entry point, after site configuration has been loaded
         and individual tiles need to be rendered.
     """
-    mimetype, format = Config.getTypeByExtension(extension)
+    mimetype, format = layer.getTypeByExtension(extension)
     cache = layer.config.cache
     
     # Start by checking for a tile in the cache.
