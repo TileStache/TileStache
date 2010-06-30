@@ -1,4 +1,4 @@
-VERSION=0.1.12
+VERSION=0.1.13
 PACKAGE=TileStache-$(VERSION)
 TARBALL=$(PACKAGE).tar.gz
 DOCROOT=tilestache.org:public_html/tilestache/www
