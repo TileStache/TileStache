@@ -18,10 +18,24 @@ def row2feature(row, id_field='id', geometry_field='geometry'):
     feature = {'type': 'Feature', 'properties': _copy(row)}
 
     geometry = feature['properties'].pop(geometry_field)
-    feature['geometry'] = str(_loadshape(_unhexlify(geometry)))
+    feature['geometry'] = _loadshape(_unhexlify(geometry))
     feature['id'] = feature['properties'].pop(id_field)
     
     return feature
+
+def shape2geometry(shape, projection):
+    """
+    """
+    if str(shape).startswith('POINT'):
+        loc = projection.projLocation(Point(*shape.coords[0]))
+        return {'type': 'Point', 'coordinates': [loc.lon, loc.lat]}
+
+    return None
+
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
 
 class SaveableResponse:
     """ Wrapper class for JSON response that makes it behave like a PIL.Image object.
@@ -78,6 +92,7 @@ class Provider:
         
         for row in rows:
             feature = row2feature(row)
+            feature['geometry'] = shape2geometry(feature['geometry'], self.projection)
             response['features'].append(feature)
     
         return SaveableResponse(response)
