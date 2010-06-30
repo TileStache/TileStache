@@ -23,12 +23,27 @@ def row2feature(row, id_field, geometry_field):
     
     return feature
 
+def _p2p(xy, projection):
+    """
+    """
+    loc = projection.projLocation(Point(*xy))
+    return loc.lon, loc.lat
+
 def shape2geometry(shape, projection):
     """
     """
-    if str(shape).startswith('POINT'):
-        loc = projection.projLocation(Point(*shape.coords[0]))
-        return {'type': 'Point', 'coordinates': [loc.lon, loc.lat]}
+    if str(shape).startswith('POINT '):
+        coords = _p2p(shape.coords[0], projection)
+        return {'type': 'Point', 'coordinates': coords}
+
+    if str(shape).startswith('LINESTRING '):
+        coords = [_p2p(xy, projection) for xy in shape.coords]
+        return {'type': 'LineString', 'coordinates': coords}
+
+    if str(shape).startswith('POLYGON '):
+        rings = [shape.exterior] + list(shape.interiors)
+        coords = [[_p2p(xy, projection) for xy in ring.coords] for ring in rings]
+        return {'type': 'Polygon', 'coordinates': coords}
 
     return None
 
