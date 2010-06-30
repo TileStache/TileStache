@@ -12,7 +12,7 @@ from psycopg2.extras import RealDictCursor
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
 
-def row2feature(row, id_field='id', geometry_field='geometry'):
+def row2feature(row, id_field, geometry_field):
     """
     """
     feature = {'type': 'Feature', 'properties': _copy(row)}
@@ -61,11 +61,13 @@ class SaveableResponse:
 class Provider:
     """
     """
-    def __init__(self, layer, dsn, query):
+    def __init__(self, layer, dsn, query, id_column='id', geometry_column='geometry'):
         self.layer = layer
         self.dbdsn = dsn
         self.query = query
         self.projection = getProjectionByName('spherical mercator')
+        self.geometry_field = geometry_column
+        self.id_field = id_column
 
     def getTypeByExtension(self, extension):
         """ Get mime-type and format by file extension.
@@ -91,7 +93,7 @@ class Provider:
         response = {'type': 'FeatureCollection', 'features': []}
         
         for row in rows:
-            feature = row2feature(row)
+            feature = row2feature(row, self.id_field, self.geometry_field)
             feature['geometry'] = shape2geometry(feature['geometry'], self.projection)
             response['features'].append(feature)
     
