@@ -1,4 +1,20 @@
 """ Provider that returns GeoJSON data responses from PostGIS queries.
+
+This is an example of a provider that does not return an image, but rather
+queries a database for raw data and replies with a string of GeoJSON. Read
+more about the GeoJSON spec at: http://geojson.org/geojson-spec.html
+
+Example TileStache provider configuration:
+
+"pois":
+{
+    "provider": {"class": "TileStache.Goodies.Providers.PostGeoJSON.Provider",
+                 "kwargs": {
+                    "dsn": "dbname=geodata user=postgres",
+                    "query": "SELECT osm_id, name, way FROM planet_osm_point WHERE way && !bbox! AND name IS NOT NULL",
+                    "id_column": "osm_id", "geometry_column": "way"
+                 }}
+}
 """
 
 from re import compile
@@ -91,6 +107,8 @@ class Provider:
 
     def getTypeByExtension(self, extension):
         """ Get mime-type and format by file extension.
+        
+            This only accepts "json".
         """
         if extension.lower() != 'json':
             raise KnownUnknown('PostGeoJSON only makes .json tiles, not "%s"' % extension)
@@ -98,6 +116,8 @@ class Provider:
         return 'text/json', 'JSON'
 
     def renderTile(self, width, height, srs, coord):
+        """ Render a single tile, return a SaveableResponse instance.
+        """
         ul = self.projection.coordinateProj(coord)
         lr = self.projection.coordinateProj(coord.right().down())
         
