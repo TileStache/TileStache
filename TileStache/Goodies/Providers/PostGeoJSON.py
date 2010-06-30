@@ -13,7 +13,7 @@ from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
 
 def row2feature(row, id_field, geometry_field):
-    """
+    """ Convert a database row dict to a feature dict.
     """
     feature = {'type': 'Feature', 'properties': _copy(row)}
 
@@ -24,30 +24,35 @@ def row2feature(row, id_field, geometry_field):
     return feature
 
 def _p2p(xy, projection):
+    """ Convert a simple (x, y) coordinate to a (lon, lat) position.
     """
-    """
-    loc = projection.projLocation(Point(*xy))
+    loc = projection.projLocation(_Point(*xy))
     return loc.lon, loc.lat
 
 def shape2geometry(shape, projection):
-    """
+    """ Convert a Shapely geometry object to a GeoJSON-suitable geometry dict.
     """
     if str(shape).startswith('POINT '):
+        type = 'Point'
         coords = _p2p(shape.coords[0], projection)
-        return {'type': 'Point', 'coordinates': coords}
 
-    if str(shape).startswith('LINESTRING '):
+    elif str(shape).startswith('LINESTRING '):
+        type = 'LineString'
         coords = [_p2p(xy, projection) for xy in shape.coords]
-        return {'type': 'LineString', 'coordinates': coords}
 
-    if str(shape).startswith('POLYGON '):
+    elif str(shape).startswith('POLYGON '):
+        type = 'Polygon'
         rings = [shape.exterior] + list(shape.interiors)
         coords = [[_p2p(xy, projection) for xy in ring.coords] for ring in rings]
-        return {'type': 'Polygon', 'coordinates': coords}
 
-    return None
+    else:
+        return None
 
-class Point:
+    return {'type': type, 'coordinates': coords}
+
+class _Point:
+    """ Local duck for (x, y) points.
+    """
     def __init__(self, x, y):
         self.x = x
         self.y = y
