@@ -24,6 +24,10 @@ $(TARBALL): doc
 	mkdir $(PACKAGE)/TileStache/Goodies
 	ln TileStache/Goodies/*.py $(PACKAGE)/TileStache/Goodies/
 
+	mkdir $(PACKAGE)/TileStache/Goodies/Caches
+	ln TileStache/Goodies/Caches/*.py $(PACKAGE)/TileStache/Goodies/Caches/
+	ln TileStache/Goodies/Caches/*.ttf $(PACKAGE)/TileStache/Goodies/Caches/
+
 	mkdir $(PACKAGE)/TileStache/Goodies/Providers
 	ln TileStache/Goodies/Providers/*.py $(PACKAGE)/TileStache/Goodies/Providers/
 	ln TileStache/Goodies/Providers/*.ttf $(PACKAGE)/TileStache/Goodies/Providers/
@@ -50,6 +54,8 @@ doc:
 	pydoc -w TileStache.Geography
 	pydoc -w TileStache.Providers
 	pydoc -w TileStache.Goodies
+	pydoc -w TileStache.Goodies.Caches
+	pydoc -w TileStache.Goodies.Caches.LimitedDisk
 	pydoc -w TileStache.Goodies.Providers
 	pydoc -w TileStache.Goodies.Providers.Composite
 	pydoc -w TileStache.Goodies.Providers.PostGeoJSON
