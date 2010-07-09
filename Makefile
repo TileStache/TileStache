@@ -1,4 +1,4 @@
-VERSION=0.1.9
+VERSION=0.1.13
 PACKAGE=TileStache-$(VERSION)
 TARBALL=$(PACKAGE).tar.gz
 DOCROOT=tilestache.org:public_html/tilestache/www
@@ -52,6 +52,7 @@ doc:
 	pydoc -w TileStache.Goodies
 	pydoc -w TileStache.Goodies.Providers
 	pydoc -w TileStache.Goodies.Providers.Composite
+	pydoc -w TileStache.Goodies.Providers.PostGeoJSON
 	pydoc -w TileStache.Goodies.Providers.Grid
 	
 	pydoc -w scripts/tilestache-*.py

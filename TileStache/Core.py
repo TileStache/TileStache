@@ -173,8 +173,8 @@ class Layer:
         else:
             raise KnownUnknown('Your provider lacks renderTile and renderArea methods.')
 
-        assert hasattr(tile, 'save'), \
-               'Return value of provider.renderArea() must act like an image.'
+        if not hasattr(tile, 'save'):
+            raise KnownUnknown('Return value of provider.renderArea() must act like an image; e.g. have a "save" method.')
         
         if self.doMetatile():
             # tile will be set again later
@@ -253,12 +253,52 @@ class Layer:
 
         return subtiles
 
+    def getTypeByExtension(self, extension):
+        """ Get mime-type and PIL format by file extension.
+        """
+        if hasattr(self.provider, 'getTypeByExtension'):
+            return self.provider.getTypeByExtension(extension)
+        
+        elif extension.lower() == 'png':
+            return 'image/png', 'PNG'
+    
+        elif extension.lower() == 'jpg':
+            return 'image/jpeg', 'JPEG'
+    
+        else:
+            raise KnownUnknown('Unknown extension in configuration: "%s"' % extension)
+
 class KnownUnknown(Exception):
     """ There are known unknowns. That is to say, there are things that we now know we don't know.
     
         This exception gets thrown in a couple places where common mistakes are made.
     """
     pass
+
+def _preview(layername):
+    """ Get an HTML response for a given named layer.
+    """
+    return """<!DOCTYPE html>
+<html>
+<head>
+	<title>TileStache Preview: %(layername)s</title>
+    <script src="http://code.modestmaps.com/0.13.2/modestmaps.min.js" type="text/javascript"></script>
+</head>
+<body>
+    <script type="text/javascript">
+    <!--
+    
+        var template = '{Z}/{X}/{Y}.png';
+        var provider = new com.modestmaps.TemplatedMapProvider(template);
+        var map = new com.modestmaps.Map(document.body, provider);
+        map.setCenterZoom(new com.modestmaps.Location(37.80, -122.26), 10);
+        map.draw();
+    
+    //-->
+    </script>
+</body>
+</html>
+""" % locals()
 
 def _rummy():
     """ Draw Him.
