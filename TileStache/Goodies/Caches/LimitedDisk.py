@@ -3,26 +3,42 @@
 
 from sqlite3 import connect, OperationalError, IntegrityError
 
+_create_tables = """
+    CREATE TABLE IF NOT EXISTS locks (
+        row     INTEGER,
+        column  INTEGER,
+        zoom    INTEGER,
+        format  TEXT,
+        
+        PRIMARY KEY (row, column, zoom, format)
+    )
+    """, """
+    CREATE TABLE IF NOT EXISTS tiles (
+        row     INTEGER,
+        column  INTEGER,
+        zoom    INTEGER,
+        format  TEXT,
+        
+        used    INTEGER,
+        path    TEXT,
+        
+        PRIMARY KEY (row, column, zoom, format)
+    )
+    """, """
+    CREATE INDEX IF NOT EXISTS tiles_used ON tiles (used)
+    """
+
 class Cache:
 
     def __init__(self):
         self.dbpath = '/tmp/stache.db'
 
         db = connect(self.dbpath).cursor()
+        
+        for create_table in _create_tables:
+            db.execute(create_table)
 
-        try:
-            db.execute("""
-                CREATE TABLE locks (
-                    row     INTEGER,
-                    column  INTEGER,
-                    zoom    INTEGER,
-                    format  TEXT,
-                    
-                    PRIMARY KEY (row, column, zoom, format)
-                )
-                """)
-        except OperationalError:
-            pass
+        db.close()
 
     def lock(self, layer, coord, format):
         """ Acquire a cache lock for this tile.
