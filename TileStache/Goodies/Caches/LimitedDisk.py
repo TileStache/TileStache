@@ -4,6 +4,7 @@
 import os
 import sys
 
+from math import ceil
 from time import time, sleep
 from tempfile import mkstemp
 from os.path import isdir, exists, dirname, basename, join as pathjoin
@@ -20,16 +21,9 @@ _create_tables = """
     )
     """, """
     CREATE TABLE IF NOT EXISTS tiles (
-        row     INTEGER,
-        column  INTEGER,
-        zoom    INTEGER,
-        format  TEXT,
-        
+        path    TEXT PRIMARY KEY,
         used    INTEGER,
-        size    INTEGER,
-        path    TEXT,
-        
-        PRIMARY KEY (row, column, zoom, format)
+        size    INTEGER
     )
     """, """
     CREATE INDEX IF NOT EXISTS tiles_used ON tiles (used)
@@ -87,7 +81,8 @@ class Cache:
 
             try:
                 db.execute("""INSERT INTO locks
-                              (row, column, zoom, format) VALUES (?, ?, ?, ?)""",
+                              (row, column, zoom, format)
+                              VALUES (?, ?, ?, ?)""",
                            (coord.row, coord.column, coord.zoom, format))
             except IntegrityError:
                 db.connection.close()
@@ -113,41 +108,38 @@ class Cache:
         db.connection.close()
 
     def read(self, layer, coord, format):
-        """
+        """ Read a cached tile.
+        
+            If found, update the used column in the tiles table with current time.
         """
         sys.stderr.write('read %d/%d/%d, %s' % (coord.zoom, coord.column, coord.row, format))
 
-        db = connect(self.dbpath).cursor()
+        path = self._filepath(layer, coord, format)
+        fullpath = pathjoin(self.cachepath, path)
         
-        db.execute("""SELECT path FROM tiles
-                      WHERE row=? AND column=? AND zoom=? AND format=?""",
-                   (coord.row, coord.column, coord.zoom, format))
-        
-        row = db.fetchone()
-        
-        if row:
-            path = pathjoin(self.cachepath, row[0])
-            body = open(path, 'r').read()
-            
+        if exists(fullpath):
+            body = open(fullpath, 'r').read()
+
             sys.stderr.write('...hit %s, set used=%d' % (path, time()))
-        
+
+            db = connect(self.dbpath).cursor()
             db.execute("""UPDATE tiles
                           SET used=?
-                          WHERE row=? AND column=? AND zoom=? AND format=?""",
-                       (int(time()), coord.row, coord.column, coord.zoom, format))
-
+                          WHERE path=?""",
+                       (int(time()), path))
             db.connection.commit()
-
+            db.connection.close()
+        
         else:
             sys.stderr.write('...miss')
             body = None
 
-        db.connection.close()
-        
         return body
 
     def _write(self, body, path, format):
-        """
+        """ Actually write the file to the cache directory, return its size.
+        
+            If filesystem block size is known, try to return actual disk space used.
         """
         fullpath = pathjoin(self.cachepath, path)
 
@@ -171,6 +163,15 @@ class Cache:
             os.rename(tmp_path, fullpath)
 
         os.chmod(fullpath, 0666&~self.umask)
+        
+        stat = os.stat(fullpath)
+        size = stat.st_size
+        
+        if hasattr(stat, 'st_blksize'):
+            blocks = ceil(size / float(stat.st_blksize))
+            size = int(blocks * stat.st_blksize)
+
+        return size
     
     def save(self, body, layer, coord, format):
         """
@@ -178,17 +179,14 @@ class Cache:
         sys.stderr.write('save %d/%d/%d, %s' % (coord.zoom, coord.column, coord.row, format))
         
         path = self._filepath(layer, coord, format)
-        used = int(time())
-        size = len(body)
-        
-        self._write(body, path, format)
+        size = self._write(body, path, format)
 
         db = connect(self.dbpath).cursor()
         
         db.execute("""INSERT INTO tiles
-                      (path, size, used, row, column, zoom, format)
-                      VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                   (path, size, used, coord.row, coord.column, coord.zoom, format))
+                      (path, size, used)
+                      VALUES (?, ?, ?)""",
+                   (path, size, int(time())))
         
         db.connection.commit()
         db.connection.close()
