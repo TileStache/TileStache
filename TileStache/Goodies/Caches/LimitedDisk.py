@@ -47,7 +47,7 @@ class Cache:
         for create_table in _create_tables:
             db.execute(create_table)
 
-        db.close()
+        db.connection.close()
 
     def _filepath(self, layer, coord, format):
         """
@@ -74,20 +74,29 @@ class Cache:
         """
         sys.stderr.write('lock %d/%d/%d, %s' % (coord.zoom, coord.column, coord.row, format))
 
-        db = connect(self.dbpath, isolation_level='EXCLUSIVE').cursor()
+        due = time() + layer.stale_lock_timeout
         
-        try:
-            db.execute("""INSERT INTO locks
-                          (row, column, zoom, format) VALUES (?, ?, ?, ?)""",
-                       (coord.row, coord.column, coord.zoom, format))
-        except IntegrityError:
-            # yikes, locked. deal with this later.
-            sys.stderr.write('already locked? %d/%d/%d, %s' % (coord.zoom, coord.column, coord.row, format))
-            pass
-        else:
-            db.connection.commit()
+        while True:
+            if time() > due:
+                # someone left the door locked.
+                sys.stderr.write('...force %d/%d/%d, %s' % (coord.zoom, coord.column, coord.row, format))
+                self.unlock(layer, coord, format)
+            
+            # try to acquire a lock, repeating if necessary.
+            db = connect(self.dbpath, isolation_level='EXCLUSIVE').cursor()
 
-        db.close()
+            try:
+                db.execute("""INSERT INTO locks
+                              (row, column, zoom, format) VALUES (?, ?, ?, ?)""",
+                           (coord.row, coord.column, coord.zoom, format))
+            except IntegrityError:
+                db.connection.close()
+                sleep(.2)
+                continue
+            else:
+                db.connection.commit()
+                db.connection.close()
+                break
 
     def unlock(self, layer, coord, format):
         """ Release a cache lock for this tile.
@@ -101,7 +110,7 @@ class Cache:
                       WHERE row=? AND column=? AND zoom=? AND format=?""",
                    (coord.row, coord.column, coord.zoom, format))
         db.connection.commit()
-        db.close()
+        db.connection.close()
 
     def read(self, layer, coord, format):
         """
@@ -133,7 +142,7 @@ class Cache:
             sys.stderr.write('...miss')
             body = None
 
-        db.close()
+        db.connection.close()
         
         return body
 
@@ -182,4 +191,4 @@ class Cache:
                    (path, size, used, coord.row, coord.column, coord.zoom, format))
         
         db.connection.commit()
-        db.close()
+        db.connection.close()
