@@ -1,11 +1,26 @@
-"""
+""" Cache that stores a limited amount of data.
+
+This is an example cache that uses a SQLite database to track sizes and last-read
+times for cached tiles, and removes least-recently-used tiles whenever the total
+size of the cache exceeds a set limit.
+
+Example TileStache cache configuration, with a 16MB limit:
+
+"cache":
+{
+    "class": "TileStache.Goodies.Caches.LimitedDisk.Cache",
+    "kwargs": {
+        "path": "/tmp/limited-cache",
+        "limit": 16777216
+    }
+}
 """
 
 import os
 import sys
+import time
 
-from math import ceil
-from time import time, sleep
+from math import ceil as _ceil
 from tempfile import mkstemp
 from os.path import isdir, exists, dirname, basename, join as pathjoin
 from sqlite3 import connect, OperationalError, IntegrityError
@@ -31,10 +46,11 @@ _create_tables = """
 
 class Cache:
 
-    def __init__(self):
-        self.cachepath = '/tmp/limited'
+    def __init__(self, path, limit, umask=0022):
+        self.cachepath = path
         self.dbpath = pathjoin(self.cachepath, 'stache.db')
-        self.umask = 0022
+        self.umask = umask
+        self.limit = limit
 
         db = connect(self.dbpath).cursor()
         
@@ -68,10 +84,10 @@ class Cache:
         """
         sys.stderr.write('lock %d/%d/%d, %s' % (coord.zoom, coord.column, coord.row, format))
 
-        due = time() + layer.stale_lock_timeout
+        due = time.time() + layer.stale_lock_timeout
         
         while True:
-            if time() > due:
+            if time.time() > due:
                 # someone left the door locked.
                 sys.stderr.write('...force %d/%d/%d, %s' % (coord.zoom, coord.column, coord.row, format))
                 self.unlock(layer, coord, format)
@@ -86,7 +102,7 @@ class Cache:
                            (coord.row, coord.column, coord.zoom, format))
             except IntegrityError:
                 db.connection.close()
-                sleep(.2)
+                time.sleep(.2)
                 continue
             else:
                 db.connection.commit()
@@ -120,13 +136,13 @@ class Cache:
         if exists(fullpath):
             body = open(fullpath, 'r').read()
 
-            sys.stderr.write('...hit %s, set used=%d' % (path, time()))
+            sys.stderr.write('...hit %s, set used=%d' % (path, time.time()))
 
             db = connect(self.dbpath).cursor()
             db.execute("""UPDATE tiles
                           SET used=?
                           WHERE path=?""",
-                       (int(time()), path))
+                       (int(time.time()), path))
             db.connection.commit()
             db.connection.close()
         
@@ -168,10 +184,17 @@ class Cache:
         size = stat.st_size
         
         if hasattr(stat, 'st_blksize'):
-            blocks = ceil(size / float(stat.st_blksize))
+            blocks = _ceil(size / float(stat.st_blksize))
             size = int(blocks * stat.st_blksize)
 
         return size
+
+    def _remove(self, path):
+        """
+        """
+        fullpath = pathjoin(self.cachepath, path)
+
+        os.unlink(fullpath)
     
     def save(self, body, layer, coord, format):
         """
@@ -183,10 +206,33 @@ class Cache:
 
         db = connect(self.dbpath).cursor()
         
-        db.execute("""INSERT INTO tiles
-                      (path, size, used)
-                      VALUES (?, ?, ?)""",
-                   (path, size, int(time())))
+        try:
+            db.execute("""INSERT INTO tiles
+                          (size, used, path)
+                          VALUES (?, ?, ?)""",
+                       (size, int(time.time()), path))
+        except IntegrityError:
+            db.execute("""UPDATE tiles
+                          SET size=?, used=?
+                          WHERE path=?""",
+                       (size, int(time.time()), path))
+        
+        row = db.execute('SELECT SUM(size) FROM tiles').fetchone()
+        
+        if row and (row[0] > self.limit):
+            over = row[0] - self.limit
+            
+            while over > 0:
+                row = db.execute('SELECT path, size FROM tiles ORDER BY used ASC LIMIT 1').fetchone()
+                
+                if row is None:
+                    break
+
+                path, size = row
+                db.execute('DELETE FROM tiles WHERE path=?', (path, ))
+                self._remove(path)
+                over -= size
+                sys.stderr.write('delete ' + path)
         
         db.connection.commit()
         db.connection.close()
