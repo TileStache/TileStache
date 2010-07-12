@@ -40,11 +40,12 @@ def app(environ, start_response):
             status = '200 OK'
 
         except Exception, e:
+            content_type = 'text/plain'
             status = '500 SERVER ERROR'
             data = str(e)
 
     response_headers = [
-        ('Content-type', type),
+        ('Content-type', content_type),
         ('Content-Length', str(len(data)))
     ]
 
