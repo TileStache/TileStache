@@ -17,7 +17,7 @@ try:
 except ImportError:
     from simplejson import dump as json_dump
 
-from TileStache import parseConfigfile, handleRequest
+from TileStache import parseConfigfile, getTile
 from TileStache.Core import KnownUnknown
 
 from ModestMaps.Core import Coordinate
@@ -124,7 +124,7 @@ if __name__ == '__main__':
         if options.verbose:
             print >> stderr, '%(offset)d of %(total)d...' % progress,
 
-        mimetype, content = handleRequest(layer, coord, extension)
+        mimetype, content = getTile(layer, coord, extension)
         progress['size'] = '%dKB' % (len(content) / 1024)
 
         if options.verbose:

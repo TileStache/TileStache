@@ -23,7 +23,7 @@ import os
 from tempfile import mkstemp
 from optparse import OptionParser
 
-from TileStache import parseConfigfile, handleRequest
+from TileStache import parseConfigfile, getTile
 from TileStache.Core import KnownUnknown
 
 from ModestMaps.Core import Coordinate
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     
     for coord in coords:
         # render
-        mimetype, content = handleRequest(layer, coord, extension)
+        mimetype, content = getTile(layer, coord, extension)
         
         # save
         handle, filename = mkstemp(prefix='tile-', suffix='.'+extension)

@@ -76,12 +76,12 @@ class Layer:
         
         if self.layername:
             layer = config.layers[self.layername]
-            mime, body = TileStache.handleRequest(layer, coord, 'png')
+            mime, body = TileStache.getTile(layer, coord, 'png')
             layer_img = PIL.Image.open(StringIO(body))
         
         if self.maskname:
             layer = config.layers[self.maskname]
-            mime, body = TileStache.handleRequest(layer, coord, 'png')
+            mime, body = TileStache.getTile(layer, coord, 'png')
             mask_img = PIL.Image.open(StringIO(body)).convert('L')
 
         if self.colorname:
@@ -219,22 +219,22 @@ class Composite:
         return image
     
         layer = self.layer.config.layers['base']
-        mime, body = TileStache.handleRequest(layer, coord, 'png')
+        mime, body = TileStache.getTile(layer, coord, 'png')
         img_base = PIL.Image.open(StringIO(body))
 
         layer = self.layer.config.layers['outlines']
-        mime, body = TileStache.handleRequest(layer, coord, 'png')
+        mime, body = TileStache.getTile(layer, coord, 'png')
         img_outlines = PIL.Image.open(StringIO(body))
         
         layer = self.layer.config.layers['halos']
-        mime, body = TileStache.handleRequest(layer, coord, 'png')
+        mime, body = TileStache.getTile(layer, coord, 'png')
         img_halos = PIL.Image.open(StringIO(body))
         
         img_outlinesmask = PIL.Image.new('RGBA', img_outlines.size, (0, 0, 0, 0))
         img_outlinesmask.paste(img_outlines, None, img_halos.convert('L'))
 
         layer = self.layer.config.layers['streets']
-        mime, body = TileStache.handleRequest(layer, coord, 'png')
+        mime, body = TileStache.getTile(layer, coord, 'png')
         img_streets = PIL.Image.open(StringIO(body))
         
         img = PIL.Image.new('RGBA', (256, 256))

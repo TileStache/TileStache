@@ -26,7 +26,7 @@ import Config
 _pathinfo_pat = re.compile(r'^/?(?P<l>\w.+)/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)\.(?P<e>\w+)$')
 _preview_pat = re.compile(r'^/?(?P<l>\w.+)/preview\.html$')
 
-def handleRequest(layer, coord, extension):
+def getTile(layer, coord, extension):
     """ Get a type string and tile binary for a given request layer tile.
     
         Arguments:
@@ -71,7 +71,7 @@ def handleRequest(layer, coord, extension):
     
     return mimetype, body
 
-def handlePreview(layer):
+def getPreview(layer):
     """ Get a type string and dynamic map viewer HTML for a given layer.
     """
     return 'text/html', Core._preview(layer.name())
@@ -129,31 +129,31 @@ def splitPathInfo(pathinfo):
 
     return layer, coord, extension
 
-def cgiHandler(environ, config='./tilestache.cfg', debug=False):
-    """ Read environment PATH_INFO, load up configuration, talk to stdout by CGI.
-    """
-    if debug:
-        import cgitb
-        cgitb.enable()
+def requestHandler(config_path, path_info, query_string):
+    """ Generate a mime-type and response body for a given request.
     
+        Requires a path to a config file and PATH_INFO (e.g. "/example/0/0/0.png").
+        Query string is optional and not currently used. Calls getTile()
+        to render actual tiles, and getPreview() to render preview.html.
+    """
     try:
-        if not environ.has_key('PATH_INFO'):
-            raise Core.KnownUnknown('Missing PATH_INFO in TileStache.cgiHandler().')
-
-        config = parseConfigfile(config)
-        layername, coord, extension = splitPathInfo(environ['PATH_INFO'])
+        if path_info is None:
+            raise Core.KnownUnknown('Missing path_info in requestHandler().')
+    
+        config = parseConfigfile(config_path)
+        layername, coord, extension = splitPathInfo(path_info)
         
         if layername not in config.layers:
             raise Core.KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (layername, ', '.join(config.layers.keys())))
         
-        query = parse_qs(environ['QUERY_STRING'])
+        query = parse_qs(query_string or '')
         layer = config.layers[layername]
         
         if extension == 'html' and coord is None:
-            mimetype, content = handlePreview(layer)
+            mimetype, content = getPreview(layer)
 
         else:
-            mimetype, content = handleRequest(layer, coord, extension)
+            mimetype, content = getTile(layer, coord, extension)
 
     except Core.KnownUnknown, e:
         out = StringIO()
@@ -165,12 +165,30 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
         
         mimetype, content = 'text/plain', out.getvalue()
 
+    return mimetype, content
+
+def cgiHandler(environ, config_path='./tilestache.cfg', debug=False):
+    """ Read environment PATH_INFO, load up configuration, talk to stdout by CGI.
+    
+        Calls requestHandler().
+    """
+    if debug:
+        import cgitb
+        cgitb.enable()
+    
+    path_info = environ.get('PATH_INFO', None)
+    query_string = environ.get('QUERY_STRING', None)
+    
+    mimetype, content = requestHandler(config_path, path_info, query_string)
+
     print >> stdout, 'Content-Length: %d' % len(content)
     print >> stdout, 'Content-Type: %s\n' % mimetype
     print >> stdout, content
 
 def modpythonHandler(request):
     """ Handle a mod_python request.
+    
+        Calls requestHandler().
     
         Example Apache configuration for TileStache:
 
@@ -186,30 +204,13 @@ def modpythonHandler(request):
     """
     from mod_python import apache
     
-    try:
-        config = request.get_options().get('config', 'tilestache.cfg')
-        config = realpath(pathjoin(dirname(request.filename), config))
-        config = parseConfigfile(config)
+    config_path = request.get_options().get('config', 'tilestache.cfg')
+    config_path = realpath(pathjoin(dirname(request.filename), config_path))
     
-        layername, coord, extension = splitPathInfo(request.path_info)
-        
-        if layername not in config.layers:
-            raise Core.KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (layername, ', '.join(config.layers.keys())))
-        
-        query = request.args
-        layer = config.layers[layername]
-        
-        mimetype, content = handleRequest(layer, coord, extension)
-
-    except Core.KnownUnknown, e:
-        out = StringIO()
-        
-        print >> out, 'Known unknown!'
-        print >> out, e
-        print >> out, ''
-        print >> out, '\n'.join(Core._rummy())
-        
-        mimetype, content = 'text/plain', out.getvalue()
+    path_info = request.path_info
+    query_string = request.args
+    
+    mimetype, content = requestHandler(config_path, path_info, query_string)
 
     request.status = apache.HTTP_OK
     request.content_type = mimetype
