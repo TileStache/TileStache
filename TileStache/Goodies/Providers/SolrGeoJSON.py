@@ -7,38 +7,51 @@ Read more about the GeoJSON spec at: http://geojson.org/geojson-spec.html
 
 Caveats:
 
-Currently only Solr instances with the JTeam spatial plugin installed are
-supported: http://www.jteam.nl/news/spatialsolr.html
-
-That means only radial queries are supported at the moment.
-
 Example TileStache provider configuration:
 
 "solr": {
     "provider": {"class": "TileStache.Goodies.Providers.SolrGeoJSON.Provider",
                  "kwargs": {
-                    'solr_endpoint': 'http://localhost:8983/solr/example',
-                    'solr_query': '*:*',
+                    "solr_endpoint": "http://localhost:8983/solr/example",
+                    "solr_query": "*:*",
                  }}
 }
 
 The following optional parameters are also supported:
 
-query_parser: The name of the Solr query parser associated with your spatial
-plugin; the default is 'spatial'.
-
 latitude_field: The name of the latitude field associated with your query parser;
 the default is 'latitude'
 
 longitude_field: The name of the longitude field associated with your query
-parser, default is 'longitude'
-
-id_field: The name name of your Solr instance's unique ID field; the default is ''.
-
-radius: The distance (in km) of your radial query; the default is '1'.
+parser, default is 'longitude
 
 response_fields: A comma-separated list of fields with which to filter the Solr
 response; the default is '' (or: include all fields)
+
+id_field: The name name of your Solr instance's unique ID field; the default is ''.
+
+By default queries are scoped to the bounding box of a given tile. Radial queries
+are also supported if you supply a 'radius' kwarg to your provider and have installed
+the JTeam spatial plugin: http://www.jteam.nl/news/spatialsolr.html.
+
+For example:
+
+"solr": {
+    "provider": {"class": "TileStache.Goodies.Providers.SolrGeoJSON.Provider",
+                 "kwargs": {
+                    "solr_endpoint": "http://localhost:8983/solr/example",
+                    "solr_query": 'foo:bar',
+                    "radius": "1",
+                 }}
+}
+
+Radial queries are begin at the center of the tile being rendered and distances are
+measured in kilometers.
+
+The following optional parameters are also supported for radial queries:
+
+query_parser: The name of the Solr query parser associated with your spatial
+plugin; the default is 'spatial'.
 
 """
 
@@ -89,7 +102,7 @@ class Provider:
         self.lon_field = kwargs.get('longitude_column', 'longitude')
         self.id_field = kwargs.get('id_column', '')
 
-        self.solr_radius = kwargs.get('radius', 1)
+        self.solr_radius = kwargs.get('radius', None)
         self.solr_fields = kwargs.get('response_fields', None)
 
     def getTypeByExtension(self, extension):
@@ -102,6 +115,12 @@ class Provider:
 
         return 'text/json', 'JSON'
 
+    def unproject(self, x, y):
+        x, y = x / 6378137, y / 6378137 # dimensions of the earth
+        lat, lon = 2 * atan(pow(e, y)) - .5 * pi, x # basic spherical mercator
+        lat, lon = lat * 180/pi, lon * 180/pi # radians to degrees
+        return lat, lon
+
     def renderTile(self, width, height, srs, coord):
         """ Render a single tile, return a SaveableResponse instance.
         """
@@ -111,17 +130,26 @@ class Provider:
         y = miny + ((maxy - miny) / 2)
         x = minx + ((maxx - minx) / 2)
 
-        x, y = x / 6378137, y / 6378137 # dimensions of the earth
-        lat, lon = 2 * atan(pow(e, y)) - .5 * pi, x # basic spherical mercator
-        lat, lon = lat * 180/pi, lon * 180/pi # radians to degrees
+        sw_lat, sw_lon = self.unproject(minx, miny)
+        ne_lat, ne_lon = self.unproject(maxx, maxy)
+        center_lat, center_lon = self.unproject(x, y)
+
+        bbox = "%s:[%s TO %s] AND %s:[%s TO %s]" % (self.lon_field, sw_lon, ne_lon, self.lat_field, sw_lat, ne_lat)
+        query = bbox
 
         # for example:
         # {!spatial lat=51.500152 long=-0.126236 radius=10 calc=arc unit=km}*:*
 
-        query = "{!%s lat=%s long=%s radius=%s calc=arc unit=km}%s" % (self.query_parser, lat, lon, self.solr_radius, self.query)
+        if self.solr_radius:
+            query = "{!%s lat=%s long=%s radius=%s calc=arc unit=km}%s" % (self.query_parser, center_lat, center_lon, self.solr_radius, bbox)
 
-        rsp_fields = []
         kwargs = {}
+
+        if self.query != '*:*':
+            kwargs['fq'] = self.query
+
+        kwargs['omitHeader'] = 'true'
+        rsp_fields = []
 
         if self.solr_fields:
 
@@ -139,7 +167,7 @@ class Provider:
 
         total = None
         start = 0
-        rows = 100
+        rows = 1000
 
         while not total or start < total:
 
@@ -150,6 +178,9 @@ class Provider:
 
             if not total:
                 total = rsp.hits
+
+            if total == 0:
+                break
 
             for row in rsp:
 
