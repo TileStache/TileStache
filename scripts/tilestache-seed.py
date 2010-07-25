@@ -32,7 +32,7 @@ of tile paths as they are created.
 
 Configuration, bbox, and layer options are required; see `%prog --help` for info.""")
 
-parser.set_defaults(extension='png', verbose=True)
+parser.set_defaults(extension='png', padding=0, verbose=True)
 
 parser.add_option('-c', '--config', dest='config',
                   help='Path to configuration file.')
@@ -44,10 +44,14 @@ parser.add_option('-b', '--bbox', dest='bbox',
                   help='Bounding box in floating point geographic coordinates: south west north east.',
                   type='float', nargs=4)
 
+parser.add_option('-p', '--padding', dest='padding',
+                  help='Extra margin of tiles to add around bounded area. Default value is 0 (no extra tiles).',
+                  type='int')
+
 parser.add_option('-e', '--extension', dest='extension',
                   help='Optional file type for rendered tiles. Default value is "png".')
 
-parser.add_option('-p', '--progress-file', dest='progressfile',
+parser.add_option('-f', '--progress-file', dest='progressfile',
                   help="Optional JSON progress file that gets written on each iteration, so you don't have to pay close attention.")
 
 parser.add_option('-q', action='store_false', dest='verbose',
@@ -56,14 +60,14 @@ parser.add_option('-q', action='store_false', dest='verbose',
 parser.add_option('-i', '--include-path', dest='include',
                   help="Add the following colon-separated list of paths to Python's include path (aka sys.path)")
 
-def listCoordinates(ul, lr, zooms):
+def listCoordinates(ul, lr, zooms, padding):
     """
     """
     count = 0
     
     for zoom in zooms:
-        ul_ = ul.zoomTo(zoom).container()
-        lr_ = lr.zoomTo(zoom).container()
+        ul_ = ul.zoomTo(zoom).container().left(padding).up(padding)
+        lr_ = lr.zoomTo(zoom).container().right(padding).down(padding)
         
         rows = lr_.row + 1 - ul_.row
         cols = lr_.column + 1 - ul_.column
@@ -73,8 +77,8 @@ def listCoordinates(ul, lr, zooms):
     offset = 0
     
     for zoom in zooms:
-        ul_ = ul.zoomTo(zoom).container()
-        lr_ = lr.zoomTo(zoom).container()
+        ul_ = ul.zoomTo(zoom).container().left(padding).up(padding)
+        lr_ = lr.zoomTo(zoom).container().right(padding).down(padding)
 
         for row in range(int(ul_.row), int(lr_.row + 1)):
             for column in range(int(ul_.column), int(lr_.column + 1)):
@@ -124,11 +128,16 @@ if __name__ == '__main__':
                 raise KnownUnknown('"%s" is not a valid numeric zoom level.' % zoom)
 
             zooms[i] = int(zoom)
+        
+        if options.padding < 0:
+            raise KnownUnknown('A negative padding will not work.')
+
+        padding = options.padding
 
     except KnownUnknown, e:
         parser.error(str(e))
 
-    for (offset, count, coord) in listCoordinates(ul, lr, zooms):
+    for (offset, count, coord) in listCoordinates(ul, lr, zooms, padding):
         path = '%s/%d/%d/%d.%s' % (layer.name(), coord.zoom, coord.column, coord.row, extension)
 
         progress = {"tile": path,
