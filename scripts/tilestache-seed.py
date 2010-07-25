@@ -60,9 +60,10 @@ parser.add_option('-q', action='store_false', dest='verbose',
 parser.add_option('-i', '--include-path', dest='include',
                   help="Add the following colon-separated list of paths to Python's include path (aka sys.path)")
 
-def listCoordinates(ul, lr, zooms, padding):
+def generateCoordinates(ul, lr, zooms, padding):
+    """ Generate a stream of (offset, count, coordinate) tuples for seeding.
     """
-    """
+    # start with a simple total of all the coordinates we will need.
     count = 0
     
     for zoom in zooms:
@@ -74,6 +75,8 @@ def listCoordinates(ul, lr, zooms, padding):
         
         count += int(rows * cols)
 
+    # now generate the actual coordinates.
+    # offset starts at zero
     offset = 0
     
     for zoom in zooms:
@@ -83,6 +86,7 @@ def listCoordinates(ul, lr, zooms, padding):
         for row in range(int(ul_.row), int(lr_.row + 1)):
             for column in range(int(ul_.column), int(lr_.column + 1)):
                 coord = Coordinate(row, column, zoom)
+                
                 yield (offset, count, coord)
                 
                 offset += 1
@@ -137,7 +141,7 @@ if __name__ == '__main__':
     except KnownUnknown, e:
         parser.error(str(e))
 
-    for (offset, count, coord) in listCoordinates(ul, lr, zooms, padding):
+    for (offset, count, coord) in generateCoordinates(ul, lr, zooms, padding):
         path = '%s/%d/%d/%d.%s' % (layer.name(), coord.zoom, coord.column, coord.row, extension)
 
         progress = {"tile": path,
