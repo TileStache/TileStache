@@ -56,6 +56,33 @@ parser.add_option('-q', action='store_false', dest='verbose',
 parser.add_option('-i', '--include-path', dest='include',
                   help="Add the following colon-separated list of paths to Python's include path (aka sys.path)")
 
+def listCoordinates(ul, lr, zooms):
+    """
+    """
+    count = 0
+    
+    for zoom in zooms:
+        ul_ = ul.zoomTo(zoom).container()
+        lr_ = lr.zoomTo(zoom).container()
+        
+        rows = lr_.row + 1 - ul_.row
+        cols = lr_.column + 1 - ul_.column
+        
+        count += int(rows * cols)
+
+    offset = 0
+    
+    for zoom in zooms:
+        ul_ = ul.zoomTo(zoom).container()
+        lr_ = lr.zoomTo(zoom).container()
+
+        for row in range(int(ul_.row), int(lr_.row + 1)):
+            for column in range(int(ul_.column), int(lr_.column + 1)):
+                coord = Coordinate(row, column, zoom)
+                yield (offset, count, coord)
+                
+                offset += 1
+
 if __name__ == '__main__':
     options, zooms = parser.parse_args()
 
@@ -101,25 +128,12 @@ if __name__ == '__main__':
     except KnownUnknown, e:
         parser.error(str(e))
 
-    # this list might get long, but we want to know how many
-    # total tiles there are to render so progress can be shown.
-    coords = []
-
-    for zoom in zooms:
-        ul_ = ul.zoomTo(zoom).container()
-        lr_ = lr.zoomTo(zoom).container()
-
-        for row in range(int(ul_.row), int(lr_.row + 1)):
-            for column in range(int(ul_.column), int(lr_.column + 1)):
-                coord = Coordinate(row, column, zoom)
-                coords.append(coord)
-
-    for (i, coord) in enumerate(coords):
+    for (offset, count, coord) in listCoordinates(ul, lr, zooms):
         path = '%s/%d/%d/%d.%s' % (layer.name(), coord.zoom, coord.column, coord.row, extension)
 
         progress = {"tile": path,
-                    "offset": i + 1,
-                    "total": len(coords)}
+                    "offset": offset + 1,
+                    "total": count}
 
         if options.verbose:
             print >> stderr, '%(offset)d of %(total)d...' % progress,
