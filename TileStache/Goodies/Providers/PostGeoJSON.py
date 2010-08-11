@@ -62,23 +62,27 @@ def _p2p(xy, projection):
 def shape2geometry(shape, projection):
     """ Convert a Shapely geometry object to a GeoJSON-suitable geometry dict.
     """
-    if str(shape).startswith('POINT '):
-        type = 'Point'
-        coords = _p2p(shape.coords[0], projection)
-
-    elif str(shape).startswith('LINESTRING '):
-        type = 'LineString'
-        coords = [_p2p(xy, projection) for xy in shape.coords]
-
-    elif str(shape).startswith('POLYGON '):
-        type = 'Polygon'
-        rings = [shape.exterior] + list(shape.interiors)
-        coords = [[_p2p(xy, projection) for xy in ring.coords] for ring in rings]
-
-    else:
-        return None
-
-    return {'type': type, 'coordinates': coords}
+    geom = shape.__geo_interface__
+    
+    if geom['type'] == 'Point':
+        geom['coordinates'] = _p2p(geom['coordinates'], projection)
+    
+    elif geom['type'] in ('MultiPoint', 'LineString'):
+        geom['coordinates'] = [_p2p(c, projection)
+                               for c in geom['coordinates']]
+    
+    elif geom['type'] in ('MultiLineString', 'Polygon'):
+        geom['coordinates'] = [[_p2p(c, projection)
+                                for c in cs]
+                               for cs in geom['coordinates']]
+    
+    elif geom['type'] == 'MultiPolygon':
+        geom['coordinates'] = [[[_p2p(c, projection)
+                                 for c in cs]
+                                for cs in ccs]
+                               for ccs in geom['coordinates']]
+    
+    return geom
 
 class _Point:
     """ Local duck for (x, y) points.
