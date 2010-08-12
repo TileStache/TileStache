@@ -26,7 +26,8 @@ Example TileStache provider configuration:
                  "kwargs": {
                     "dsn": "dbname=geodata user=postgres",
                     "query": "SELECT osm_id, name, way FROM planet_osm_point WHERE way && !bbox! AND name IS NOT NULL",
-                    "id_column": "osm_id", "geometry_column": "way"
+                    "id_column": "osm_id", "geometry_column": "way",
+		    "indent": 2
                  }}
 }
 """
@@ -96,14 +97,20 @@ class SaveableResponse:
     
         TileStache.getTile() expects to be able to save one of these to a buffer.
     """
-    def __init__(self, content):
+    def __init__(self, content, indent=2):
         self.content = content
-
+	self.indent = indent
+        
     def save(self, out, format):
         if format != 'JSON':
             raise KnownUnknown('PostGeoJSON only saves .json tiles, not "%s"' % format)
+
+        indent = None
         
-        encoded = JSONEncoder(indent=2).iterencode(self.content)
+        if int(self.indent) > 0:
+            indent = self.indent
+        
+        encoded = JSONEncoder(indent=indent).iterencode(self.content)
         float_pat = compile(r'^-?\d+\.\d+$')
         
         for atom in encoded:
@@ -115,14 +122,15 @@ class SaveableResponse:
 class Provider:
     """
     """
-    def __init__(self, layer, dsn, query, id_column='id', geometry_column='geometry'):
+    def __init__(self, layer, dsn, query, id_column='id', geometry_column='geometry', indent=2):
         self.layer = layer
         self.dbdsn = dsn
         self.query = query
         self.projection = getProjectionByName('spherical mercator')
         self.geometry_field = geometry_column
         self.id_field = id_column
-
+	self.indent = indent
+        
     def getTypeByExtension(self, extension):
         """ Get mime-type and format by file extension.
         
@@ -155,4 +163,4 @@ class Provider:
             feature['geometry'] = shape2geometry(feature['geometry'], self.projection)
             response['features'].append(feature)
     
-        return SaveableResponse(response)
+        return SaveableResponse(response, self.indent)
