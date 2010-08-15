@@ -27,7 +27,7 @@ Example TileStache provider configuration:
                     "dsn": "dbname=geodata user=postgres",
                     "query": "SELECT osm_id, name, way FROM planet_osm_point WHERE way && !bbox! AND name IS NOT NULL",
                     "id_column": "osm_id", "geometry_column": "way",
-		    "indent": 2
+                    "indent": 2
                  }}
 }
 """
@@ -99,7 +99,7 @@ class SaveableResponse:
     """
     def __init__(self, content, indent=2):
         self.content = content
-	self.indent = indent
+        self.indent = indent
         
     def save(self, out, format):
         if format != 'JSON':
@@ -129,7 +129,7 @@ class Provider:
         self.projection = getProjectionByName('spherical mercator')
         self.geometry_field = geometry_column
         self.id_field = id_column
-	self.indent = indent
+        self.indent = indent
         
     def getTypeByExtension(self, extension):
         """ Get mime-type and format by file extension.
