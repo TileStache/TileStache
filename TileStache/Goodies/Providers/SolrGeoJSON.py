@@ -55,7 +55,6 @@ plugin; the default is 'spatial'.
 
 """
 
-import pysolr
 from math import log, tan, pi, atan, pow, e
 
 from re import compile
@@ -63,6 +62,12 @@ from json import JSONEncoder
 
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
+
+try:
+    import pysolr
+except ImportError:
+    # well it won't work but we can still make the documentation.
+    pass
 
 class SaveableResponse:
     """ Wrapper class for JSON response that makes it behave like a PIL.Image object.
