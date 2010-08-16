@@ -5,9 +5,12 @@ from urllib import urlopen
 from tempfile import mkstemp
 from xml.dom.minidom import parse
 from subprocess import Popen, PIPE
+from itertools import groupby
+from operator import itemgetter
 
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
+from ModestMaps.Geo import Location
 
 try:
     from psycopg2 import connect as _connect, ProgrammingError
@@ -30,23 +33,45 @@ def coordinate_api_url(coord, projection):
     
     url = 'http://api.openstreetmap.org/api/0.6/map?bbox=%(w).6f,%(s).6f,%(e).6f,%(n).6f' % locals()
     
+    print >> stderr, url
+    
     return url
 
-def clean_database_bbox(db, prefix, coord):
+def osm_table_ids(doc):
+    """
+    """
+    assert doc.firstChild.tagName == 'osm', 'Element'
+    assert doc.firstChild.getAttribute('version') == '0.6', 'Version'
+    
+    for child in doc.firstChild.childNodes:
+        if child.nodeType is not child.ELEMENT_NODE:
+            continue
+
+        if child.tagName == 'node':
+            id, lat, lon = [child.getAttribute(a) for a in ('id', 'lat', 'lon')]
+            yield child.tagName, int(id), float(lat), float(lon)
+
+        elif child.tagName == 'way':
+            yield child.tagName, int(child.getAttribute('id')), None, None
+
+def clean_database_bbox(db, prefix, element, osm_ids, bounds):
     """
     """
     projection = getProjectionByName('spherical mercator')
     
-    ul = projection.coordinateProj(coord)
-    lr = projection.coordinateProj(coord.right().down())
+    ul = projection.locationProj(Location(*bounds[0:2]))
+    lr = projection.locationProj(Location(*bounds[2:4]))
     
     bbox = 'ST_SetSRID(ST_MakeBox2D(ST_MakePoint(%.6f, %.6f), ST_MakePoint(%.6f, %.6f)), 900913)' % (ul.x, ul.y, lr.x, lr.y)
+    list = '(' + ', '.join(map(str, osm_ids)) + ')'
     
-    for table in ('point', 'line', 'polygon', 'roads'):
-        print >> stderr, 'DELETE FROM %(prefix)s_%(table)s WHERE way && %(bbox)s' % locals()
-
+    for table in {'node': ['point'], 'way': ['line', 'polygon', 'roads']}.get(element):
+    
+        print >> stderr, 'DELETE FROM %(prefix)s_%(table)s' % locals(), list, bbox
+        
         db.execute("""DELETE FROM %(prefix)s_%(table)s
-                      WHERE way && %(bbox)s""" % locals())
+                      WHERE osm_id IN %(list)s
+                        AND way && %(bbox)s""" % locals())
 
 class SaveableResponse:
     """ Wrapper class for JSON response that makes it behave like a PIL.Image object.
@@ -118,7 +143,26 @@ class Provider:
         osm2pgsql += [filename]
 
         try:
-            clean_database_bbox(db, 'mirrorosm', coord)
+            bbox = [None, None, None, None]
+        
+            for (element, osm_ids) in groupby(osm_table_ids(doc), itemgetter(0)):
+                ids = []
+                
+                for (e, osm_id, lat, lon) in osm_ids:
+                    ids.append(osm_id)
+
+                    if lat or lon:
+                        bbox[0] = bbox[0] and min(bbox[0], lat) or lat
+                        bbox[1] = bbox[1] and min(bbox[1], lon) or lon
+                        bbox[2] = bbox[2] and max(bbox[2], lat) or lat
+                        bbox[3] = bbox[3] and max(bbox[3], lon) or lon
+                    
+                    if len(ids) == 2:
+                        clean_database_bbox(db, 'mirrorosm', element, ids, bbox)
+                        ids = []
+    
+                if len(ids):
+                    clean_database_bbox(db, 'mirrorosm', element, ids, bbox)
 
         except ProgrammingError, e:
             if not search(r'relation "\w+" does not exist', str(e)):
