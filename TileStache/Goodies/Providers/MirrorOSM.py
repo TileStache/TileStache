@@ -5,12 +5,9 @@ from urllib import urlopen
 from tempfile import mkstemp
 from xml.dom.minidom import parse
 from subprocess import Popen, PIPE
-from itertools import groupby
-from operator import itemgetter
 
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
-from ModestMaps.Geo import Location
 
 try:
     from psycopg2 import connect as _connect, ProgrammingError
@@ -33,45 +30,49 @@ def coordinate_api_url(coord, projection):
     
     url = 'http://api.openstreetmap.org/api/0.6/map?bbox=%(w).6f,%(s).6f,%(e).6f,%(n).6f' % locals()
     
-    print >> stderr, url
-    
     return url
 
-def osm_table_ids(doc):
-    """
-    """
-    assert doc.firstChild.tagName == 'osm', 'Element'
-    assert doc.firstChild.getAttribute('version') == '0.6', 'Version'
+def clean_extra_nodes(doc, coord):
+    """ Remove tags on nodes that shouldn't show up in the points table.
     
-    for child in doc.firstChild.childNodes:
-        if child.nodeType is not child.ELEMENT_NODE:
-            continue
-
-        if child.tagName == 'node':
-            id, lat, lon = [child.getAttribute(a) for a in ('id', 'lat', 'lon')]
-            yield child.tagName, int(id), float(lat), float(lon)
-
-        elif child.tagName == 'way':
-            yield child.tagName, int(child.getAttribute('id')), None, None
-
-def clean_database_bbox(db, prefix, element, osm_ids, bounds):
-    """
+        Check each node in the XML doc for whether it's outside the tile bounds.
     """
     projection = getProjectionByName('spherical mercator')
     
-    ul = projection.locationProj(Location(*bounds[0:2]))
-    lr = projection.locationProj(Location(*bounds[2:4]))
+    ul = projection.coordinateLocation(coord)
+    lr = projection.coordinateLocation(coord.down().right())
     
-    bbox = 'ST_SetSRID(ST_MakeBox2D(ST_MakePoint(%.6f, %.6f), ST_MakePoint(%.6f, %.6f)), 900913)' % (ul.x, ul.y, lr.x, lr.y)
-    list = '(' + ', '.join(map(str, osm_ids)) + ')'
+    north, west, south, east = ul.lat, ul.lon, lr.lat, lr.lon
     
-    for table in {'node': ['point'], 'way': ['line', 'polygon', 'roads']}.get(element):
-    
-        print >> stderr, 'DELETE FROM %(prefix)s_%(table)s' % locals(), list, bbox
+    for node in doc.firstChild.childNodes:
+        if node.nodeType is not node.ELEMENT_NODE:
+            continue
+
+        if node.tagName != 'node':
+            continue
+
+        lat, lon = [float(node.getAttribute(a)) for a in ('lat', 'lon')]
         
-        db.execute("""DELETE FROM %(prefix)s_%(table)s
-                      WHERE osm_id IN %(list)s
-                        AND way && %(bbox)s""" % locals())
+        if lat < south or north < lat or lon < west or east < lon:
+            # The current node is outside the bounding box.
+            # It'll be needed by a way somewhere, but strip it of
+            # any tags so it doesn't appear in the points table.
+
+            while node.firstChild:
+                node.removeChild(node.firstChild)
+
+def clean_existing_rows(db, prefix, coord):
+    """ Remove all geometries inside the tile bounds from each table.
+    """
+    projection = getProjectionByName('spherical mercator')
+    
+    ul = projection.coordinateProj(coord)
+    lr = projection.coordinateProj(coord.down().right())
+    
+    bbox = 'ST_SetSRID(ST_MakeBox2D(ST_MakePoint(%.7f, %.7f), ST_MakePoint(%.7f, %.7f)), 900913)' % (ul.x, ul.y, lr.x, lr.y)
+    
+    for table in ('point', 'line', 'polygon', 'roads'):
+        db.execute('DELETE FROM %(prefix)s_%(table)s WHERE way && %(bbox)s' % locals())
 
 class SaveableResponse:
     """ Wrapper class for JSON response that makes it behave like a PIL.Image object.
@@ -96,8 +97,6 @@ class Provider:
         """
         self.layer = layer
         self.dbkwargs = {}
-        
-        print >> stderr, 'Zoinks'
         
         if hostname:
             self.dbkwargs['host'] = hostname
@@ -127,12 +126,13 @@ class Provider:
         url = coordinate_api_url(coord, self.layer.projection)
         doc = parse(urlopen(url))
         raw = doc.toxml('utf-8')
+
+        # modify doc in-place
+        clean_extra_nodes(doc, coord)
         
-        handle, filename = mkstemp(dir='/tmp', prefix='mirrorosm-', suffix='.osm')
-        write(handle, raw)
+        handle, filename = mkstemp(prefix='mirrorosm-', suffix='.osm')
+        write(handle, doc.toxml('utf-8'))
         close(handle)
-        
-        db = _connect(**self.dbkwargs).cursor()
         
         osm2pgsql = 'osm2pgsql --append --merc --utf8-sanitize --prefix mirrorosm'.split()
         
@@ -141,59 +141,51 @@ class Provider:
                 osm2pgsql += flag, self.dbkwargs[key]
         
         osm2pgsql += [filename]
-
-        try:
-            bbox = [None, None, None, None]
         
-            for (element, osm_ids) in groupby(osm_table_ids(doc), itemgetter(0)):
-                ids = []
-                
-                for (e, osm_id, lat, lon) in osm_ids:
-                    ids.append(osm_id)
+        db = _connect(**self.dbkwargs).cursor()
+        
+        try:
+            # Start by attempting to remove existing
+            # data from this tile in the database.
 
-                    if lat or lon:
-                        bbox[0] = bbox[0] and min(bbox[0], lat) or lat
-                        bbox[1] = bbox[1] and min(bbox[1], lon) or lon
-                        bbox[2] = bbox[2] and max(bbox[2], lat) or lat
-                        bbox[3] = bbox[3] and max(bbox[3], lon) or lon
-                    
-                    if len(ids) == 2:
-                        clean_database_bbox(db, 'mirrorosm', element, ids, bbox)
-                        ids = []
-    
-                if len(ids):
-                    clean_database_bbox(db, 'mirrorosm', element, ids, bbox)
+            db.execute('BEGIN')
+            clean_existing_rows(db, 'mirrorosm', coord)
 
         except ProgrammingError, e:
+            # If something went wrong, check whether
+            # it's that the tables don't yet exist.
+        
             if not search(r'relation "\w+" does not exist', str(e)):
                 # it's because of something other than a missing table
                 raise e
+    
+                # Connection to database failed: FATAL:  database "gis" does not exist
+                # Connection to database failed: FATAL:  role "www-data" does not exist
+                # Error, failed to query table mirrorosm_point
 
             db.execute('ROLLBACK')
             db.close()
-            print >> stderr, 'ROLLBACK'
     
             osm2pgsql[1] = '--create'
             
-            print >> stderr, ' '.join(osm2pgsql)
             create = Popen(osm2pgsql, stderr=PIPE, stdout=PIPE)
             create.wait()
+            
+            returncode = create.returncode
 
         else:
+            # If nothing went wrong, we're probably in good shape to append data.
+
             db.execute('COMMIT')
             db.close()
-            print >> stderr, 'COMMIT'
     
-            print >> stderr, ' '.join(osm2pgsql)
             append = Popen(osm2pgsql, stderr=PIPE, stdout=PIPE)
             append.wait()
+            
+            returncode = append.returncode
 
-            assert append.returncode == 0, 'Shit.'
-        
         unlink(filename)
         
-        # Connection to database failed: FATAL:  database "gis" does not exist
-        # Connection to database failed: FATAL:  role "www-data" does not exist
-        # Error, failed to query table mirrorosm_point
-
+        assert returncode == 0, "It's important that osm2pgsql actually worked."
+        
         return SaveableResponse(raw + '\n')
