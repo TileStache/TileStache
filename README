@@ -24,7 +24,7 @@ designers and cartographers.
     # like http://tile.openstreetmap.org/12/656/1582.png
     coord = ModestMaps.Core.Coordinate(1582, 656, 12)
     config = TileStache.Config.buildConfiguration(config)
-    type, bytes = TileStache.handleRequest(config.layers['ex'], coord, 'png')
+    type, bytes = TileStache.getTile(config.layers['ex'], coord, 'png')
     
     open('tile.png', 'w').write(bytes)
 
