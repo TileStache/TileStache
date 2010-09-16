@@ -73,6 +73,7 @@ from urlparse import urlparse
 from httplib import HTTPConnection
 from tempfile import mkstemp
 from urllib import urlopen
+from glob import glob
 
 try:
     import mapnik
@@ -177,7 +178,7 @@ class Mapnik:
         - http://trac.mapnik.org/wiki/XMLConfigReference
     """
     
-    def __init__(self, layer, mapfile):
+    def __init__(self, layer, mapfile, fonts=None):
         """ Initialize Mapnik provider with layer and mapfile.
             
             XML mapfile keyword arg comes from TileStache config,
@@ -186,6 +187,12 @@ class Mapnik:
         self.layer = layer
         self.mapfile = str(mapfile)
         self.mapnik = None
+        
+        engine = mapnik.FontEngine.instance()
+        
+        if fonts:
+            for font in glob(fonts.rstrip('/') + '/*.ttf'):
+                engine.register_font(font)
 
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """
