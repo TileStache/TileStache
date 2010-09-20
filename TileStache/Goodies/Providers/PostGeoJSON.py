@@ -126,7 +126,7 @@ class Provider:
         self.layer = layer
         self.dbdsn = dsn
         self.query = query
-        self.projection = getProjectionByName('spherical mercator')
+        self.mercator = getProjectionByName('spherical mercator')
         self.geometry_field = geometry_column
         self.id_field = id_column
         self.indent = indent
@@ -144,8 +144,11 @@ class Provider:
     def renderTile(self, width, height, srs, coord):
         """ Render a single tile, return a SaveableResponse instance.
         """
-        ul = self.projection.coordinateProj(coord)
-        lr = self.projection.coordinateProj(coord.right().down())
+        nw = self.layer.projection.coordinateLocation(coord)
+        se = self.layer.projection.coordinateLocation(coord.right().down())
+
+        ul = self.mercator.locationProj(nw)
+        lr = self.mercator.locationProj(se)
         
         bbox = 'ST_SetSRID(ST_MakeBox2D(ST_MakePoint(%.6f, %.6f), ST_MakePoint(%.6f, %.6f)), 900913)' % (ul.x, ul.y, lr.x, lr.y)
 
@@ -160,7 +163,7 @@ class Provider:
         
         for row in rows:
             feature = row2feature(row, self.id_field, self.geometry_field)
-            feature['geometry'] = shape2geometry(feature['geometry'], self.projection)
+            feature['geometry'] = shape2geometry(feature['geometry'], self.mercator)
             response['features'].append(feature)
     
         return SaveableResponse(response, self.indent)
