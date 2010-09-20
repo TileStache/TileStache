@@ -36,7 +36,7 @@ def app(environ, start_response):
     else:
 
         try:
-            content_type, data = TileStache.handleRequest(config.layers[layer], coord, ext)
+            content_type, data = TileStache.getTile(config.layers[layer], coord, ext)
             status = '200 OK'
 
         except Exception, e:

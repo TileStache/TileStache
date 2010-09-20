@@ -72,7 +72,7 @@ except ImportError:
 class SaveableResponse:
     """ Wrapper class for JSON response that makes it behave like a PIL.Image object.
 
-        TileStache.handleRequest() expects to be able to save one of these to a buffer.
+        TileStache.getTile() expects to be able to save one of these to a buffer.
     """
     def __init__(self, content):
         self.content = content

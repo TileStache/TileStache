@@ -97,10 +97,11 @@ class SaveableResponse:
     
         TileStache.getTile() expects to be able to save one of these to a buffer.
     """
-    def __init__(self, content, indent=2):
+    def __init__(self, content, indent=2, precision=2):
         self.content = content
-        self.indent = indent
-        
+	self.indent = indent
+        self.precision = precision
+
     def save(self, out, format):
         if format != 'JSON':
             raise KnownUnknown('PostGeoJSON only saves .json tiles, not "%s"' % format)
@@ -112,25 +113,33 @@ class SaveableResponse:
         
         encoded = JSONEncoder(indent=indent).iterencode(self.content)
         float_pat = compile(r'^-?\d+\.\d+$')
-        
+
+        precision = 6
+
+        if int(self.precision) > 0:
+            precision = self.precision
+
+        format = '%.' + str(precision) +  'f'
+
         for atom in encoded:
             if float_pat.match(atom):
-                out.write('%.6f' % float(atom))
+                out.write(format % float(atom))
             else:
                 out.write(atom)
 
 class Provider:
     """
     """
-    def __init__(self, layer, dsn, query, id_column='id', geometry_column='geometry', indent=2):
+    def __init__(self, layer, dsn, query, id_column='id', geometry_column='geometry', indent=2, precision=6):
         self.layer = layer
         self.dbdsn = dsn
         self.query = query
         self.mercator = getProjectionByName('spherical mercator')
         self.geometry_field = geometry_column
         self.id_field = id_column
-        self.indent = indent
-        
+	self.indent = indent
+        self.precision = precision
+
     def getTypeByExtension(self, extension):
         """ Get mime-type and format by file extension.
         
@@ -166,4 +175,4 @@ class Provider:
             feature['geometry'] = shape2geometry(feature['geometry'], self.mercator)
             response['features'].append(feature)
     
-        return SaveableResponse(response, self.indent)
+        return SaveableResponse(response, self.indent, self.precision)
