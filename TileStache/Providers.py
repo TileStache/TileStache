@@ -192,7 +192,7 @@ class Mapnik:
         
         if fonts:
             for font in glob(fonts.rstrip('/') + '/*.ttf'):
-                engine.register_font(font)
+                engine.register_font(str(font))
 
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """
