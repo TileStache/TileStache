@@ -28,6 +28,10 @@ designers and cartographers.
     
     open('tile.png', 'w').write(bytes)
 
+---- Documentation ----
+
+http://tilestache.org/doc/
+
 ---- Features ----
 
 Rendering providers:
@@ -69,43 +73,6 @@ tile layout compatible with those used by OpenStreetMap, Google, Bing Maps,
 Yahoo! and others. It should be possible to make TileStache do whatever is
 necessary to support any external system, but we eschew complex, impenetrable
 standards in favor of pragmatic, fast utility with basic web clients.
-
----- Functions ----
-
-cgiHandler(environ, config='./tilestache.cfg', debug=False)
-    Read environment PATH_INFO, load up configuration, talk to stdout by CGI.
-
-handleRequest(layer, coord, extension)
-    Get a type string and image binary for a given request layer tile.
-    
-    Arguments:
-    - layer: instance of Core.Layer to render.
-    - coord: one ModestMaps.Core.Coordinate corresponding to a single tile.
-    - extension: filename extension to choose response type, e.g. "png" or "jpg".
-    
-    This is the main entry point, after site configuration has been loaded
-    and individual tiles need to be rendered.
-
-parseConfigfile(configpath)
-    Parse a configuration file and return a Configuration object.
-    
-    Configuration file is formatted as JSON with two sections, "cache" and "layers":
-    
-      {
-        "cache": { ... },
-        "layers": {
-          "layer-1": { ... },
-          "layer-2": { ... },
-          ...
-        }
-      }
-    
-    The full filesystem path to the file is significant, used
-    to resolve any relative paths found in the configuration.
-    
-    See the Caches module for more information on the "caches" section,
-    and the Core and Providers modules for more information on the
-    "layers" section.
 
 ---- Dependencies ----
 

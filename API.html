@@ -21,10 +21,12 @@
     
     body { margin-left: 56px; }
     #intro { margin-left: -28px; }
-    h1, h2, h3, h4 { margin-left: -28px; }
+    h1, h2, h3, h4 { margin: 1em 56px 1em -28px; }
     dd, li { margin-left: 14px; }
     ul { padding-left: 0; list-style-type: none; }
-    #index { float: right; width: 20em; }
+    #index { float: right; width: 20em; padding-bottom: 2em; }
+    
+    h2 { margin-top: 2em; border-top: 1px solid #ccc; padding-top: 1em;}
 
     body, #index { background-color: white; }
     pre .bg { color: #aaa; }
@@ -33,10 +35,10 @@
 
     var, samp, code { white-space: nowrap; }
     samp, pre { background-color: #eee; }
-    dt { display: inline; }
-    dt, var { background-color: #fe7; }
+    dt { display: inline; font-weight: bold; }
+    var { background-color: #fe7; }
 
-    samp, pre, dt, var { padding: 0 2px; margin: 0 -2px; border-radius: 2px; }
+    samp, pre, var { padding: 0 2px; margin: 0 -2px; border-radius: 2px; }
     pre { margin: -4px 10px; padding: 4px; border: 1px solid #ddd; border-radius: 3px; }
 
     -->
@@ -58,6 +60,10 @@
 
     <p>
     <strong>This document covers TileStache version 0.0.0</strong>.
+    </p>
+
+    <p>
+    See also <a href="http://tilestache.org/doc/TileStache.html">detailed module and class reference</a>.
     </p>
 
 </div>

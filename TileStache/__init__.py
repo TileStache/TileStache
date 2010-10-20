@@ -1,6 +1,12 @@
 """ A stylish alternative for caching your map tiles.
 
+TileStache is a Python-based server application that can serve up map tiles
+based on rendered geographic data. You might be familiar with TileCache
+(http://tilecache.org), the venerable open source WMS server from MetaCarta.
+TileStache is similar, but we hope simpler and better-suited to the needs of
+designers and cartographers.
 
+Documentation available at http://tilestache.org/doc/
 """
 
 import re
