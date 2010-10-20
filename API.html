@@ -5,40 +5,45 @@
 	<meta http-equiv="content-type" content="text/html; charset=utf-8">
     <style type="text/css" title="text/css">
     <!--
-/*
-body
-{
-    font-family: Arial, Helvetica, sans;
-    font-size: 14px;
-    line-height: 18px;
-    color: black;
-    background-color: white;
-}
 
-h2 { font-size: 1.5em; }
-h3 { font-size: 1.2em; }
-h4 { font-size: 1em; }
+    body
+    {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 14px;
+        line-height: 18px;
+        color: black;
+    }
+    
+    h2 { font-size: 1.5em; }
+    h3 { font-size: 1.2em; }
+    h4 { font-size: 1em; }
+    
+    body { margin-left: 56px; }
+    #intro { margin-left: -28px; }
+    h1, h2, h3, h4 { margin-left: -28px; }
+    dd, li { margin-left: 14px; }
+    ul { padding-left: 0; list-style-type: none; }
+    #index { float: right; width: 20em; }
 
-a { color: blue; }
+    body, #index { background-color: white; }
+    pre .bg { color: #aaa; }
 
-h1, h2, h3, h4 { margin: 2em 0 1em 0; }
-p { margin: 1em 0; }
-pre { margin: 1em; }
-dd { margin: 0 0 1em 1em; }
-*/
+    p, dd, pre { width: 50em; }
 
-    body { color: silver; margin-left: 2em; }
-    body>* { color: black; }
-    p, dd { width: 50em; }
-    pre .bg { color: gray; }
-    pre { margin-left: 2em; }
     var, samp, code { white-space: nowrap; }
+    samp, pre { background-color: #eee; }
+    dt { display: inline; }
+    dt, var { background-color: #fe7; }
+
+    samp, pre, dt, var { padding: 0 2px; margin: 0 -2px; border-radius: 2px; }
+    pre { margin: -4px 10px; padding: 4px; border: 1px solid #ddd; border-radius: 3px; }
+
     -->
     </style>
 </head>
 <body>
 
-<p>
+<p id="intro">
 TileStache is a Python-based server application that can serve up map tiles
 based on rendered geographic data. You might be familiar with
 <a href="http://tilecache.org">TileCache</a> the venerable open source WMS
@@ -46,9 +51,77 @@ server from MetaCarta. TileStache is similar, but we hope simpler and
 better-suited to the needs of designers and cartographers.
 </p>
 
-<h2>Requesting Tiles</h2>
+<ul id="index">
+  <li>
+    <a href="#requesting-tiles">Requesting Tiles</a>
+    <ul>
+      <li><a href="#over-http">Over HTTP</a></li>
+      <li>
+        <a href="#in-code">In Code</a>
+<!-- 
+        <ul>
+          <li><a href="#tilestache-gettile"><code>TileStache.getTile</code></a></li>
+          <li><a href="#tilestache-requesthandler"><code>TileStache.requestHandler</code></a></li>
+        </ul>
+ -->
+      </li>
+    </ul>
+  </li>
+  <li>
+    <a href="#serving-tiles">Serving Tiles</a>
+    <ul>
+      <li><a href="#cgi">CGI</a></li>
+      <li><a href="#mod-python">mod_python</a></li>
+    </ul>
+  </li>
+  <li>
+    <a href="#configuring-tilestache">Configuring TileStache</a>
+    <ul>
+      <li>
+        <a href="#caches">Caches</a>
+<!-- 
+        <ul>
+          <li><a href="#test-cache">Test</a></li>
+          <li><a href="#disk-cache">Disk</a></li>
+        </ul>
+ -->
+      </li>
+      <li><a href="#layers">Layers</a></li>
+      <li>
+        <a href="#providers">Providers</a>
+<!-- 
+        <ul>
+          <li><a href="#mapnik-provider">Mapnik</a></li>
+          <li><a href="#proxy-provider">Proxy</a></li>
+        </ul>
+ -->
+      </li>
+      <li><a href="#projections">Projections</a></li>
+      <li><a href="#metatiles">Metatiles</a></li>
+    </ul>
+  </li>
+  <li>
+    <a href="#extending-tilestache">Extending TileStache</a>
+    <ul>
+      <li>
+        <a href="#custom-providers">Providers</a>
+<!-- 
+        <ul>
+          <li><a href="#provider-rendertile"><code>provider.renderTile</code></a></li>
+          <li><a href="#provider-renderarea"><code>provider.renderArea</code></a></li>
+          <li><a href="#provider-gettypebyextension"><code>provider.getTypeByExtension</code></a></li>
+        </ul>
+ -->
+      </li>
+      <li><a href="#custom-caches">Caches</a></li>
+      <li><a href="#custom-configuration">Configuration</a></li>
+    </ul>
+  </li>
+</ul>
 
-<h3>Over HTTP</h3>
+<h2><a id="requesting-tiles" name="requesting-tiles">Requesting Tiles</a></h2>
+
+<h3><a id="over-http" name="over-http">Over HTTP</a></h3>
 
 <p>
 TileStache URLs are based on a simplified TMS scheme:
@@ -74,9 +147,9 @@ Interactive, slippy-map previews of tiles are also available:
 /{layer name}/preview.html
 </pre>
 
-<h3>In Code</h3>
+<h3><a id="in-code" name="in-code">In Code</a></h3>
 
-<h4><code>TileStache.getTile</code></h4>
+<h4><a id="tilestache-gettile" name="tilestache-gettile"><code>TileStache.getTile</code></a></h4>
 
 <p>
 Get a type string and tile binary for a given request layer tile.
@@ -112,11 +185,11 @@ rendered tile.
 
 <p>
 See
-<a href="http://parallels-ubuntu/~migurski/TileStache/doc/TileStache.html#-getTile">TileStache.getTile</a>
+<a href="http://tilestache.org/doc/TileStache.html#-getTile">TileStache.getTile</a>
 documentation for more information.
 </p>
 
-<h4><code>TileStache.requestHandler</code></h4>
+<h4><a id="tilestache-requesthandler" name="tilestache-requesthandler"><code>TileStache.requestHandler</code></a></h4>
 
 <p>
 Generate a mime-type and response body for a given request. This is the function
@@ -133,7 +206,7 @@ Arguments to <code>requestHandler</code>:
     Required file path string for a JSON configuration file or a configuration
     object with <code>cache</code>, <code>layers</code>, and
     <code>dirpath</code> properties, such as
-    <a href="http://parallels-ubuntu/~migurski/TileStache/doc/TileStache.Config.html#Configuration"><code>TileStache.Config.Configuration</code></a>.
+    <a href="http://tilestache.org/doc/TileStache.Config.html#Configuration"><code>TileStache.Config.Configuration</code></a>.
     </dd>
 
     <dt>path_info</dt>
@@ -158,18 +231,18 @@ rendered tile.
 
 <p>
 See
-<a href="http://parallels-ubuntu/~migurski/TileStache/doc/TileStache.html#-requestHandler">TileStache.requestHandler</a>
+<a href="http://tilestache.org/doc/TileStache.html#-requestHandler">TileStache.requestHandler</a>
 documentation for more information.
 </p>
 
-<h2>Serving Tiles</h2>
+<h2><a id="serving-tiles" name="serving-tiles">Serving Tiles</a></h2>
 
 <p>
 We currently provide two scripts for serving tiles, one for a CGI-based
 webserver and another for Apache <code>mod_python</code>.
 </p>
 
-<h4>CGI</h4>
+<h4><a id="cgi" name="cgi">CGI</a></h4>
 
 <p>
 Using TileStache through CGI supports basic tile serving, and is useful for
@@ -186,11 +259,11 @@ TileStache.cgiHandler(os.environ, 'tilestache.cfg', debug=True)
 
 <p>
 See
-<a href="http://parallels-ubuntu/~migurski/TileStache/doc/TileStache.html#-cgiHandler"><code>TileStache.cgiHandler</code></a>
+<a href="http://tilestache.org/doc/TileStache.html#-cgiHandler"><code>TileStache.cgiHandler</code></a>
 documentation for more information.
 </p>
 
-<h4>mod_python</h4>
+<h4><a id="mod-python" name="mod-python">mod_python</a></h4>
 
 <p>
 Using TileStache through <code>mod_python</code> improves performance by
@@ -209,16 +282,16 @@ tiles configured by a file in <code>/etc</code>:
 
 <p>
 See
-<a href="http://parallels-ubuntu/~migurski/TileStache/doc/TileStache.html#-modPythonHandler"><code>TileStache.modPythonHandler</code></a>
+<a href="http://tilestache.org/doc/TileStache.html#-modPythonHandler"><code>TileStache.modPythonHandler</code></a>
 documentation for more information.
 </p>
 
-<h2>Configuring TileStache</h2>
+<h2><a id="configuring-tilestache" name="configuring-tilestache">Configuring TileStache</a></h2>
 
 <p>
 TileStache configuration is stored in JSON files, and is composed of two main
-top-level sections: "cache" and "layers". There are examples of both in this
-minimal sample configuration:
+top-level sections: <samp>"cache"</samp> and <samp>"layers"</samp>. There are
+examples of both in this minimal sample configuration:
 </p>
  
 <pre>
@@ -233,16 +306,16 @@ minimal sample configuration:
 }
 </pre>
 
-<h3>Caches</h3>
+<h3><a id="caches" name="caches">Caches</a></h3>
 
 <p>
 A Cache is the part of TileStache that stores static files to speed up future
 requests. A few default caches are shown here, with additional cache classes
 defined in
-<a href="http://parallels-ubuntu/~migurski/TileStache/doc/TileStache.Goodies.Caches.html"><code>TileStache.Goodies.Caches</code></a>
+<a href="http://tilestache.org/doc/TileStache.Goodies.Caches.html"><code>TileStache.Goodies.Caches</code></a>
 </p>
 
-<h4>Test</h4>
+<h4><a id="test-cache" name="test-cache">Test</a></h4>
 
 <p>
 Simple cache that doesn’t actually cache anything.
@@ -274,17 +347,17 @@ Test cache parameters:
     <dt>verbose</dt>
     <dd>
     Optional boolean flag to write cache activities to a logging function,
-    defaults to <var>False</var> if omitted.
+    defaults to <samp>False</samp> if omitted.
     </dd>
 </dl>
 
 <p>
 See
-<a href="http://parallels-ubuntu/~migurski/TileStache/doc/TileStache.Caches.html#Test">TileStache.Caches.Test</a>
+<a href="http://tilestache.org/doc/TileStache.Caches.html#Test">TileStache.Caches.Test</a>
 documentation for more information.
 </p>
 
-<h4>Disk</h4>
+<h4><a id="disk-cache" name="disk-cache">Disk</a></h4>
 
 <p>
 Caches files to disk.
@@ -319,32 +392,32 @@ Disk cache parameters:
     <dt>umask</dt>
     <dd>
     Optional string representation of octal permission mask for stored files.
-    Defaults to <var>"0022"</var>.
+    Defaults to <samp>"0022"</samp>.
     </dd>
 
     <dt>dirs</dt>
     <dd>
     Optional string saying whether to create cache directories that are safe or
     portable. For an example tile <samp>12/656/1582.png</samp>,
-    <var>"portable"</var> creates matching directory trees while
-    <var>"safe"</var> guarantees directories with fewer files, e.g.
-    <samp>12/000/656/001/582.png</samp>. Defaults to <var>"safe"</var>.
+    <samp>"portable"</samp> creates matching directory trees while
+    <samp>"safe"</samp> guarantees directories with fewer files, e.g.
+    <samp>12/000/656/001/582.png</samp>. Defaults to <samp>"safe"</samp>.
     </dd>
 </dl>
 
 <p>
 If your configuration file is loaded from a remote location, e.g.
 <samp>http://example.com/tilestache.cfg</samp>, the path <strong>must</strong>
-be an unambiguous filesystem path, e.g. <var>"file:///tmp/cache"</var>.
+be an unambiguous filesystem path, e.g. <samp>"file:///tmp/cache"</samp>.
 </p>
 
 <p>
 See
-<a href="http://parallels-ubuntu/~migurski/TileStache/doc/TileStache.Caches.html#Disk">TileStache.Caches.Disk</a>
+<a href="http://tilestache.org/doc/TileStache.Caches.html#Disk">TileStache.Caches.Disk</a>
 documentation for more information.
 </p>
 
-<h3>Layers</h3>
+<h3><a id="layers" name="layers">Layers</a></h3>
 
 <p>
 A Layer represents a set of tiles in TileStache. It keeps references to
@@ -413,16 +486,16 @@ Shared layer parameters:
     </dd>
 </dl>
 
-<h3>Providers</h3>
+<h3><a id="providers" name="providers">Providers</a></h3>
 
 <p>
 A Provider is the part of TileStache that stores static files to speed up
 future requests. A few default providers are shown here, with additional
 provider classes defined in
-<a href="http://parallels-ubuntu/~migurski/TileStache/doc/TileStache.Goodies.Providers.html"><code>TileStache.Goodies.Providers</code></a>
+<a href="http://tilestache.org/doc/TileStache.Goodies.Providers.html"><code>TileStache.Goodies.Providers</code></a>
 </p>
 
-<h4>Mapnik</h4>
+<h4><a id="mapnik-provider" name="mapnik-provider">Mapnik</a></h4>
 
 <p>
 Built-in Mapnik provider, renders map images from Mapnik XML files.
@@ -462,11 +535,11 @@ Mapnik provider parameters:
 
 <p>
 See
-<a href="http://parallels-ubuntu/~migurski/TileStache/doc/TileStache.Providers.html#Mapnik">TileStache.Providers.Mapnik</a>
+<a href="http://tilestache.org/doc/TileStache.Providers.html#Mapnik">TileStache.Providers.Mapnik</a>
 for more information.
 </p>
 
-<h4>Proxy</h4>
+<h4><a id="proxy-provider" name="proxy-provider">Proxy</a></h4>
 
 <p>
 Proxy provider, to pass through and cache tiles from other places.
@@ -513,11 +586,11 @@ Proxy provider parameters:
 
 <p>
 See
-<a href="http://parallels-ubuntu/~migurski/TileStache/doc/TileStache.Providers.html#Proxy">TileStache.Providers.Proxy</a>
+<a href="http://tilestache.org/doc/TileStache.Providers.html#Proxy">TileStache.Providers.Proxy</a>
 for more information.
 </p>
 
-<h3>Projections</h3>
+<h3><a id="projections" name="projections">Projections</a></h3>
 
 <p>
 A Projection defines the relationship between the rendered tiles and the
@@ -547,11 +620,11 @@ Provided projections:
 
 <p>
 See
-<a href="http://parallels-ubuntu/~migurski/TileStache/doc/TileStache.Geography.html">TileStache.Geography</a>
+<a href="http://tilestache.org/doc/TileStache.Geography.html">TileStache.Geography</a>
 for more information.
 </p>
 
-<h4>Metatiles</h4>
+<h4><a id="metatiles" name="metatiles">Metatiles</a></h4>
 
 <p>
 Metatiles are larger areas to be rendered at one time, often used because it’s
@@ -610,13 +683,45 @@ Metatile parameters:
     </dd>
 </dl> 
 
-<h2>Extending TileStache</h2>
+<h2><a id="extending-tilestache" name="extending-tilestache">Extending TileStache</a></h2>
 
 <p>
-(duck-typing)
+TileStache relies on <a href="http://en.wikipedia.org/wiki/Duck_typing">duck typing</a>
+rather than inheritance for extensibility, so all guidelines for customization
+below explain what methods and properties must be defined on objects for them
+to be valid as providers, caches, and configurations.
 </p>
 
-<h3>Providers</h3>
+<h3><a id="custom-providers" name="custom-providers">Providers</a></h3>
+
+<p>
+Example external provider configuration:
+</p>
+ 
+<pre>
+<span class="bg">{
+  "cache": …,
+  "layers": 
+  {
+    "example-name":
+    {</span>
+      "provider":
+      {
+        "class": "Module.Classname",
+        "kwargs": {"frob": "yes"}
+      }
+    <span class="bg">}
+  }
+}</span>
+</pre>
+
+<p>
+The <var>class</var> value is split up into module and classname, and
+dynamically included. If this doesn’t work for some reason, TileStache will
+fail loudly to let you know. The <var>kwargs</var> value is fed to the class
+constructor as a dictionary of keyword args. If your defined class doesn’t
+accept any of these keyword arguments, TileStache will throw an exception.
+</p>
 
 <p>
 A provider must offer at least one of two methods for rendering map areas.
@@ -629,8 +734,16 @@ a format name, typically an instance of the <code>PIL.Image</code> object but
 allowing for creation of providers that save text, raw data or other non-image
 response.
 </p>
- 
-<h4><code>provider.renderTile</code></h4>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.Providers.html">TileStache.Providers</a>
+for more information on custom providers and
+<a href="http://tilestache.org/doc/TileStache.Goodies.Providers.html">TileStache.Goodies.Providers</a>
+for examples of custom providers.
+</p>
+
+<h4><a id="provider-rendertile" name="provider-rendertile"><code>provider.renderTile</code></a></h4>
 
 <p>
 Draws a single tile at a time.
@@ -655,7 +768,7 @@ Arguments to <code>renderTile</code>:
     <dd>
     Projection as Proj4 string.
     <samp>"+proj=longlat +ellps=WGS84 +datum=WGS84"</samp> is an example, see
-    <a href="http://parallels-ubuntu/~migurski/TileStache/doc/TileStache.Geography.html">TileStache.Geography</a>
+    <a href="http://tilestache.org/doc/TileStache.Geography.html">TileStache.Geography</a>
     for actual values.
     </dd>
     
@@ -666,13 +779,24 @@ Arguments to <code>renderTile</code>:
 </dl>
 
 <p>
-Return value of <code>renderTile</code> is a <code>PIL.Image</code> or other saveable object.
+Return value of <code>renderTile</code> is a <code>PIL.Image</code> or other
+saveable object, used like this:
 </p>
+
+<pre>
+provider.renderTile(…).save(file, "XML")
+</pre>
  
-<h4><code>provider.renderArea</code></h4>
+<h4><a id="provider-renderarea" name="provider-renderarea"><code>provider.renderArea</code></a></h4>
 
 <p>
 Draws a variably-sized area, and is used when drawing metatiles.
+</p>
+
+<p>
+Non-image providers and metatiles do not mix. If your provider returns JSON,
+plaintext, XML, or some other non-PIL format, implement only the
+<code>renderTile</code> method.
 </p>
 
 <p>
@@ -694,7 +818,7 @@ Arguments to <code>renderArea</code>:
     <dd>
     Projection as Proj4 string.
     <samp>"+proj=longlat +ellps=WGS84 +datum=WGS84"</samp> is an example, see
-    <a href="http://parallels-ubuntu/~migurski/TileStache/doc/TileStache.Geography.html">TileStache.Geography</a>
+    <a href="http://tilestache.org/doc/TileStache.Geography.html">TileStache.Geography</a>
     for actual values.
     </dd>
     
@@ -726,18 +850,20 @@ Arguments to <code>renderArea</code>:
 </dl>
 
 <p>
-Return value of <code>renderArea</code> is a <code>PIL.Image</code> or other saveable object.
+Return value of <code>renderArea</code> is a <code>PIL.Image</code> or other
+saveable object, used like this:
 </p>
 
-<h4><code>provider.getTypeByExtension</code></h4>
+<pre>
+provider.renderArea(…).save(file, "PNG")
+</pre>
+
+<h4><a id="provider-gettypebyextension" name="provider-gettypebyextension"><code>provider.getTypeByExtension</code></a></h4>
 
 <p>
-A provider may offer a method for custom response type, getTypeByExtension().
-This method accepts a single argument, a filename extension string (e.g. "png",
-"json", etc.) and returns a tuple with twon strings: a mime-type and a format.
-Note that for image and non-image tiles alike, renderArea() and renderTile()
-methods on a provider class must return a object with a save() method that
-can accept a file-like object and a format name, e.g. this should word:
+A provider may offer a method for custom response types,
+<code>getTypeByExtension</code>. This method returns a tuple with two strings:
+a mime-type and a format.
 </p>
 
 <p>
@@ -750,17 +876,135 @@ Arguments to <code>getTypeByExtension</code>:
     Filename extension string, e.g. <samp>"png"</samp>, <samp>"json"</samp>, etc.
     </dd>
 </dl>
-    
-    provder.renderArea(...).save(fp, "TEXT")
+
+<h3><a id="custom-caches" name="custom-caches">Caches</a></h3>
+
+<p>
+Example external provider configuration:
+</p>
  
-... if "TEXT" is a valid response format according to getTypeByExtension().
+<pre>
+<span class="bg">{</span>
+  "cache":
+  {
+    "class": "Module.Classname",
+    "kwargs": {"frob": "yes"}
+  },
+  <span class="bg">"layers": { … }
+}</span>
+</pre>
+
+<p>
+The <var>class</var> value is split up into module and classname, and
+dynamically included. If this doesn’t work for some reason, TileStache will
+fail loudly to let you know. The <var>kwargs</var> value is fed to the class
+constructor as a dictionary of keyword args. If your defined class doesn’t
+accept any of these keyword arguments, TileStache will throw an exception.
+</p>
+
+<p>
+A cache must provide all of these four methods: <code>lock</code>,
+<code>unlock</code>, <code>read</code>, and <code>save</code>.
+</p>
+
+<p>
+Each method requires three arguments:
+</p>
+
+<dl>
+    <dt>layer</dt>
+    <dd>
+    Instance of a layer.
+    </dd>
+
+    <dt>coord</dt>
+    <dd>
+    Single Coordinate that represents a tile.
+    </dd>
+
+    <dt>format</dt>
+    <dd>
+    String like <samp>"png"</samp> or <samp>"jpg"</samp> that is used as a
+    filename extension.
+    </dd>
+</dl>
  
-Non-image providers and metatiles do not mix.
+<p>
+The <code>save</code> method accepts an additional argument <i>before the others</i>:
+</p>
+ 
+<dl>
+    <dt>body</dt>
+    <dd>
+    Raw content to save to the cache.
+    </dd>
+</dl>
 
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.Caches.html">TileStache.Caches</a>
+for more information on custom caches and
+<a href="http://tilestache.org/doc/TileStache.Goodies.Caches.html">TileStache.Goodies.Caches</a>
+for examples of custom caches.
+</p>
 
-<h3>Caches</h3>
+<h3><a id="custom-configuration" name="custom-configuration">Configuration</a></h3>
 
-<h3>Configuration</h3>
+<p>
+A complete configuration object includes <var>cache</var>,
+<var>layers</var>, and <var>dirpath</var> properties:
+</p>
+ 
+<dl>
+    <dt>cache</dt>
+    <dd>
+    Cache instance, e.g.
+    <code><a href="http://tilestache.org/doc/TileStache.Caches.html#Disk">TileStache.Caches.Disk</a></code>
+    etc. See
+    <a href="http://tilestache.org/doc/TileStache.Caches.html">TileStache.Caches</a>
+    for details on what makes a usable cache.
+    </dd>
+
+    <dt>layers</dt>
+    <dd>
+    Dictionary of layers keyed by name. 
+    </dd>
+
+    <dt>dirpath</dt>
+    <dd>
+    Local filesystem path for this configuration, useful for expanding relative
+    paths.
+    </dd>
+</dl>
+
+<p>
+When creating a custom <var>layers</var> dictionary, e.g. for dynamic layer
+collections backed by some external configuration, these
+<a href="http://docs.python.org/library/stdtypes.html#mapping-types-dict">dictionary methods</a>
+must be provided for a complete collection of layers:
+</p>
+ 
+<dl>
+    <dt>keys</dt>
+    <dd>
+    Return list of layer name strings.
+    </dd>
+
+    <dt>items</dt>
+    <dd>
+    Return list of (name, layer) pairs.
+    </dd>
+
+    <dt>__contains__</dt>
+    <dd>
+    Return boolean true if given key is an existing layer.
+    </dd>
+
+    <dt>__getitem__</dt>
+    <dd>
+    Return existing layer object for given key or raise <code>KeyError</code>.
+    </dd>
+</dl>
 
 </body>
 </html>
