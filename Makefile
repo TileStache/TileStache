@@ -67,5 +67,9 @@ doc:
 	mv TileStache.*.html doc/
 	mv tilestache-*.html doc/
 
+	cp API.html doc/index.html
+	perl -pi -e 's#http://tilestache.org/doc/##' doc/index.html
+	perl -pi -e 's#\b\d+\.\d+\.\d+\b#$(VERSION)#' doc/index.html
+
 clean:
 	rm -rf $(TARBALL) doc
