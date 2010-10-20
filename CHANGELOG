@@ -1,0 +1,2 @@
+2010-10-21: 1.1.0
+- Made configuration objects customizable by defining proprties in new API.html
