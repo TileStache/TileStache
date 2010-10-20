@@ -129,10 +129,14 @@ def splitPathInfo(pathinfo):
 
     return layer, coord, extension
 
-def requestHandler(config_path, path_info, query_string):
+def requestHandler(config, path_info, query_string):
     """ Generate a mime-type and response body for a given request.
     
-        Requires a path to a config file and PATH_INFO (e.g. "/example/0/0/0.png").
+        Requires a configuration and PATH_INFO (e.g. "/example/0/0/0.png").
+        
+        Config parameter can be a file path string for a JSON configuration file
+        or a configuration object with 'cache', 'layers', and 'dirpath' properties.
+        
         Query string is optional and not currently used. Calls getTile()
         to render actual tiles, and getPreview() to render preview.html.
     """
@@ -140,7 +144,14 @@ def requestHandler(config_path, path_info, query_string):
         if path_info is None:
             raise Core.KnownUnknown('Missing path_info in requestHandler().')
     
-        config = parseConfigfile(config_path)
+        if type(config) in (str, unicode):
+            # should be a path to a configuration file we can load
+            config = parseConfigfile(config)
+        else:
+            assert hasattr(config, 'cache'), 'Configuration object must have a cache.'
+            assert hasattr(config, 'layers'), 'Configuration object must have layers.'
+            assert hasattr(config, 'dirpath'), 'Configuration object must have a dirpath.'
+        
         layername, coord, extension = splitPathInfo(path_info)
         
         if layername not in config.layers:
@@ -167,10 +178,13 @@ def requestHandler(config_path, path_info, query_string):
 
     return mimetype, content
 
-def cgiHandler(environ, config_path='./tilestache.cfg', debug=False):
+def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     """ Read environment PATH_INFO, load up configuration, talk to stdout by CGI.
     
         Calls requestHandler().
+        
+        Config parameter can be a file path string for a JSON configuration file
+        or a configuration object with 'cache', 'layers', and 'dirpath' properties.
     """
     if debug:
         import cgitb
@@ -179,7 +193,7 @@ def cgiHandler(environ, config_path='./tilestache.cfg', debug=False):
     path_info = environ.get('PATH_INFO', None)
     query_string = environ.get('QUERY_STRING', None)
     
-    mimetype, content = requestHandler(config_path, path_info, query_string)
+    mimetype, content = requestHandler(config, path_info, query_string)
 
     print >> stdout, 'Content-Length: %d' % len(content)
     print >> stdout, 'Content-Type: %s\n' % mimetype

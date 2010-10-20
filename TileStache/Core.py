@@ -113,12 +113,22 @@ class Metatile:
 class Layer:
     """ A Layer.
     
-        Properties:
-        - provider: render provider, see Providers module.
-        - config: Configuration instance, see Config module.
-        - projection: geographic projection, see Geography module.
-        - metatile: some information on drawing many tiles at once.
-        - stale_lock_timeout: number of seconds until a cache lock is forced.
+        Attributes:
+
+          provider:
+            Render provider, see Providers module.
+
+          config:
+            Configuration instance, see Config module.
+
+          projection:
+            Geographic projection, see Geography module.
+
+          metatile:
+            Some information for drawing many tiles at once.
+
+          stale_lock_timeout:
+            Number of seconds until a cache lock is forced.
     """
     def __init__(self, config, projection, metatile, stale_lock_timeout=15):
         self.provider = None
@@ -130,6 +140,9 @@ class Layer:
 
     def name(self):
         """ Figure out what I'm called, return a name if there is one.
+        
+            Layer names are stored in the Configuration object, so
+            config.layers must be inspected to find a matching name.
         """
         for (name, layer) in self.config.layers.items():
             if layer is self:

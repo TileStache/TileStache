@@ -61,6 +61,37 @@ import Geography
 
 class Configuration:
     """ A complete site configuration, with a collection of Layer objects.
+    
+        Attributes:
+        
+          cache:
+            Cache instance, e.g. TileStache.Caches.Disk etc.
+            See TileStache.Caches for details on what makes
+            a usable cache.
+        
+          layers:
+            Dictionary of layers keyed by name.
+            
+            When creating a custom layers dictionary, e.g. for dynamic
+            layer collections backed by some external configuration,
+            these dictionary methods must be provided for a complete
+            collection of layers:
+            
+              keys():
+                Return list of layer name strings.
+
+              items():
+                Return list of (name, layer) pairs.
+
+              __contains__(key):
+                Return boolean true if given key is an existing layer.
+                
+              __getitem__(key):
+                Return existing layer object for given key or raise KeyError.
+        
+          dirpath:
+            Local filesystem path for this configuration,
+            useful for expanding relative paths.
     """
     def __init__(self, cache, dirpath):
         self.cache = cache
