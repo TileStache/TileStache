@@ -19,7 +19,7 @@
     h4 { font-size: 1em; }
     pre { font-size: 0.8em; }
     
-    body { margin-left: 56px; }
+    body { margin-left: 56px; margin-bottom: 4em; }
     #intro { margin-left: -28px; }
     h1, h2, h3, h4 { margin: 1em 56px 1em -28px; }
     dd, li { margin-left: 14px; }
@@ -221,8 +221,8 @@ Arguments to <code>requestHandler</code>:
     <dt>config</dt>
     <dd>
     Required file path string for a JSON configuration file or a configuration
-    object with <code>cache</code>, <code>layers</code>, and
-    <code>dirpath</code> properties, such as
+    object with <var>cache</var>, <var>layers</var>, and <var>dirpath</var>
+    properties, such as
     <a href="http://tilestache.org/doc/TileStache.Config.html#Configuration"><code>TileStache.Config.Configuration</code></a>.
     </dd>
 
@@ -235,8 +235,8 @@ Arguments to <code>requestHandler</code>:
     <dt>query_string</dt>
     <dd>
     Optional, currently-unused placeholder for possible future query string
-    use. Or maybe an explicit deterrent from ever building such a thing. Hard
-    to say.
+    use. Or maybe an explicit deterrent from ever building such a thing.
+    <small>Hard to say.</small>
     </dd>
 </dl>
  
@@ -741,7 +741,9 @@ accept any of these keyword arguments, TileStache will throw an exception.
 </p>
 
 <p>
-A provider must offer at least one of two methods for rendering map areas.
+A provider must offer at least one of two methods for rendering map areas:
+<code>renderTile</code> or <code>renderArea</code>. A provider must also accept
+an instance of <code>Layer</code> as the first argument to its constructor.
 </p>
 
 <p>
@@ -751,6 +753,26 @@ a format name, typically an instance of the <code>PIL.Image</code> object but
 allowing for creation of providers that save text, raw data or other non-image
 response.
 </p>
+
+<p>
+A minimal provider stub class:
+</p>
+
+<pre>
+class ProviderStub:
+
+  def __init__(self, layer):
+    # create a new provider for a layer
+    raise NotImplementedError
+    
+  def renderTile(self, width, height, srs, coord):
+    # return an object with a PIL-like save() method for a tile
+    raise NotImplementedError
+    
+  def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
+    # return an object with a PIL-like save() method for an area
+    raise NotImplementedError
+</pre>
 
 <p>
 See
@@ -958,6 +980,30 @@ The <code>save</code> method accepts an additional argument <i>before the others
 </dl>
 
 <p>
+A minimal cache stub class:
+</p>
+
+<pre>
+class CacheStub:
+
+  def lock(self, layer, coord, format):
+    # lock a tile
+    raise NotImplementedError
+
+  def unlock(self, layer, coord, format):
+    # unlock a tile
+    raise NotImplementedError
+
+  def read(self, layer, coord, format):
+    # return raw tile content from cache
+    raise NotImplementedError
+  
+  def save(self, body, layer, coord, format):
+    # save raw tile content to cache
+    raise NotImplementedError
+</pre>
+
+<p>
 See
 <a href="http://tilestache.org/doc/TileStache.Caches.html">TileStache.Caches</a>
 for more information on custom caches and
@@ -1022,6 +1068,30 @@ must be provided for a complete collection of layers:
     Return existing layer object for given key or raise <code>KeyError</code>.
     </dd>
 </dl>
+
+<p>
+A minimal layers dictionary stub class:
+</p>
+
+<pre>
+class LayersStub:
+
+  def keys(self):
+    # return a list of key strings
+    raise NotImplementedError
+
+  def items(self):
+    # return a list of (key, layer) tuples
+    raise NotImplementedError
+
+  def __contains__(self, key):
+    # return True if the key is here
+    raise NotImplementedError
+  
+  def __getitem__(self, key):
+    # return the layer named by the key
+    raise NotImplementedError
+</pre>
 
 </body>
 </html>
