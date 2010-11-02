@@ -17,7 +17,7 @@ class ArcRest:
         s, host, path, p, query, f = urlparse(self.url)
 
         conn = HTTPConnection(host, 80)
-        conn.request('GET', path+"?bbox=%f,%f,%f,%f&bboxSR=102113&layers=%s&size=%d,%d&imageSR=102113&format=png24&transparent=true&f=image" % (self.layers, xmin, ymin, xmax, ymax, height, width))
+        conn.request('GET', path+"?bbox=%f,%f,%f,%f&bboxSR=102113&layers=%s&size=%d,%d&imageSR=102113&format=png24&transparent=true&f=image" % (xmin, ymin, xmax, ymax, self.layers, height, width))
 
         body = conn.getresponse().read()
         tile = PIL.Image.open(StringIO(body)).convert('RGBA')
