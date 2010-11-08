@@ -262,11 +262,47 @@ class nuStack:
     def __init__(self, layers):
         self.layers = layers
 
+    def render(self):
+    
+        def combine(img1, img2):
+            img_ = img1.copy()
+            img_.paste(img2, (0, 0), img2)
+            return img_
+    
+        bitmaps = [layer.render() for layer in self.layers]
+    
+        return reduce(combine, bitmaps)
+
 class nuLayer:
 
     def __init__(self, config, info):
         self.config = config
-        self.info = info
+        
+        self.srcname = info.get('src', None)
+        self.maskname = info.get('mask', None)
+
+    def render(self):
+    
+        src_img, mask_img = None, None
+        
+        if self.srcname:
+            src_img = self.config.layers[self.srcname].renderTile().convert('RGBA')
+        
+        if self.maskname:
+            mask_img = self.config.layers[self.maskname].renderTile().convert('L')
+    
+        out_img = PIL.Image.new('RGBA', (3, 3), (0, 0, 0, 0))
+        
+        if src_img and mask_img:
+            # need to combine the masks here
+            srcmask_img = PIL.Image.new('RGBA', out_img.size, (0, 0, 0, 0))
+            srcmask_img.paste(src_img, None, mask_img)
+            out_img.paste(srcmask_img, None, srcmask_img)
+        
+        elif src_img:
+            out_img.paste(src_img, None, src_img)
+    
+        return out_img
 
 def doStuff(config, thing):
     
@@ -299,6 +335,7 @@ if __name__ == '__main__':
     
     _fff, _ccc, _999, _000, _nil = '\xFF\xFF\xFF\xFF', '\xCC\xCC\xCC\xFF', '\x99\x99\x99\xFF', '\x00\x00\x00\xFF', '\x00\x00\x00\x00'
     
+    # sort of a diagonal street...
     cfg.layers = {
                   'base': BitmapProvider(_ccc * 9),
                   'halos': BitmapProvider((_000 * 3) + (_fff * 3) + (_000 * 3)),
@@ -318,4 +355,8 @@ if __name__ == '__main__':
             ]
         ]
     
-    doStuff(cfg, stack)
+    stack = doStuff(cfg, stack)
+    
+    img = stack.render()
+    
+    img.save('composited.png')
