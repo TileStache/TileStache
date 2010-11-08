@@ -148,7 +148,14 @@ class Stack:
         return output_img
 
 def makeColor(color):
-    """
+    """ Convert colors expressed as HTML-style RGB(A) strings to tuples.
+    
+        Examples:
+          white: "#ffffff", "#fff", "#ffff", "#ffffffff"
+          black: "#000000", "#000", "#000f", "#000000ff"
+          null: "#0000", "#00000000"
+          orange: "#f90", "#ff9900", "#ff9900ff"
+          transparent orange: "#f908", "#ff990088"
     """
     if type(color) not in (str, unicode):
         raise Exception('Color must be a string: %s' % repr(color))
@@ -156,14 +163,21 @@ def makeColor(color):
     if color[0] != '#':
         raise Exception('Color must start with hash: "%s"' % color)
 
-    if len(color) not in (4, 7):
-        raise Exception('Color must have three or six hex chars: "%s"' % color)
+    if len(color) not in (4, 5, 7, 9):
+        raise Exception('Color must have three, four, six or seven hex chars: "%s"' % color)
 
-    r = int(len(color) == 7 and color[1:3] or color[1]+color[1], 16)
-    g = int(len(color) == 7 and color[3:5] or color[2]+color[2], 16)
-    b = int(len(color) == 7 and color[5:7] or color[3]+color[3], 16)
+    if len(color) == 4:
+        color = ''.join([color[i] for i in (0, 1, 1, 2, 2, 3, 3)])
 
-    return r, g, b, 0xFF
+    elif len(color) == 5:
+        color = ''.join([color[i] for i in (0, 1, 1, 2, 2, 3, 3, 4, 4)])
+    
+    r = int(color[1:3], 16)
+    g = int(color[3:5], 16)
+    b = int(color[5:7], 16)
+    a = len(color) == 7 and 0xFF or int(color[7:9], 16)
+
+    return r, g, b, a
     
 def makeLayer(element):
     """
@@ -298,6 +312,30 @@ if __name__ == '__main__':
         layer.provider = TinyBitmap(string)
 
         return layer
+    
+    class ColorTests(unittest.TestCase):
+        """
+        """
+        def testColors(self):
+            assert makeColor('#ffffff') == (0xFF, 0xFF, 0xFF, 0xFF), 'white'
+            assert makeColor('#fff') == (0xFF, 0xFF, 0xFF, 0xFF), 'white again'
+            assert makeColor('#ffff') == (0xFF, 0xFF, 0xFF, 0xFF), 'white again again'
+            assert makeColor('#ffffffff') == (0xFF, 0xFF, 0xFF, 0xFF), 'white again again again'
+
+            assert makeColor('#000000') == (0x00, 0x00, 0x00, 0xFF), 'black'
+            assert makeColor('#000') == (0x00, 0x00, 0x00, 0xFF), 'black again'
+            assert makeColor('#000f') == (0x00, 0x00, 0x00, 0xFF), 'black again'
+            assert makeColor('#000000ff') == (0x00, 0x00, 0x00, 0xFF), 'black again again'
+
+            assert makeColor('#0000') == (0x00, 0x00, 0x00, 0x00), 'null'
+            assert makeColor('#00000000') == (0x00, 0x00, 0x00, 0x00), 'null again'
+
+            assert makeColor('#f90') == (0xFF, 0x99, 0x00, 0xFF), 'orange'
+            assert makeColor('#ff9900') == (0xFF, 0x99, 0x00, 0xFF), 'orange again'
+            assert makeColor('#ff9900ff') == (0xFF, 0x99, 0x00, 0xFF), 'orange again again'
+
+            assert makeColor('#f908') == (0xFF, 0x99, 0x00, 0x88), 'transparent orange'
+            assert makeColor('#ff990088') == (0xFF, 0x99, 0x00, 0x88), 'transparent orange again'
     
     class CompositeTests(unittest.TestCase):
         """
