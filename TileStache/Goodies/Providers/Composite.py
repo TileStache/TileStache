@@ -278,20 +278,20 @@ class nuLayer:
     def __init__(self, config, info):
         self.config = config
         
-        self.srcname = info.get('src', None)
-        self.maskname = info.get('mask', None)
+        self.sourcename = info.get('src', None)
         self.colorname = info.get('color', None)
+        self.maskname = info.get('mask', None)
 
     def render(self, coord):
     
         out_img = PIL.Image.new('RGBA', (3, 3), (0, 0, 0, 0))
         
-        src_img, color_img, mask_img = None, None, None
+        source_img, color_img, mask_img = None, None, None
         
-        if self.srcname:
-            layer = self.config.layers[self.srcname]
+        if self.sourcename:
+            layer = self.config.layers[self.sourcename]
             mime, body = TileStache.getTile(layer, coord, 'png')
-            src_img = PIL.Image.open(StringIO(body))
+            source_img = PIL.Image.open(StringIO(body))
         
         if self.colorname:
             color = makeColor(self.colorname)
@@ -302,24 +302,24 @@ class nuLayer:
             mime, body = TileStache.getTile(layer, coord, 'png')
             mask_img = PIL.Image.open(StringIO(body)).convert('L')
 
-        if src_img and color_img and mask_img:
+        if source_img and color_img and mask_img:
             raise Exception('could be ugly')
         
-        elif src_img and color_img:
+        elif source_img and color_img:
             out_img.paste(color_img, None, color_img)
-            out_img.paste(src_img, None, src_img)
+            out_img.paste(source_img, None, source_img)
 
-        elif src_img and mask_img:
+        elif source_img and mask_img:
             # need to combine the masks here
-            srcmask_img = PIL.Image.new('RGBA', out_img.size, (0, 0, 0, 0))
-            srcmask_img.paste(src_img, None, mask_img)
-            out_img.paste(srcmask_img, None, srcmask_img)
+            sourcemask_img = PIL.Image.new('RGBA', out_img.size, (0, 0, 0, 0))
+            sourcemask_img.paste(source_img, None, mask_img)
+            out_img.paste(sourcemask_img, None, sourcemask_img)
         
         elif color_img and mask_img:
             out_img.paste(color_img, None, mask_img)
         
-        elif src_img:
-            out_img.paste(src_img, None, src_img)
+        elif source_img:
+            out_img.paste(source_img, None, source_img)
         
         elif color_img:
             out_img.paste(color_img, None, color_img)
@@ -336,25 +336,25 @@ def doStuff(config, thing):
     
     if type(thing) is list:
         layers = [doStuff(config, layer) for layer in thing]
-        print 'stack:', layers
         return nuStack(layers)
     
     elif type(thing) is dict:
-        print 'layer:', thing
         return nuLayer(config, thing)
 
     else:
-        print 'fuck'
+        raise Exception('Uh oh')
 
 if __name__ == '__main__':
 
+    import unittest
+    
     import TileStache.Core
     import TileStache.Caches
     import TileStache.Geography
     import TileStache.Config
     import ModestMaps.Core
     
-    class BitmapProvider:
+    class TinyBitmap:
         def __init__(self, string):
             self.img = PIL.Image.fromstring('RGBA', (3, 3), string)
 
@@ -362,114 +362,151 @@ if __name__ == '__main__':
             return self.img
 
     def bitmap_layer(config, string):
+        """ Gin up a fake layer with a TinyBitmap provider.
+        """
         meta = TileStache.Core.Metatile()
         proj = TileStache.Geography.SphericalMercator()
         layer = TileStache.Core.Layer(config, proj, meta)
-        layer.provider = BitmapProvider(string)
+        layer.provider = TinyBitmap(string)
+
         return layer
     
-    cache = TileStache.Caches.Test()
-    cfg = TileStache.Config.Configuration(cache, '.')
+    class CompositeTests(unittest.TestCase):
+        """
+        """
+        def setUp(self):
     
-    _fff, _ccc, _999, _000, _nil = '\xFF\xFF\xFF\xFF', '\xCC\xCC\xCC\xFF', '\x99\x99\x99\xFF', '\x00\x00\x00\xFF', '\x00\x00\x00\x00'
+            cache = TileStache.Caches.Test()
+            self.config = TileStache.Config.Configuration(cache, '.')
+            
+            _fff, _ccc, _999, _000, _nil = '\xFF\xFF\xFF\xFF', '\xCC\xCC\xCC\xFF', '\x99\x99\x99\xFF', '\x00\x00\x00\xFF', '\x00\x00\x00\x00'
+            
+            # sort of a sw/ne diagonal street, with a top-left corner halo
+            self.config.layers = \
+            {
+                'base': bitmap_layer(self.config, _ccc * 9),
+                'halos': bitmap_layer(self.config, (_fff * 2) + _000 + (_fff * 2) + (_000 * 4)),
+                'outlines': bitmap_layer(self.config, _nil + (_999 * 7) + _nil),
+                'streets': bitmap_layer(self.config, (_nil * 2) + _fff + _nil + _fff + _nil + _fff + (_nil * 2))
+            }
+        
+        def test0(self):
     
-    # sort of a diagonal street, with a corner halo...
-    cfg.layers = {
-                  'base': bitmap_layer(cfg, _ccc * 9),
-                  'halos': bitmap_layer(cfg, (_fff * 2) + _000 + (_fff * 2) + (_000 * 4)),
-                  'outlines': bitmap_layer(cfg, _nil + (_999 * 7) + _nil),
-                  'streets': bitmap_layer(cfg, (_nil * 2) + _fff + _nil + _fff + _nil + _fff + (_nil * 2))
-                 }
+            stack = \
+                [
+                    {"src": "base"},
+                    [
+                        {"src": "outlines"},
+                        {"src": "streets"}
+                    ]
+                ]
+            
+            stack = doStuff(self.config, stack)
+            img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
+            
+            assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF)
+            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF)
+            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF)
+            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF)
+            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF)
+            assert img.getpixel((2, 1)) == (0x99, 0x99, 0x99, 0xFF)
+            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF)
+            assert img.getpixel((1, 2)) == (0x99, 0x99, 0x99, 0xFF)
+            assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
+        
+        def test1(self):
     
-    stack = \
-        [
-            {"src": "base"},
-            [
-                {"src": "outlines", "mask": "halos"},
-                {"src": "streets"}
-            ]
-        ]
+            stack = \
+                [
+                    {"src": "base"},
+                    [
+                        {"src": "outlines", "mask": "halos"},
+                        {"src": "streets"}
+                    ]
+                ]
+            
+            stack = doStuff(self.config, stack)
+            img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
+            
+            assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF)
+            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF)
+            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF)
+            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF)
+            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF)
+            assert img.getpixel((2, 1)) == (0xCC, 0xCC, 0xCC, 0xFF)
+            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF)
+            assert img.getpixel((1, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
+            assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
+        
+        def test2(self):
     
-    stack = doStuff(cfg, stack)
+            stack = \
+                [
+                    {"color": "#ccc"},
+                    [
+                        {"src": "outlines", "mask": "halos"},
+                        {"src": "streets"}
+                    ]
+                ]
+            
+            stack = doStuff(self.config, stack)
+            img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
+            
+            assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF)
+            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF)
+            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF)
+            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF)
+            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF)
+            assert img.getpixel((2, 1)) == (0xCC, 0xCC, 0xCC, 0xFF)
+            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF)
+            assert img.getpixel((1, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
+            assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
+        
+        def test3(self):
+            
+            stack = \
+                [
+                    {"color": "#ccc"},
+                    [
+                        {"color": "#999", "mask": "halos"},
+                        {"src": "streets"}
+                    ]
+                ]
+            
+            stack = doStuff(self.config, stack)
+            img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
+            
+            assert img.getpixel((0, 0)) == (0x99, 0x99, 0x99, 0xFF)
+            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF)
+            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF)
+            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF)
+            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF)
+            assert img.getpixel((2, 1)) == (0xCC, 0xCC, 0xCC, 0xFF)
+            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF)
+            assert img.getpixel((1, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
+            assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
+        
+        def test4(self):
     
-    img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
-    
-    assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF)
-    assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF)
-    assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF)
-    assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF)
-    assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF)
-    assert img.getpixel((2, 1)) == (0xCC, 0xCC, 0xCC, 0xFF)
-    assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF)
-    assert img.getpixel((1, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
-    assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
-    
-    stack = \
-        [
-            {"color": "#ccc"},
-            [
-                {"src": "outlines", "mask": "halos"},
-                {"src": "streets"}
-            ]
-        ]
-    
-    stack = doStuff(cfg, stack)
-    
-    img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
-    
-    assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF)
-    assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF)
-    assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF)
-    assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF)
-    assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF)
-    assert img.getpixel((2, 1)) == (0xCC, 0xCC, 0xCC, 0xFF)
-    assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF)
-    assert img.getpixel((1, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
-    assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
-    
-    stack = \
-        [
-            {"color": "#ccc"},
-            [
-                {"color": "#999", "mask": "halos"},
-                {"src": "streets"}
-            ]
-        ]
-    
-    stack = doStuff(cfg, stack)
-    
-    img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
-    
-    assert img.getpixel((0, 0)) == (0x99, 0x99, 0x99, 0xFF)
-    assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF)
-    assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF)
-    assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF)
-    assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF)
-    assert img.getpixel((2, 1)) == (0xCC, 0xCC, 0xCC, 0xFF)
-    assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF)
-    assert img.getpixel((1, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
-    assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
-    
-    stack = \
-        [
-            [
-                {"color": "#999", "mask": "halos"},
-                {"src": "streets"}
-            ]
-        ]
-    
-    stack = doStuff(cfg, stack)
-    
-    img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
-    
-    img.save('composited.png')
-    
-    assert img.getpixel((0, 0)) == (0x99, 0x99, 0x99, 0xFF)
-    assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF)
-    assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF)
-    assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF)
-    assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF)
-    assert img.getpixel((2, 1)) == (0x00, 0x00, 0x00, 0x00)
-    assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF)
-    assert img.getpixel((1, 2)) == (0x00, 0x00, 0x00, 0x00)
-    assert img.getpixel((2, 2)) == (0x00, 0x00, 0x00, 0x00)
+            stack = \
+                [
+                    [
+                        {"color": "#999", "mask": "halos"},
+                        {"src": "streets"}
+                    ]
+                ]
+            
+            stack = doStuff(self.config, stack)
+            img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
+            
+            assert img.getpixel((0, 0)) == (0x99, 0x99, 0x99, 0xFF)
+            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF)
+            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF)
+            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF)
+            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF)
+            assert img.getpixel((2, 1)) == (0x00, 0x00, 0x00, 0x00)
+            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF)
+            assert img.getpixel((1, 2)) == (0x00, 0x00, 0x00, 0x00)
+            assert img.getpixel((2, 2)) == (0x00, 0x00, 0x00, 0x00)
+
+    unittest.main()
