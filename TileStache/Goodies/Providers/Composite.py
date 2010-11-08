@@ -415,15 +415,15 @@ if __name__ == '__main__':
             stack = doStuff(self.config, stack)
             img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
             
-            assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF)
-            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF)
-            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF)
-            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF)
-            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF)
-            assert img.getpixel((2, 1)) == (0x99, 0x99, 0x99, 0xFF)
-            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF)
-            assert img.getpixel((1, 2)) == (0x99, 0x99, 0x99, 0xFF)
-            assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
+            assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF), 'top left pixel'
+            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
+            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF), 'top right pixel'
+            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF), 'center left pixel'
+            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF), 'middle pixel'
+            assert img.getpixel((2, 1)) == (0x99, 0x99, 0x99, 0xFF), 'center right pixel'
+            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom left pixel'
+            assert img.getpixel((1, 2)) == (0x99, 0x99, 0x99, 0xFF), 'bottom center pixel'
+            assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF), 'bottom right pixel'
         
         def test1(self):
     
@@ -439,15 +439,15 @@ if __name__ == '__main__':
             stack = doStuff(self.config, stack)
             img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
             
-            assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF)
-            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF)
-            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF)
-            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF)
-            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF)
-            assert img.getpixel((2, 1)) == (0xCC, 0xCC, 0xCC, 0xFF)
-            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF)
-            assert img.getpixel((1, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
-            assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
+            assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF), 'top left pixel'
+            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
+            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF), 'top right pixel'
+            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF), 'center left pixel'
+            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF), 'middle pixel'
+            assert img.getpixel((2, 1)) == (0xCC, 0xCC, 0xCC, 0xFF), 'center right pixel'
+            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom left pixel'
+            assert img.getpixel((1, 2)) == (0xCC, 0xCC, 0xCC, 0xFF), 'bottom center pixel'
+            assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF), 'bottom right pixel'
         
         def test2(self):
     
@@ -463,15 +463,15 @@ if __name__ == '__main__':
             stack = doStuff(self.config, stack)
             img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
             
-            assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF)
-            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF)
-            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF)
-            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF)
-            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF)
-            assert img.getpixel((2, 1)) == (0xCC, 0xCC, 0xCC, 0xFF)
-            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF)
-            assert img.getpixel((1, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
-            assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
+            assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF), 'top left pixel'
+            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
+            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF), 'top right pixel'
+            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF), 'center left pixel'
+            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF), 'middle pixel'
+            assert img.getpixel((2, 1)) == (0xCC, 0xCC, 0xCC, 0xFF), 'center right pixel'
+            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom left pixel'
+            assert img.getpixel((1, 2)) == (0xCC, 0xCC, 0xCC, 0xFF), 'bottom center pixel'
+            assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF), 'bottom right pixel'
         
         def test3(self):
             
@@ -487,15 +487,15 @@ if __name__ == '__main__':
             stack = doStuff(self.config, stack)
             img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
             
-            assert img.getpixel((0, 0)) == (0x99, 0x99, 0x99, 0xFF)
-            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF)
-            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF)
-            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF)
-            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF)
-            assert img.getpixel((2, 1)) == (0xCC, 0xCC, 0xCC, 0xFF)
-            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF)
-            assert img.getpixel((1, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
-            assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF)
+            assert img.getpixel((0, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top left pixel'
+            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
+            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF), 'top right pixel'
+            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF), 'center left pixel'
+            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF), 'middle pixel'
+            assert img.getpixel((2, 1)) == (0xCC, 0xCC, 0xCC, 0xFF), 'center right pixel'
+            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom left pixel'
+            assert img.getpixel((1, 2)) == (0xCC, 0xCC, 0xCC, 0xFF), 'bottom center pixel'
+            assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF), 'bottom right pixel'
         
         def test4(self):
     
@@ -510,14 +510,14 @@ if __name__ == '__main__':
             stack = doStuff(self.config, stack)
             img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
             
-            assert img.getpixel((0, 0)) == (0x99, 0x99, 0x99, 0xFF)
-            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF)
-            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF)
-            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF)
-            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF)
-            assert img.getpixel((2, 1)) == (0x00, 0x00, 0x00, 0x00)
-            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF)
-            assert img.getpixel((1, 2)) == (0x00, 0x00, 0x00, 0x00)
-            assert img.getpixel((2, 2)) == (0x00, 0x00, 0x00, 0x00)
+            assert img.getpixel((0, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top left pixel'
+            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
+            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF), 'top right pixel'
+            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF), 'center left pixel'
+            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF), 'middle pixel'
+            assert img.getpixel((2, 1)) == (0x00, 0x00, 0x00, 0x00), 'center right pixel'
+            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom left pixel'
+            assert img.getpixel((1, 2)) == (0x00, 0x00, 0x00, 0x00), 'bottom center pixel'
+            assert img.getpixel((2, 2)) == (0x00, 0x00, 0x00, 0x00), 'bottom right pixel'
 
     unittest.main()
