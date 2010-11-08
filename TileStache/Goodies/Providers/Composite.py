@@ -262,14 +262,14 @@ class nuStack:
     def __init__(self, layers):
         self.layers = layers
 
-    def render(self, coord):
+    def render(self, width, height, coord):
     
         def combine(img1, img2):
             img_ = img1.copy()
             img_.paste(img2, (0, 0), img2)
             return img_
     
-        bitmaps = [layer.render(coord) for layer in self.layers]
+        bitmaps = [layer.render(width, height, coord) for layer in self.layers]
     
         return reduce(combine, bitmaps)
 
@@ -282,9 +282,9 @@ class nuLayer:
         self.colorname = info.get('color', None)
         self.maskname = info.get('mask', None)
 
-    def render(self, coord):
+    def render(self, width, height, coord):
     
-        out_img = PIL.Image.new('RGBA', (3, 3), (0, 0, 0, 0))
+        out_img = PIL.Image.new('RGBA', (width, height), (0, 0, 0, 0))
         
         source_img, color_img, mask_img = None, None, None
         
@@ -413,7 +413,7 @@ if __name__ == '__main__':
                 ]
             
             stack = doStuff(self.config, stack)
-            img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
+            img = stack.render(3, 3, ModestMaps.Core.Coordinate(0, 0, 0))
             
             assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF), 'top left pixel'
             assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
@@ -437,7 +437,7 @@ if __name__ == '__main__':
                 ]
             
             stack = doStuff(self.config, stack)
-            img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
+            img = stack.render(3, 3, ModestMaps.Core.Coordinate(0, 0, 0))
             
             assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF), 'top left pixel'
             assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
@@ -461,7 +461,7 @@ if __name__ == '__main__':
                 ]
             
             stack = doStuff(self.config, stack)
-            img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
+            img = stack.render(3, 3, ModestMaps.Core.Coordinate(0, 0, 0))
             
             assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF), 'top left pixel'
             assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
@@ -485,7 +485,7 @@ if __name__ == '__main__':
                 ]
             
             stack = doStuff(self.config, stack)
-            img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
+            img = stack.render(3, 3, ModestMaps.Core.Coordinate(0, 0, 0))
             
             assert img.getpixel((0, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top left pixel'
             assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
@@ -508,7 +508,7 @@ if __name__ == '__main__':
                 ]
             
             stack = doStuff(self.config, stack)
-            img = stack.render(ModestMaps.Core.Coordinate(0, 0, 0))
+            img = stack.render(3, 3, ModestMaps.Core.Coordinate(0, 0, 0))
             
             assert img.getpixel((0, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top left pixel'
             assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
