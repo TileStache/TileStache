@@ -257,89 +257,15 @@ class Composite:
     
         pass
 
-class nuStack:
-    
-    def __init__(self, layers):
-        self.layers = layers
-
-    def render(self, width, height, coord):
-    
-        def combine(img1, img2):
-            img_ = img1.copy()
-            img_.paste(img2, (0, 0), img2)
-            return img_
-    
-        bitmaps = [layer.render(width, height, coord) for layer in self.layers]
-    
-        return reduce(combine, bitmaps)
-
-class nuLayer:
-
-    def __init__(self, config, info):
-        self.config = config
-        
-        self.sourcename = info.get('src', None)
-        self.colorname = info.get('color', None)
-        self.maskname = info.get('mask', None)
-
-    def render(self, width, height, coord):
-    
-        out_img = PIL.Image.new('RGBA', (width, height), (0, 0, 0, 0))
-        
-        source_img, color_img, mask_img = None, None, None
-        
-        if self.sourcename:
-            layer = self.config.layers[self.sourcename]
-            mime, body = TileStache.getTile(layer, coord, 'png')
-            source_img = PIL.Image.open(StringIO(body))
-        
-        if self.colorname:
-            color = makeColor(self.colorname)
-            color_img = PIL.Image.new('RGBA', out_img.size, color)
-        
-        if self.maskname:
-            layer = self.config.layers[self.maskname]
-            mime, body = TileStache.getTile(layer, coord, 'png')
-            mask_img = PIL.Image.open(StringIO(body)).convert('L')
-
-        if source_img and color_img and mask_img:
-            raise Exception('could be ugly')
-        
-        elif source_img and color_img:
-            out_img.paste(color_img, None, color_img)
-            out_img.paste(source_img, None, source_img)
-
-        elif source_img and mask_img:
-            # need to combine the masks here
-            sourcemask_img = PIL.Image.new('RGBA', out_img.size, (0, 0, 0, 0))
-            sourcemask_img.paste(source_img, None, mask_img)
-            out_img.paste(sourcemask_img, None, sourcemask_img)
-        
-        elif color_img and mask_img:
-            out_img.paste(color_img, None, mask_img)
-        
-        elif source_img:
-            out_img.paste(source_img, None, source_img)
-        
-        elif color_img:
-            out_img.paste(color_img, None, color_img)
-
-        elif mask_img:
-            raise Exception('nothing')
-
-        else:
-            raise Exception('nothing')
-    
-        return out_img
-
-def doStuff(config, thing):
+def doStuff(thing):
     
     if type(thing) is list:
-        layers = [doStuff(config, layer) for layer in thing]
-        return nuStack(layers)
+        layers = map(doStuff, thing)
+        return Stack(layers)
     
     elif type(thing) is dict:
-        return nuLayer(config, thing)
+        layername, colorname, maskname = [thing.get(k, None) for k in ('src', 'color', 'mask')]
+        return Layer(layername, colorname, maskname)
 
     else:
         raise Exception('Uh oh')
@@ -400,6 +326,8 @@ if __name__ == '__main__':
                 'outlines': tinybitmap_layer(self.config, _nil + (_999 * 7) + _nil),
                 'streets':  tinybitmap_layer(self.config, _nil + _nil + _fff + _nil + _fff + _nil + _fff + _nil + _nil)
             }
+            
+            self.start_img = PIL.Image.new('RGBA', (3, 3), (0x00, 0x00, 0x00, 0x00))
         
         def test0(self):
     
@@ -412,8 +340,8 @@ if __name__ == '__main__':
                     ]
                 ]
             
-            stack = doStuff(self.config, stack)
-            img = stack.render(3, 3, ModestMaps.Core.Coordinate(0, 0, 0))
+            stack = doStuff(stack)
+            img = stack.render(self.config, self.start_img, ModestMaps.Core.Coordinate(0, 0, 0))
             
             assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF), 'top left pixel'
             assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
@@ -436,8 +364,8 @@ if __name__ == '__main__':
                     ]
                 ]
             
-            stack = doStuff(self.config, stack)
-            img = stack.render(3, 3, ModestMaps.Core.Coordinate(0, 0, 0))
+            stack = doStuff(stack)
+            img = stack.render(self.config, self.start_img, ModestMaps.Core.Coordinate(0, 0, 0))
             
             assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF), 'top left pixel'
             assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
@@ -460,8 +388,8 @@ if __name__ == '__main__':
                     ]
                 ]
             
-            stack = doStuff(self.config, stack)
-            img = stack.render(3, 3, ModestMaps.Core.Coordinate(0, 0, 0))
+            stack = doStuff(stack)
+            img = stack.render(self.config, self.start_img, ModestMaps.Core.Coordinate(0, 0, 0))
             
             assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF), 'top left pixel'
             assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
@@ -484,8 +412,8 @@ if __name__ == '__main__':
                     ]
                 ]
             
-            stack = doStuff(self.config, stack)
-            img = stack.render(3, 3, ModestMaps.Core.Coordinate(0, 0, 0))
+            stack = doStuff(stack)
+            img = stack.render(self.config, self.start_img, ModestMaps.Core.Coordinate(0, 0, 0))
             
             assert img.getpixel((0, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top left pixel'
             assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
@@ -507,8 +435,8 @@ if __name__ == '__main__':
                     ]
                 ]
             
-            stack = doStuff(self.config, stack)
-            img = stack.render(3, 3, ModestMaps.Core.Coordinate(0, 0, 0))
+            stack = doStuff(stack)
+            img = stack.render(self.config, self.start_img, ModestMaps.Core.Coordinate(0, 0, 0))
             
             assert img.getpixel((0, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top left pixel'
             assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
