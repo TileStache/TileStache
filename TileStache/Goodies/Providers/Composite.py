@@ -256,3 +256,66 @@ class Composite:
         return img
     
         pass
+
+class nuStack:
+    
+    def __init__(self, layers):
+        self.layers = layers
+
+class nuLayer:
+
+    def __init__(self, config, info):
+        self.config = config
+        self.info = info
+
+def doStuff(config, thing):
+    
+    if type(thing) is list:
+        layers = [doStuff(config, layer) for layer in thing]
+        print 'stack:', layers
+        return nuStack(layers)
+    
+    elif type(thing) is dict:
+        print 'layer:', thing
+        return nuLayer(config, thing)
+
+    else:
+        print 'fuck'
+
+if __name__ == '__main__':
+
+    import TileStache.Caches
+    import TileStache.Config
+    
+    class BitmapProvider:
+        def __init__(self, string):
+            self.img = PIL.Image.fromstring('RGBA', (3, 3), string)
+
+        def renderTile(self, *args, **kwargs):
+            return self.img
+    
+    cache = TileStache.Caches.Test()
+    cfg = TileStache.Config.Configuration(cache, '.')
+    
+    _fff, _ccc, _999, _000, _nil = '\xFF\xFF\xFF\xFF', '\xCC\xCC\xCC\xFF', '\x99\x99\x99\xFF', '\x00\x00\x00\xFF', '\x00\x00\x00\x00'
+    
+    cfg.layers = {
+                  'base': BitmapProvider(_ccc * 9),
+                  'halos': BitmapProvider((_000 * 3) + (_fff * 3) + (_000 * 3)),
+                  'outlines': BitmapProvider(_nil + (_999 * 7) + _nil),
+                  'streets': BitmapProvider((_nil * 2) + _fff + _nil + _fff + _nil + _fff + (_nil * 2))
+                 }
+    
+    for (name, bitmap) in cfg.layers.items():
+        bitmap.renderTile().save(name + '.png')
+    
+    stack = \
+        [
+            {"src": "base"},
+            [
+                {"src": "outlines", "mask": "halos"},
+                {"src": "streets"}
+            ]
+        ]
+    
+    doStuff(cfg, stack)
