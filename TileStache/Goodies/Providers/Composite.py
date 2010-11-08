@@ -355,13 +355,15 @@ if __name__ == '__main__':
     import ModestMaps.Core
     
     class TinyBitmap:
+        """ A minimal provider that only returns 3x3 bitmaps from strings.
+        """
         def __init__(self, string):
             self.img = PIL.Image.fromstring('RGBA', (3, 3), string)
 
         def renderTile(self, *args, **kwargs):
             return self.img
 
-    def bitmap_layer(config, string):
+    def tinybitmap_layer(config, string):
         """ Gin up a fake layer with a TinyBitmap provider.
         """
         meta = TileStache.Core.Metatile()
@@ -379,15 +381,24 @@ if __name__ == '__main__':
             cache = TileStache.Caches.Test()
             self.config = TileStache.Config.Configuration(cache, '.')
             
+            # Sort of a sw/ne diagonal street, with a top-left corner halo:
+            # 
+            # +------+   +------+   +------+   +------+   +------+
+            # |''''''|   |xxxx  |   |  oooo|   |    **|   |''oo**|
+            # |''''''| + |xxxx  | + |oooooo| + |  **  | > |oo**''|
+            # |''''''|   |      |   |oooo  |   |**    |   |**''''|
+            # +------+   +------+   +------+   +------+   +------+
+            #
+            # Just trust the tests.
+            #
             _fff, _ccc, _999, _000, _nil = '\xFF\xFF\xFF\xFF', '\xCC\xCC\xCC\xFF', '\x99\x99\x99\xFF', '\x00\x00\x00\xFF', '\x00\x00\x00\x00'
             
-            # sort of a sw/ne diagonal street, with a top-left corner halo
             self.config.layers = \
             {
-                'base': bitmap_layer(self.config, _ccc * 9),
-                'halos': bitmap_layer(self.config, (_fff * 2) + _000 + (_fff * 2) + (_000 * 4)),
-                'outlines': bitmap_layer(self.config, _nil + (_999 * 7) + _nil),
-                'streets': bitmap_layer(self.config, (_nil * 2) + _fff + _nil + _fff + _nil + _fff + (_nil * 2))
+                'base': tinybitmap_layer(self.config, _ccc * 9),
+                'halos': tinybitmap_layer(self.config, (_fff * 2) + _000 + (_fff * 2) + (_000 * 4)),
+                'outlines': tinybitmap_layer(self.config, _nil + (_999 * 7) + _nil),
+                'streets': tinybitmap_layer(self.config, (_nil * 2) + _fff + _nil + _fff + _nil + _fff + (_nil * 2))
             }
         
         def test0(self):
