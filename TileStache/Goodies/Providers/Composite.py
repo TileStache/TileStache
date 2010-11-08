@@ -384,9 +384,9 @@ if __name__ == '__main__':
             # Sort of a sw/ne diagonal street, with a top-left corner halo:
             # 
             # +------+   +------+   +------+   +------+   +------+
-            # |''''''|   |xxxx  |   |  oooo|   |    **|   |''oo**|
-            # |''''''| + |xxxx  | + |oooooo| + |  **  | > |oo**''|
-            # |''''''|   |      |   |oooo  |   |**    |   |**''''|
+            # |\\\\\\|   |++++--|   |  ////|   |    ''|   |\\//''|
+            # |\\\\\\| + |++++--| + |//////| + |  ''  | > |//''\\|
+            # |\\\\\\|   |------|   |////  |   |''    |   |''\\\\|
             # +------+   +------+   +------+   +------+   +------+
             #
             # Just trust the tests.
@@ -395,10 +395,10 @@ if __name__ == '__main__':
             
             self.config.layers = \
             {
-                'base': tinybitmap_layer(self.config, _ccc * 9),
-                'halos': tinybitmap_layer(self.config, (_fff * 2) + _000 + (_fff * 2) + (_000 * 4)),
+                'base':     tinybitmap_layer(self.config, _ccc * 9),
+                'halos':    tinybitmap_layer(self.config, _fff + _fff + _000 + _fff + _fff + (_000 * 4)),
                 'outlines': tinybitmap_layer(self.config, _nil + (_999 * 7) + _nil),
-                'streets': tinybitmap_layer(self.config, (_nil * 2) + _fff + _nil + _fff + _nil + _fff + (_nil * 2))
+                'streets':  tinybitmap_layer(self.config, _nil + _nil + _fff + _nil + _fff + _nil + _fff + _nil + _nil)
             }
         
         def test0(self):
