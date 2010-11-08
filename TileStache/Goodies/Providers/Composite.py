@@ -50,6 +50,16 @@ Corresponding example composite-stack.xml:
         </stack>
     </stack>
 
+New configuration JSON blob or file:
+
+    [
+        {"src": "base"},
+        [
+            {"src": "outlines", "mask": "halos"},
+            {"src": "streets"}
+        ]
+    ]
+
 Note that each layer in this file refers to a TileStache layer by name.
 This complete example can be found in the included examples directory.
 """
