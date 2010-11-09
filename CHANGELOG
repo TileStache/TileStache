@@ -3,3 +3,6 @@
 
 2010-11-09: 1.1.1
 - Fixed a bug in mapnik provider to make fonts directory work
+
+2010-11-09: 1.1.2
+- Refixed a bug in mapnik provider and learned to test things before pushing them
