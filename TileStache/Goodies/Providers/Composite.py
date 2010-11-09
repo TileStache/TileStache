@@ -1,5 +1,9 @@
 """ Layered, composite rendering for TileStache.
 
+NOTE: This code is currently in heavy progress. I'm finishing the addition
+of the new JSON style of layer configuration, while the original XML form
+is *deprecated* and will be removed in the future TileStache 2.0.
+
 Example configuration:
 
     {
@@ -66,12 +70,55 @@ This complete example can be found in the included examples directory.
 
 import sys
 
+from json import loads as jsonload
+from urllib import urlopen
+from urlparse import urljoin
 from os.path import join as pathjoin
 from xml.dom.minidom import parse as parseXML
 from StringIO import StringIO
 
 import PIL.Image
 import TileStache
+
+class Provider:
+    """
+    """
+    def __init__(self, layer, stack=None, stackfile=None):
+        self.layer = layer
+        
+        if type(stack) in (str, unicode):
+            stack = jsonload(urlopen(urljoin(layer.config.dirpath, stack)).read())
+        
+        if type(stack) in (list, dict):
+            self.stack = doStuff(stack)
+
+        elif stack is None and stackfile:
+            #
+            # The stackfile argument is super-deprecated.
+            #
+            stackfile = pathjoin(self.layer.config.dirpath, stackfile)
+            stack = parseXML(stackfile).firstChild
+            
+            assert stack.tagName == 'stack', \
+                   'Expecting root element "stack" but got "%s"' % stack.tagName
+    
+            self.stack = makeStack(stack)
+        
+        else:
+            raise Exception('Note sure what to do with this stack argument: %s' % repr(stack))
+        
+    def renderTile(self, width, height, srs, coord):
+    
+        image = PIL.Image.new('RGBA', (width, height), (0, 0, 0, 0))
+        
+        image = self.stack.render(self.layer.config, image, coord)
+        
+        return image
+
+class Composite(Provider):
+    """ An old name for the Provider class, deprecated for the next version.
+    """
+    pass
 
 class Layer:
 
@@ -221,56 +268,6 @@ def makeStack(element):
 
     return Stack(layers)
 
-class Composite:
-
-    def __init__(self, layer, stackfile=None):
-        self.layer = layer
-        
-        stackfile = pathjoin(self.layer.config.dirpath, stackfile)
-        stack = parseXML(stackfile).firstChild
-        
-        assert stack.tagName == 'stack', \
-               'Expecting root element "stack" but got "%s"' % stack.tagName
-
-        self.stack = makeStack(stack)
-
-    def renderTile(self, width, height, srs, coord):
-    
-        image = PIL.Image.new('RGBA', (width, height), (0, 0, 0, 0))
-        
-        image = self.stack.render(self.layer.config, image, coord)
-        
-        return image
-    
-        layer = self.layer.config.layers['base']
-        mime, body = TileStache.getTile(layer, coord, 'png')
-        img_base = PIL.Image.open(StringIO(body))
-
-        layer = self.layer.config.layers['outlines']
-        mime, body = TileStache.getTile(layer, coord, 'png')
-        img_outlines = PIL.Image.open(StringIO(body))
-        
-        layer = self.layer.config.layers['halos']
-        mime, body = TileStache.getTile(layer, coord, 'png')
-        img_halos = PIL.Image.open(StringIO(body))
-        
-        img_outlinesmask = PIL.Image.new('RGBA', img_outlines.size, (0, 0, 0, 0))
-        img_outlinesmask.paste(img_outlines, None, img_halos.convert('L'))
-
-        layer = self.layer.config.layers['streets']
-        mime, body = TileStache.getTile(layer, coord, 'png')
-        img_streets = PIL.Image.open(StringIO(body))
-        
-        img = PIL.Image.new('RGBA', (256, 256))
-        
-        img.paste(img_base, (0, 0), img_base)
-        img.paste(img_outlines, None, img_outlinesmask)
-        img.paste(img_streets, (0, 0), img_streets)
-        
-        return img
-    
-        pass
-
 def doStuff(thing):
     
     if type(thing) is list:
@@ -310,6 +307,16 @@ if __name__ == '__main__':
         proj = TileStache.Geography.SphericalMercator()
         layer = TileStache.Core.Layer(config, proj, meta)
         layer.provider = TinyBitmap(string)
+
+        return layer
+
+    def minimal_stack_layer(config, stack):
+        """
+        """
+        meta = TileStache.Core.Metatile()
+        proj = TileStache.Geography.SphericalMercator()
+        layer = TileStache.Core.Layer(config, proj, meta)
+        layer.provider = Provider(layer, stack=stack)
 
         return layer
     
@@ -378,8 +385,8 @@ if __name__ == '__main__':
                     ]
                 ]
             
-            stack = doStuff(stack)
-            img = stack.render(self.config, self.start_img, ModestMaps.Core.Coordinate(0, 0, 0))
+            layer = minimal_stack_layer(self.config, stack)
+            img = layer.provider.renderTile(3, 3, None, ModestMaps.Core.Coordinate(0, 0, 0))
             
             assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF), 'top left pixel'
             assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
@@ -402,8 +409,8 @@ if __name__ == '__main__':
                     ]
                 ]
             
-            stack = doStuff(stack)
-            img = stack.render(self.config, self.start_img, ModestMaps.Core.Coordinate(0, 0, 0))
+            layer = minimal_stack_layer(self.config, stack)
+            img = layer.provider.renderTile(3, 3, None, ModestMaps.Core.Coordinate(0, 0, 0))
             
             assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF), 'top left pixel'
             assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
@@ -426,8 +433,8 @@ if __name__ == '__main__':
                     ]
                 ]
             
-            stack = doStuff(stack)
-            img = stack.render(self.config, self.start_img, ModestMaps.Core.Coordinate(0, 0, 0))
+            layer = minimal_stack_layer(self.config, stack)
+            img = layer.provider.renderTile(3, 3, None, ModestMaps.Core.Coordinate(0, 0, 0))
             
             assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF), 'top left pixel'
             assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
@@ -450,8 +457,8 @@ if __name__ == '__main__':
                     ]
                 ]
             
-            stack = doStuff(stack)
-            img = stack.render(self.config, self.start_img, ModestMaps.Core.Coordinate(0, 0, 0))
+            layer = minimal_stack_layer(self.config, stack)
+            img = layer.provider.renderTile(3, 3, None, ModestMaps.Core.Coordinate(0, 0, 0))
             
             assert img.getpixel((0, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top left pixel'
             assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
@@ -473,8 +480,8 @@ if __name__ == '__main__':
                     ]
                 ]
             
-            stack = doStuff(stack)
-            img = stack.render(self.config, self.start_img, ModestMaps.Core.Coordinate(0, 0, 0))
+            layer = minimal_stack_layer(self.config, stack)
+            img = layer.provider.renderTile(3, 3, None, ModestMaps.Core.Coordinate(0, 0, 0))
             
             assert img.getpixel((0, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top left pixel'
             assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
