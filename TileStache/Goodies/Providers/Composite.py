@@ -4,7 +4,52 @@ NOTE: This code is currently in heavy progress. I'm finishing the addition
 of the new JSON style of layer configuration, while the original XML form
 is *deprecated* and will be removed in the future TileStache 2.0.
 
-Example configuration:
+The Composite Provider provides a Photoshop-like rendering pipeline, making it
+possible to use the output of other configured tile layers as layers or masks
+to create a combined output. Composite is modeled on Lars Ahlzen's TopOSM.
+
+The "stack" configuration parameter describes a layer or stack of layers that
+can be combined to create output. A simple stack that merely outputs a single
+color orange tile looks like this:
+
+    {"color" "#ff9900"}
+
+Other layers in the current TileStache configuration can be reference by name,
+as in this example stack that simply echoes another layer:
+
+    {"src": "layer-name"}
+
+Layers can also be used as masks, as in this example that uses one layer
+to mask another layer:
+
+    {"mask": "layer-name", "src": "other-layer"}
+
+Many combinations of "src", "mask", and "color" can be used together, but it's
+an error to provide all three.
+
+Finally, the stacking feature allows layers to combined in more complex ways.
+This example stack combines a background color and foreground layer:
+
+    [
+      {"color": "#ff9900"},
+      {"src": "layer-name"}
+    ]
+
+Stacks can be nested as well, such as this combination of two background layers
+and two foreground layers:
+
+    [
+      [
+        {"color"" "#0066ff"},
+        {"src": "continents"}
+      ],
+      [
+        {"src": "streets"},
+        {"src": "labels"}
+      ]
+    ]
+
+A complete example configuration might look like this:
 
     {
       "cache":
@@ -15,54 +60,61 @@ Example configuration:
       {
         "base":
         {
-            "provider": {"name": "mapnik", "mapfile": "mapnik-base.xml"}
+          "provider": {"name": "mapnik", "mapfile": "mapnik-base.xml"}
         },
         "halos":
         {
-            "provider": {"name": "mapnik", "mapfile": "mapnik-halos.xml"},
-            "metatile": {"buffer": 128}
+          "provider": {"name": "mapnik", "mapfile": "mapnik-halos.xml"},
+          "metatile": {"buffer": 128}
         },
         "outlines":
         {
-            "provider": {"name": "mapnik", "mapfile": "mapnik-outlines.xml"},
-            "metatile": {"buffer": 16}
+          "provider": {"name": "mapnik", "mapfile": "mapnik-outlines.xml"},
+          "metatile": {"buffer": 16}
         },
         "streets":
         {
-            "provider": {"name": "mapnik", "mapfile": "mapnik-streets.xml"},
-            "metatile": {"buffer": 128}
+          "provider": {"name": "mapnik", "mapfile": "mapnik-streets.xml"},
+          "metatile": {"buffer": 128}
         },
         "composite":
         {
-            "provider": {"class": "TileStache.Goodies.Providers.Composite.Composite",
-                         "kwargs": {"stackfile": "composite-stack.xml"}}
+          "provider":
+          {
+            "class": "TileStache.Goodies.Providers.Composite.Provider",
+            "kwargs":
+            {
+              "stack":
+              [
+                {"src": "base"},
+                [
+                  {"src": "outlines", "mask": "halos"},
+                  {"src": "streets"}
+                ]
+              ]
+            }
+          }
         }
       }
     }
 
-Corresponding example composite-stack.xml:
+It's also possible to provide an equivalent "stackfile" argument that refers to
+an XML file, but this feature is *deprecated* and will be removed in the future
+release of TileStache 2.0.
 
-    <?xml version="1.0"?>
+Corresponding example stackfile XML:
+
+  <?xml version="1.0"?>
+  <stack>
+    <layer src="base" />
+  
     <stack>
-        <layer src="base" />
-    
-        <stack>
-            <layer src="outlines">
-                <mask src="halos" />
-            </layer>
-            <layer src="streets" />
-        </stack>
+      <layer src="outlines">
+        <mask src="halos" />
+      </layer>
+      <layer src="streets" />
     </stack>
-
-New configuration JSON blob or file:
-
-    [
-        {"src": "base"},
-        [
-            {"src": "outlines", "mask": "halos"},
-            {"src": "streets"}
-        ]
-    ]
+  </stack>
 
 Note that each layer in this file refers to a TileStache layer by name.
 This complete example can be found in the included examples directory.
@@ -359,6 +411,7 @@ if __name__ == '__main__':
             # |\\\\\\| + |++++--| + |//////| + |  ''  | > |//''\\|
             # |\\\\\\|   |------|   |////  |   |''    |   |''\\\\|
             # +------+   +------+   +------+   +------+   +------+
+            # base       halos      outlines   streets    output
             #
             # Just trust the tests.
             #
