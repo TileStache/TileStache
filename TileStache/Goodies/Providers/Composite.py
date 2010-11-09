@@ -132,6 +132,8 @@ from StringIO import StringIO
 import PIL.Image
 import TileStache
 
+from TileStache.Core import KnownUnknown
+
 class Provider:
     """
     """
@@ -200,7 +202,7 @@ class Layer:
         output_img = input_img.copy()
 
         if layer_img and color_img and mask_img:
-            raise Exception('could be ugly')
+            raise KnownUnknown("You can't specify src, color and mask together in a Composite Layer: %s, %s, %s" % (repr(self.layername), repr(self.colorname), repr(self.maskname)))
         
         elif layer_img and color_img:
             output_img.paste(color_img, None, color_img)
@@ -222,10 +224,10 @@ class Layer:
             output_img.paste(color_img, None, color_img)
 
         elif mask_img:
-            raise Exception('nothing')
+            raise KnownUnknown("You have to provide more than just a mask to Composite Layer: %s" % repr(self.maskname))
 
         else:
-            raise Exception('nothing')
+            raise KnownUnknown("You have to at least some combination of src, color and mask to Composite Layer: %s" % repr(self.maskname))
 
         return output_img
 
@@ -257,13 +259,13 @@ def makeColor(color):
           transparent orange: "#f908", "#ff990088"
     """
     if type(color) not in (str, unicode):
-        raise Exception('Color must be a string: %s' % repr(color))
+        raise KnownUnknown('Color must be a string: %s' % repr(color))
 
     if color[0] != '#':
-        raise Exception('Color must start with hash: "%s"' % color)
+        raise KnownUnknown('Color must start with hash: "%s"' % color)
 
     if len(color) not in (4, 5, 7, 9):
-        raise Exception('Color must have three, four, six or seven hex chars: "%s"' % color)
+        raise KnownUnknown('Color must have three, four, six or seven hex chars: "%s"' % color)
 
     if len(color) == 4:
         color = ''.join([color[i] for i in (0, 1, 1, 2, 2, 3, 3)])
@@ -271,10 +273,14 @@ def makeColor(color):
     elif len(color) == 5:
         color = ''.join([color[i] for i in (0, 1, 1, 2, 2, 3, 3, 4, 4)])
     
-    r = int(color[1:3], 16)
-    g = int(color[3:5], 16)
-    b = int(color[5:7], 16)
-    a = len(color) == 7 and 0xFF or int(color[7:9], 16)
+    try:
+        r = int(color[1:3], 16)
+        g = int(color[3:5], 16)
+        b = int(color[5:7], 16)
+        a = len(color) == 7 and 0xFF or int(color[7:9], 16)
+
+    except ValueError:
+        raise KnownUnknown('Color must be made up of valid hex chars: "%s"' % color)
 
     return r, g, b, a
     
@@ -395,6 +401,29 @@ if __name__ == '__main__':
 
             assert makeColor('#f908') == (0xFF, 0x99, 0x00, 0x88), 'transparent orange'
             assert makeColor('#ff990088') == (0xFF, 0x99, 0x00, 0x88), 'transparent orange again'
+        
+        def testErrors(self):
+
+            # it has to be a string
+            self.assertRaises(KnownUnknown, makeColor, True)
+            self.assertRaises(KnownUnknown, makeColor, None)
+            self.assertRaises(KnownUnknown, makeColor, 1337)
+            self.assertRaises(KnownUnknown, makeColor, [93])
+            
+            # it has to start with a hash
+            self.assertRaises(KnownUnknown, makeColor, 'hello')
+            
+            # it has to have 3, 4, 6 or 7 hex chars
+            self.assertRaises(KnownUnknown, makeColor, '#00')
+            self.assertRaises(KnownUnknown, makeColor, '#00000')
+            self.assertRaises(KnownUnknown, makeColor, '#0000000')
+            self.assertRaises(KnownUnknown, makeColor, '#000000000')
+            
+            # they have to actually hex chars
+            self.assertRaises(KnownUnknown, makeColor, '#foo')
+            self.assertRaises(KnownUnknown, makeColor, '#bear')
+            self.assertRaises(KnownUnknown, makeColor, '#monkey')
+            self.assertRaises(KnownUnknown, makeColor, '#dedboeuf')
     
     class CompositeTests(unittest.TestCase):
         """
@@ -545,5 +574,25 @@ if __name__ == '__main__':
             assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom left pixel'
             assert img.getpixel((1, 2)) == (0x00, 0x00, 0x00, 0x00), 'bottom center pixel'
             assert img.getpixel((2, 2)) == (0x00, 0x00, 0x00, 0x00), 'bottom right pixel'
+        
+        def test5(self):
+
+            stack = {"src": "streets", "color": "#999", "mask": "halos"}
+            layer = minimal_stack_layer(self.config, stack)
+            
+            # it's an error to specify scr, color, and mask all together
+            self.assertRaises(KnownUnknown, layer.provider.renderTile, 3, 3, None, ModestMaps.Core.Coordinate(0, 0, 0))
+
+            stack = {"mask": "halos"}
+            layer = minimal_stack_layer(self.config, stack)
+            
+            # it's also an error to specify just a mask
+            self.assertRaises(KnownUnknown, layer.provider.renderTile, 3, 3, None, ModestMaps.Core.Coordinate(0, 0, 0))
+
+            stack = {}
+            layer = minimal_stack_layer(self.config, stack)
+            
+            # an empty stack is not so great
+            self.assertRaises(KnownUnknown, layer.provider.renderTile, 3, 3, None, ModestMaps.Core.Coordinate(0, 0, 0))
 
     unittest.main()
