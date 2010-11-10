@@ -1,8 +1,11 @@
 2010-10-21: 1.1.0
-- Made configuration objects customizable by defining proprties in new API.html
+- Made configuration objects customizable by defining properties in new API.html.
 
 2010-11-09: 1.1.1
-- Fixed a bug in mapnik provider to make fonts directory work
+- Fixed a bug in mapnik provider to make fonts directory work.
 
 2010-11-09: 1.1.2
-- Refixed a bug in mapnik provider and learned to test things before pushing them
+- Refixed a bug in mapnik provider and learned to test things before pushing them.
+
+2010-11-09: 1.1.3
+- Found another mapnik bug, removed unnecessary tempfile creation.
