@@ -135,9 +135,25 @@ import TileStache
 from TileStache.Core import KnownUnknown
 
 class Provider:
-    """
+    """ Provides a Photoshop-like rendering pipeline, making it possible to use
+        the output of other configured tile layers as layers or masks to create
+        a combined output.
     """
     def __init__(self, layer, stack=None, stackfile=None):
+        """ Make a new Composite.Provider.
+            
+            Arguments:
+            
+              layer:
+                The current TileStache.Core.Layer
+                
+              stack:
+                A list or dictionary with configuration for the image stack, parsed
+                by build_stack(). Also acceptable is a URL to a JSON file.
+              
+              stackfile:
+                *Deprecated* filename for an XML representation of the image stack.
+        """
         self.layer = layer
         
         if type(stack) in (str, unicode):
@@ -197,6 +213,19 @@ class Layer:
         reference to another layer for the mask, and a color name for the fill.
     """
     def __init__(self, layername=None, colorname=None, maskname=None):
+        """ A new image layer.
+        
+            Arguments:
+            
+              layername:
+                Name of the primary source image layer.
+              
+              colorname:
+                Fill color, passed to make_color().
+              
+              maskname:
+                Name of the mask image layer.
+        """
         self.layername = layername
         self.colorname = colorname
         self.maskname = maskname
@@ -259,6 +288,13 @@ class Stack:
     """ A stack of image layers.
     """
     def __init__(self, layers):
+        """ A new image stack.
+        
+            Argument:
+            
+              layers:
+                List of Layer instances.
+        """
         self.layers = layers
 
     def render(self, config, input_img, coord):
