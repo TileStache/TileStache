@@ -181,13 +181,17 @@ class Layer:
         
         elif hasattr(provider, 'renderTile'):
             # draw a single tile
-            tile = provider.renderTile(256, 256, srs, coord)
+            width, height = 256, 256
+            tile = provider.renderTile(width, height, srs, coord)
 
         else:
             raise KnownUnknown('Your provider lacks renderTile and renderArea methods.')
 
         if not hasattr(tile, 'save'):
             raise KnownUnknown('Return value of provider.renderArea() must act like an image; e.g. have a "save" method.')
+
+        if hasattr(tile, 'size') and tile.size != (width, height):
+            raise KnownUnknown('Your provider returned the wrong image size: %s.' % repr(tile.size))
         
         if self.doMetatile():
             # tile will be set again later
