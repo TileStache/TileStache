@@ -144,7 +144,7 @@ class Provider:
             stack = jsonload(urlopen(urljoin(layer.config.dirpath, stack)).read())
         
         if type(stack) in (list, dict):
-            self.stack = doStuff(stack)
+            self.stack = build_stack(stack)
 
         elif stack is None and stackfile:
             #
@@ -174,15 +174,39 @@ class Composite(Provider):
     """
     pass
 
-class Layer:
+def build_stack(object):
+    """ Build up a data structure of Stack and Layer objects from lists of dictionaries.
+    
+        Normally, this is applied to the "stack" parameter to Composite.Provider.
+    """
+    if type(object) is list:
+        layers = map(build_stack, object)
+        return Stack(layers)
+    
+    elif type(object) is dict:
+        layername, colorname, maskname = [object.get(k, None) for k in ('src', 'color', 'mask')]
+        return Layer(layername, colorname, maskname)
 
+    else:
+        raise Exception('Uh oh')
+
+class Layer:
+    """ A single image layer in a stack.
+    
+        Can include a reference to another layer for the source image, a second
+        reference to another layer for the mask, and a color name for the fill.
+    """
     def __init__(self, layername=None, colorname=None, maskname=None):
         self.layername = layername
         self.colorname = colorname
         self.maskname = maskname
 
     def render(self, config, input_img, coord):
-        
+        """ Render this image layer.
+
+            Given a configuration object, starting image, and coordinate,
+            return an output image with the contents of this image layer.
+        """
         layer_img, color_img, mask_img = None, None, None
         
         if self.layername:
@@ -196,7 +220,7 @@ class Layer:
             mask_img = PIL.Image.open(StringIO(body)).convert('L')
 
         if self.colorname:
-            color = makeColor(self.colorname)
+            color = make_color(self.colorname)
             color_img = PIL.Image.new('RGBA', input_img.size, color)
 
         output_img = input_img.copy()
@@ -232,12 +256,18 @@ class Layer:
         return output_img
 
 class Stack:
-
+    """ A stack of image layers.
+    """
     def __init__(self, layers):
         self.layers = layers
 
     def render(self, config, input_img, coord):
-    
+        """ Render this image stack.
+
+            Given a configuration object, starting image, and coordinate,
+            return an output image with the results of all the layers in
+            this stack pasted on in turn.
+        """
         stack_img = PIL.Image.new('RGBA', input_img.size, (0, 0, 0, 0))
         
         for layer in self.layers:
@@ -248,8 +278,10 @@ class Stack:
         
         return output_img
 
-def makeColor(color):
+def make_color(color):
     """ Convert colors expressed as HTML-style RGB(A) strings to tuples.
+        
+        Returns four-element RGBA tuple, e.g. (0xFF, 0x99, 0x00, 0xFF).
     
         Examples:
           white: "#ffffff", "#fff", "#ffff", "#ffffffff"
@@ -283,9 +315,14 @@ def makeColor(color):
         raise KnownUnknown('Color must be made up of valid hex chars: "%s"' % color)
 
     return r, g, b, a
+
+def makeColor(color):
+    """ An old name for the make_color function, deprecated for the next version.
+    """
+    return make_color(color)
     
 def makeLayer(element):
-    """
+    """ Build a Layer object from an XML element, deprecated for the next version.
     """
     kwargs = {}
     
@@ -305,7 +342,7 @@ def makeLayer(element):
     return Layer(**kwargs)
 
 def makeStack(element):
-    """
+    """ Build a Stack object from an XML element, deprecated for the next version.
     """
     layers = []
     
@@ -325,19 +362,6 @@ def makeStack(element):
     print >> sys.stderr, 'Making a stack with %d layers' % len(layers)
 
     return Stack(layers)
-
-def doStuff(thing):
-    
-    if type(thing) is list:
-        layers = map(doStuff, thing)
-        return Stack(layers)
-    
-    elif type(thing) is dict:
-        layername, colorname, maskname = [thing.get(k, None) for k in ('src', 'color', 'mask')]
-        return Layer(layername, colorname, maskname)
-
-    else:
-        raise Exception('Uh oh')
 
 if __name__ == '__main__':
 
@@ -382,48 +406,48 @@ if __name__ == '__main__':
         """
         """
         def testColors(self):
-            assert makeColor('#ffffff') == (0xFF, 0xFF, 0xFF, 0xFF), 'white'
-            assert makeColor('#fff') == (0xFF, 0xFF, 0xFF, 0xFF), 'white again'
-            assert makeColor('#ffff') == (0xFF, 0xFF, 0xFF, 0xFF), 'white again again'
-            assert makeColor('#ffffffff') == (0xFF, 0xFF, 0xFF, 0xFF), 'white again again again'
+            assert make_color('#ffffff') == (0xFF, 0xFF, 0xFF, 0xFF), 'white'
+            assert make_color('#fff') == (0xFF, 0xFF, 0xFF, 0xFF), 'white again'
+            assert make_color('#ffff') == (0xFF, 0xFF, 0xFF, 0xFF), 'white again again'
+            assert make_color('#ffffffff') == (0xFF, 0xFF, 0xFF, 0xFF), 'white again again again'
 
-            assert makeColor('#000000') == (0x00, 0x00, 0x00, 0xFF), 'black'
-            assert makeColor('#000') == (0x00, 0x00, 0x00, 0xFF), 'black again'
-            assert makeColor('#000f') == (0x00, 0x00, 0x00, 0xFF), 'black again'
-            assert makeColor('#000000ff') == (0x00, 0x00, 0x00, 0xFF), 'black again again'
+            assert make_color('#000000') == (0x00, 0x00, 0x00, 0xFF), 'black'
+            assert make_color('#000') == (0x00, 0x00, 0x00, 0xFF), 'black again'
+            assert make_color('#000f') == (0x00, 0x00, 0x00, 0xFF), 'black again'
+            assert make_color('#000000ff') == (0x00, 0x00, 0x00, 0xFF), 'black again again'
 
-            assert makeColor('#0000') == (0x00, 0x00, 0x00, 0x00), 'null'
-            assert makeColor('#00000000') == (0x00, 0x00, 0x00, 0x00), 'null again'
+            assert make_color('#0000') == (0x00, 0x00, 0x00, 0x00), 'null'
+            assert make_color('#00000000') == (0x00, 0x00, 0x00, 0x00), 'null again'
 
-            assert makeColor('#f90') == (0xFF, 0x99, 0x00, 0xFF), 'orange'
-            assert makeColor('#ff9900') == (0xFF, 0x99, 0x00, 0xFF), 'orange again'
-            assert makeColor('#ff9900ff') == (0xFF, 0x99, 0x00, 0xFF), 'orange again again'
+            assert make_color('#f90') == (0xFF, 0x99, 0x00, 0xFF), 'orange'
+            assert make_color('#ff9900') == (0xFF, 0x99, 0x00, 0xFF), 'orange again'
+            assert make_color('#ff9900ff') == (0xFF, 0x99, 0x00, 0xFF), 'orange again again'
 
-            assert makeColor('#f908') == (0xFF, 0x99, 0x00, 0x88), 'transparent orange'
-            assert makeColor('#ff990088') == (0xFF, 0x99, 0x00, 0x88), 'transparent orange again'
+            assert make_color('#f908') == (0xFF, 0x99, 0x00, 0x88), 'transparent orange'
+            assert make_color('#ff990088') == (0xFF, 0x99, 0x00, 0x88), 'transparent orange again'
         
         def testErrors(self):
 
             # it has to be a string
-            self.assertRaises(KnownUnknown, makeColor, True)
-            self.assertRaises(KnownUnknown, makeColor, None)
-            self.assertRaises(KnownUnknown, makeColor, 1337)
-            self.assertRaises(KnownUnknown, makeColor, [93])
+            self.assertRaises(KnownUnknown, make_color, True)
+            self.assertRaises(KnownUnknown, make_color, None)
+            self.assertRaises(KnownUnknown, make_color, 1337)
+            self.assertRaises(KnownUnknown, make_color, [93])
             
             # it has to start with a hash
-            self.assertRaises(KnownUnknown, makeColor, 'hello')
+            self.assertRaises(KnownUnknown, make_color, 'hello')
             
             # it has to have 3, 4, 6 or 7 hex chars
-            self.assertRaises(KnownUnknown, makeColor, '#00')
-            self.assertRaises(KnownUnknown, makeColor, '#00000')
-            self.assertRaises(KnownUnknown, makeColor, '#0000000')
-            self.assertRaises(KnownUnknown, makeColor, '#000000000')
+            self.assertRaises(KnownUnknown, make_color, '#00')
+            self.assertRaises(KnownUnknown, make_color, '#00000')
+            self.assertRaises(KnownUnknown, make_color, '#0000000')
+            self.assertRaises(KnownUnknown, make_color, '#000000000')
             
             # they have to actually hex chars
-            self.assertRaises(KnownUnknown, makeColor, '#foo')
-            self.assertRaises(KnownUnknown, makeColor, '#bear')
-            self.assertRaises(KnownUnknown, makeColor, '#monkey')
-            self.assertRaises(KnownUnknown, makeColor, '#dedboeuf')
+            self.assertRaises(KnownUnknown, make_color, '#foo')
+            self.assertRaises(KnownUnknown, make_color, '#bear')
+            self.assertRaises(KnownUnknown, make_color, '#monkey')
+            self.assertRaises(KnownUnknown, make_color, '#dedboeuf')
     
     class CompositeTests(unittest.TestCase):
         """
