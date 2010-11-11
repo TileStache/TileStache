@@ -80,7 +80,7 @@ def getTile(layer, coord, extension):
 def getPreview(layer):
     """ Get a type string and dynamic map viewer HTML for a given layer.
     """
-    return 'text/html', Core._preview(layer.name())
+    return 'text/html', Core._preview(layer)
 
 def parseConfigfile(configpath):
     """ Parse a configuration file and return a Configuration object.

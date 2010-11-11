@@ -292,9 +292,11 @@ class KnownUnknown(Exception):
     """
     pass
 
-def _preview(layername):
+def _preview(layer):
     """ Get an HTML response for a given named layer.
     """
+    layername = layer.name()
+    
     return """<!DOCTYPE html>
 <html>
 <head>
