@@ -13,10 +13,11 @@ configuration file as a dictionary:
       {
         "example-name":
         {
-            "provider": { ... },
-            "metatile": { ... },
-            "stale lock timeout": ...,
-            "projection": ...
+          "provider": { ... },
+          "metatile": { ... },
+          "preview": { ... },
+          "stale lock timeout": ...,
+          "projection": ...
         }
       }
     }
@@ -25,6 +26,9 @@ configuration file as a dictionary:
 - "metatile" optionally makes it possible for multiple individual tiles to be
   rendered at one time, for greater speed and efficiency. This is commonly used
   for the Mapnik provider. See below for more information on metatiles.
+- "preview" optionally overrides the starting point for the built-in per-layer
+  slippy map preview, useful for image-based layers where appropriate.
+  See below for more information on the preview.
 - "projection" names a geographic projection, explained in TileStache.Geography.
   If omitted, defaults to spherical mercator.
 - "stale lock timeout" is an optional number of seconds to wait before forcing
@@ -40,9 +44,9 @@ Metatile represents a larger area to be rendered at one time. Metatiles are
 represented in the configuration file as a dictionary:
 
     {
-        "rows": 4,
-        "columns": 4,
-        "buffer": 64
+      "rows": 4,
+      "columns": 4,
+      "buffer": 64
     }
 
 - "rows" and "columns" are the height and width of the metatile measured in
@@ -53,6 +57,19 @@ represented in the configuration file as a dictionary:
   bit extra around the edges to ensure that text is not cut off. This example
   metatile has a buffer of 64 pixels, so the resulting metatile will be 1152
   pixels square: 4 rows x 256 pixels + 2 x 64 pixel buffer.
+
+The preview can be accessed through a URL like /<layer name>/preview.html:
+
+    {
+      "lat": 33.9901,
+      "lon": -116.1637,
+      "zoom": 16,
+      "ext": "jpg"
+    }
+
+- "lat" and "lon" are the starting latitude and longitude in degrees.
+- "zoom" is the starting zoom level.
+- "ext" is the filename extension, e.g. "png".
 """
 
 from StringIO import StringIO
@@ -113,7 +130,7 @@ class Metatile:
 class Layer:
     """ A Layer.
     
-        Attributes:
+        Required attributes:
 
           provider:
             Render provider, see Providers module.
@@ -127,16 +144,35 @@ class Layer:
           metatile:
             Some information for drawing many tiles at once.
 
+        Optional attributes:
+
           stale_lock_timeout:
-            Number of seconds until a cache lock is forced.
+            Number of seconds until a cache lock is forced, default 15.
+
+          preview_lat:
+            Starting latitude for slippy map layer preview, default 37.80.
+
+          preview_lon:
+            Starting longitude for slippy map layer preview, default -122.26.
+
+          preview_zoom:
+            Starting zoom for slippy map layer preview, default 10.
+
+          preview_ext:
+            Tile name extension for slippy map layer preview, default "png".
     """
-    def __init__(self, config, projection, metatile, stale_lock_timeout=15):
+    def __init__(self, config, projection, metatile, stale_lock_timeout=15, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png'):
         self.provider = None
         self.config = config
         self.projection = projection
         self.metatile = metatile
         
         self.stale_lock_timeout = stale_lock_timeout
+        
+        self.preview_lat = preview_lat
+        self.preview_lon = preview_lon
+        self.preview_zoom = preview_zoom
+        self.preview_ext = preview_ext
 
     def name(self):
         """ Figure out what I'm called, return a name if there is one.
@@ -296,6 +332,9 @@ def _preview(layer):
     """ Get an HTML response for a given named layer.
     """
     layername = layer.name()
+    lat, lon = layer.preview_lat, layer.preview_lon
+    zoom = layer.preview_zoom
+    ext = layer.preview_ext
     
     return """<!DOCTYPE html>
 <html>
@@ -307,10 +346,10 @@ def _preview(layer):
     <script type="text/javascript">
     <!--
     
-        var template = '{Z}/{X}/{Y}.png';
+        var template = '{Z}/{X}/{Y}.%(ext)s';
         var provider = new com.modestmaps.TemplatedMapProvider(template);
         var map = new com.modestmaps.Map(document.body, provider);
-        map.setCenterZoom(new com.modestmaps.Location(37.80, -122.26), 10);
+        map.setCenterZoom(new com.modestmaps.Location(%(lat).6f, %(lon).6f), %(zoom)d);
         map.draw();
     
     //-->
