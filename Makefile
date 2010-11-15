@@ -15,6 +15,7 @@ $(TARBALL): doc
 	mkdir $(PACKAGE)
 	ln setup.py $(PACKAGE)/
 	ln README $(PACKAGE)/
+	ln VERSION $(PACKAGE)/
 	ln tilestache.cfg $(PACKAGE)/
 	ln tilestache.cgi $(PACKAGE)/
 

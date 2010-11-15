@@ -1,3 +1,6 @@
+2010-11-15: 1.2.1
+- Previously neglected to include VERSION file in tarball.
+
 2010-11-15: 1.2.0
 - Made preview.html pages for tiles configurable with a starting location.
 - Sharply improved TileStache.Goodies.Providers.Composite with JSON config, etc. 
