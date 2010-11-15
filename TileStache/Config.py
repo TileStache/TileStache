@@ -35,6 +35,7 @@ can be found in the TileStache.Core module documentation. Another sample:
         {
             "provider": { ... },
             "metatile": { ... },
+            "preview": { ... },
             "stale lock timeout": ...,
             "projection": ...
         }
@@ -191,13 +192,20 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     projection = Geography.getProjectionByName(projection)
     
     #
-    # Add cache lock timeouts
+    # Add cache lock timeouts and preview arguments
     #
     
     layer_kwargs = {}
     
     if layer_dict.has_key('stale lock timeout'):
         layer_kwargs['stale_lock_timeout'] = int(layer_dict['stale lock timeout'])
+    
+    if layer_dict.has_key('preview'):
+        preview_dict = layer_dict['preview']
+        
+        for (key, func) in zip(('lat', 'lon', 'zoom', 'ext'), (float, float, int, str)):
+            if key in preview_dict:
+                layer_kwargs['preview_' + key] = func(preview_dict[key])
     
     #
     # Do the metatile
@@ -223,8 +231,8 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         provider_kwargs = {}
         
         if _class is Providers.Mapnik:
-            mapfile = provider_dict['mapfile']
-            provider_kwargs['mapfile'] = urljoin(dirpath, mapfile)
+            provider_kwargs['mapfile'] = provider_dict['mapfile']
+            provider_kwargs['fonts'] = provider_dict.get('fonts', None)
         
         elif _class is Providers.Proxy:
             if provider_dict.has_key('url'):

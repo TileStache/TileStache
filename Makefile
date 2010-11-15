@@ -1,4 +1,4 @@
-VERSION=1.1.0
+VERSION:=$(shell cat VERSION)
 PACKAGE=TileStache-$(VERSION)
 TARBALL=$(PACKAGE).tar.gz
 DOCROOT=tilestache.org:public_html/tilestache/www
@@ -15,6 +15,7 @@ $(TARBALL): doc
 	mkdir $(PACKAGE)
 	ln setup.py $(PACKAGE)/
 	ln README $(PACKAGE)/
+	ln VERSION $(PACKAGE)/
 	ln tilestache.cfg $(PACKAGE)/
 	ln tilestache.cgi $(PACKAGE)/
 
