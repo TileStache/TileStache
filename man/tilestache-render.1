@@ -1,0 +1,32 @@
+.TH TILESTACHE-RENDER 1 "Nov 10, 2010"
+.SH NAME
+tilestache-render \- render tiles from tilestache
+.SH SYNOPSIS
+.B tilestache-render
+.RI [ options ] " coordinates" ...
+.SH DESCRIPTION
+This manual page documents briefly the \fBtilestache-render\fR command.
+.PP
+\fBtilestache-render\fP is used to render tiles from \fBTileStache\fR.
+.br
+Each coordinate in the argument list should look like "12/656/1582.png",
+similar to URL paths in web server usage. Coordinates are processed in
+order, each one rendered to an image file in a temporary location and
+output to stdout.
+.SH REQUIRED OPTIONS
+.TP
+\fB-c\fR, \fB\-\-config\fR \fIfile\fR
+Path to configuration file.
+.TP
+\fB-l\fR, \fB\-\-layer\fR \fIlayer\fR
+Layer name from configuration.
+.SH OPTIONS
+.B \-h, \-\-help
+Show summary of options.
+.SH SEE ALSO
+.BR tilestache-seed (1)
+.SH AUTHOR
+\fBTileStache\fR was written by Michal Migurski <mike@stamen.com>.
+.PP
+This manual page was written by David Paleino <dapal@debian.org>,
+for the Debian project (and may be used by others).
