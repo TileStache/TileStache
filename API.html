@@ -122,6 +122,7 @@
       </li>
       <li><a href="#projections">Projections</a></li>
       <li><a href="#metatiles">Metatiles</a></li>
+      <li><a href="#preview">Preview</a></li>
     </ul>
   </li>
   <li>
@@ -462,6 +463,7 @@ Example layer configuration:
     {
       "provider": { … },
       "metatile": { … },
+      "preview": { … },
       "stale lock timeout": …,
       "projection": …
     }
@@ -484,20 +486,30 @@ Shared layer parameters:
 <dl>
     <dt>provider</dt>
     <dd>
-    Refers to a Provider, explained in detail under Providers.
+    Refers to a Provider, explained in detail under
+    <a href="#providers">Providers</a>.
     </dd>
 
     <dt>metatile</dt>
     <dd>
     Optionally makes it possible for multiple individual tiles to be rendered
     at one time, for greater speed and efficiency. This is commonly used for
-    bitmap providers such as Mapnik. See Metatiles for more information.
+    bitmap providers such as Mapnik. See <a href="#metatiles">Metatiles</a>
+    for more information.
+    </dd>
+
+    <dt>preview</dt>
+    <dd>
+    Optionally overrides the starting point for the built-in per-layer slippy
+    map preview, useful for image-based layers where appropriate. See
+    <a href="#preview">Preview</a> for more information.
     </dd>
 
     <dt>projection</dt>
     <dd>
-    Names a geographic projection, explained in Projections. If omitted,
-    defaults to <samp>"spherical mercator"</samp>.
+    Names a geographic projection, explained in
+    <a href="#projections">Projections</a>. If omitted, defaults to
+    <samp>"spherical mercator"</samp>.
     </dd>
 
     <dt>stale lock timeout</dt>
@@ -704,6 +716,71 @@ Metatile parameters:
     Buffer area around the metatile, measured in pixels. This is useful for
     providers with labels or icons, where it’s necessary to draw a bit extra
     around the edges to ensure that text is not cut off.
+    </dd>
+</dl> 
+
+<h4><a id="preview" name="preview">Preview</a></h4>
+
+<p>
+TileStache includes a built-in slippy map preview, that can be viewed in a
+browser using the URL <samp>/{layer name}/preview.html</samp>, e.g.
+<samp>http://example.org/example-name/preview.html</samp>. The settings for
+this preview are completely optional, but can be set on a per-layer basis
+for control over starting location and file extension.
+</p>
+ 
+<p>
+Example preview configuration:
+</p>
+
+<pre>
+<span class="bg">{
+  "cache": …,
+  "layers": 
+  {
+    "example-name":
+    {
+      "provider": { … },</span>
+      "preview": 
+      {
+        "lat": 37.80439,
+        "lon": -122.27127,
+        "zoom": 15,
+        "ext": "jpg"
+      }
+    <span class="bg">}
+  }
+}</span>
+</pre>
+
+<p>
+This example preview displays JPG tiles, and is centered on
+<a href="http://osm.org/go/TZNQsg5C--">37.80439, -122.27127 at zoom 15</a>.
+</p>
+
+<p>
+Preview parameters:
+</p>
+
+<dl>
+    <dt>lat</dt>
+    <dd>
+    Starting latitude in degrees.
+    </dd>
+
+    <dt>lon</dt>
+    <dd>
+    Starting longitude in degrees.
+    </dd>
+
+    <dt>zoom</dt>
+    <dd>
+    Starting zoom level.
+    </dd>
+
+    <dt>ext</dt>
+    <dd>
+    Filename extension, e.g. <samp>"png"</samp>.
     </dd>
 </dl> 
 
