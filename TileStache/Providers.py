@@ -69,7 +69,8 @@ For an example of a non-image provider, see TileStache.Goodies.Provider.PostGeoJ
 import os
 
 from StringIO import StringIO
-from urlparse import urlparse
+from posixpath import exists
+from urlparse import urlparse, urljoin
 from httplib import HTTPConnection
 from tempfile import mkstemp
 from urllib import urlopen
@@ -184,8 +185,15 @@ class Mapnik:
             XML mapfile keyword arg comes from TileStache config,
             and is an absolute path by the time it gets here.
         """
+        maphref = urljoin(layer.config.dirpath, mapfile)
+        scheme, h, path, q, p, f = urlparse(maphref)
+        
+        if scheme in ('file', ''):
+            self.mapfile = path
+        else:
+            self.mapfile = maphref
+        
         self.layer = layer
-        self.mapfile = str(mapfile)
         self.mapnik = None
         
         engine = mapnik.FontEngine.instance()
@@ -200,12 +208,16 @@ class Mapnik:
         if self.mapnik is None:
             self.mapnik = mapnik.Map(0, 0)
             
-            handle, filename = mkstemp()
-            os.write(handle, urlopen(self.mapfile).read())
-            os.close(handle)
-
-            mapnik.load_map(self.mapnik, filename)
-            os.unlink(filename)
+            if exists(self.mapfile):
+                mapnik.load_map(self.mapnik, str(self.mapfile))
+            
+            else:
+                handle, filename = mkstemp()
+                os.write(handle, urlopen(self.mapfile).read())
+                os.close(handle)
+    
+                mapnik.load_map(self.mapnik, filename)
+                os.unlink(filename)
         
         self.mapnik.width = width
         self.mapnik.height = height
