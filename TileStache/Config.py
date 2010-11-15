@@ -192,7 +192,7 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     projection = Geography.getProjectionByName(projection)
     
     #
-    # Add cache lock timeouts
+    # Add cache lock timeouts and preview arguments
     #
     
     layer_kwargs = {}
@@ -202,10 +202,10 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     
     if layer_dict.has_key('preview'):
         preview_dict = layer_dict['preview']
-        layer_kwargs['preview_lat'] = float(preview_dict['lat'])
-        layer_kwargs['preview_lon'] = float(preview_dict['lon'])
-        layer_kwargs['preview_zoom'] = int(preview_dict['zoom'])
-        layer_kwargs['preview_ext'] = preview_dict['ext']
+        
+        for (key, func) in zip(('lat', 'lon', 'zoom', 'ext'), (float, float, int, str)):
+            if key in preview_dict:
+                layer_kwargs['preview_' + key] = func(preview_dict[key])
     
     #
     # Do the metatile
