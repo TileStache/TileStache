@@ -129,6 +129,8 @@ from os.path import join as pathjoin
 from xml.dom.minidom import parse as parseXML
 from StringIO import StringIO
 
+import sympy
+import numpy
 import PIL.Image
 import TileStache
 
@@ -200,8 +202,8 @@ def build_stack(object):
         return Stack(layers)
     
     elif type(object) is dict:
-        layername, colorname, maskname = [object.get(k, None) for k in ('src', 'color', 'mask')]
-        return Layer(layername, colorname, maskname)
+        args = [object.get(k, None) for k in ('src', 'color', 'mask', 'adjustments')]
+        return Layer(*args)
 
     else:
         raise Exception('Uh oh')
@@ -212,7 +214,7 @@ class Layer:
         Can include a reference to another layer for the source image, a second
         reference to another layer for the mask, and a color name for the fill.
     """
-    def __init__(self, layername=None, colorname=None, maskname=None):
+    def __init__(self, layername=None, colorname=None, maskname=None, adjustments=None):
         """ A new image layer.
         
             Arguments:
@@ -229,6 +231,7 @@ class Layer:
         self.layername = layername
         self.colorname = colorname
         self.maskname = maskname
+        self.adjustments = adjustments
 
     def render(self, config, input_img, coord):
         """ Render this image layer.
@@ -241,7 +244,7 @@ class Layer:
         if self.layername:
             layer = config.layers[self.layername]
             mime, body = TileStache.getTile(layer, coord, 'png')
-            layer_img = PIL.Image.open(StringIO(body))
+            layer_img = PIL.Image.open(StringIO(body)).convert('RGBA')
         
         if self.maskname:
             layer = config.layers[self.maskname]
@@ -252,8 +255,11 @@ class Layer:
             color = make_color(self.colorname)
             color_img = PIL.Image.new('RGBA', input_img.size, color)
 
+        if layer_img:
+            layer_img = apply_adjustments(layer_img, self.adjustments)
+        
         output_img = input_img.copy()
-
+        
         if layer_img and color_img and mask_img:
             raise KnownUnknown("You can't specify src, color and mask together in a Composite Layer: %s, %s, %s" % (repr(self.layername), repr(self.colorname), repr(self.maskname)))
         
@@ -351,6 +357,70 @@ def make_color(color):
         raise KnownUnknown('Color must be made up of valid hex chars: "%s"' % color)
 
     return r, g, b, a
+
+def arr2img(ar):
+    """ Convert Numeric.array to PIL.Image.
+    """
+    return PIL.Image.fromstring('L', (ar.shape[1], ar.shape[0]), ar.astype(numpy.ubyte).tostring())
+
+def img2arr(im):
+    """ Convert PIL.Image to Numeric.array.
+    """
+    return numpy.reshape(numpy.fromstring(im.tostring(), numpy.ubyte), (im.size[1], im.size[0]))
+
+def apply_adjustments(img, adjustments):
+    """ Apply image adjustments one by one and return a modified image.
+    
+        Working adjustments:
+        
+          curves:
+            Calls apply_curves_adjustment()
+    """
+    if not adjustments:
+        return img
+
+    # split the channels
+    rgba = map(img2arr, img.split())
+    rgba = [chan.astype(numpy.float32) for chan in rgba]
+    
+    for (name, args) in adjustments:
+        if name == 'curves':
+            rgba = apply_curves_adjustment(rgba, *args)
+        
+        else:
+            raise KnownUnknown('Unrecognized composite adjustment: "%s" with args %s' % (name, repr(args)))
+
+    # merge the channels
+    rgba = [chan.clip(0x00, 0xFF).astype(numpy.ubyte) for chan in rgba]
+    img = PIL.Image.merge('RGBA', map(arr2img, rgba))
+    
+    return img
+
+def apply_curves_adjustment(rgba, black, grey, white):
+    """ *write me*
+    """
+    # channels
+    red, green, blue, alpha = rgba
+    
+    # coefficients
+    a, b, c = [sympy.Symbol(n) for n in 'abc']
+    
+    # black, gray, white
+    eqs = [a * black**2 + b * black + c - 0x00,
+           a *  grey**2 + b *  grey + c - 0x80,
+           a * white**2 + b * white + c - 0xFF]
+    
+    co = sympy.solve(eqs, a, b, c)
+    
+    # arrays for each coefficient
+    a, b, c = [float(co[n]) * numpy.ones(red.shape, numpy.float32) for n in (a, b, c)]
+    
+    # arithmetic
+    red   = a * red**2   + b * red   + c
+    green = a * green**2 + b * green + c
+    blue  = a * blue**2  + b * blue  + c
+    
+    return red, green, blue, alpha
 
 def makeColor(color):
     """ An old name for the make_color function, deprecated for the next version.
