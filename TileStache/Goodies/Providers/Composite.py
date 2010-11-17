@@ -202,7 +202,7 @@ def build_stack(object):
         return Stack(layers)
     
     elif type(object) is dict:
-        args = [object.get(k, None) for k in ('src', 'color', 'mask', 'adjustments')]
+        args = [object.get(k, None) for k in ('src', 'color', 'mask', 'opacity', 'mode', 'adjustments')]
         return Layer(*args)
 
     else:
@@ -214,7 +214,7 @@ class Layer:
         Can include a reference to another layer for the source image, a second
         reference to another layer for the mask, and a color name for the fill.
     """
-    def __init__(self, layername=None, colorname=None, maskname=None, adjustments=None):
+    def __init__(self, layername=None, colorname=None, maskname=None, opacity=1.0, blendmode=None, adjustments=None):
         """ A new image layer.
         
             Arguments:
@@ -231,6 +231,8 @@ class Layer:
         self.layername = layername
         self.colorname = colorname
         self.maskname = maskname
+        self.opacity = opacity
+        self.blendmode = blendmode
         self.adjustments = adjustments
 
     def render(self, config, input_img, coord):
@@ -264,23 +266,23 @@ class Layer:
             raise KnownUnknown("You can't specify src, color and mask together in a Composite Layer: %s, %s, %s" % (repr(self.layername), repr(self.colorname), repr(self.maskname)))
         
         elif layer_img and color_img:
-            output_img.paste(color_img, None, color_img)
-            output_img.paste(layer_img, None, layer_img)
+            output_img = blend_images(output_img, color_img, color_img, self.opacity, self.blendmode)
+            output_img = blend_images(output_img, layer_img, layer_img, self.opacity, self.blendmode)
 
         elif layer_img and mask_img:
             # need to combine the masks here
             layermask_img = PIL.Image.new('RGBA', layer_img.size, (0, 0, 0, 0))
             layermask_img.paste(layer_img, None, mask_img)
-            output_img.paste(layermask_img, None, layermask_img)
+            output_img = blend_images(output_img, layermask_img, layermask_img, self.opacity, self.blendmode)
 
         elif color_img and mask_img:
-            output_img.paste(color_img, None, mask_img)
+            output_img = blend_images(output_img, color_img, mask_img, self.opacity, self.blendmode)
         
         elif layer_img:
-            output_img.paste(layer_img, None, layer_img)
+            output_img = blend_images(output_img, layer_img, layer_img, self.opacity, self.blendmode)
         
         elif color_img:
-            output_img.paste(color_img, None, color_img)
+            output_img = blend_images(output_img, color_img, color_img, self.opacity, self.blendmode)
 
         elif mask_img:
             raise KnownUnknown("You have to provide more than just a mask to Composite Layer: %s" % repr(self.maskname))
@@ -421,6 +423,54 @@ def apply_curves_adjustment(rgba, black, grey, white):
     blue  = a * blue**2  + b * blue  + c
     
     return red, green, blue, alpha
+
+def blend_images(bottom_img, top_img, mask_img, opacity, blendmode):
+    """ Blend images using a given mask, opacity, and blend mode.
+    
+        Working blend modes:
+          
+          None:
+            Plain old pass-through blend.
+        
+          "hard light":
+            Apply http://illusions.hu/effectwiki/doku.php?id=hard_light_blending
+    """
+    output_img = bottom_img.copy()
+
+    if opacity == 0:
+        # no-op
+        return output_img
+    
+    if not blendmode:
+        # plain old paste
+        output_img.paste(top_img, None, mask_img)
+        return output_img
+
+    # split the channels
+    btm_rgba = [img2arr(band).astype(numpy.float32) / 255.0 for band in bottom_img.split()]
+    top_rgba = [img2arr(band).astype(numpy.float32) / 255.0 for band in top_img.split()]
+    msk_rgba = [img2arr(band).astype(numpy.float32) / 255.0 for band in mask_img.split()]
+    out_rgba = [img2arr(band).astype(numpy.float32) / 255.0 for band in output_img.split()]
+    
+    if blendmode == 'hard light':
+        # http://illusions.hu/effectwiki/doku.php?id=hard_light_blending
+        for c in (0, 1, 2):
+            dk, lt = top_rgba[c] < .5, top_rgba[c] >= .5
+            
+            out_rgba[c][dk] = 2 * btm_rgba[c][dk] * top_rgba[c][dk]
+            out_rgba[c][lt] = 1 - 2 * (1 - btm_rgba[c][lt]) * (1 - top_rgba[c][lt])
+    
+    else:
+        raise KnownUnknown('Unrecognized blend mode: "%s"' % blendmode)
+
+    for c in (0, 1, 2):
+        out_rgba[c] = (1 - opacity) * btm_rgba[c] + opacity * out_rgba[c]
+    
+    # merge the channels
+    out_rgba = [(chan.clip(0.0, 1.0) * 255.0).astype(numpy.ubyte) for chan in out_rgba]
+    output_img = PIL.Image.merge('RGBA', map(arr2img, out_rgba))
+    
+    return output_img
 
 def makeColor(color):
     """ An old name for the make_color function, deprecated for the next version.
