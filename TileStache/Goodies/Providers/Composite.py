@@ -360,12 +360,12 @@ def make_color(color):
 
     return r, g, b, a
 
-def arr2img(ar):
+def _arr2img(ar):
     """ Convert Numeric.array to PIL.Image.
     """
     return PIL.Image.fromstring('L', (ar.shape[1], ar.shape[0]), ar.astype(numpy.ubyte).tostring())
 
-def img2arr(im):
+def _img2arr(im):
     """ Convert PIL.Image to Numeric.array.
     """
     return numpy.reshape(numpy.fromstring(im.tostring(), numpy.ubyte), (im.size[1], im.size[0]))
@@ -382,7 +382,7 @@ def apply_adjustments(img, adjustments):
         return img
 
     # split the channels
-    rgba = map(img2arr, img.split())
+    rgba = map(_img2arr, img.split())
     rgba = [chan.astype(numpy.float32) for chan in rgba]
     
     for (name, args) in adjustments:
@@ -394,7 +394,7 @@ def apply_adjustments(img, adjustments):
 
     # merge the channels
     rgba = [chan.clip(0x00, 0xFF).astype(numpy.ubyte) for chan in rgba]
-    img = PIL.Image.merge('RGBA', map(arr2img, rgba))
+    img = PIL.Image.merge('RGBA', map(_arr2img, rgba))
     
     return img
 
@@ -447,10 +447,10 @@ def blend_images(bottom_img, top_img, mask_img, opacity, blendmode):
         return output_img
 
     # split the channels
-    btm_rgba = [img2arr(band).astype(numpy.float32) / 255.0 for band in bottom_img.split()]
-    top_rgba = [img2arr(band).astype(numpy.float32) / 255.0 for band in top_img.split()]
-    msk_rgba = [img2arr(band).astype(numpy.float32) / 255.0 for band in mask_img.split()]
-    out_rgba = [img2arr(band).astype(numpy.float32) / 255.0 for band in output_img.split()]
+    btm_rgba = [_img2arr(band).astype(numpy.float32) / 255.0 for band in bottom_img.split()]
+    top_rgba = [_img2arr(band).astype(numpy.float32) / 255.0 for band in top_img.split()]
+    msk_rgba = [_img2arr(band).astype(numpy.float32) / 255.0 for band in mask_img.split()]
+    out_rgba = [_img2arr(band).astype(numpy.float32) / 255.0 for band in output_img.split()]
     
     if blendmode == 'hard light':
         # http://illusions.hu/effectwiki/doku.php?id=hard_light_blending
@@ -468,7 +468,7 @@ def blend_images(bottom_img, top_img, mask_img, opacity, blendmode):
     
     # merge the channels
     out_rgba = [(chan.clip(0.0, 1.0) * 255.0).astype(numpy.ubyte) for chan in out_rgba]
-    output_img = PIL.Image.merge('RGBA', map(arr2img, out_rgba))
+    output_img = PIL.Image.merge('RGBA', map(_arr2img, out_rgba))
     
     return output_img
 
