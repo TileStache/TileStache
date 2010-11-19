@@ -118,6 +118,7 @@
         <ul>
           <li><a href="#mapnik-provider">Mapnik</a></li>
           <li><a href="#proxy-provider">Proxy</a></li>
+          <li><a href="#url-template-provider">URL Template</a></li>
         </ul>
  -->
       </li>
@@ -645,21 +646,63 @@ See
 for more information.
 </p>
 
+<h4><a id="url-template-provider" name="url-template-provider">URL Template</a></h4>
+
+<p>
+Templated URL provider, to pass through and cache tiles from WMS servers.
+</p>
+ 
+<p>
+Example UrlTemplate provider configuration:
+</p>
+
+<pre>
+<span class="bg">{
+  "cache": { … }.
+  "layers":
+  {
+    "roads":
+    {</span>
+      "provider":
+      {
+        "name": "url template", 
+        "template": "http://example.com/?bbox=$xmin,$ymin,$xmax,$ymax"
+      }
+    <span class="bg">}
+  }
+}</span>
+</pre>
+ 
+<p>
+UrlTemplate provider parameters:
+</p>
+
+<dl>
+    <dt>template</dt>
+    <dd>
+    String with substitutions suitable for use in
+    <a href="http://docs.python.org/library/string.html#string.Template">string.Template</a>.
+    The variables available for substitution are <var>width</var>,
+    <var>height</var> (in pixels), <var>srs</var> (in
+    <a href="http://trac.osgeo.org/proj/wiki/GenParms">PROJ.4 format</a>),
+    <var>xmin</var>, <var>ymin</var>, <var>xmax</var>, <var>ymax</var> (in
+    projected map units), and <var>zoom</var>.
+    Example:
+    <samp>"http://example.com/?bbox=$xmin,$ymin,$xmax,$ymax&bboxSR=102113&size=$width,$height&imageSR=102113&format=jpg&f=image"</samp>.
+    </dd>
+</dl>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.Providers.html#UrlTemplate">TileStache.Providers.UrlTemplate</a>
+for more information.
+</p>
+
 <h4><a id="additional-providers" name="additional-providers">Additional Providers</a></h4>
 
 <p>
 New providers with functionality that’s not strictly core to TileStache first appear in
 <a href="http://tilestache.org/doc/TileStache.Goodies.Providers.html">TileStache.Goodies.Providers</a>.
-</p>
-
-<h5>UrlTemplate</h5>
-
-<p>
-[write me]
-
-See
-<a href="http://tilestache.org/doc/TileStache.Goodies.Providers.UrlTemplate.html">TileStache.Goodies.Providers.UrlTemplate</a>
-for more information.
 </p>
 
 <h5>Grid</h5>
