@@ -41,6 +41,9 @@ $(TARBALL): doc
 	mkdir $(PACKAGE)/doc
 	ln doc/*.html $(PACKAGE)/doc/
 
+	mkdir $(PACKAGE)/man
+	ln man/*.1 $(PACKAGE)/man/
+
 	tar -czf $(TARBALL) $(PACKAGE)
 	rm -rf $(PACKAGE)
 
@@ -60,7 +63,6 @@ doc:
 	pydoc -w TileStache.Goodies.Providers.Composite
 	pydoc -w TileStache.Goodies.Providers.PostGeoJSON
 	pydoc -w TileStache.Goodies.Providers.SolrGeoJSON
-	pydoc -w TileStache.Goodies.Providers.UrlTemplate
 	pydoc -w TileStache.Goodies.Providers.Grid
 
 	pydoc -w scripts/tilestache-*.py
