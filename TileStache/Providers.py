@@ -7,6 +7,7 @@ TileStache dynamically by class name.
 Built-in providers:
 - mapnik
 - proxy
+- url template
 
 Example built-in provider, for JSON configuration file:
 
@@ -73,6 +74,7 @@ from posixpath import exists
 from urlparse import urlparse, urljoin
 from httplib import HTTPConnection
 from tempfile import mkstemp
+from string import Template
 from urllib import urlopen
 from glob import glob
 
@@ -99,6 +101,9 @@ def getProviderByName(name):
 
     elif name.lower() == 'proxy':
         return Proxy
+
+    elif name.lower() == 'url template':
+        return UrlTemplate
 
     raise Exception('Unknown provider name: "%s"' % name)
 
@@ -229,3 +234,39 @@ class Mapnik:
         img = PIL.Image.fromstring('RGBA', (width, height), img.tostring())
         
         return img
+
+class UrlTemplate:
+    """ Built-in URL Template provider. Proxies map images from WMS servers.
+        
+        This provider is identified by the name "url template" in the TileStache config.
+        
+        Additional arguments:
+        
+        - template (required)
+            String with substitutions suitable for use in string.Template.
+
+        More on string substitutions:
+        - http://docs.python.org/library/string.html#template-strings
+    """
+
+    def __init__(self, layer, template):
+        """ Initialize a UrlTemplate provider with layer and template string.
+        
+            http://docs.python.org/library/string.html#template-strings
+        """
+        self.layer = layer
+        self.template = Template(template)
+
+    def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
+        """ Return an image for an area.
+        
+            Each argument (width, height, etc.) is substituted into the template.
+        """
+        mapping = {'width': width, 'height': height, 'srs': srs, 'zoom': zoom}
+        mapping.update({'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax})
+        
+        href = self.template.safe_substitute(mapping)
+        body = urlopen(href).read()
+        tile = PIL.Image.open(StringIO(body)).convert('RGBA')
+
+        return tile

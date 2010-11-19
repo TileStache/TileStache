@@ -41,6 +41,9 @@ $(TARBALL): doc
 	mkdir $(PACKAGE)/doc
 	ln doc/*.html $(PACKAGE)/doc/
 
+	mkdir $(PACKAGE)/man
+	ln man/*.1 $(PACKAGE)/man/
+
 	tar -czf $(TARBALL) $(PACKAGE)
 	rm -rf $(PACKAGE)
 
