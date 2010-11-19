@@ -240,6 +240,9 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
             if provider_dict.has_key('provider'):
                 provider_kwargs['provider_name'] = provider_dict['provider']
         
+        elif _class is Providers.UrlTemplate:
+            provider_kwargs['template'] = provider_dict['template']
+        
     elif provider_dict.has_key('class'):
         _class = loadClassPath(provider_dict['class'])
         provider_kwargs = provider_dict.get('kwargs', {})
