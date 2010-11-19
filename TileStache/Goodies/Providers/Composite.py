@@ -202,8 +202,13 @@ def build_stack(object):
         return Stack(layers)
     
     elif type(object) is dict:
-        args = [object.get(k, None) for k in ('src', 'color', 'mask', 'opacity', 'mode', 'adjustments')]
-        return Layer(*args)
+        keys = ('src', 'layername'), ('color', 'colorname'), \
+               ('mask', 'maskname'), ('opacity', 'opacity'), \
+               ('mode', 'blendmode'), ('adjustments', 'adjustments')
+
+        args = [(arg, object[key]) for (key, arg) in keys if key in object]
+        
+        return Layer(**dict(args))
 
     else:
         raise Exception('Uh oh')
@@ -241,55 +246,66 @@ class Layer:
             Given a configuration object, starting image, and coordinate,
             return an output image with the contents of this image layer.
         """
-        layer_img, color_img, mask_img = None, None, None
+        has_layer, has_color, has_mask = False, False, False
         
+        output_rgba = _img2rgba(input_img)
+    
         if self.layername:
             layer = config.layers[self.layername]
             mime, body = TileStache.getTile(layer, coord, 'png')
             layer_img = PIL.Image.open(StringIO(body)).convert('RGBA')
+            layer_rgba = _img2rgba(layer_img)
+
+            has_layer = True
         
         if self.maskname:
             layer = config.layers[self.maskname]
             mime, body = TileStache.getTile(layer, coord, 'png')
             mask_img = PIL.Image.open(StringIO(body)).convert('L')
+            mask_chan = _img2arr(mask_img).astype(numpy.float32) / 255.
+
+            has_mask = True
 
         if self.colorname:
             color = make_color(self.colorname)
-            color_img = PIL.Image.new('RGBA', input_img.size, color)
+            color_rgba = [numpy.zeros(output_rgba[0].shape, numpy.float32) + band/255.0 for band in color]
 
-        if layer_img:
-            layer_img = apply_adjustments(layer_img, self.adjustments)
+            has_color = True
+
+        if has_layer:
+            layer_rgba = apply_adjustments(layer_rgba, self.adjustments)
         
-        output_img = input_img.copy()
-        
-        if layer_img and color_img and mask_img:
+        if has_layer and has_color and has_mask:
             raise KnownUnknown("You can't specify src, color and mask together in a Composite Layer: %s, %s, %s" % (repr(self.layername), repr(self.colorname), repr(self.maskname)))
         
-        elif layer_img and color_img:
-            output_img = blend_images(output_img, color_img, color_img, self.opacity, self.blendmode)
-            output_img = blend_images(output_img, layer_img, layer_img, self.opacity, self.blendmode)
+        elif has_layer and has_color:
+            output_rgba = blend_images(output_rgba, color_rgba, color_rgba, self.opacity, self.blendmode)
+            output_rgba = blend_images(output_rgba, layer_rgba, layer_rgba, self.opacity, self.blendmode)
 
-        elif layer_img and mask_img:
+        elif has_layer and has_mask:
             # need to combine the masks here
-            layermask_img = PIL.Image.new('RGBA', layer_img.size, (0, 0, 0, 0))
-            layermask_img.paste(layer_img, None, mask_img)
-            output_img = blend_images(output_img, layermask_img, layermask_img, self.opacity, self.blendmode)
+            layermask_rgba = [numpy.zeros(mask_chan.shape, numpy.float32) for i in range(4)]
+            layermask_rgba = blend_images(layermask_rgba, layer_rgba, mask_chan, 1, None)
 
-        elif color_img and mask_img:
-            output_img = blend_images(output_img, color_img, mask_img, self.opacity, self.blendmode)
-        
-        elif layer_img:
-            output_img = blend_images(output_img, layer_img, layer_img, self.opacity, self.blendmode)
-        
-        elif color_img:
-            output_img = blend_images(output_img, color_img, color_img, self.opacity, self.blendmode)
+            output_rgba = blend_images(output_rgba, layermask_rgba, layermask_rgba, self.opacity, self.blendmode)
 
-        elif mask_img:
+        elif has_color and has_mask:
+            output_rgba = blend_images(output_rgba, color_rgba, mask_chan, self.opacity, self.blendmode)
+        
+        elif has_layer:
+            output_rgba = blend_images(output_rgba, layer_rgba, layer_rgba, self.opacity, self.blendmode)
+        
+        elif has_color:
+            output_rgba = blend_images(output_rgba, color_rgba, color_rgba, self.opacity, self.blendmode)
+
+        elif has_mask:
             raise KnownUnknown("You have to provide more than just a mask to Composite Layer: %s" % repr(self.maskname))
 
         else:
             raise KnownUnknown("You have to at least some combination of src, color and mask to Composite Layer: %s" % repr(self.maskname))
 
+        output_img = _rgba2img(output_rgba)
+        
         return output_img
 
 class Stack:
@@ -368,9 +384,22 @@ def _arr2img(ar):
 def _img2arr(im):
     """ Convert PIL.Image to Numeric.array.
     """
+    assert im.mode == 'L'
     return numpy.reshape(numpy.fromstring(im.tostring(), numpy.ubyte), (im.size[1], im.size[0]))
 
-def apply_adjustments(img, adjustments):
+def _rgba2img(rgba):
+    """ Convert four Numeric.array objects to PIL.Image.
+    """
+    assert type(rgba) is list
+    return PIL.Image.merge('RGBA', [_arr2img((band * 255.0).astype(numpy.ubyte)) for band in rgba])
+
+def _img2rgba(im):
+    """ Convert PIL.Image to four Numeric.array objects.
+    """
+    assert im.mode == 'RGBA'
+    return [_img2arr(band).astype(numpy.float32) / 255.0 for band in im.split()]
+
+def apply_adjustments(rgba, adjustments):
     """ Apply image adjustments one by one and return a modified image.
     
         Working adjustments:
@@ -379,24 +408,16 @@ def apply_adjustments(img, adjustments):
             Calls apply_curves_adjustment()
     """
     if not adjustments:
-        return img
+        return rgba
 
-    # split the channels
-    rgba = map(_img2arr, img.split())
-    rgba = [chan.astype(numpy.float32) for chan in rgba]
-    
     for (name, args) in adjustments:
         if name == 'curves':
             rgba = apply_curves_adjustment(rgba, *args)
         
         else:
             raise KnownUnknown('Unrecognized composite adjustment: "%s" with args %s' % (name, repr(args)))
-
-    # merge the channels
-    rgba = [chan.clip(0x00, 0xFF).astype(numpy.ubyte) for chan in rgba]
-    img = PIL.Image.merge('RGBA', map(_arr2img, rgba))
     
-    return img
+    return rgba
 
 def apply_curves_adjustment(rgba, black, grey, white):
     """ *write me*
@@ -407,10 +428,13 @@ def apply_curves_adjustment(rgba, black, grey, white):
     # coefficients
     a, b, c = [sympy.Symbol(n) for n in 'abc']
     
+    # knowns
+    black, grey, white = black / 255.0, grey / 255.0, white / 255.0
+    
     # black, gray, white
-    eqs = [a * black**2 + b * black + c - 0x00,
-           a *  grey**2 + b *  grey + c - 0x80,
-           a * white**2 + b * white + c - 0xFF]
+    eqs = [a * black**2 + b * black + c - 0.0,
+           a *  grey**2 + b *  grey + c - 0.5,
+           a * white**2 + b * white + c - 1.0]
     
     co = sympy.solve(eqs, a, b, c)
     
@@ -424,7 +448,7 @@ def apply_curves_adjustment(rgba, black, grey, white):
     
     return red, green, blue, alpha
 
-def blend_images(bottom_img, top_img, mask_img, opacity, blendmode):
+def blend_images(bottom_rgba, top_rgba, mask_chan, opacity, blendmode):
     """ Blend images using a given mask, opacity, and blend mode.
     
         Working blend modes:
@@ -435,42 +459,40 @@ def blend_images(bottom_img, top_img, mask_img, opacity, blendmode):
           "hard light":
             Apply http://illusions.hu/effectwiki/doku.php?id=hard_light_blending
     """
-    output_img = bottom_img.copy()
+    output_rgba = [numpy.copy(chan) for chan in bottom_rgba]
 
     if opacity == 0:
         # no-op
-        return output_img
+        return output_rgba
+    
+    if type(mask_chan) is list:
+        # use just the alpha channel if it's given as full RGBA.
+        mask_chan = mask_chan[3]
     
     if not blendmode:
         # plain old paste
-        output_img.paste(top_img, None, mask_img)
-        return output_img
+        for c in (0, 1, 2):
+            output_rgba[c] = (1 - mask_chan) * bottom_rgba[c] + mask_chan * top_rgba[c]
 
-    # split the channels
-    btm_rgba = [_img2arr(band).astype(numpy.float32) / 255.0 for band in bottom_img.split()]
-    top_rgba = [_img2arr(band).astype(numpy.float32) / 255.0 for band in top_img.split()]
-    msk_rgba = [_img2arr(band).astype(numpy.float32) / 255.0 for band in mask_img.split()]
-    out_rgba = [_img2arr(band).astype(numpy.float32) / 255.0 for band in output_img.split()]
-    
-    if blendmode == 'hard light':
+        # combine all three alphas
+        intersect_chan = top_rgba[3] * mask_chan
+        output_rgba[3] = 1 - (1 - bottom_rgba[3]) * (1 - intersect_chan)
+
+    elif blendmode == 'hard light':
         # http://illusions.hu/effectwiki/doku.php?id=hard_light_blending
         for c in (0, 1, 2):
             dk, lt = top_rgba[c] < .5, top_rgba[c] >= .5
             
-            out_rgba[c][dk] = 2 * btm_rgba[c][dk] * top_rgba[c][dk]
-            out_rgba[c][lt] = 1 - 2 * (1 - btm_rgba[c][lt]) * (1 - top_rgba[c][lt])
+            output_rgba[c][dk] = 2 * bottom_rgba[c][dk] * top_rgba[c][dk]
+            output_rgba[c][lt] = 1 - 2 * (1 - bottom_rgba[c][lt]) * (1 - top_rgba[c][lt])
     
     else:
         raise KnownUnknown('Unrecognized blend mode: "%s"' % blendmode)
 
     for c in (0, 1, 2):
-        out_rgba[c] = (1 - opacity) * btm_rgba[c] + opacity * out_rgba[c]
+        output_rgba[c] = (1 - opacity) * bottom_rgba[c] + opacity * output_rgba[c]
     
-    # merge the channels
-    out_rgba = [(chan.clip(0.0, 1.0) * 255.0).astype(numpy.ubyte) for chan in out_rgba]
-    output_img = PIL.Image.merge('RGBA', map(_arr2img, out_rgba))
-    
-    return output_img
+    return output_rgba
 
 def makeColor(color):
     """ An old name for the make_color function, deprecated for the next version.
