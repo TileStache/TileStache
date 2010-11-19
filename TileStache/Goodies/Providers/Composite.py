@@ -302,7 +302,7 @@ class Layer:
             raise KnownUnknown("You have to provide more than just a mask to Composite Layer: %s" % repr(self.maskname))
 
         else:
-            raise KnownUnknown("You have to at least some combination of src, color and mask to Composite Layer: %s" % repr(self.maskname))
+            raise KnownUnknown("You have to provide at least some combination of src, color and mask to Composite Layer")
 
         output_img = _rgba2img(output_rgba)
         
@@ -428,7 +428,7 @@ def apply_curves_adjustment(rgba, black, grey, white):
     # coefficients
     a, b, c = [sympy.Symbol(n) for n in 'abc']
     
-    # knowns
+    # knowns are given in 0-255 range, need to be converted to floats
     black, grey, white = black / 255.0, grey / 255.0, white / 255.0
     
     # black, gray, white
