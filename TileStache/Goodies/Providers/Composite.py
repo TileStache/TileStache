@@ -279,6 +279,7 @@ class Layer:
             raise KnownUnknown("You can't specify src, color and mask together in a Composite Layer: %s, %s, %s" % (repr(self.layername), repr(self.colorname), repr(self.maskname)))
         
         elif has_layer and has_color:
+            # color first, then layer
             output_rgba = blend_images(output_rgba, color_rgba[:3], color_rgba[3], self.opacity, self.blendmode)
             output_rgba = blend_images(output_rgba, layer_rgba[:3], layer_rgba[3], self.opacity, self.blendmode)
 
@@ -450,12 +451,7 @@ def blend_images(bottom_rgba, top_rgb, mask_chan, opacity, blendmode):
     """ Blend images using a given mask, opacity, and blend mode.
     
         Working blend modes:
-          
-          None:
-            Plain old pass-through blend.
-        
-          "hard light":
-            Apply http://illusions.hu/effectwiki/doku.php?id=hard_light_blending
+        None for plain pass-through, "screen", "multiply", and "hard light".
     """
     if opacity == 0 or not mask_chan.any():
         # no-op for zero opacity or empty mask
@@ -468,20 +464,22 @@ def blend_images(bottom_rgba, top_rgb, mask_chan, opacity, blendmode):
         # plain old paste
         output_rgba[:3] = [numpy.copy(chan) for chan in top_rgb]
 
-    elif blendmode == 'hard light':
-        # http://illusions.hu/effectwiki/doku.php?id=hard_light_blending
-        for c in (0, 1, 2):
-            # different pixel subsets for dark and light parts of overlay
-            dk, lt = top_rgb[c] < .5, top_rgb[c] >= .5
-            
-            output_rgba[c][dk] = 2 * bottom_rgba[c][dk] * top_rgb[c][dk]
-            output_rgba[c][lt] = 1 - 2 * (1 - bottom_rgba[c][lt]) * (1 - top_rgb[c][lt])
-    
     else:
-        raise KnownUnknown('Unrecognized blend mode: "%s"' % blendmode)
+        blend_functions = {'screen': blend_channels_screen,
+                           'multiply': blend_channels_multiply,
+                           'hard light': blend_channels_hard_light}
+
+        if blendmode in blend_functions:
+            for c in (0, 1, 2):
+                blend_function = blend_functions[blendmode]
+                blend_function(output_rgba[c], bottom_rgba[c], top_rgb[c])
+        
+        else:
+            raise KnownUnknown('Unrecognized blend mode: "%s"' % blendmode)
     
     # comined effective mask channel
-    mask_chan = mask_chan * opacity
+    if opacity < 1:
+        mask_chan = mask_chan * opacity
 
     # pixels from mask that aren't full-white
     gr = mask_chan < 1
@@ -489,12 +487,38 @@ def blend_images(bottom_rgba, top_rgb, mask_chan, opacity, blendmode):
     if gr.any():
         # we have some shades of gray to take care of
         for c in (0, 1, 2):
-            output_rgba[c][gr] = (1 - mask_chan[gr]) * bottom_rgba[c][gr] + mask_chan[gr] * output_rgba[c][gr]
+            output_rgba[c][gr] = (1 - mask_chan[gr]) * bottom_rgba[c][gr] \
+                                     + mask_chan[gr] * output_rgba[c][gr]
     
     # output mask is the screen of the existing and overlaid alphas
-    output_rgba[3] = 1 - (1 - bottom_rgba[3]) * (1 - mask_chan)
+    blend_channels_screen(output_rgba[3], bottom_rgba[3], mask_chan)
     
     return output_rgba
+
+def blend_channels_screen(output_chan, bottom_chan, top_chan):
+    """ Modify output channel in-place with the combination of bottom and top channels.
+    
+        Math from http://illusions.hu/effectwiki/doku.php?id=screen_blending
+    """
+    output_chan[:,:] = 1 - (1 - bottom_chan[:,:]) * (1 - top_chan[:,:])
+
+def blend_channels_multiply(output_chan, bottom_chan, top_chan):
+    """ Modify output channel in-place with the combination of bottom and top channels.
+    
+        Math from http://illusions.hu/effectwiki/doku.php?id=multiply_blending
+    """
+    output_chan[:,:] = bottom_chan[:,:] * top_chan[:,:]
+
+def blend_channels_hard_light(output_chan, bottom_chan, top_chan):
+    """ Modify output channel in-place with the combination of bottom and top channels.
+    
+        Math from http://illusions.hu/effectwiki/doku.php?id=hard_light_blending
+    """
+    # different pixel subsets for dark and light parts of overlay
+    dk, lt = top_chan < .5, top_chan >= .5
+    
+    output_chan[dk] = 2 * bottom_chan[dk] * top_chan[dk]
+    output_chan[lt] = 1 - 2 * (1 - bottom_chan[lt]) * (1 - top_chan[lt])
 
 def makeColor(color):
     """ An old name for the make_color function, deprecated for the next version.
