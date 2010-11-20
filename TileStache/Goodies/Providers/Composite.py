@@ -279,24 +279,22 @@ class Layer:
             raise KnownUnknown("You can't specify src, color and mask together in a Composite Layer: %s, %s, %s" % (repr(self.layername), repr(self.colorname), repr(self.maskname)))
         
         elif has_layer and has_color:
-            output_rgba = blend_images(output_rgba, color_rgba, color_rgba, self.opacity, self.blendmode)
-            output_rgba = blend_images(output_rgba, layer_rgba, layer_rgba, self.opacity, self.blendmode)
+            output_rgba = blend_images(output_rgba, color_rgba[:3], color_rgba[3], self.opacity, self.blendmode)
+            output_rgba = blend_images(output_rgba, layer_rgba[:3], layer_rgba[3], self.opacity, self.blendmode)
 
         elif has_layer and has_mask:
             # need to combine the masks here
-            layermask_rgba = [numpy.zeros(mask_chan.shape, numpy.float32) for i in range(4)]
-            layermask_rgba = blend_images(layermask_rgba, layer_rgba, mask_chan, 1, None)
-
-            output_rgba = blend_images(output_rgba, layermask_rgba, layermask_rgba, self.opacity, self.blendmode)
+            layermask_chan = layer_rgba[3] * mask_chan
+            output_rgba = blend_images(output_rgba, layer_rgba[:3], layermask_chan, self.opacity, self.blendmode)
 
         elif has_color and has_mask:
-            output_rgba = blend_images(output_rgba, color_rgba, mask_chan, self.opacity, self.blendmode)
+            output_rgba = blend_images(output_rgba, color_rgba[:3], mask_chan, self.opacity, self.blendmode)
         
         elif has_layer:
-            output_rgba = blend_images(output_rgba, layer_rgba, layer_rgba, self.opacity, self.blendmode)
+            output_rgba = blend_images(output_rgba, layer_rgba[:3], layer_rgba[3], self.opacity, self.blendmode)
         
         elif has_color:
-            output_rgba = blend_images(output_rgba, color_rgba, color_rgba, self.opacity, self.blendmode)
+            output_rgba = blend_images(output_rgba, color_rgba[:3], color_rgba[3], self.opacity, self.blendmode)
 
         elif has_mask:
             raise KnownUnknown("You have to provide more than just a mask to Composite Layer: %s" % repr(self.maskname))
@@ -391,7 +389,7 @@ def _rgba2img(rgba):
     """ Convert four Numeric.array objects to PIL.Image.
     """
     assert type(rgba) is list
-    return PIL.Image.merge('RGBA', [_arr2img((band * 255.0).astype(numpy.ubyte)) for band in rgba])
+    return PIL.Image.merge('RGBA', [_arr2img(numpy.round(band * 255.0).astype(numpy.ubyte)) for band in rgba])
 
 def _img2rgba(im):
     """ Convert PIL.Image to four Numeric.array objects.
@@ -448,7 +446,7 @@ def apply_curves_adjustment(rgba, black, grey, white):
     
     return red, green, blue, alpha
 
-def blend_images(bottom_rgba, top_rgba, mask_chan, opacity, blendmode):
+def blend_images(bottom_rgba, top_rgb, mask_chan, opacity, blendmode):
     """ Blend images using a given mask, opacity, and blend mode.
     
         Working blend modes:
@@ -459,38 +457,42 @@ def blend_images(bottom_rgba, top_rgba, mask_chan, opacity, blendmode):
           "hard light":
             Apply http://illusions.hu/effectwiki/doku.php?id=hard_light_blending
     """
-    output_rgba = [numpy.copy(chan) for chan in bottom_rgba]
-
-    if opacity == 0:
-        # no-op
-        return output_rgba
+    if opacity == 0 or not mask_chan.any():
+        # no-op for zero opacity or empty mask
+        return [numpy.copy(chan) for chan in bottom_rgba]
     
-    if type(mask_chan) is list:
-        # use just the alpha channel if it's given as full RGBA.
-        mask_chan = mask_chan[3]
+    # prepare unitialized output arrays
+    output_rgba = [numpy.empty_like(chan) for chan in bottom_rgba]
     
     if not blendmode:
         # plain old paste
-        for c in (0, 1, 2):
-            output_rgba[c] = (1 - mask_chan) * bottom_rgba[c] + mask_chan * top_rgba[c]
-
-        # combine all three alphas
-        intersect_chan = top_rgba[3] * mask_chan
-        output_rgba[3] = 1 - (1 - bottom_rgba[3]) * (1 - intersect_chan)
+        output_rgba[:3] = [numpy.copy(chan) for chan in top_rgb]
 
     elif blendmode == 'hard light':
         # http://illusions.hu/effectwiki/doku.php?id=hard_light_blending
         for c in (0, 1, 2):
-            dk, lt = top_rgba[c] < .5, top_rgba[c] >= .5
+            # different pixel subsets for dark and light parts of overlay
+            dk, lt = top_rgb[c] < .5, top_rgb[c] >= .5
             
-            output_rgba[c][dk] = 2 * bottom_rgba[c][dk] * top_rgba[c][dk]
-            output_rgba[c][lt] = 1 - 2 * (1 - bottom_rgba[c][lt]) * (1 - top_rgba[c][lt])
+            output_rgba[c][dk] = 2 * bottom_rgba[c][dk] * top_rgb[c][dk]
+            output_rgba[c][lt] = 1 - 2 * (1 - bottom_rgba[c][lt]) * (1 - top_rgb[c][lt])
     
     else:
         raise KnownUnknown('Unrecognized blend mode: "%s"' % blendmode)
+    
+    # comined effective mask channel
+    mask_chan = mask_chan * opacity
 
-    for c in (0, 1, 2):
-        output_rgba[c] = (1 - opacity) * bottom_rgba[c] + opacity * output_rgba[c]
+    # pixels from mask that aren't full-white
+    gr = mask_chan < 1
+    
+    if gr.any():
+        # we have some shades of gray to take care of
+        for c in (0, 1, 2):
+            output_rgba[c][gr] = (1 - mask_chan[gr]) * bottom_rgba[c][gr] + mask_chan[gr] * output_rgba[c][gr]
+    
+    # output mask is the screen of the existing and overlaid alphas
+    output_rgba[3] = 1 - (1 - bottom_rgba[3]) * (1 - mask_chan)
     
     return output_rgba
 
@@ -797,4 +799,125 @@ if __name__ == '__main__':
             # an empty stack is not so great
             self.assertRaises(KnownUnknown, layer.provider.renderTile, 3, 3, None, ModestMaps.Core.Coordinate(0, 0, 0))
 
+    class AlphaTests(unittest.TestCase):
+        """
+        """
+        def setUp(self):
+    
+            cache = TileStache.Caches.Test()
+            self.config = TileStache.Config.Configuration(cache, '.')
+            
+            _808f = '\x80\x80\x80\xFF'
+            _fff0, _fff8, _ffff = '\xFF\xFF\xFF\x00', '\xFF\xFF\xFF\x80', '\xFF\xFF\xFF\xFF'
+            _0000, _0008, _000f = '\x00\x00\x00\x00', '\x00\x00\x00\x80', '\x00\x00\x00\xFF'
+            
+            self.config.layers = \
+            {
+                # 50% gray all over
+                'gray':       tinybitmap_layer(self.config, _808f * 9),
+                
+                # opaque horizontal gradient, black to white
+                'h gradient': tinybitmap_layer(self.config, (_000f + _808f + _ffff) * 3),
+                
+                # transparent white at top to opaque white at bottom
+                'white wipe': tinybitmap_layer(self.config, _fff0 * 3 + _fff8 * 3 + _ffff * 3),
+                
+                # transparent black at top to opaque black at bottom
+                'black wipe': tinybitmap_layer(self.config, _0000 * 3 + _0008 * 3 + _000f * 3)
+            }
+            
+            self.start_img = PIL.Image.new('RGBA', (3, 3), (0x00, 0x00, 0x00, 0x00))
+        
+        def test0(self):
+            
+            stack = \
+                [
+                    [
+                        {"src": "gray"},
+                        {"src": "white wipe"}
+                    ]
+                ]
+            
+            layer = minimal_stack_layer(self.config, stack)
+            img = layer.provider.renderTile(3, 3, None, ModestMaps.Core.Coordinate(0, 0, 0))
+            
+            assert img.getpixel((0, 0)) == (0x80, 0x80, 0x80, 0xFF), 'top left pixel'
+            assert img.getpixel((1, 0)) == (0x80, 0x80, 0x80, 0xFF), 'top center pixel'
+            assert img.getpixel((2, 0)) == (0x80, 0x80, 0x80, 0xFF), 'top right pixel'
+            assert img.getpixel((0, 1)) == (0xC0, 0xC0, 0xC0, 0xFF), 'center left pixel'
+            assert img.getpixel((1, 1)) == (0xC0, 0xC0, 0xC0, 0xFF), 'middle pixel'
+            assert img.getpixel((2, 1)) == (0xC0, 0xC0, 0xC0, 0xFF), 'center right pixel'
+            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom left pixel'
+            assert img.getpixel((1, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom center pixel'
+            assert img.getpixel((2, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom right pixel'
+        
+        def test1(self):
+            
+            stack = \
+                [
+                    [
+                        {"src": "gray"},
+                        {"src": "black wipe"}
+                    ]
+                ]
+            
+            layer = minimal_stack_layer(self.config, stack)
+            img = layer.provider.renderTile(3, 3, None, ModestMaps.Core.Coordinate(0, 0, 0))
+            
+            assert img.getpixel((0, 0)) == (0x80, 0x80, 0x80, 0xFF), 'top left pixel'
+            assert img.getpixel((1, 0)) == (0x80, 0x80, 0x80, 0xFF), 'top center pixel'
+            assert img.getpixel((2, 0)) == (0x80, 0x80, 0x80, 0xFF), 'top right pixel'
+            assert img.getpixel((0, 1)) == (0x40, 0x40, 0x40, 0xFF), 'center left pixel'
+            assert img.getpixel((1, 1)) == (0x40, 0x40, 0x40, 0xFF), 'middle pixel'
+            assert img.getpixel((2, 1)) == (0x40, 0x40, 0x40, 0xFF), 'center right pixel'
+            assert img.getpixel((0, 2)) == (0x00, 0x00, 0x00, 0xFF), 'bottom left pixel'
+            assert img.getpixel((1, 2)) == (0x00, 0x00, 0x00, 0xFF), 'bottom center pixel'
+            assert img.getpixel((2, 2)) == (0x00, 0x00, 0x00, 0xFF), 'bottom right pixel'
+        
+        def test2(self):
+        
+            stack = \
+                [
+                    [
+                        {"src": "gray"},
+                        {"src": "white wipe", "mask": "h gradient"}
+                    ]
+                ]
+            
+            layer = minimal_stack_layer(self.config, stack)
+            img = layer.provider.renderTile(3, 3, None, ModestMaps.Core.Coordinate(0, 0, 0))
+            
+            assert img.getpixel((0, 0)) == (0x80, 0x80, 0x80, 0xFF), 'top left pixel'
+            assert img.getpixel((1, 0)) == (0x80, 0x80, 0x80, 0xFF), 'top center pixel'
+            assert img.getpixel((2, 0)) == (0x80, 0x80, 0x80, 0xFF), 'top right pixel'
+            assert img.getpixel((0, 1)) == (0x80, 0x80, 0x80, 0xFF), 'center left pixel'
+            assert img.getpixel((1, 1)) == (0xA0, 0xA0, 0xA0, 0xFF), 'middle pixel'
+            assert img.getpixel((2, 1)) == (0xC0, 0xC0, 0xC0, 0xFF), 'center right pixel'
+            assert img.getpixel((0, 2)) == (0x80, 0x80, 0x80, 0xFF), 'bottom left pixel'
+            assert img.getpixel((1, 2)) == (0xC0, 0xC0, 0xC0, 0xFF), 'bottom center pixel'
+            assert img.getpixel((2, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom right pixel'
+        
+        def test3(self):
+            
+            stack = \
+                [
+                    [
+                        {"src": "gray"},
+                        {"src": "black wipe", "mask": "h gradient"}
+                    ]
+                ]
+            
+            layer = minimal_stack_layer(self.config, stack)
+            img = layer.provider.renderTile(3, 3, None, ModestMaps.Core.Coordinate(0, 0, 0))
+            
+            assert img.getpixel((0, 0)) == (0x80, 0x80, 0x80, 0xFF), 'top left pixel'
+            assert img.getpixel((1, 0)) == (0x80, 0x80, 0x80, 0xFF), 'top center pixel'
+            assert img.getpixel((2, 0)) == (0x80, 0x80, 0x80, 0xFF), 'top right pixel'
+            assert img.getpixel((0, 1)) == (0x80, 0x80, 0x80, 0xFF), 'center left pixel'
+            assert img.getpixel((1, 1)) == (0x60, 0x60, 0x60, 0xFF), 'middle pixel'
+            assert img.getpixel((2, 1)) == (0x40, 0x40, 0x40, 0xFF), 'center right pixel'
+            assert img.getpixel((0, 2)) == (0x80, 0x80, 0x80, 0xFF), 'bottom left pixel'
+            assert img.getpixel((1, 2)) == (0x40, 0x40, 0x40, 0xFF), 'bottom center pixel'
+            assert img.getpixel((2, 2)) == (0x00, 0x00, 0x00, 0xFF), 'bottom right pixel'
+    
     unittest.main()
