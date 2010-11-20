@@ -27,6 +27,23 @@ to mask another layer:
 Many combinations of "src", "mask", and "color" can be used together, but it's
 an error to provide all three.
 
+Layers can be combined through the use of opacity and blend modes. Opacity is
+specified as a value from 0.0-1.0, and blend mode is specified as a string.
+This example layer is blended using the "hard light" mode at 50% opacity:
+
+    {"src": "hillshading", "mode": "hard light", "opacity": 0.5}
+
+Currently-supported blend modes include "screen", "multiply", and "hard light".
+
+Layers can also be affected by adjustments. Adjustments are specified as an
+array of names and parameters. This example layer has been slightly darkened
+using the "curves" adjustment, moving the input value of 181 (light gray)
+to 50% gray while leaving black and white alone:
+
+    {"src": "hillshading", "adjustments": [ ["curves", [0, 181, 255]] ]}
+
+Currently, only the "curves" adjustment is supported.
+
 Finally, the stacking feature allows layers to combined in more complex ways.
 This example stack combines a background color and foreground layer:
 
