@@ -347,7 +347,13 @@ class Stack:
         stack_img = PIL.Image.new('RGBA', input_img.size, (0, 0, 0, 0))
         
         for layer in self.layers:
-            stack_img = layer.render(config, stack_img, coord)
+            try:
+                stack_img = layer.render(config, stack_img, coord)
+            except IOError:
+                # Be permissive of I/O errors getting sub-layers, for example if a
+                # proxy layer referenced here doesn't have an image for a zoom level.
+                # TODO: regret this later.
+                pass
 
         output_img = input_img.copy()
         output_img.paste(stack_img, (0, 0), stack_img)
