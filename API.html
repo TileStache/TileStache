@@ -400,7 +400,8 @@ Example configuration:
     "name": "Disk",
     "path": "/tmp/stache",
     "umask": "0000",
-    "dirs": "portable"
+    "dirs": "portable",
+    "gzip": ["xml", "json"]
   }<span class="bg">,
   "layers": { … }
 }</span>
@@ -429,6 +430,13 @@ Disk cache parameters:
     <samp>"portable"</samp> creates matching directory trees while
     <samp>"safe"</samp> guarantees directories with fewer files, e.g.
     <samp>12/000/656/001/582.png</samp>. Defaults to <samp>"safe"</samp>.
+    </dd>
+
+    <dt>gzip</dt>
+    <dd>
+    Optional list of file formats that should be stored in a
+    compressed form. Defaults to <samp>["txt", "text", "json", "xml"]</samp>.
+    Provide an empty list in the configuration for no compression.
     </dd>
 </dl>
 

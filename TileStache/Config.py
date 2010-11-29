@@ -167,8 +167,9 @@ def _parseConfigfileCache(cache_dict, dirpath):
             if cache_dict.has_key('umask'):
                 kwargs['umask'] = int(cache_dict['umask'], 8)
             
-            if cache_dict.has_key('dirs'):
-                kwargs['dirs'] = cache_dict['dirs']
+            for key in ('dirs', 'gzip'):
+                if cache_dict.has_key(key):
+                    kwargs[key] = cache_dict[key]
     
         else:
             raise Exception('Unknown cache: %s' % cache_dict['name'])
