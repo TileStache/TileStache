@@ -1,3 +1,7 @@
+2010-11-29: 1.5.0
+- Expanded PostGeoJSON provider in extras collection to include built-in shape clipping for Polymaps.
+- Added gzip option to Disk cache to reduce disk usage of  text-based providers like XML or JSON.
+
 2010-11-23: 1.4.1
 - Being permissive of I/O errors when getting sublayers in Composite provider.
   This is short-term necessary, may require configuration or fixing later.
