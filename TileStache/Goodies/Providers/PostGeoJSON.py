@@ -99,7 +99,7 @@ class SaveableResponse:
     """
     def __init__(self, content, indent=2, precision=2):
         self.content = content
-	self.indent = indent
+        self.indent = indent
         self.precision = precision
 
     def save(self, out, format):
@@ -137,7 +137,7 @@ class Provider:
         self.mercator = getProjectionByName('spherical mercator')
         self.geometry_field = geometry_column
         self.id_field = id_column
-	self.indent = indent
+        self.indent = indent
         self.precision = precision
 
     def getTypeByExtension(self, extension):
