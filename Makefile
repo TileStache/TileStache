@@ -70,6 +70,8 @@ doc:
 	mv TileStache.html doc/
 	mv TileStache.*.html doc/
 	mv tilestache-*.html doc/
+	
+	perl -pi -e 's#<br><a href="file:/[^"]+">[^<]+</a>##' doc/*.html
 
 	cp API.html doc/index.html
 	perl -pi -e 's#http://tilestache.org/doc/##' doc/index.html
