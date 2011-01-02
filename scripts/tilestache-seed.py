@@ -19,6 +19,7 @@ except ImportError:
 
 from TileStache import parseConfigfile, getTile
 from TileStache.Core import KnownUnknown
+from TileStache.Caches import Disk
 
 from ModestMaps.Core import Coordinate
 from ModestMaps.Geo import Location
@@ -32,7 +33,9 @@ of tile paths as they are created.
 
 Configuration, bbox, and layer options are required; see `%prog --help` for info.""")
 
-parser.set_defaults(extension='png', padding=0, verbose=True)
+defaults = dict(extension='png', padding=0, verbose=True, bbox=(37.777, -122.352, 37.839, -122.226))
+
+parser.set_defaults(**defaults)
 
 parser.add_option('-c', '--config', dest='config',
                   help='Path to configuration file.')
@@ -45,11 +48,11 @@ parser.add_option('-b', '--bbox', dest='bbox',
                   type='float', nargs=4)
 
 parser.add_option('-p', '--padding', dest='padding',
-                  help='Extra margin of tiles to add around bounded area. Default value is 0 (no extra tiles).',
+                  help='Extra margin of tiles to add around bounded area. Default value is %s (no extra tiles).' % repr(defaults['padding']),
                   type='int')
 
 parser.add_option('-e', '--extension', dest='extension',
-                  help='Optional file type for rendered tiles. Default value is "png".')
+                  help='Optional file type for rendered tiles. Default value is %s.' % repr(defaults['extension']))
 
 parser.add_option('-f', '--progress-file', dest='progressfile',
                   help="Optional JSON progress file that gets written on each iteration, so you don't have to pay close attention.")
@@ -59,6 +62,9 @@ parser.add_option('-q', action='store_false', dest='verbose',
 
 parser.add_option('-i', '--include-path', dest='include',
                   help="Add the following colon-separated list of paths to Python's include path (aka sys.path)")
+
+parser.add_option('-d', '--output-directory', dest='outputdirectory',
+                  help='Optional output directory for tiles, to override configured cache with the equivalent of: {"name": "Disk", "path": <output directory>, "dirs": "portable", "gzip": []}. More information in http://tilestache.org/doc/#caches.')
 
 def generateCoordinates(ul, lr, zooms, padding):
     """ Generate a stream of (offset, count, coordinate) tuples for seeding.
@@ -107,6 +113,9 @@ if __name__ == '__main__':
             raise KnownUnknown('Missing required layer (--layer) parameter.')
 
         config = parseConfigfile(options.config)
+        
+        if options.outputdirectory:
+            config.cache = Disk(options.outputdirectory, dirs='portable', gzip=[])
 
         if options.layer not in config.layers:
             raise KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (options.layer, ', '.join(config.layers.keys())))

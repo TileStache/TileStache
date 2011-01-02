@@ -43,6 +43,12 @@ Suppress chatty output, \-\-progress-file works well with this.
 .TP
 .B \-i, \-\-include-path
 Add the following colon-separated list of paths to Python's include path (aka sys.path).
+.TP
+.B \-d, \-\-output-directory
+Optional output directory for tiles, to override configured cache with the equivalent of:
+    {"name": "Disk", "path": <output directory>, "dirs": "portable", "gzip": []}.
+
+More information in http://tilestache.org/doc/#caches.
 .SH SEE ALSO
 .BR tilestache-render (1)
 .SH AUTHOR
