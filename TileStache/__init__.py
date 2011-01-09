@@ -209,7 +209,7 @@ class WSGITileServer(object):
     """Create a WSGI application that can handle requests from any server that talks WSGI.
         The WSGI application is an instance of this class. Example:
 
-        app = WSGITileServer('/path/to/tilecache.cfg')
+        app = WSGITileServer('/path/to/tilestache.cfg')
         werkzeug.serving.run_simple('localhost', 8080, app)
     """
 
@@ -217,7 +217,7 @@ class WSGITileServer(object):
         try:
             self.config = parseConfigfile(config)
         except Exception, e:
-            raise Core.KnownUnknown("Error loading tilecache config file:\n%s" % str(e))
+            raise Core.KnownUnknown("Error loading Tilestache config file:\n%s" % str(e))
 
     def __call__(self, environ, start_response):
         try:
