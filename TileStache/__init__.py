@@ -205,6 +205,39 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     print >> stdout, 'Content-Type: %s\n' % mimetype
     print >> stdout, content
 
+class WSGITileServer(object):
+    """Create a WSGI application that can handle requests from any server that talks WSGI.
+        The WSGI application is an instance of this class. Example:
+
+        app = WSGITileServer('/path/to/tilecache.cfg')
+        werkzeug.serving.run_simple('localhost', 8080, app)
+    """
+
+    def __init__(self, config):
+        try:
+            self.config = parseConfigfile(config)
+        except Exception, e:
+            raise Core.KnownUnknown("Error loading tilecache config file:\n%s" % str(e))
+
+    def __call__(self, environ, start_response):
+        try:
+            layer, coord, ext = splitPathInfo(environ['PATH_INFO'])
+        except Core.KnownUnknown, e:
+            return self.response(start_response, '400 Bad Request', str(e))
+
+        if not self.config.layers.get(layer):
+            return self.response(start_response, '404 Not Found')
+
+        mimetype, content = requestHandler(self.config, environ['PATH_INFO'], environ['QUERY_STRING'])
+        return self.response(start_response, '200 OK', content, mimetype)
+
+    def response(self, start_response, code, content='', mimetype='text/plain'):
+        start_response(code, [
+            ('Content-Type', mimetype),
+            ('Content-Length', len(content)),
+        ])
+        return [content]
+
 def modpythonHandler(request):
     """ Handle a mod_python request.
     

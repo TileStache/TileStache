@@ -95,6 +95,7 @@
   <li>
     <a href="#serving-tiles">Serving Tiles</a>
     <ul>
+      <li><a href="#wsgi">WSGI</a></li>
       <li><a href="#cgi">CGI</a></li>
       <li><a href="#mod-python">mod_python</a></li>
     </ul>
@@ -265,9 +266,38 @@ documentation for more information.
 <h2><a id="serving-tiles" name="serving-tiles">Serving Tiles</a></h2>
 
 <p>
-We currently provide two scripts for serving tiles, one for a CGI-based
-webserver and another for Apache <code>mod_python</code>.
+We currently provide three scripts for serving tiles: one for a WSGI-based
+webserver, one for a CGI-based webserver, and one for Apache <code>mod_python</code>.
 </p>
+
+<h4><a id="wsgi" name="wsgi">WSGI</a></h4>
+
+<p>
+TileStache comes with a WSGI application and a 
+<a href="http://werkzeug.pocoo.org/">Werkzeug</a> web server. To use the
+built-in server, run <tt>tilestache-server.py</tt>,
+which (by default) looks for a config file named <tt>tilestache.cfg</tt>
+in the current directory and then serves tiles on
+<tt>http://127.0.0.1:8080/</tt>. Check <tt>tilestache.py --help</tt>
+to change these defaults.
+</p>
+
+<p>Alternatively, any WSGI server can be pointed at an instance of
+<tt>TileCache.WSGITileServer</tt>. Here's an example for 
+<a href="http://gunicorn.org/">gunicorn</a>:
+</p>
+
+<pre>
+# wsgi.py
+import os, TileStache
+config_file = os.environ['TILESTACHE_CONFIG']
+app = TileStache.WSGITileServer(config_file)
+</pre>
+<br />
+<pre>
+$ export TILESTACHE_CONFIG=/path/to/tilestache.cfg
+$ gunicorn wsgi:app
+</pre>
 
 <h4><a id="cgi" name="cgi">CGI</a></h4>
 

@@ -78,6 +78,7 @@ standards in favor of pragmatic, fast utility with basic web clients.
 
 - ModestMaps: http://modestmaps.com, http://github.com/migurski/modestmaps-py
 - mapnik: http://mapnik.org (optional)
+- werkzeug: http://werkzeug.pocoo.org/ (optional)
 
 ---- License ----
 
