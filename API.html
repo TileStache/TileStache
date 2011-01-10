@@ -283,20 +283,12 @@ to change these defaults.
 </p>
 
 <p>Alternatively, any WSGI server can be pointed at an instance of
-<tt>TileStache.WSGITileServer</tt>. Here's an example for 
+<tt>TileStache.WSGITileServer</tt>. Here's how to use it with
 <a href="http://gunicorn.org/">gunicorn</a>:
 </p>
 
 <pre>
-# wsgi.py
-import os, TileStache
-config_file = os.environ['TILESTACHE_CONFIG']
-app = TileStache.WSGITileServer(config_file)
-</pre>
-<br />
-<pre>
-$ export TILESTACHE_CONFIG=/path/to/tilestache.cfg
-$ gunicorn wsgi:app
+$ gunicorn "TileStache:WSGITileServer('/path/to/tilestache.cfg')"
 </pre>
 
 <h4><a id="cgi" name="cgi">CGI</a></h4>
