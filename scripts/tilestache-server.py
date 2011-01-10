@@ -19,6 +19,6 @@ if __name__ == '__main__':
         print >> sys.stderr, "Config file not found. Use -c to pick a tilestache config file."
         sys.exit(1)
 
-    app = TileStache.WSGITileServer(config=options.file)
+    app = TileStache.WSGITileServer(config=options.file, autoreload=True)
     run_simple(options.ip, options.port, app)
 

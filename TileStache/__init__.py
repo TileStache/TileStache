@@ -213,13 +213,23 @@ class WSGITileServer(object):
         werkzeug.serving.run_simple('localhost', 8080, app)
     """
 
-    def __init__(self, config):
+    def __init__(self, config, autoreload=False):
+        self.autoreload = autoreload
+        self.config_path = config
+
         try:
             self.config = parseConfigfile(config)
         except Exception, e:
             raise Core.KnownUnknown("Error loading Tilestache config file:\n%s" % str(e))
 
     def __call__(self, environ, start_response):
+
+        if self.autoreload: # re-parse the config file on every request
+            try:
+                self.config = parseConfigfile(self.config_path)
+            except Exception, e:
+                raise Core.KnownUnknown("Error loading Tilestache config file:\n%s" % str(e))
+
         try:
             layer, coord, ext = splitPathInfo(environ['PATH_INFO'])
         except Core.KnownUnknown, e:
