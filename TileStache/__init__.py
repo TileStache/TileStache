@@ -239,7 +239,7 @@ class WSGITileServer(object):
             return self.response(start_response, '404 Not Found')
 
         mimetype, content = requestHandler(self.config, environ['PATH_INFO'], environ['QUERY_STRING'])
-        return self.response(start_response, '200 OK', content, mimetype)
+        return self.response(start_response, '200 OK', str(content), mimetype)
 
     def response(self, start_response, code, content='', mimetype='text/plain'):
         start_response(code, [
