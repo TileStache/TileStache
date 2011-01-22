@@ -1,3 +1,7 @@
+2011-01-21: 1.6.0
+- Added "-d" flag for tilestache-seed.py to drop tiles in a directory, regardless of cache settings.
+- Merged Zain Memon's WSGI support, supercedesprevious example gunicorn support.
+
 2010-11-29: 1.5.0
 - Expanded PostGeoJSON provider in extras collection to include built-in shape clipping for Polymaps.
 - Added gzip option to Disk cache to reduce disk usage of  text-based providers like XML or JSON.
