@@ -205,15 +205,21 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     print >> stdout, 'Content-Type: %s\n' % mimetype
     print >> stdout, content
 
-class WSGITileServer(object):
-    """Create a WSGI application that can handle requests from any server that talks WSGI.
+class WSGITileServer:
+    """ Create a WSGI application that can handle requests from any server that talks WSGI.
+
         The WSGI application is an instance of this class. Example:
 
-        app = WSGITileServer('/path/to/tilestache.cfg')
-        werkzeug.serving.run_simple('localhost', 8080, app)
+          app = WSGITileServer('/path/to/tilestache.cfg')
+          werkzeug.serving.run_simple('localhost', 8080, app)
     """
 
     def __init__(self, config, autoreload=False):
+        """ Initialize a callable WSGI instance.
+
+            Required config parameter is a path to a configuration file.
+            Optional autoreload boolean parameter causes config to be re-read on each request.
+        """
         self.autoreload = autoreload
         self.config_path = config
 
@@ -223,7 +229,8 @@ class WSGITileServer(object):
             raise Core.KnownUnknown("Error loading Tilestache config file:\n%s" % str(e))
 
     def __call__(self, environ, start_response):
-
+        """
+        """
         if self.autoreload: # re-parse the config file on every request
             try:
                 self.config = parseConfigfile(self.config_path)
@@ -233,15 +240,17 @@ class WSGITileServer(object):
         try:
             layer, coord, ext = splitPathInfo(environ['PATH_INFO'])
         except Core.KnownUnknown, e:
-            return self.response(start_response, '400 Bad Request', str(e))
+            return self._response(start_response, '400 Bad Request', str(e))
 
         if not self.config.layers.get(layer):
-            return self.response(start_response, '404 Not Found')
+            return self._response(start_response, '404 Not Found')
 
         mimetype, content = requestHandler(self.config, environ['PATH_INFO'], environ['QUERY_STRING'])
-        return self.response(start_response, '200 OK', str(content), mimetype)
+        return self._response(start_response, '200 OK', str(content), mimetype)
 
-    def response(self, start_response, code, content='', mimetype='text/plain'):
+    def _response(self, start_response, code, content='', mimetype='text/plain'):
+        """
+        """
         start_response(code, [
             ('Content-Type', mimetype),
             ('Content-Length', len(content)),
