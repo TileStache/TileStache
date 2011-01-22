@@ -36,7 +36,7 @@ $(TARBALL): doc
 	ln scripts/*.py $(PACKAGE)/scripts/
 
 	mkdir $(PACKAGE)/examples
-	ln examples/*.py $(PACKAGE)/examples/
+	#ln examples/*.py $(PACKAGE)/examples/
 
 	mkdir $(PACKAGE)/doc
 	ln doc/*.html $(PACKAGE)/doc/
