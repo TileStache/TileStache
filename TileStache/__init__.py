@@ -253,7 +253,7 @@ class WSGITileServer:
         """
         start_response(code, [
             ('Content-Type', mimetype),
-            ('Content-Length', len(content)),
+            ('Content-Length', str(len(content))),
         ])
         return [content]
 

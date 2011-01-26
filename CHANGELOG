@@ -1,3 +1,6 @@
+2011-01-26: 1.6.2
+- Fixed WSGI content-length type error that was affecting mod_wsgi.
+
 2011-01-21: 1.6.0
 - Added "-d" flag for tilestache-seed.py to drop tiles in a directory, regardless of cache settings.
 - Merged Zain Memon's WSGI support, supercedesprevious example gunicorn support.
