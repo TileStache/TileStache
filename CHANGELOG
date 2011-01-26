@@ -1,3 +1,8 @@
+2011-01-26: 1.7.0
+- Made geographic projections user-specifiable using module:class naming.
+- Made all class specifications accept module:class syntax, hoping to deprecate module.class sometime.
+- Added manpage fixes from David Paleino.
+
 2011-01-26: 1.6.2
 - Fixed WSGI content-length type error that was affecting mod_wsgi.
 
