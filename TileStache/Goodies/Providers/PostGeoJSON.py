@@ -92,11 +92,17 @@ from json import JSONEncoder
 from copy import copy as _copy
 from binascii import unhexlify as _unhexlify
 
-from shapely.wkb import loads as _loadshape
-from shapely.geometry import Polygon
-from shapely.geos import TopologicalError
-from psycopg2 import connect as _connect
-from psycopg2.extras import RealDictCursor
+try:
+    from shapely.wkb import loads as _loadshape
+    from shapely.geometry import Polygon
+    from shapely.geos import TopologicalError
+    from psycopg2 import connect as _connect
+    from psycopg2.extras import RealDictCursor
+except ImportError:
+    # At least it should be possible to build the documentation.
+    pass
+
+
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
 
