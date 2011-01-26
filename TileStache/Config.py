@@ -46,7 +46,7 @@ In-depth explanations of the layer components can be found in the module
 documentation for TileStache.Providers, TileStache.Core, and TileStache.Geography.
 """
 
-from sys import stderr
+from sys import stderr, modules
 from os.path import realpath, join as pathjoin
 from urlparse import urljoin, urlparse
 
@@ -263,19 +263,42 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
 
 def loadClassPath(classpath):
     """ Load external class based on a path.
+        
+        Example classpath: "Module.Submodule:Classname".
     
-        Example classpath: "Module.Submodule.Classname",
+        Equivalent soon-to-be-deprecated classpath: "Module.Submodule.Classname".
     """
-    classpath = classpath.split('.')
+    if ':' in classpath:
+        #
+        # Just-added support for "foo:blah"-style classpaths.
+        #
+        modname, objname = classpath.split(':', 1)
 
-    try:
-        module = __import__('.'.join(classpath[:-1]), fromlist=str(classpath[-1]))
-    except ImportError, e:
-        raise Core.KnownUnknown('Tried to import %s, but: %s' % ('.'.join(classpath), e))
+        try:
+            __import__(modname)
+            module = modules[modname]
+            _class = eval(objname, module.__dict__)
+            
+            if _class is None:
+                raise Exception('eval(%(objname)s) in %(modname)s came up None' % locals())
 
-    try:
-        _class = getattr(module, classpath[-1])
-    except AttributeError, e:
-        raise Core.KnownUnknown('Tried to import %s, but: %s' % ('.'.join(classpath), e))
+        except Exception, e:
+            raise Core.KnownUnknown('Tried to import %s, but: %s' % (classpath, e))
+    
+    else:
+        #
+        # Support for "foo.blah"-style classpaths, TODO: deprecate this in v2.
+        #
+        classpath = classpath.split('.')
+    
+        try:
+            module = __import__('.'.join(classpath[:-1]), fromlist=str(classpath[-1]))
+        except ImportError, e:
+            raise Core.KnownUnknown('Tried to import %s, but: %s' % ('.'.join(classpath), e))
+    
+        try:
+            _class = getattr(module, classpath[-1])
+        except AttributeError, e:
+            raise Core.KnownUnknown('Tried to import %s, but: %s' % ('.'.join(classpath), e))
 
     return _class

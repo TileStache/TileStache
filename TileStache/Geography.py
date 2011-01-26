@@ -15,6 +15,21 @@ Example use projection in a layer definition:
         ...
     }
 
+You can define your own projection, with a module and object name as arguments:
+
+    "layer-name": {
+        ...
+        "projection": "Module:Object"
+    }
+
+The object must include methods that convert between coordinates, points, and
+locations. See the included mercator and WGS84 implementations for example.
+You can also instantiate a projection class using this syntax:
+
+    "layer-name": {
+        ...
+        "projection": "Module:Object()"
+    }
 """
 
 from ModestMaps.Core import Point, Coordinate
@@ -22,6 +37,7 @@ from ModestMaps.Geo import deriveTransformation, MercatorProjection, LinearProje
 from math import log as _log, pi as _pi
 
 import Core
+import Config
 
 class SphericalMercator(MercatorProjection):
     """ Spherical mercator projection for most commonly-used web map tile scheme.
@@ -127,4 +143,7 @@ def getProjectionByName(name):
         return WGS84()
         
     else:
-        raise Core.KnownUnknown('Unknown projection in configuration: "%s"' % name)
+        try:
+            return Config.loadClassPath(name)
+        except Exception, e:
+            raise Core.KnownUnknown('Failed projection in configuration: "%s" - %s' % (name, e))

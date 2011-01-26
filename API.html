@@ -809,6 +809,30 @@ Provided projections:
 </dl>
 
 <p>
+You can define your own projection, with a module and object name as arguments:
+</p>
+
+<pre>
+<span class="bg">"layer-name": {
+    ...</span>
+    "projection": "Module:Object",
+<span class="bg">}</span>
+</pre>
+
+<p>
+The object must include methods that convert between coordinates, points, and
+locations. See the included mercator and WGS84 implementations for example.
+You can also instantiate a projection class using this syntax:
+</p>
+
+<pre>
+<span class="bg">"layer-name": {
+    ...</span>
+    "projection": "Module:Object()"
+<span class="bg">}</span>
+</pre>
+
+<p>
 See
 <a href="http://tilestache.org/doc/TileStache.Geography.html">TileStache.Geography</a>
 for more information.
