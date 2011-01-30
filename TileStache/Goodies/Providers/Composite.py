@@ -148,8 +148,13 @@ from StringIO import StringIO
 
 import sympy
 import numpy
-import PIL.Image
 import TileStache
+
+try:
+    from PIL import Image
+except ImportError:
+    # On some systems, PIL.Image is known as Image.
+    import Image
 
 from TileStache.Core import KnownUnknown
 
@@ -198,7 +203,7 @@ class Provider:
         
     def renderTile(self, width, height, srs, coord):
     
-        image = PIL.Image.new('RGBA', (width, height), (0, 0, 0, 0))
+        image = Image.new('RGBA', (width, height), (0, 0, 0, 0))
         
         image = self.stack.render(self.layer.config, image, coord)
         
@@ -270,7 +275,7 @@ class Layer:
         if self.layername:
             layer = config.layers[self.layername]
             mime, body = TileStache.getTile(layer, coord, 'png')
-            layer_img = PIL.Image.open(StringIO(body)).convert('RGBA')
+            layer_img = Image.open(StringIO(body)).convert('RGBA')
             layer_rgba = _img2rgba(layer_img)
 
             has_layer = True
@@ -278,7 +283,7 @@ class Layer:
         if self.maskname:
             layer = config.layers[self.maskname]
             mime, body = TileStache.getTile(layer, coord, 'png')
-            mask_img = PIL.Image.open(StringIO(body)).convert('L')
+            mask_img = Image.open(StringIO(body)).convert('L')
             mask_chan = _img2arr(mask_img).astype(numpy.float32) / 255.
 
             has_mask = True
@@ -344,7 +349,7 @@ class Stack:
             return an output image with the results of all the layers in
             this stack pasted on in turn.
         """
-        stack_img = PIL.Image.new('RGBA', input_img.size, (0, 0, 0, 0))
+        stack_img = Image.new('RGBA', input_img.size, (0, 0, 0, 0))
         
         for layer in self.layers:
             try:
@@ -399,24 +404,24 @@ def make_color(color):
     return r, g, b, a
 
 def _arr2img(ar):
-    """ Convert Numeric.array to PIL.Image.
+    """ Convert Numeric array to PIL Image.
     """
-    return PIL.Image.fromstring('L', (ar.shape[1], ar.shape[0]), ar.astype(numpy.ubyte).tostring())
+    return Image.fromstring('L', (ar.shape[1], ar.shape[0]), ar.astype(numpy.ubyte).tostring())
 
 def _img2arr(im):
-    """ Convert PIL.Image to Numeric.array.
+    """ Convert PIL Image to Numeric array.
     """
     assert im.mode == 'L'
     return numpy.reshape(numpy.fromstring(im.tostring(), numpy.ubyte), (im.size[1], im.size[0]))
 
 def _rgba2img(rgba):
-    """ Convert four Numeric.array objects to PIL.Image.
+    """ Convert four Numeric array objects to PIL Image.
     """
     assert type(rgba) is list
-    return PIL.Image.merge('RGBA', [_arr2img(numpy.round(band * 255.0).astype(numpy.ubyte)) for band in rgba])
+    return Image.merge('RGBA', [_arr2img(numpy.round(band * 255.0).astype(numpy.ubyte)) for band in rgba])
 
 def _img2rgba(im):
-    """ Convert PIL.Image to four Numeric.array objects.
+    """ Convert PIL Image to four Numeric array objects.
     """
     assert im.mode == 'RGBA'
     return [_img2arr(band).astype(numpy.float32) / 255.0 for band in im.split()]
@@ -604,7 +609,7 @@ if __name__ == '__main__':
         """ A minimal provider that only returns 3x3 bitmaps from strings.
         """
         def __init__(self, string):
-            self.img = PIL.Image.fromstring('RGBA', (3, 3), string)
+            self.img = Image.fromstring('RGBA', (3, 3), string)
 
         def renderTile(self, *args, **kwargs):
             return self.img
@@ -705,7 +710,7 @@ if __name__ == '__main__':
                 'streets':  tinybitmap_layer(self.config, _nil + _nil + _fff + _nil + _fff + _nil + _fff + _nil + _nil)
             }
             
-            self.start_img = PIL.Image.new('RGBA', (3, 3), (0x00, 0x00, 0x00, 0x00))
+            self.start_img = Image.new('RGBA', (3, 3), (0x00, 0x00, 0x00, 0x00))
         
         def test0(self):
     
@@ -873,7 +878,7 @@ if __name__ == '__main__':
                 'black wipe': tinybitmap_layer(self.config, _0000 * 3 + _0008 * 3 + _000f * 3)
             }
             
-            self.start_img = PIL.Image.new('RGBA', (3, 3), (0x00, 0x00, 0x00, 0x00))
+            self.start_img = Image.new('RGBA', (3, 3), (0x00, 0x00, 0x00, 0x00))
         
         def test0(self):
             

@@ -1,3 +1,6 @@
+2011-01-29: 1.7.1
+- Fixed PIL import to account for systems that can "import Image".
+
 2011-01-26: 1.7.0
 - Made geographic projections user-specifiable using module:class naming.
 - Made all class specifications accept module:class syntax, hoping to deprecate module.class sometime.

@@ -85,7 +85,12 @@ except ImportError:
     # if you don't plan to use the mapnik provider.
     pass
 
-import PIL.Image
+try:
+    from PIL import Image
+except ImportError:
+    # On some systems, PIL.Image is known as Image.
+    import Image
+
 import ModestMaps
 from ModestMaps.Core import Point, Coordinate
 
@@ -155,7 +160,7 @@ class Proxy:
         if (width, height) != (256, 256):
             raise Exception("Image dimensions don't match expected tile size: %(width)dx%(height)d" % locals())
 
-        img = PIL.Image.new('RGB', (width, height))
+        img = Image.new('RGB', (width, height))
         
         for url in self.provider.getTileUrls(coord):
             s, host, path, p, query, f = urlparse(url)
@@ -163,7 +168,7 @@ class Proxy:
             conn.request('GET', path+'?'+query)
 
             body = conn.getresponse().read()
-            tile = PIL.Image.open(StringIO(body)).convert('RGBA')
+            tile = Image.open(StringIO(body)).convert('RGBA')
             img.paste(tile, (0, 0), tile)
         
         return img
@@ -231,7 +236,7 @@ class Mapnik:
         img = mapnik.Image(width, height)
         mapnik.render(self.mapnik, img)
         
-        img = PIL.Image.fromstring('RGBA', (width, height), img.tostring())
+        img = Image.fromstring('RGBA', (width, height), img.tostring())
         
         return img
 
@@ -267,6 +272,6 @@ class UrlTemplate:
         
         href = self.template.safe_substitute(mapping)
         body = urlopen(href).read()
-        tile = PIL.Image.open(StringIO(body)).convert('RGBA')
+        tile = Image.open(StringIO(body)).convert('RGBA')
 
         return tile
