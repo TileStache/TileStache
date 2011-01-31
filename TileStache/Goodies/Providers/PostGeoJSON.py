@@ -88,9 +88,13 @@ this seems to work:
 """
 
 from re import compile
-from json import JSONEncoder
 from copy import copy as _copy
 from binascii import unhexlify as _unhexlify
+
+try:
+    from json import JSONEncoder
+except ImportError:
+    from simplejson import JSONEncoder
 
 try:
     from shapely.wkb import loads as _loadshape
