@@ -45,6 +45,7 @@ The save() method accepts an additional argument before the others:
 import os
 import sys
 import time
+import gzip
 
 from tempfile import mkstemp
 from os.path import isdir, exists, dirname, basename, join as pathjoin
@@ -145,22 +146,30 @@ class Disk:
           are safe or portable. For an example tile 12/656/1582.png, "portable"
           creates matching directory trees while "portable" guarantees directories
           with fewer files, e.g. 12/000/656/001/582.png. Defaults to safe.
+        - gzip: optional list of file formats that should be stored in a
+          compressed form. Defaults to "txt", "text", "json", and "xml".
+          Provide an empty list in the configuration for no compression.
 
         If your configuration file is loaded from a remote location, e.g.
         "http://example.com/tilestache.cfg", the path *must* be an unambiguous
         filesystem path, e.g. "file:///tmp/cache"
     """
-    def __init__(self, path, umask=0022, dirs='safe'):
+    def __init__(self, path, umask=0022, dirs='safe', gzip='txt text json xml'.split()):
         self.cachepath = path
         self.umask = umask
         self.dirs = dirs
+        self.gzip = [format.lower() for format in gzip]
 
+    def _is_compressed(self, format):
+        return format.lower() in self.gzip
+    
     def _filepath(self, layer, coord, format):
         """
         """
         l = layer.name()
         z = '%d' % coord.zoom
         e = format.lower()
+        e += self._is_compressed(format) and '.gz' or ''
         
         if self.dirs == 'safe':
             x = '%06d' % coord.column
@@ -236,7 +245,10 @@ class Disk:
         fullpath = self._fullpath(layer, coord, format)
         
         if exists(fullpath):
-            return open(fullpath, 'r').read()
+            if self._is_compressed(format):
+                return gzip.open(fullpath, 'r').read()
+            else:
+                return open(fullpath, 'r').read()
 
         return None
     
@@ -254,9 +266,19 @@ class Disk:
         finally:
             os.umask(umask_old)
 
-        fh, tmp_path = mkstemp(dir=self.cachepath, suffix='.' + format.lower())
-        os.write(fh, body)
-        os.close(fh)
+        suffix = '.' + format.lower()
+        suffix += self._is_compressed(format) and '.gz' or ''
+
+        fh, tmp_path = mkstemp(dir=self.cachepath, suffix=suffix)
+        
+        if self._is_compressed(format):
+            os.close(fh)
+            tmp_file = gzip.open(tmp_path, 'w')
+            tmp_file.write(body)
+            tmp_file.close()
+        else:
+            os.write(fh, body)
+            os.close(fh)
         
         try:
             os.rename(tmp_path, fullpath)

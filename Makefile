@@ -1,4 +1,4 @@
-VERSION=1.0.0
+VERSION:=$(shell cat VERSION)
 PACKAGE=TileStache-$(VERSION)
 TARBALL=$(PACKAGE).tar.gz
 DOCROOT=tilestache.org:public_html/tilestache/www
@@ -15,6 +15,7 @@ $(TARBALL): doc
 	mkdir $(PACKAGE)
 	ln setup.py $(PACKAGE)/
 	ln README $(PACKAGE)/
+	ln VERSION $(PACKAGE)/
 	ln tilestache.cfg $(PACKAGE)/
 	ln tilestache.cgi $(PACKAGE)/
 
@@ -35,10 +36,13 @@ $(TARBALL): doc
 	ln scripts/*.py $(PACKAGE)/scripts/
 
 	mkdir $(PACKAGE)/examples
-	ln examples/*.py $(PACKAGE)/examples/
+	#ln examples/*.py $(PACKAGE)/examples/
 
 	mkdir $(PACKAGE)/doc
 	ln doc/*.html $(PACKAGE)/doc/
+
+	mkdir $(PACKAGE)/man
+	ln man/*.1 $(PACKAGE)/man/
 
 	tar -czf $(TARBALL) $(PACKAGE)
 	rm -rf $(PACKAGE)
@@ -67,6 +71,12 @@ doc:
 	mv TileStache.html doc/
 	mv TileStache.*.html doc/
 	mv tilestache-*.html doc/
+	
+	perl -pi -e 's#<br><a href="file:/[^"]+">[^<]+</a>##' doc/*.html
+
+	cp API.html doc/index.html
+	perl -pi -e 's#http://tilestache.org/doc/##' doc/index.html
+	perl -pi -e 's#\b\d+\.\d+\.\d+\b#$(VERSION)#' doc/index.html
 
 clean:
 	rm -rf $(TARBALL) doc

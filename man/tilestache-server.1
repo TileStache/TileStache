@@ -1,0 +1,32 @@
+.TH TILESTACHE-SERVER 1 "Jan 24, 2011"
+.SH NAME
+tilestache-server \- seed a single layer in your TileStache configuration
+.SH SYNOPSIS
+.B tilestache-server
+.RI [ options ]
+.SH DESCRIPTION
+This manual page documents briefly the \fBtilestache-server\fR command.
+.PP
+\fBtilestache-server\fR serves tiles through Werkzeug, using a
+tilestache configuration file.
+.SH OPTIONS
+.TP
+\fB\-c\fR, \fB\-\-config\fR \fIfile\fR
+Path to configuration file. Defaults to \fItilestache.cfg\fR.
+.TP
+\fB-i\fR, \fB\-\-ip\fR \fIaddress\fR
+IP address to listen to. Defaults to \fI127.0.0.1\fR.
+.TP
+\fB-p\fR, \fB\-\-port\fR \fIport\fR
+Port number to listen to. Defaults to \fI8080\fR.
+.TP
+.B \-h, \-\-help
+Show summary of options.
+.SH SEE ALSO
+.BR tilestache-render (1)
+.BR tilestache-seed (1)
+.SH AUTHOR
+\fBTileStache\fR was written by Michal Migurski <mike@stamen.com>.
+.PP
+This manual page was written by David Paleino <dapal@debian.org>,
+for the Debian project (and may be used by others).

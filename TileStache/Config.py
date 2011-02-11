@@ -35,6 +35,7 @@ can be found in the TileStache.Core module documentation. Another sample:
         {
             "provider": { ... },
             "metatile": { ... },
+            "preview": { ... },
             "stale lock timeout": ...,
             "projection": ...
         }
@@ -45,7 +46,7 @@ In-depth explanations of the layer components can be found in the module
 documentation for TileStache.Providers, TileStache.Core, and TileStache.Geography.
 """
 
-from sys import stderr
+from sys import stderr, modules
 from os.path import realpath, join as pathjoin
 from urlparse import urljoin, urlparse
 
@@ -61,6 +62,37 @@ import Geography
 
 class Configuration:
     """ A complete site configuration, with a collection of Layer objects.
+    
+        Attributes:
+        
+          cache:
+            Cache instance, e.g. TileStache.Caches.Disk etc.
+            See TileStache.Caches for details on what makes
+            a usable cache.
+        
+          layers:
+            Dictionary of layers keyed by name.
+            
+            When creating a custom layers dictionary, e.g. for dynamic
+            layer collections backed by some external configuration,
+            these dictionary methods must be provided for a complete
+            collection of layers:
+            
+              keys():
+                Return list of layer name strings.
+
+              items():
+                Return list of (name, layer) pairs.
+
+              __contains__(key):
+                Return boolean true if given key is an existing layer.
+                
+              __getitem__(key):
+                Return existing layer object for given key or raise KeyError.
+        
+          dirpath:
+            Local filesystem path for this configuration,
+            useful for expanding relative paths.
     """
     def __init__(self, cache, dirpath):
         self.cache = cache
@@ -135,8 +167,9 @@ def _parseConfigfileCache(cache_dict, dirpath):
             if cache_dict.has_key('umask'):
                 kwargs['umask'] = int(cache_dict['umask'], 8)
             
-            if cache_dict.has_key('dirs'):
-                kwargs['dirs'] = cache_dict['dirs']
+            for key in ('dirs', 'gzip'):
+                if cache_dict.has_key(key):
+                    kwargs[key] = cache_dict[key]
     
         else:
             raise Exception('Unknown cache: %s' % cache_dict['name'])
@@ -160,13 +193,20 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     projection = Geography.getProjectionByName(projection)
     
     #
-    # Add cache lock timeouts
+    # Add cache lock timeouts and preview arguments
     #
     
     layer_kwargs = {}
     
     if layer_dict.has_key('stale lock timeout'):
         layer_kwargs['stale_lock_timeout'] = int(layer_dict['stale lock timeout'])
+    
+    if layer_dict.has_key('preview'):
+        preview_dict = layer_dict['preview']
+        
+        for (key, func) in zip(('lat', 'lon', 'zoom', 'ext'), (float, float, int, str)):
+            if key in preview_dict:
+                layer_kwargs['preview_' + key] = func(preview_dict[key])
     
     #
     # Do the metatile
@@ -192,14 +232,17 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         provider_kwargs = {}
         
         if _class is Providers.Mapnik:
-            mapfile = provider_dict['mapfile']
-            provider_kwargs['mapfile'] = urljoin(dirpath, mapfile)
+            provider_kwargs['mapfile'] = provider_dict['mapfile']
+            provider_kwargs['fonts'] = provider_dict.get('fonts', None)
         
         elif _class is Providers.Proxy:
             if provider_dict.has_key('url'):
                 provider_kwargs['url'] = provider_dict['url']
             if provider_dict.has_key('provider'):
                 provider_kwargs['provider_name'] = provider_dict['provider']
+        
+        elif _class is Providers.UrlTemplate:
+            provider_kwargs['template'] = provider_dict['template']
         
     elif provider_dict.has_key('class'):
         _class = loadClassPath(provider_dict['class'])
@@ -220,19 +263,42 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
 
 def loadClassPath(classpath):
     """ Load external class based on a path.
+        
+        Example classpath: "Module.Submodule:Classname".
     
-        Example classpath: "Module.Submodule.Classname",
+        Equivalent soon-to-be-deprecated classpath: "Module.Submodule.Classname".
     """
-    classpath = classpath.split('.')
+    if ':' in classpath:
+        #
+        # Just-added support for "foo:blah"-style classpaths.
+        #
+        modname, objname = classpath.split(':', 1)
 
-    try:
-        module = __import__('.'.join(classpath[:-1]), fromlist=str(classpath[-1]))
-    except ImportError, e:
-        raise Core.KnownUnknown('Tried to import %s, but: %s' % ('.'.join(classpath), e))
+        try:
+            __import__(modname)
+            module = modules[modname]
+            _class = eval(objname, module.__dict__)
+            
+            if _class is None:
+                raise Exception('eval(%(objname)s) in %(modname)s came up None' % locals())
 
-    try:
-        _class = getattr(module, classpath[-1])
-    except AttributeError, e:
-        raise Core.KnownUnknown('Tried to import %s, but: %s' % ('.'.join(classpath), e))
+        except Exception, e:
+            raise Core.KnownUnknown('Tried to import %s, but: %s' % (classpath, e))
+    
+    else:
+        #
+        # Support for "foo.blah"-style classpaths, TODO: deprecate this in v2.
+        #
+        classpath = classpath.split('.')
+    
+        try:
+            module = __import__('.'.join(classpath[:-1]), fromlist=str(classpath[-1]))
+        except ImportError, e:
+            raise Core.KnownUnknown('Tried to import %s, but: %s' % ('.'.join(classpath), e))
+    
+        try:
+            _class = getattr(module, classpath[-1])
+        except AttributeError, e:
+            raise Core.KnownUnknown('Tried to import %s, but: %s' % ('.'.join(classpath), e))
 
     return _class

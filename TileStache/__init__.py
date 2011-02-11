@@ -1,6 +1,12 @@
 """ A stylish alternative for caching your map tiles.
 
+TileStache is a Python-based server application that can serve up map tiles
+based on rendered geographic data. You might be familiar with TileCache
+(http://tilecache.org), the venerable open source WMS server from MetaCarta.
+TileStache is similar, but we hope simpler and better-suited to the needs of
+designers and cartographers.
 
+Documentation available at http://tilestache.org/doc/
 """
 
 import re
@@ -74,7 +80,7 @@ def getTile(layer, coord, extension):
 def getPreview(layer):
     """ Get a type string and dynamic map viewer HTML for a given layer.
     """
-    return 'text/html', Core._preview(layer.name())
+    return 'text/html', Core._preview(layer)
 
 def parseConfigfile(configpath):
     """ Parse a configuration file and return a Configuration object.
@@ -129,10 +135,14 @@ def splitPathInfo(pathinfo):
 
     return layer, coord, extension
 
-def requestHandler(config_path, path_info, query_string):
+def requestHandler(config, path_info, query_string):
     """ Generate a mime-type and response body for a given request.
     
-        Requires a path to a config file and PATH_INFO (e.g. "/example/0/0/0.png").
+        Requires a configuration and PATH_INFO (e.g. "/example/0/0/0.png").
+        
+        Config parameter can be a file path string for a JSON configuration file
+        or a configuration object with 'cache', 'layers', and 'dirpath' properties.
+        
         Query string is optional and not currently used. Calls getTile()
         to render actual tiles, and getPreview() to render preview.html.
     """
@@ -140,7 +150,14 @@ def requestHandler(config_path, path_info, query_string):
         if path_info is None:
             raise Core.KnownUnknown('Missing path_info in requestHandler().')
     
-        config = parseConfigfile(config_path)
+        if type(config) in (str, unicode):
+            # should be a path to a configuration file we can load
+            config = parseConfigfile(config)
+        else:
+            assert hasattr(config, 'cache'), 'Configuration object must have a cache.'
+            assert hasattr(config, 'layers'), 'Configuration object must have layers.'
+            assert hasattr(config, 'dirpath'), 'Configuration object must have a dirpath.'
+        
         layername, coord, extension = splitPathInfo(path_info)
         
         if layername not in config.layers:
@@ -167,10 +184,13 @@ def requestHandler(config_path, path_info, query_string):
 
     return mimetype, content
 
-def cgiHandler(environ, config_path='./tilestache.cfg', debug=False):
+def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     """ Read environment PATH_INFO, load up configuration, talk to stdout by CGI.
     
         Calls requestHandler().
+        
+        Config parameter can be a file path string for a JSON configuration file
+        or a configuration object with 'cache', 'layers', and 'dirpath' properties.
     """
     if debug:
         import cgitb
@@ -179,11 +199,63 @@ def cgiHandler(environ, config_path='./tilestache.cfg', debug=False):
     path_info = environ.get('PATH_INFO', None)
     query_string = environ.get('QUERY_STRING', None)
     
-    mimetype, content = requestHandler(config_path, path_info, query_string)
+    mimetype, content = requestHandler(config, path_info, query_string)
 
     print >> stdout, 'Content-Length: %d' % len(content)
     print >> stdout, 'Content-Type: %s\n' % mimetype
     print >> stdout, content
+
+class WSGITileServer:
+    """ Create a WSGI application that can handle requests from any server that talks WSGI.
+
+        The WSGI application is an instance of this class. Example:
+
+          app = WSGITileServer('/path/to/tilestache.cfg')
+          werkzeug.serving.run_simple('localhost', 8080, app)
+    """
+
+    def __init__(self, config, autoreload=False):
+        """ Initialize a callable WSGI instance.
+
+            Required config parameter is a path to a configuration file.
+            Optional autoreload boolean parameter causes config to be re-read on each request.
+        """
+        self.autoreload = autoreload
+        self.config_path = config
+
+        try:
+            self.config = parseConfigfile(config)
+        except Exception, e:
+            raise Core.KnownUnknown("Error loading Tilestache config file:\n%s" % str(e))
+
+    def __call__(self, environ, start_response):
+        """
+        """
+        if self.autoreload: # re-parse the config file on every request
+            try:
+                self.config = parseConfigfile(self.config_path)
+            except Exception, e:
+                raise Core.KnownUnknown("Error loading Tilestache config file:\n%s" % str(e))
+
+        try:
+            layer, coord, ext = splitPathInfo(environ['PATH_INFO'])
+        except Core.KnownUnknown, e:
+            return self._response(start_response, '400 Bad Request', str(e))
+
+        if not self.config.layers.get(layer):
+            return self._response(start_response, '404 Not Found')
+
+        mimetype, content = requestHandler(self.config, environ['PATH_INFO'], environ['QUERY_STRING'])
+        return self._response(start_response, '200 OK', str(content), mimetype)
+
+    def _response(self, start_response, code, content='', mimetype='text/plain'):
+        """
+        """
+        start_response(code, [
+            ('Content-Type', mimetype),
+            ('Content-Length', str(len(content))),
+        ])
+        return [content]
 
 def modpythonHandler(request):
     """ Handle a mod_python request.

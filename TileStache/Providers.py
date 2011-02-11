@@ -7,6 +7,7 @@ TileStache dynamically by class name.
 Built-in providers:
 - mapnik
 - proxy
+- url template
 
 Example built-in provider, for JSON configuration file:
 
@@ -69,10 +70,13 @@ For an example of a non-image provider, see TileStache.Goodies.Provider.PostGeoJ
 import os
 
 from StringIO import StringIO
-from urlparse import urlparse
+from posixpath import exists
+from urlparse import urlparse, urljoin
 from httplib import HTTPConnection
 from tempfile import mkstemp
+from string import Template
 from urllib import urlopen
+from glob import glob
 
 try:
     import mapnik
@@ -81,7 +85,12 @@ except ImportError:
     # if you don't plan to use the mapnik provider.
     pass
 
-import PIL.Image
+try:
+    from PIL import Image
+except ImportError:
+    # On some systems, PIL.Image is known as Image.
+    import Image
+
 import ModestMaps
 from ModestMaps.Core import Point, Coordinate
 
@@ -97,6 +106,9 @@ def getProviderByName(name):
 
     elif name.lower() == 'proxy':
         return Proxy
+
+    elif name.lower() == 'url template':
+        return UrlTemplate
 
     raise Exception('Unknown provider name: "%s"' % name)
 
@@ -148,7 +160,7 @@ class Proxy:
         if (width, height) != (256, 256):
             raise Exception("Image dimensions don't match expected tile size: %(width)dx%(height)d" % locals())
 
-        img = PIL.Image.new('RGB', (width, height))
+        img = Image.new('RGB', (width, height))
         
         for url in self.provider.getTileUrls(coord):
             s, host, path, p, query, f = urlparse(url)
@@ -156,7 +168,7 @@ class Proxy:
             conn.request('GET', path+'?'+query)
 
             body = conn.getresponse().read()
-            tile = PIL.Image.open(StringIO(body)).convert('RGBA')
+            tile = Image.open(StringIO(body)).convert('RGBA')
             img.paste(tile, (0, 0), tile)
         
         return img
@@ -177,15 +189,28 @@ class Mapnik:
         - http://trac.mapnik.org/wiki/XMLConfigReference
     """
     
-    def __init__(self, layer, mapfile):
+    def __init__(self, layer, mapfile, fonts=None):
         """ Initialize Mapnik provider with layer and mapfile.
             
             XML mapfile keyword arg comes from TileStache config,
             and is an absolute path by the time it gets here.
         """
+        maphref = urljoin(layer.config.dirpath, mapfile)
+        scheme, h, path, q, p, f = urlparse(maphref)
+        
+        if scheme in ('file', ''):
+            self.mapfile = path
+        else:
+            self.mapfile = maphref
+        
         self.layer = layer
-        self.mapfile = str(mapfile)
         self.mapnik = None
+        
+        engine = mapnik.FontEngine.instance()
+        
+        if fonts:
+            for font in glob(fonts.rstrip('/') + '/*.ttf'):
+                engine.register_font(str(font))
 
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """
@@ -193,12 +218,16 @@ class Mapnik:
         if self.mapnik is None:
             self.mapnik = mapnik.Map(0, 0)
             
-            handle, filename = mkstemp()
-            os.write(handle, urlopen(self.mapfile).read())
-            os.close(handle)
-
-            mapnik.load_map(self.mapnik, filename)
-            os.unlink(filename)
+            if exists(self.mapfile):
+                mapnik.load_map(self.mapnik, str(self.mapfile))
+            
+            else:
+                handle, filename = mkstemp()
+                os.write(handle, urlopen(self.mapfile).read())
+                os.close(handle)
+    
+                mapnik.load_map(self.mapnik, filename)
+                os.unlink(filename)
         
         self.mapnik.width = width
         self.mapnik.height = height
@@ -207,6 +236,42 @@ class Mapnik:
         img = mapnik.Image(width, height)
         mapnik.render(self.mapnik, img)
         
-        img = PIL.Image.fromstring('RGBA', (width, height), img.tostring())
+        img = Image.fromstring('RGBA', (width, height), img.tostring())
         
         return img
+
+class UrlTemplate:
+    """ Built-in URL Template provider. Proxies map images from WMS servers.
+        
+        This provider is identified by the name "url template" in the TileStache config.
+        
+        Additional arguments:
+        
+        - template (required)
+            String with substitutions suitable for use in string.Template.
+
+        More on string substitutions:
+        - http://docs.python.org/library/string.html#template-strings
+    """
+
+    def __init__(self, layer, template):
+        """ Initialize a UrlTemplate provider with layer and template string.
+        
+            http://docs.python.org/library/string.html#template-strings
+        """
+        self.layer = layer
+        self.template = Template(template)
+
+    def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
+        """ Return an image for an area.
+        
+            Each argument (width, height, etc.) is substituted into the template.
+        """
+        mapping = {'width': width, 'height': height, 'srs': srs, 'zoom': zoom}
+        mapping.update({'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax})
+        
+        href = self.template.safe_substitute(mapping)
+        body = urlopen(href).read()
+        tile = Image.open(StringIO(body)).convert('RGBA')
+
+        return tile

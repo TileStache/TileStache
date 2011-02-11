@@ -1,0 +1,58 @@
+.TH TILESTACHE-SEED 1 "Nov 10, 2010"
+.SH NAME
+tilestache-seed \- seed a single layer in your TileStache configuration
+.SH SYNOPSIS
+.B tilestache-seed
+.RI [ options ] " zoom" ...
+.SH DESCRIPTION
+This manual page documents briefly the \fBtilestache-seed\fR command.
+.PP
+\fBtilestache-seed\fR seeds a single layer in your TileStache configuration.
+No images are returned, but TileStache ends up with a pre-filled cache.
+Bounding box is given as a pair of lat/lon coordinates, e.g. "37.788
+\-122.349 37.833 \-122.246". Output is a list of tile paths as they are
+created.
+.br
+Configuration, BBox, and Layer options are required.
+.SH REQUIRED OPTIONS
+.TP
+\fB\-c\fR, \fB\-\-config\fR \fIfile\fR
+Path to configuration file. \fBRequired\fR.
+.TP
+\fB-l\fR, \fB\-\-layer\fR \fIlayer\fR
+Layer name from configuration. \fBRequired\fR.
+.TP
+\fB-b\fR, \fB\-\-bbox\fR \fIsouth\fR \fIwest\fR \fInorth\fR \fIeast\fR
+Bounding box in floating point geographic coordinates. \fBRequired\fR.
+.SH OPTIONS
+.TP
+.B \-h, \-\-help
+Show summary of options.
+.TP
+\fB-p\fR, \fB\-\-padding\fR \fIpadding\fR
+Extra margin of tiles to add around bounded area. Default value is 0 (no extra tiles).
+.TP
+\fB-e\fR, \fB\-\-extension\fR \fIextension\fR
+Optional file type for rendered tiles. Default value is "png".
+.TP
+\fB-f\fR, \fB\-\-progress-file\fR \fIfile\fR
+Optional JSON progress file that gets written on each iteration, so you don't have to pay close attention.
+.TP
+.B \-q
+Suppress chatty output, \-\-progress-file works well with this.
+.TP
+.B \-i, \-\-include-path
+Add the following colon-separated list of paths to Python's include path (aka sys.path).
+.TP
+.B \-d, \-\-output-directory
+Optional output directory for tiles, to override configured cache with the equivalent of:
+    {"name": "Disk", "path": <output directory>, "dirs": "portable", "gzip": []}.
+
+More information in http://tilestache.org/doc/#caches.
+.SH SEE ALSO
+.BR tilestache-render (1)
+.SH AUTHOR
+\fBTileStache\fR was written by Michal Migurski <mike@stamen.com>.
+.PP
+This manual page was written by David Paleino <dapal@debian.org>,
+for the Debian project (and may be used by others).

@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>TileStache API</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <style type="text/css" title="text/css">
+    <!--
+
+    body
+    {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 14px;
+        line-height: 18px;
+        color: black;
+    }
+    
+    h2 { font-size: 1.5em; }
+    h3 { font-size: 1.2em; }
+    h4, h5 { font-size: 1em; }
+    
+    pre, p samp, dl samp, p code, dl code
+    {
+        font-family: Monaco, monospace;
+        font-size: 0.9em;
+    }
+
+    pre { font-size: 0.8em; }
+    
+    body { margin-left: 56px; margin-bottom: 4em; }
+    #intro { margin-left: -28px; }
+    h1, h2, h3, h4 { margin: 1em 56px 1em -28px; }
+    h5 { margin: 1em 0; }
+    dd, li { margin-left: 14px; }
+    ul { padding-left: 0; list-style-type: none; }
+    #index { float: right; width: 20em; padding-bottom: 2em; }
+    
+    h2 { margin-top: 2em; border-top: 1px solid #ccc; padding-top: 1em;}
+
+    body, #index { background-color: white; }
+    pre .bg { color: #aaa; }
+
+    p, dd, pre { width: 50em; }
+
+    var, samp, code { white-space: nowrap; }
+    samp, pre { background-color: #eee; }
+    dt { display: inline; font-weight: bold; }
+    var { background-color: #fe7; }
+
+    samp, pre, var { padding: 0 2px; margin: 0 -2px; border-radius: 2px; }
+    pre { margin: -4px 10px; padding: 4px; border: 1px solid #ddd; border-radius: 3px; }
+
+    -->
+    </style>
+</head>
+<body>
+
+<h1>TileStache API</h1>
+
+<div id="intro">
+
+    <p>
+    TileStache is a Python-based server application that can serve up map tiles
+    based on rendered geographic data. You might be familiar with
+    <a href="http://tilecache.org">TileCache</a> the venerable open source WMS
+    server from MetaCarta. TileStache is similar, but we hope simpler and
+    better-suited to the needs of designers and cartographers.
+    </p>
+
+    <p>
+    <strong>This document covers TileStache version 0.0.0</strong>.
+    </p>
+
+    <p>
+    See also <a href="http://tilestache.org/doc/TileStache.html">detailed module and class reference</a>.
+    </p>
+
+</div>
+
+<ul id="index">
+  <li>
+    <a href="#requesting-tiles">Requesting Tiles</a>
+    <ul>
+      <li><a href="#over-http">Over HTTP</a></li>
+      <li>
+        <a href="#in-code">In Code</a>
+<!-- 
+        <ul>
+          <li><a href="#tilestache-gettile"><code>TileStache.getTile</code></a></li>
+          <li><a href="#tilestache-requesthandler"><code>TileStache.requestHandler</code></a></li>
+        </ul>
+ -->
+      </li>
+    </ul>
+  </li>
+  <li>
+    <a href="#serving-tiles">Serving Tiles</a>
+    <ul>
+      <li><a href="#wsgi">WSGI</a></li>
+      <li><a href="#cgi">CGI</a></li>
+      <li><a href="#mod-python">mod_python</a></li>
+    </ul>
+  </li>
+  <li>
+    <a href="#configuring-tilestache">Configuring TileStache</a>
+    <ul>
+      <li>
+        <a href="#caches">Caches</a>
+<!-- 
+        <ul>
+          <li><a href="#test-cache">Test</a></li>
+          <li><a href="#disk-cache">Disk</a></li>
+        </ul>
+ -->
+      </li>
+      <li><a href="#layers">Layers</a></li>
+      <li>
+        <a href="#providers">Providers</a>
+<!-- 
+        <ul>
+          <li><a href="#mapnik-provider">Mapnik</a></li>
+          <li><a href="#proxy-provider">Proxy</a></li>
+          <li><a href="#url-template-provider">URL Template</a></li>
+        </ul>
+ -->
+      </li>
+      <li><a href="#projections">Projections</a></li>
+      <li><a href="#metatiles">Metatiles</a></li>
+      <li><a href="#preview">Preview</a></li>
+    </ul>
+  </li>
+  <li>
+    <a href="#extending-tilestache">Extending TileStache</a>
+    <ul>
+      <li>
+        <a href="#custom-providers">Providers</a>
+<!-- 
+        <ul>
+          <li><a href="#provider-rendertile"><code>provider.renderTile</code></a></li>
+          <li><a href="#provider-renderarea"><code>provider.renderArea</code></a></li>
+          <li><a href="#provider-gettypebyextension"><code>provider.getTypeByExtension</code></a></li>
+        </ul>
+ -->
+      </li>
+      <li><a href="#custom-caches">Caches</a></li>
+      <li><a href="#custom-configuration">Configuration</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h2><a id="requesting-tiles" name="requesting-tiles">Requesting Tiles</a></h2>
+
+<h3><a id="over-http" name="over-http">Over HTTP</a></h3>
+
+<p>
+TileStache URLs are based on a simplified TMS scheme:
+</p>
+
+<pre>
+/{layer name}/{zoom}/{column}/{row}.{extension}
+</pre>
+
+<p>
+An example tile URL might look like this:
+</p>
+
+<pre>
+http://example.org/path/tile.cgi/streets/12/656/1582.png
+</pre>
+
+<p>
+Interactive, slippy-map previews of tiles are also available:
+</p>
+
+<pre>
+/{layer name}/preview.html
+</pre>
+
+<h3><a id="in-code" name="in-code">In Code</a></h3>
+
+<h4><a id="tilestache-gettile" name="tilestache-gettile"><code>TileStache.getTile</code></a></h4>
+
+<p>
+Get a type string and tile binary for a given request layer tile.
+</p>
+ 
+<p>
+Arguments to <code>getTile</code>:
+</p>
+
+<dl>
+    <dt>layer</dt>
+    <dd>
+    Instance of <code>Core.Layer</code> to render.
+    </dd>
+
+    <dt>coord</dt>
+    <dd>
+    One <code>ModestMaps.Core.Coordinate</code> corresponding to a single tile.
+    </dd>
+
+    <dt>extension</dt>
+    <dd>
+    Filename extension to choose response type, e.g. <samp>"png"</samp> or
+    <samp>"jpg"</samp>.
+    </dd>
+</dl>
+ 
+<p>
+Return value of <code>getTile</code> is a tuple containing a mime-type string
+such as <samp>"image/png"</samp> and a complete byte string representing the
+rendered tile.
+</p>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.html#-getTile">TileStache.getTile</a>
+documentation for more information.
+</p>
+
+<h4><a id="tilestache-requesthandler" name="tilestache-requesthandler"><code>TileStache.requestHandler</code></a></h4>
+
+<p>
+Generate a mime-type and response body for a given request. This is the function
+to use when creating new HTTP interfaces to TileStache.
+</p>
+ 
+<p>
+Arguments to <code>requestHandler</code>:
+</p>
+
+<dl>
+    <dt>config</dt>
+    <dd>
+    Required file path string for a JSON configuration file or a configuration
+    object with <var>cache</var>, <var>layers</var>, and <var>dirpath</var>
+    properties, such as
+    <a href="http://tilestache.org/doc/TileStache.Config.html#Configuration"><code>TileStache.Config.Configuration</code></a>.
+    </dd>
+
+    <dt>path_info</dt>
+    <dd>
+    Required end portion of a request URL including the layer name and tile
+    coordinate, e.g. <samp>"/roads/12/656/1582.png"</samp>.
+    </dd>
+
+    <dt>query_string</dt>
+    <dd>
+    Optional, currently-unused placeholder for possible future query string
+    use. Or maybe an explicit deterrent from ever building such a thing.
+    <small>Hard to say.</small>
+    </dd>
+</dl>
+ 
+<p>
+Return value of <code>requestHandler</code> is a tuple containing a mime-type string
+such as <samp>"image/png"</samp> and a complete byte string representing the
+rendered tile.
+</p>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.html#-requestHandler">TileStache.requestHandler</a>
+documentation for more information.
+</p>
+
+<h2><a id="serving-tiles" name="serving-tiles">Serving Tiles</a></h2>
+
+<p>
+We currently provide three scripts for serving tiles: one for a WSGI-based
+webserver, one for a CGI-based webserver, and one for Apache <code>mod_python</code>.
+</p>
+
+<h4><a id="wsgi" name="wsgi">WSGI</a></h4>
+
+<p>
+TileStache comes with a WSGI application and a 
+<a href="http://werkzeug.pocoo.org/">Werkzeug</a> web server. To use the
+built-in server, run <tt>tilestache-server.py</tt>,
+which (by default) looks for a config file named <tt>tilestache.cfg</tt>
+in the current directory and then serves tiles on
+<tt>http://127.0.0.1:8080/</tt>. Check <tt>tilestache-server.py --help</tt>
+to change these defaults.
+</p>
+
+<p>Alternatively, any WSGI server can be pointed at an instance of
+<tt>TileStache.WSGITileServer</tt>. Here's how to use it with
+<a href="http://gunicorn.org/">gunicorn</a>:
+</p>
+
+<pre>
+$ gunicorn "TileStache:WSGITileServer('/path/to/tilestache.cfg')"
+</pre>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.html#WSGITileServer"><code>TileStache.WSGITileServer</code></a>
+documentation for more information.
+</p>
+
+<h4><a id="cgi" name="cgi">CGI</a></h4>
+
+<p>
+Using TileStache through CGI supports basic tile serving, and is useful for
+simple testing and low-to-medium traffic websites. This is a complete, working
+CGI script that looks for configuration in a local file called
+<tt>tilestache.cfg</tt>:
+</p>
+
+<pre>
+#!/usr/bin/python
+import os, TileStache
+TileStache.cgiHandler(os.environ, 'tilestache.cfg', debug=True)
+</pre>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.html#-cgiHandler"><code>TileStache.cgiHandler</code></a>
+documentation for more information.
+</p>
+
+<h4><a id="mod-python" name="mod-python">mod_python</a></h4>
+
+<p>
+Using TileStache through <code>mod_python</code> improves performance by
+caching imported modules, but must be configured via the Apache webserver
+config. This is a complete example configuration for a webserver publishing
+tiles configured by a file in <code>/etc</code>:
+</p>
+
+<pre>
+&lt;Directory /var/www/tiles&gt;
+  AddHandler mod_python .py
+  PythonHandler TileStache::modpythonHandler
+  PythonOption config /etc/tilestache.cfg
+&lt;/Directory&gt;
+</pre>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.html#-modPythonHandler"><code>TileStache.modPythonHandler</code></a>
+documentation for more information.
+</p>
+
+<h2><a id="configuring-tilestache" name="configuring-tilestache">Configuring TileStache</a></h2>
+
+<p>
+TileStache configuration is stored in JSON files, and is composed of two main
+top-level sections: <samp>"cache"</samp> and <samp>"layers"</samp>. There are
+examples of both in this minimal sample configuration:
+</p>
+ 
+<pre>
+{
+  "cache": {"name": "Test"},
+  "layers": {
+    "ex": {
+        "provider": {"name": "mapnik", "mapfile": "style.xml"},
+        "projection": "spherical mercator"
+    } 
+  }
+}
+</pre>
+
+<h3><a id="caches" name="caches">Caches</a></h3>
+
+<p>
+A Cache is the part of TileStache that stores static files to speed up future
+requests. A few default caches are shown here, with additional cache classes
+defined in
+<a href="http://tilestache.org/doc/TileStache.Goodies.Caches.html"><code>TileStache.Goodies.Caches</code></a>
+</p>
+
+<h4><a id="test-cache" name="test-cache">Test</a></h4>
+
+<p>
+Simple cache that doesn’t actually cache anything.
+</p>
+ 
+<p>
+Activity is optionally logged, though.
+</p>
+ 
+<p>
+Example configuration:
+</p>
+
+<pre>
+<span class="bg">{</span>
+  "cache": {
+    "name": "Test",
+    "verbose": True
+  }<span class="bg">,
+  "layers": { … }
+}</span>
+</pre>
+ 
+<p>
+Test cache parameters:
+</p>
+
+<dl>
+    <dt>verbose</dt>
+    <dd>
+    Optional boolean flag to write cache activities to a logging function,
+    defaults to <samp>False</samp> if omitted.
+    </dd>
+</dl>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.Caches.html#Test">TileStache.Caches.Test</a>
+documentation for more information.
+</p>
+
+<h4><a id="disk-cache" name="disk-cache">Disk</a></h4>
+
+<p>
+Caches files to disk.
+</p>
+ 
+<p>
+Example configuration:
+</p>
+ 
+<pre>
+<span class="bg">{</span>
+  "cache": {
+    "name": "Disk",
+    "path": "/tmp/stache",
+    "umask": "0000",
+    "dirs": "portable",
+    "gzip": ["xml", "json"]
+  }<span class="bg">,
+  "layers": { … }
+}</span>
+</pre>
+ 
+<p>
+Disk cache parameters:
+</p>
+
+<dl>
+    <dt>path</dt>
+    <dd>
+    Required local directory path where files should be stored.
+    </dd>
+
+    <dt>umask</dt>
+    <dd>
+    Optional string representation of octal permission mask for stored files.
+    Defaults to <samp>"0022"</samp>.
+    </dd>
+
+    <dt>dirs</dt>
+    <dd>
+    Optional string saying whether to create cache directories that are safe or
+    portable. For an example tile <samp>12/656/1582.png</samp>,
+    <samp>"portable"</samp> creates matching directory trees while
+    <samp>"safe"</samp> guarantees directories with fewer files, e.g.
+    <samp>12/000/656/001/582.png</samp>. Defaults to <samp>"safe"</samp>.
+    </dd>
+
+    <dt>gzip</dt>
+    <dd>
+    Optional list of file formats that should be stored in a
+    compressed form. Defaults to <samp>["txt", "text", "json", "xml"]</samp>.
+    Provide an empty list in the configuration for no compression.
+    </dd>
+</dl>
+
+<p>
+If your configuration file is loaded from a remote location, e.g.
+<samp>http://example.com/tilestache.cfg</samp>, the path <strong>must</strong>
+be an unambiguous filesystem path, e.g. <samp>"file:///tmp/cache"</samp>.
+</p>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.Caches.html#Disk">TileStache.Caches.Disk</a>
+documentation for more information.
+</p>
+
+<h4><a id="additional-caches" name="additional-caches">Additional Caches</a></h4>
+
+<p>
+New caches with functionality that’s not strictly core to TileStache first appear in
+<a href="http://tilestache.org/doc/TileStache.Goodies.Caches.html">TileStache.Goodies.Caches</a>.
+</p>
+
+<h5>LimitedDisk</h5>
+
+<p>
+Cache that stores a limited amount of data. This is an example cache that uses
+a SQLite database to track sizes and last-read times for cached tiles, and
+removes least-recently-used tiles whenever the total size of the cache exceeds
+a set limit. See
+<a href="http://tilestache.org/doc/TileStache.Goodies.Caches.LimitedDisk.html">TileStache.Goodies.Caches.LimitedDisk</a>
+for more information.
+</p>
+
+<h3><a id="layers" name="layers">Layers</a></h3>
+
+<p>
+A Layer represents a set of tiles in TileStache. It keeps references to
+providers, projections, a Configuration instance, and other details required
+for to the storage and rendering of a tile set.
+</p>
+
+<p>
+Example layer configuration:
+</p>
+ 
+<pre>
+<span class="bg">{
+  "cache": …,
+  "layers": 
+  {</span>
+    "example-name":
+    {
+      "provider": { … },
+      "metatile": { … },
+      "preview": { … },
+      "stale lock timeout": …,
+      "projection": …
+    }
+  <span class="bg">}
+}</span>
+</pre>
+ 
+<p>
+The public-facing URL of a single tile for this layer might look like this:
+</p>
+ 
+<pre>
+http://example.com/tilestache.cgi/example-name/0/0/0.png
+</pre>
+
+<p>
+Shared layer parameters:
+</p>
+
+<dl>
+    <dt>provider</dt>
+    <dd>
+    Refers to a Provider, explained in detail under
+    <a href="#providers">Providers</a>.
+    </dd>
+
+    <dt>metatile</dt>
+    <dd>
+    Optionally makes it possible for multiple individual tiles to be rendered
+    at one time, for greater speed and efficiency. This is commonly used for
+    bitmap providers such as Mapnik. See <a href="#metatiles">Metatiles</a>
+    for more information.
+    </dd>
+
+    <dt>preview</dt>
+    <dd>
+    Optionally overrides the starting point for the built-in per-layer slippy
+    map preview, useful for image-based layers where appropriate. See
+    <a href="#preview">Preview</a> for more information.
+    </dd>
+
+    <dt>projection</dt>
+    <dd>
+    Names a geographic projection, explained in
+    <a href="#projections">Projections</a>. If omitted, defaults to
+    <samp>"spherical mercator"</samp>.
+    </dd>
+
+    <dt>stale lock timeout</dt>
+    <dd>
+    An optional number of seconds to wait before forcing a lock that might be
+    stuck. This is defined on a per-layer basis, rather than for an entire
+    cache at one time, because you may have different expectations for the
+    rendering speeds of different layer configurations. Defaults to
+    <samp>15</samp>.
+    </dd>
+</dl>
+
+<h3><a id="providers" name="providers">Providers</a></h3>
+
+<p>
+A Provider is the part of TileStache that stores static files to speed up
+future requests. A few default providers are shown here, with additional
+provider classes defined in
+<a href="http://tilestache.org/doc/TileStache.Goodies.Providers.html"><code>TileStache.Goodies.Providers</code></a>
+</p>
+
+<h4><a id="mapnik-provider" name="mapnik-provider">Mapnik</a></h4>
+
+<p>
+Built-in Mapnik provider, renders map images from Mapnik XML files.
+</p>
+ 
+<p>
+Example Mapnik provider configuration:
+</p>
+
+<pre>
+<span class="bg">{
+  "cache": { … }.
+  "layers":
+  {
+    "roads":
+    {</span>
+      "provider":
+      {
+        "name": "mapnik", 
+        "mapfile": "style.xml"
+      }
+    <span class="bg">}
+  }
+}</span>
+</pre>
+ 
+<p>
+Mapnik provider parameters:
+</p>
+
+<dl>
+    <dt>mapfile</dt>
+    <dd>
+    Required local file path to Mapnik XML file.
+    </dd>
+</dl>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.Providers.html#Mapnik">TileStache.Providers.Mapnik</a>
+for more information.
+</p>
+
+<h4><a id="proxy-provider" name="proxy-provider">Proxy</a></h4>
+
+<p>
+Proxy provider, to pass through and cache tiles from other places.
+</p>
+ 
+<p>
+Example Proxy provider configuration:
+</p>
+
+<pre>
+<span class="bg">{
+  "cache": { … }.
+  "layers":
+  {
+    "roads":
+    {</span>
+      "provider":
+      {
+        "name": "proxy", 
+        "url": "http://tile.openstreetmap.org/{Z}/{X}/{Y}.png"
+      }
+    <span class="bg">}
+  }
+}</span>
+</pre>
+ 
+<p>
+Proxy provider parameters:
+</p>
+
+<dl>
+    <dt>url</dt>
+    <dd>
+    Optional URL template for remote tiles, for example:
+    <samp>"http://tile.openstreetmap.org/{Z}/{X}/{Y}.png"</samp>
+    </dd>
+    <dt>provider</dt>
+    <dd>
+    Optional provider name string from Modest Maps built-ins. See
+    <code>ModestMaps.builtinProviders.keys()</code> for a list. Example:
+    <samp>"OPENSTREETMAP"</samp>.
+    </dd>
+</dl>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.Providers.html#Proxy">TileStache.Providers.Proxy</a>
+for more information.
+</p>
+
+<h4><a id="url-template-provider" name="url-template-provider">URL Template</a></h4>
+
+<p>
+Templated URL provider, to pass through and cache tiles from WMS servers.
+</p>
+ 
+<p>
+Example UrlTemplate provider configuration:
+</p>
+
+<pre>
+<span class="bg">{
+  "cache": { … }.
+  "layers":
+  {
+    "roads":
+    {</span>
+      "provider":
+      {
+        "name": "url template", 
+        "template": "http://example.com/?bbox=$xmin,$ymin,$xmax,$ymax"
+      }
+    <span class="bg">}
+  }
+}</span>
+</pre>
+ 
+<p>
+UrlTemplate provider parameters:
+</p>
+
+<dl>
+    <dt>template</dt>
+    <dd>
+    String with substitutions suitable for use in
+    <a href="http://docs.python.org/library/string.html#string.Template">string.Template</a>.
+    The variables available for substitution are <var>width</var>,
+    <var>height</var> (in pixels), <var>srs</var> (in
+    <a href="http://trac.osgeo.org/proj/wiki/GenParms">PROJ.4 format</a>),
+    <var>xmin</var>, <var>ymin</var>, <var>xmax</var>, <var>ymax</var> (in
+    projected map units), and <var>zoom</var>.
+    Example:
+    <samp>"http://example.com/?bbox=$xmin,$ymin,$xmax,$ymax&bboxSR=102113&size=$width,$height&imageSR=102113&format=jpg&f=image"</samp>.
+    </dd>
+</dl>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.Providers.html#UrlTemplate">TileStache.Providers.UrlTemplate</a>
+for more information.
+</p>
+
+<h4><a id="additional-providers" name="additional-providers">Additional Providers</a></h4>
+
+<p>
+New providers with functionality that’s not strictly core to TileStache first appear in
+<a href="http://tilestache.org/doc/TileStache.Goodies.Providers.html">TileStache.Goodies.Providers</a>.
+</p>
+
+<h5>Grid</h5>
+
+<p>
+Grid rendering for TileStache. UTM provider draws gridlines in tiles,
+in transparent images suitable for use as map overlays. See
+<a href="http://tilestache.org/doc/TileStache.Goodies.Providers.Grid.html">TileStache.Goodies.Providers.Grid</a>
+for more information.
+</p>
+
+<h5>PostGeoJSON</h5>
+
+<p>
+Provider that returns GeoJSON data responses from PostGIS queries. This is an
+example of a provider that does not return an image, but rather queries a
+database for raw data and replies with a string of GeoJSON. For example, it’s
+possible to retrieve data for locations of OpenStreetMap points of interest
+based on a query with a bounding box intersection. See
+<a href="http://tilestache.org/doc/TileStache.Goodies.Providers.PostGeoJSON.html">TileStache.Goodies.Providers.PostGeoJSON</a>
+for more information.
+</p>
+
+<h5>SolrGeoJSON</h5>
+
+<p>
+Provider that returns GeoJSON data responses from Solr spatial queries. This is
+an example of a provider that does not return an image, but rather queries a
+Solr instance for raw data and replies with a string of GeoJSON. See
+<a href="http://tilestache.org/doc/TileStache.Goodies.Providers.SolrGeoJSON.html">TileStache.Goodies.Providers.SolrGeoJSON</a>
+for more information.
+</p>
+
+<h5>Composite</h5>
+
+<p>
+Layered, composite rendering for TileStache. See
+<a href="http://tilestache.org/doc/TileStache.Goodies.Providers.Composite.html">TileStache.Goodies.Providers.Composite</a>
+for more information.
+</p>
+
+<h3><a id="projections" name="projections">Projections</a></h3>
+
+<p>
+A Projection defines the relationship between the rendered tiles and the
+underlying geographic data. Generally, just one popular projection is used for
+most web maps, <samp>"spherical mercator"</samp>.
+</p>
+
+<p>
+Provided projections:
+</p>
+
+<dl>
+    <dt>spherical mercator</dt>
+    <dd>
+    Projection for most commonly-used web map tile scheme, equivalent to
+    <code>EPSG:900913</code>. The simplified projection used here is described
+    in greater detail at
+    <a href="http://trac.openlayers.org/wiki/SphericalMercator">openlayers.org</a>.
+    </dd>
+    
+    <dt>WGS84</dt>
+    <dd>
+    Unprojected projection for the other commonly-used web map tile scheme,
+    equivalent to <code>EPSG:4326</code>.
+    </dd>
+</dl>
+
+<p>
+You can define your own projection, with a module and object name as arguments:
+</p>
+
+<pre>
+<span class="bg">"layer-name": {
+    ...</span>
+    "projection": "Module:Object",
+<span class="bg">}</span>
+</pre>
+
+<p>
+The object must include methods that convert between coordinates, points, and
+locations. See the included mercator and WGS84 implementations for example.
+You can also instantiate a projection class using this syntax:
+</p>
+
+<pre>
+<span class="bg">"layer-name": {
+    ...</span>
+    "projection": "Module:Object()"
+<span class="bg">}</span>
+</pre>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.Geography.html">TileStache.Geography</a>
+for more information.
+</p>
+
+<h4><a id="metatiles" name="metatiles">Metatiles</a></h4>
+
+<p>
+Metatiles are larger areas to be rendered at one time, often used because it’s
+more efficient to render a large number of contiguous tiles at once than each
+one separately.
+</p>
+ 
+<p>
+Example metatile configuration:
+</p>
+
+<pre>
+<span class="bg">{
+  "cache": …,
+  "layers": 
+  {
+    "example-name":
+    {
+      "provider": { … },</span>
+      "metatile": 
+      {
+        "rows": 4,
+        "columns": 4,
+        "buffer": 64
+      }
+    <span class="bg">}
+  }
+}</span>
+</pre>
+
+<p>
+This example metatile is four rows tall and four columns wide with a buffer
+of 64 pixels, for a total bitmap size of 4 × 256 + 64 × 2 = <strong>1152</strong>.
+</p>
+
+<p>
+Metatile parameters:
+</p>
+
+<dl>
+    <dt>rows</dt>
+    <dd>
+    Height of the metatile measured in tiles.
+    </dd>
+
+    <dt>columns</dt>
+    <dd>
+    Width of the metatile measured in tiles.
+    </dd>
+
+    <dt>buffer</dt>
+    <dd>
+    Buffer area around the metatile, measured in pixels. This is useful for
+    providers with labels or icons, where it’s necessary to draw a bit extra
+    around the edges to ensure that text is not cut off.
+    </dd>
+</dl> 
+
+<h4><a id="preview" name="preview">Preview</a></h4>
+
+<p>
+TileStache includes a built-in slippy map preview, that can be viewed in a
+browser using the URL <samp>/{layer name}/preview.html</samp>, e.g.
+<samp>http://example.org/example-name/preview.html</samp>. The settings for
+this preview are completely optional, but can be set on a per-layer basis
+for control over starting location and file extension.
+</p>
+ 
+<p>
+Example preview configuration:
+</p>
+
+<pre>
+<span class="bg">{
+  "cache": …,
+  "layers": 
+  {
+    "example-name":
+    {
+      "provider": { … },</span>
+      "preview": 
+      {
+        "lat": 37.80439,
+        "lon": -122.27127,
+        "zoom": 15,
+        "ext": "jpg"
+      }
+    <span class="bg">}
+  }
+}</span>
+</pre>
+
+<p>
+This example preview displays JPG tiles, and is centered on
+<a href="http://osm.org/go/TZNQsg5C--">37.80439, -122.27127 at zoom 15</a>.
+</p>
+
+<p>
+Preview parameters:
+</p>
+
+<dl>
+    <dt>lat</dt>
+    <dd>
+    Starting latitude in degrees.
+    </dd>
+
+    <dt>lon</dt>
+    <dd>
+    Starting longitude in degrees.
+    </dd>
+
+    <dt>zoom</dt>
+    <dd>
+    Starting zoom level.
+    </dd>
+
+    <dt>ext</dt>
+    <dd>
+    Filename extension, e.g. <samp>"png"</samp>.
+    </dd>
+</dl> 
+
+<h2><a id="extending-tilestache" name="extending-tilestache">Extending TileStache</a></h2>
+
+<p>
+TileStache relies on <a href="http://en.wikipedia.org/wiki/Duck_typing">duck typing</a>
+rather than inheritance for extensibility, so all guidelines for customization
+below explain what methods and properties must be defined on objects for them
+to be valid as providers, caches, and configurations.
+</p>
+
+<h3><a id="custom-providers" name="custom-providers">Providers</a></h3>
+
+<p>
+Example external provider configuration:
+</p>
+ 
+<pre>
+<span class="bg">{
+  "cache": …,
+  "layers": 
+  {
+    "example-name":
+    {</span>
+      "provider":
+      {
+        "class": "Module.Classname",
+        "kwargs": {"frob": "yes"}
+      }
+    <span class="bg">}
+  }
+}</span>
+</pre>
+
+<p>
+The <var>class</var> value is split up into module and classname, and
+dynamically included. If this doesn’t work for some reason, TileStache will
+fail loudly to let you know. The <var>kwargs</var> value is fed to the class
+constructor as a dictionary of keyword args. If your defined class doesn’t
+accept any of these keyword arguments, TileStache will throw an exception.
+</p>
+
+<p>
+A provider must offer at least one of two methods for rendering map areas:
+<code>renderTile</code> or <code>renderArea</code>. A provider must also accept
+an instance of <code>Layer</code> as the first argument to its constructor.
+</p>
+
+<p>
+Return value of both <code>renderTile</code> and <code>renderArea</code> is an
+object with a <code>save</code> method that can accept a file-like object and
+a format name, typically an instance of the <code>PIL.Image</code> object but
+allowing for creation of providers that save text, raw data or other non-image
+response.
+</p>
+
+<p>
+A minimal provider stub class:
+</p>
+
+<pre>
+class ProviderStub:
+
+  def __init__(self, layer):
+    # create a new provider for a layer
+    raise NotImplementedError
+    
+  def renderTile(self, width, height, srs, coord):
+    # return an object with a PIL-like save() method for a tile
+    raise NotImplementedError
+    
+  def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
+    # return an object with a PIL-like save() method for an area
+    raise NotImplementedError
+</pre>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.Providers.html">TileStache.Providers</a>
+for more information on custom providers and
+<a href="http://tilestache.org/doc/TileStache.Goodies.Providers.html">TileStache.Goodies.Providers</a>
+for examples of custom providers.
+</p>
+
+<h4><a id="provider-rendertile" name="provider-rendertile"><code>provider.renderTile</code></a></h4>
+
+<p>
+Draws a single tile at a time.
+</p>
+
+<p>
+Arguments to <code>renderTile</code>:
+</p>
+
+<dl>
+    <dt>width</dt>
+    <dd>
+    Pixel width of tile, typically <samp>256</samp>.
+    </dd>
+    
+    <dt>height</dt>
+    <dd>
+    Pixel height of tile, typically <samp>256</samp>.
+    </dd>
+    
+    <dt>srs</dt>
+    <dd>
+    Projection as Proj4 string.
+    <samp>"+proj=longlat +ellps=WGS84 +datum=WGS84"</samp> is an example, see
+    <a href="http://tilestache.org/doc/TileStache.Geography.html">TileStache.Geography</a>
+    for actual values.
+    </dd>
+    
+    <dt>coord</dt>
+    <dd>
+    Coordinate object representing a single tile.
+    </dd>
+</dl>
+
+<p>
+Return value of <code>renderTile</code> is a
+<a href="http://www.pythonware.com/library/pil/handbook/image.htm#Image.save"><code>PIL.Image</code></a>
+or other saveable object, used like this:
+</p>
+
+<pre>
+provider.renderTile(…).save(file, "XML")
+</pre>
+ 
+<h4><a id="provider-renderarea" name="provider-renderarea"><code>provider.renderArea</code></a></h4>
+
+<p>
+Draws a variably-sized area, and is used when drawing metatiles.
+</p>
+
+<p>
+Non-image providers and metatiles do not mix. If your provider returns JSON,
+plaintext, XML, or some other non-PIL format, implement only the
+<code>renderTile</code> method.
+</p>
+
+<p>
+Arguments to <code>renderArea</code>:
+</p>
+
+<dl>
+    <dt>width</dt>
+    <dd>
+    Pixel width of tile, typically <samp>256</samp>.
+    </dd>
+    
+    <dt>height</dt>
+    <dd>
+    Pixel height of tile, typically <samp>256</samp>.
+    </dd>
+    
+    <dt>srs</dt>
+    <dd>
+    Projection as Proj4 string.
+    <samp>"+proj=longlat +ellps=WGS84 +datum=WGS84"</samp> is an example, see
+    <a href="http://tilestache.org/doc/TileStache.Geography.html">TileStache.Geography</a>
+    for actual values.
+    </dd>
+    
+    <dt>xmin</dt>
+    <dd>
+    Minimum <var>x</var> boundary of rendered area in projected coordinates.
+    </dd>
+    
+    <dt>ymin</dt>
+    <dd>
+    Minimum <var>y</var> boundary of rendered area in projected coordinates.
+    </dd>
+    
+    <dt>xmax</dt>
+    <dd>
+    Maximum <var>x</var> boundary of rendered area in projected coordinates.
+    </dd>
+    
+    <dt>ymax</dt>
+    <dd>
+    Maximum <var>y</var> boundary of rendered area in projected coordinates.
+    </dd>
+    
+    <dt>zoom</dt>
+    <dd>
+    Zoom level of final map. Technically this can be derived from the other
+    arguments, but that’s a hassle so we’ll pass it in explicitly.
+    </dd>
+</dl>
+
+<p>
+Return value of <code>renderArea</code> is a
+<a href="http://www.pythonware.com/library/pil/handbook/image.htm#Image.save"><code>PIL.Image</code></a>
+or other saveable object, used like this:
+</p>
+
+<pre>
+provider.renderArea(…).save(file, "PNG")
+</pre>
+
+<h4><a id="provider-gettypebyextension" name="provider-gettypebyextension"><code>provider.getTypeByExtension</code></a></h4>
+
+<p>
+A provider may offer a method for custom response types,
+<code>getTypeByExtension</code>. This method returns a tuple with two strings:
+a mime-type and a format.
+</p>
+
+<p>
+Arguments to <code>getTypeByExtension</code>:
+</p>
+
+<dl>
+    <dt>extension</dt>
+    <dd>
+    Filename extension string, e.g. <samp>"png"</samp>, <samp>"json"</samp>, etc.
+    </dd>
+</dl>
+
+<h3><a id="custom-caches" name="custom-caches">Caches</a></h3>
+
+<p>
+Example external provider configuration:
+</p>
+ 
+<pre>
+<span class="bg">{</span>
+  "cache":
+  {
+    "class": "Module.Classname",
+    "kwargs": {"frob": "yes"}
+  },
+  <span class="bg">"layers": { … }
+}</span>
+</pre>
+
+<p>
+The <var>class</var> value is split up into module and classname, and
+dynamically included. If this doesn’t work for some reason, TileStache will
+fail loudly to let you know. The <var>kwargs</var> value is fed to the class
+constructor as a dictionary of keyword args. If your defined class doesn’t
+accept any of these keyword arguments, TileStache will throw an exception.
+</p>
+
+<p>
+A cache must provide all of these four methods: <code>lock</code>,
+<code>unlock</code>, <code>read</code>, and <code>save</code>.
+</p>
+
+<p>
+Each method requires three arguments:
+</p>
+
+<dl>
+    <dt>layer</dt>
+    <dd>
+    Instance of a layer.
+    </dd>
+
+    <dt>coord</dt>
+    <dd>
+    Single Coordinate that represents a tile.
+    </dd>
+
+    <dt>format</dt>
+    <dd>
+    String like <samp>"png"</samp> or <samp>"jpg"</samp> that is used as a
+    filename extension.
+    </dd>
+</dl>
+ 
+<p>
+The <code>save</code> method accepts an additional argument <i>before the others</i>:
+</p>
+ 
+<dl>
+    <dt>body</dt>
+    <dd>
+    Raw content to save to the cache.
+    </dd>
+</dl>
+
+<p>
+A minimal cache stub class:
+</p>
+
+<pre>
+class CacheStub:
+
+  def lock(self, layer, coord, format):
+    # lock a tile
+    raise NotImplementedError
+
+  def unlock(self, layer, coord, format):
+    # unlock a tile
+    raise NotImplementedError
+
+  def read(self, layer, coord, format):
+    # return raw tile content from cache
+    raise NotImplementedError
+  
+  def save(self, body, layer, coord, format):
+    # save raw tile content to cache
+    raise NotImplementedError
+</pre>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.Caches.html">TileStache.Caches</a>
+for more information on custom caches and
+<a href="http://tilestache.org/doc/TileStache.Goodies.Caches.html">TileStache.Goodies.Caches</a>
+for examples of custom caches.
+</p>
+
+<h3><a id="custom-configuration" name="custom-configuration">Configuration</a></h3>
+
+<p>
+A complete configuration object includes <var>cache</var>,
+<var>layers</var>, and <var>dirpath</var> properties:
+</p>
+ 
+<dl>
+    <dt>cache</dt>
+    <dd>
+    Cache instance, e.g.
+    <code><a href="http://tilestache.org/doc/TileStache.Caches.html#Disk">TileStache.Caches.Disk</a></code>
+    etc. See
+    <a href="http://tilestache.org/doc/TileStache.Caches.html">TileStache.Caches</a>
+    for details on what makes a usable cache.
+    </dd>
+
+    <dt>layers</dt>
+    <dd>
+    Dictionary of layers keyed by name. 
+    </dd>
+
+    <dt>dirpath</dt>
+    <dd>
+    Local filesystem path for this configuration, useful for expanding relative
+    paths.
+    </dd>
+</dl>
+
+<p>
+When creating a custom <var>layers</var> dictionary, e.g. for dynamic layer
+collections backed by some external configuration, these
+<a href="http://docs.python.org/library/stdtypes.html#mapping-types-dict">dictionary methods</a>
+must be provided for a complete collection of layers:
+</p>
+ 
+<dl>
+    <dt>keys</dt>
+    <dd>
+    Return list of layer name strings.
+    </dd>
+
+    <dt>items</dt>
+    <dd>
+    Return list of (name, layer) pairs.
+    </dd>
+
+    <dt>__contains__</dt>
+    <dd>
+    Return boolean true if given key is an existing layer.
+    </dd>
+
+    <dt>__getitem__</dt>
+    <dd>
+    Return existing layer object for given key or raise <code>KeyError</code>.
+    </dd>
+</dl>
+
+<p>
+A minimal layers dictionary stub class:
+</p>
+
+<pre>
+class LayersStub:
+
+  def keys(self):
+    # return a list of key strings
+    raise NotImplementedError
+
+  def items(self):
+    # return a list of (key, layer) tuples
+    raise NotImplementedError
+
+  def __contains__(self, key):
+    # return True if the key is here
+    raise NotImplementedError
+  
+  def __getitem__(self, key):
+    # return the layer named by the key
+    raise NotImplementedError
+</pre>
+
+</body>
+</html>

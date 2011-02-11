@@ -17,9 +17,17 @@ import sys
 from math import log as _log, pow as _pow, hypot as _hypot, ceil as _ceil
 from os.path import dirname, join as pathjoin
 
-import PIL.Image
-import PIL.ImageDraw
-import PIL.ImageFont
+try:
+    import PIL
+except ImportError:
+    # On some systems, PIL's modules are imported from their own modules.
+    import Image
+    import ImageDraw
+    import ImageFont
+else:
+    from PIL import Image
+    from PIL import ImageDraw
+    from PIL import ImageFont
 
 import TileStache
 
@@ -138,7 +146,7 @@ class UTM:
 
         for dir in dirs:
             try:
-                font = PIL.ImageFont.truetype(pathjoin(dir, file), 14)
+                font = ImageFont.truetype(pathjoin(dir, file), 14)
             except IOError:
                 font = None
             else:
@@ -181,8 +189,8 @@ class UTM:
         ybot, ytop = int(ymin - ymin % step), int(ymax - xmax % step) + 2 * step
     
         # start doing things in pixels
-        img = PIL.Image.new('RGBA', (width_, height_), (0xEE, 0xEE, 0xEE, 0x00))
-        draw = PIL.ImageDraw.ImageDraw(img)
+        img = Image.new('RGBA', (width_, height_), (0xEE, 0xEE, 0xEE, 0x00))
+        draw = ImageDraw.ImageDraw(img)
         xform = transform(width_, height_, xmin_, ymax_, xmax_, ymin_)
         
         lines = []
