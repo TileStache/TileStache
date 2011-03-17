@@ -1,3 +1,7 @@
+2011-03-17: 1.7.4
+- Fixed use of "layers.get(name)" to "name in layers" in WSGI server.
+- Made possible to build Composite docs without numpy or sympy.
+
 2011-03-17: 1.7.3
 - Made it possible to instantiate WSGI server with a configuration object instead of a file.
 

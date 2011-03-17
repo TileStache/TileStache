@@ -257,7 +257,7 @@ class WSGITileServer:
         except Core.KnownUnknown, e:
             return self._response(start_response, '400 Bad Request', str(e))
 
-        if not self.config.layers.get(layer):
+        if layer not in self.config.layers:
             return self._response(start_response, '404 Not Found')
 
         mimetype, content = requestHandler(self.config, environ['PATH_INFO'], environ['QUERY_STRING'])
