@@ -217,16 +217,31 @@ class WSGITileServer:
     def __init__(self, config, autoreload=False):
         """ Initialize a callable WSGI instance.
 
-            Required config parameter is a path to a configuration file.
-            Optional autoreload boolean parameter causes config to be re-read on each request.
+            Config parameter can be a file path string for a JSON configuration
+            file or a configuration object with 'cache', 'layers', and
+            'dirpath' properties.
+            
+            Optional autoreload boolean parameter causes config to be re-read
+            on each request, applicable only when config is a JSON file.
         """
-        self.autoreload = autoreload
-        self.config_path = config
 
-        try:
-            self.config = parseConfigfile(config)
-        except Exception, e:
-            raise Core.KnownUnknown("Error loading Tilestache config file:\n%s" % str(e))
+        if type(config) in (str, unicode):
+            self.autoreload = autoreload
+            self.config_path = config
+    
+            try:
+                self.config = parseConfigfile(config)
+            except Exception, e:
+                raise Core.KnownUnknown("Error loading Tilestache config file:\n%s" % str(e))
+
+        else:
+            assert hasattr(config, 'cache'), 'Configuration object must have a cache.'
+            assert hasattr(config, 'layers'), 'Configuration object must have layers.'
+            assert hasattr(config, 'dirpath'), 'Configuration object must have a dirpath.'
+            
+            self.autoreload = False
+            self.config_path = None
+            self.config = config
 
     def __call__(self, environ, start_response):
         """
