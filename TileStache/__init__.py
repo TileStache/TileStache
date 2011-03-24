@@ -65,11 +65,20 @@ def getTile(layer, coord, extension):
             # If no one else wrote the tile, do it here.
             if body is None:
                 buff = StringIO()
-                tile = layer.render(coord, format)
+
+                try:
+                    tile = layer.render(coord, format)
+                except Core.NoTileLeftBehind, e:
+                    tile = e.tile
+                    save = False
+                else:
+                    save = True
+
                 tile.save(buff, format)
                 body = buff.getvalue()
                 
-                cache.save(body, layer, coord, format)
+                if save:
+                    cache.save(body, layer, coord, format)
 
         finally:
             # Always clean up a lock when it's no longer being used.

@@ -328,6 +328,23 @@ class KnownUnknown(Exception):
     """
     pass
 
+class NoTileLeftBehind(Exception):
+    """ Leave no tile in the cache.
+    
+        This exception can be thrown in a provider to signal to
+        TileStache.getTile() that the result tile should be returned,
+        but not saved in a cache. Useful in cases where a full tileset
+        is being rendered for static hosting, and you don't want millions
+        of identical ocean tiles.
+        
+        The one constructor argument is an instance of PIL.Image or
+        some other object with a save() method, as would be returned
+        by provider renderArea() or renderTile() methods.
+    """
+    def __init__(self, tile):
+        self.tile = tile
+        Exception.__init__(self, tile)
+
 def _preview(layer):
     """ Get an HTML response for a given named layer.
     """
