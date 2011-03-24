@@ -1,3 +1,6 @@
+2011-03-24: 1.8.0
+- Added new Core.NoTileLeftBehind exception class to suppress result caching.
+
 2011-03-17: 1.7.4
 - Fixed use of "layers.get(name)" to "name in layers" in WSGI server.
 - Made possible to build Composite docs without numpy or sympy.
