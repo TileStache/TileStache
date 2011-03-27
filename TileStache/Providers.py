@@ -160,7 +160,7 @@ class Proxy:
         if (width, height) != (256, 256):
             raise Exception("Image dimensions don't match expected tile size: %(width)dx%(height)d" % locals())
 
-        img = Image.new('RGB', (width, height))
+        img = Image.new('RGBA', (width, height))
         
         for url in self.provider.getTileUrls(coord):
             s, host, path, p, query, f = urlparse(url)
