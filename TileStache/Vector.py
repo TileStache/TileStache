@@ -16,7 +16,7 @@ from Core import KnownUnknown
 from Geography import getProjectionByName
 
 class VectorResponse:
-    """ Wrapper class for JSON response that makes it behave like a PIL.Image object.
+    """ Wrapper class for Vector response that makes it behave like a PIL.Image object.
     
         TileStache.getTile() expects to be able to save one of these to a buffer.
     """
@@ -26,8 +26,8 @@ class VectorResponse:
         self.precision = precision
 
     def save(self, out, format):
-        if format != 'JSON':
-            raise KnownUnknown('PostGeoJSON only saves .json tiles, not "%s"' % format)
+        if format != 'GeoJSON':
+            raise KnownUnknown('PostGeoJSON only saves .geojson tiles, not "%s"' % format)
 
         indent = None
         
@@ -51,7 +51,11 @@ class VectorResponse:
                 out.write(atom)
 
 def _tile_perimeter(coord, projection):
-    """
+    """ Get a tile's outer edge for a coordinate and a projection.
+    
+        Returns a list of 17 (x, y) coordinates corresponding to a clockwise
+        circumambulation of a tile boundary in a given projection. Projection
+        is like those found in TileStache.Geography, used for tile output.
     """
     ul = projection.coordinateProj(coord)
     lr = projection.coordinateProj(coord.right().down())
@@ -82,7 +86,9 @@ def _tile_perimeter(coord, projection):
     return perimeter
 
 def _tile_perimeter_geom(coord, projection):
-    """
+    """ Get an OGR Geometry object for a coordinate tile polygon.
+    
+        Uses _tile_perimeter().
     """
     perimeter = _tile_perimeter(coord, projection)
     wkt = 'POLYGON((%s))' % ', '.join(['%.3f %.3f' % xy for xy in perimeter])
@@ -94,12 +100,16 @@ def _tile_perimeter_geom(coord, projection):
     
     return geom
 
-def _feature_properties(feature, layer_definition):
-    """
+def _feature_properties(feature, layer_definition, whitelist=None):
+    """ Returns a dictionary of feature properties for a feature in a layer.
     
-        OFTInteger: 0, OFTIntegerList: 1, OFTReal: 2, OFTRealList: 3,
-        OFTString: 4, OFTStringList: 5, OFTWideString: 6, OFTWideStringList: 7,
-        OFTBinary: 8, OFTDate: 9, OFTTime: 10, OFTDateTime: 11
+        Third argument is an optional list of properties to whitelist
+        by case-sensitive name - leave it None to include everything.
+    
+        OGR property types:
+        OFTInteger (0), OFTIntegerList (1), OFTReal (2), OFTRealList (3),
+        OFTString (4), OFTStringList (5), OFTWideString (6), OFTWideStringList (7),
+        OFTBinary (8), OFTDate (9), OFTTime (10), OFTDateTime (11).
     """
     properties = {}
     okay_types = ogr.OFTInteger, ogr.OFTReal, ogr.OFTString, ogr.OFTWideString
@@ -117,17 +127,23 @@ def _feature_properties(feature, layer_definition):
                 raise KnownUnknown("Found an OGR field type I don't know what to do with: ogr.%s" % name)
 
         name = field_definition.GetNameRef()
+        
+        if type(whitelist) is list and name not in whitelist:
+            continue
+        
         properties[name] = feature.GetField(name)
     
     return properties
 
 def _open_layer(driver_name, parameters, dirpath):
-    """
+    """ Open a layer, return it and its datasource.
+    
+        Dirpath comes from configuration, and is used to locate files.
     """
     #
     # Set up the driver
     #
-    okay_drivers = 'Postgresql', 'ESRI Shapefile'
+    okay_drivers = 'Postgresql', 'ESRI Shapefile', 'GeoJSON'
     
     if driver_name not in okay_drivers:
         raise KnownUnknown('Got a driver type Vector doesn\'t understand: "%s". Need one of %s.' % (driver_name, ', '.join(okay_drivers)))
@@ -147,9 +163,9 @@ def _open_layer(driver_name, parameters, dirpath):
             if part in parameters:
                 conn_parts.append("%s='%s'" % (part, parameters[part]))
         
-        datasource = driver.Open(str('PG:' + ' '.join(conn_parts)))
+        source_name = 'PG:' + ' '.join(conn_parts)
         
-    elif driver_name == 'ESRI Shapefile':
+    elif driver_name in ('ESRI Shapefile', 'GeoJSON'):
         if 'file' not in parameters:
             raise KnownUnknown('Need at least a "file" parameter for a shapefile')
     
@@ -159,8 +175,13 @@ def _open_layer(driver_name, parameters, dirpath):
         if scheme not in ('file', ''):
             raise KnownUnknown('Shapefiles need to be local, not %s' % file_href)
         
-        datasource = driver.Open(str(file_path))
+        source_name = file_path
 
+    datasource = driver.Open(str(source_name))
+
+    if datasource is None:
+        raise KnownUnknown('Couldn\'t open datasource %s' % source_name)
+    
     #
     # Set up the layer
     #
@@ -175,8 +196,8 @@ def _open_layer(driver_name, parameters, dirpath):
     else:
         layer = datasource.GetLayer(0)
 
-    layer_sref = layer.GetSpatialRef()
-    assert layer_sref is not None
+    if layer.GetSpatialRef() is None: 
+        raise KnownUnknown('Couldn\'t get a layer from data source %s' % source_name)
 
     #
     # Return the layer and the datasource.
@@ -186,11 +207,11 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     return layer, datasource
 
-def _get_features(coord, projection, driver, parameters, clip, dirpath):
+def _get_features(coord, properties, projection, layer, clip):
+    """ Return a list of features in an OGR layer with properties in GeoJSON form.
+    
+        Optionally clip features to coordinate bounding box.
     """
-    """
-    layer, datasource = _open_layer(driver, parameters, dirpath)
-
     #
     # Prepare output spatial reference - always WGS84.
     #
@@ -230,25 +251,28 @@ def _get_features(coord, projection, driver, parameters, clip, dirpath):
         geometry.TransformTo(output_sref)
 
         geom = json_loads(geometry.ExportToJson())
-        prop = _feature_properties(feature, definition)
+        prop = _feature_properties(feature, definition, properties)
         
         features.append({'type': 'Feature', 'properties': prop, 'geometry': geom})
     
     return features
 
 class Provider:
-    """ blah.
+    """ Vector Provider for OGR datasources.
     """
     
-    def __init__(self, layer, driver, parameters):
+    def __init__(self, layer, driver, parameters, clipping, properties):
         self.layer = layer
         self.driver = driver
         self.parameters = parameters
+        self.properties = properties
+        self.clipping = clipping
 
     def renderTile(self, width, height, srs, coord):
         """ Render a single tile, return a SaveableResponse instance.
         """
-        features = _get_features(coord, self.layer.projection, self.driver, self.parameters, True, self.layer.config.dirpath)
+        layer, ds = _open_layer(self.driver, self.parameters, self.layer.config.dirpath)
+        features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipping)
         response = {'type': 'FeatureCollection', 'features': features}
 
         return VectorResponse(response)
@@ -256,9 +280,9 @@ class Provider:
     def getTypeByExtension(self, extension):
         """ Get mime-type and format by file extension.
         
-            This only accepts "json".
+            This only accepts "geojson".
         """
-        if extension.lower() != 'json':
-            raise KnownUnknown('Vector Provider only makes .json tiles, not "%s"' % extension)
+        if extension.lower() != 'geojson':
+            raise KnownUnknown('Vector Provider only makes .geojson tiles, not "%s"' % extension)
     
-        return 'text/json', 'JSON'
+        return 'text/json', 'GeoJSON'

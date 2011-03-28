@@ -247,6 +247,8 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         elif _class is Providers.Vector.Provider:
             provider_kwargs['driver'] = provider_dict['driver']
             provider_kwargs['parameters'] = provider_dict['parameters']
+            provider_kwargs['properties'] = provider_dict.get('properties', None)
+            provider_kwargs['clipping'] = provider_dict.get('clipping', True)
             
     elif provider_dict.has_key('class'):
         _class = loadClassPath(provider_dict['class'])
