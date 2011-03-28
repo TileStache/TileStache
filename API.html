@@ -1037,6 +1037,16 @@ class ProviderStub:
 </pre>
 
 <p>
+In cases where a provider generates a response that should not be cached,
+<code>renderTile</code> and <code>renderArea</code> may raise the
+<a href="http://tilestache.org/doc/TileStache.Core.html#NoTileLeftBehind">Core.NoTileLeftBehind</a>
+exception in lieu of a normal response. The exception is constructed using the
+intended response object, but nothing will be written to cache. This feature
+might useful in cases where a full tileset is being rendered for static
+hosting, and you don’t want millions of identical ocean tiles.
+</p>
+
+<p>
 See
 <a href="http://tilestache.org/doc/TileStache.Providers.html">TileStache.Providers</a>
 for more information on custom providers and

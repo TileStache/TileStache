@@ -150,13 +150,13 @@ try:
 except ImportError:
     from simplejson import loads as jsonload
 
-import numpy
 import TileStache
 
 try:
     import sympy
+    import numpy
 except ImportError:
-    # At least we'll be able to build the documentation.
+    # At least we can build the docs
     pass
 
 try:

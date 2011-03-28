@@ -65,11 +65,20 @@ def getTile(layer, coord, extension):
             # If no one else wrote the tile, do it here.
             if body is None:
                 buff = StringIO()
-                tile = layer.render(coord, format)
+
+                try:
+                    tile = layer.render(coord, format)
+                except Core.NoTileLeftBehind, e:
+                    tile = e.tile
+                    save = False
+                else:
+                    save = True
+
                 tile.save(buff, format)
                 body = buff.getvalue()
                 
-                cache.save(body, layer, coord, format)
+                if save:
+                    cache.save(body, layer, coord, format)
 
         finally:
             # Always clean up a lock when it's no longer being used.
@@ -217,16 +226,31 @@ class WSGITileServer:
     def __init__(self, config, autoreload=False):
         """ Initialize a callable WSGI instance.
 
-            Required config parameter is a path to a configuration file.
-            Optional autoreload boolean parameter causes config to be re-read on each request.
+            Config parameter can be a file path string for a JSON configuration
+            file or a configuration object with 'cache', 'layers', and
+            'dirpath' properties.
+            
+            Optional autoreload boolean parameter causes config to be re-read
+            on each request, applicable only when config is a JSON file.
         """
-        self.autoreload = autoreload
-        self.config_path = config
 
-        try:
-            self.config = parseConfigfile(config)
-        except Exception, e:
-            raise Core.KnownUnknown("Error loading Tilestache config file:\n%s" % str(e))
+        if type(config) in (str, unicode):
+            self.autoreload = autoreload
+            self.config_path = config
+    
+            try:
+                self.config = parseConfigfile(config)
+            except Exception, e:
+                raise Core.KnownUnknown("Error loading Tilestache config file:\n%s" % str(e))
+
+        else:
+            assert hasattr(config, 'cache'), 'Configuration object must have a cache.'
+            assert hasattr(config, 'layers'), 'Configuration object must have layers.'
+            assert hasattr(config, 'dirpath'), 'Configuration object must have a dirpath.'
+            
+            self.autoreload = False
+            self.config_path = None
+            self.config = config
 
     def __call__(self, environ, start_response):
         """
@@ -242,7 +266,7 @@ class WSGITileServer:
         except Core.KnownUnknown, e:
             return self._response(start_response, '400 Bad Request', str(e))
 
-        if not self.config.layers.get(layer):
+        if layer not in self.config.layers:
             return self._response(start_response, '404 Not Found')
 
         mimetype, content = requestHandler(self.config, environ['PATH_INFO'], environ['QUERY_STRING'])
