@@ -144,10 +144,10 @@ def get_layer_postgis_polygons():
     return open_layer('Postgresql', dbname='geodata', user='geodata', table='planet_osm_polygon')
 
 def get_layer_shapefile_points():
-    return open_layer('ESRI Shapefile', file='oakland-uptown-point.shp')
+    return open_layer('ESRI Shapefile', file='oakland-uptown-point.latlon.shp')
 
 def get_layer_shapefile_lines():
-    return open_layer('ESRI Shapefile', file='oakland-uptown-line.shp')
+    return open_layer('ESRI Shapefile', file='oakland-uptown-line.latlon.shp')
 
 def get_layer_query_lines():
     return open_layer('Postgresql', dbname='geodata', user='geodata', query="SELECT osm_id, name, highway, way FROM planet_osm_line WHERE SUBSTR(name, 1, 1) = '1'")
@@ -207,5 +207,3 @@ get_stuff(projection, coord, get_layer_postgis_polygons)
 get_stuff(projection, coord, get_layer_shapefile_points)
 get_stuff(projection, coord, get_layer_shapefile_lines)
 get_stuff(projection, coord, get_layer_query_lines)
-
-#layer.SetSpatialFilterRect(xmin, ymin, xmax, ymax)
