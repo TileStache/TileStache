@@ -95,6 +95,7 @@ import ModestMaps
 from ModestMaps.Core import Point, Coordinate
 
 import Geography
+import Vector
 
 def getProviderByName(name):
     """ Retrieve a provider object by name.
@@ -109,6 +110,9 @@ def getProviderByName(name):
 
     elif name.lower() == 'url template':
         return UrlTemplate
+
+    elif name.lower() == 'vector':
+        return Vector.Provider
 
     raise Exception('Unknown provider name: "%s"' % name)
 
