@@ -4,3 +4,10 @@ dist
 build
 TileStache-*.*
 TileStache-*.*.tar.gz
+*.dbf
+*.prj
+*.sbn
+*.sbx
+*.shp
+*.shx
+
