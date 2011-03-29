@@ -1,3 +1,120 @@
+""" Provider that returns vector representation of features in a data source.
+
+This is a provider that does not return an image, but rather queries
+a data source for raw features and replies with a vector representation
+such as GeoJSON. For example, it's possible to retrieve data for
+locations of OpenStreetMap points of interest or street centerlines
+contained within a tile's boundary.
+
+Many Polymaps (http://polymaps.org) examples use GeoJSON vector data tiles,
+which can be effectively created using this provider.
+
+Vector functionality is provided by OGR (http://www.gdal.org/ogr/).
+Thank you, Frank Warmerdam.
+
+Currently, only GeoJSON format (tile name extension: ".geojson") is supported
+for output. Possible future supported formats might include KML, ESRI JSON,
+AMF (ActionScript message format), and others. Feel free to get in touch via
+Github to suggest new formats: http://github.com/migurski/TileStache.
+
+Common parameters:
+
+  driver:
+    String used to identify an OGR driver. Currently, only "ESRI Shapefile",
+    "PostgreSQL", and "GeoJSON" are supported as data source drivers, with
+    "postgis" and "shapefile" accepted as synonyms. Not case-sensitive.
+    
+    OGR's complete list of potential formats can be found here:
+    http://www.gdal.org/ogr/ogr_formats.html. Feel free to get in touch via
+    Github to suggest new formats: http://github.com/migurski/TileStache.
+  
+  parameters:
+    Dictionary of parameters for each driver.
+    
+    PostgreSQL:
+    "dbname" parameter is required, with name of database.
+    "host", "user", and "password" are optional connection parameters.
+    One of "table" or "query" is required, with a table name in the first
+    case and a complete SQL query in the second.
+    
+    Shapefile and GeoJSON:
+    "file" parameter is required, with filesystem path to data file.
+  
+  properties:
+    Optional list or dictionary of case-sensitive output property names.
+    
+    If omitted, all fields from the data source will be included in response.
+    If a list, treated as a whitelist of field names to include in response.
+    If a dictionary, treated as a whitelist and re-mapping of field names.
+  
+  clipped:
+    Default is true.
+    Boolean flag for optionally clipping the output geometries to the
+    bounds of the enclosing tile. This results in incomplete geometries,
+    dramatically smaller file sizes, and improves performance and
+    compatibility with Polymaps (http://polymaps.org).
+  
+  verbose:
+    Default is false.
+    Boolean flag for optionally expanding output with additional whitespace
+    for readability. Results in larger but more readable GeoJSON responses.
+
+Example TileStache provider configuration:
+
+  "vector-postgis-points":
+  {
+    "provider": {"name": "vector", "driver": "PostgreSQL",
+                 "parameters": {"dbname": "geodata", "user": "geodata",
+                                "table": "planet_osm_point"}}
+  }
+  
+  "vector-postgis-lines":
+  {
+    "provider": {"name": "vector", "driver": "postgis",
+                 "parameters": {"dbname": "geodata", "user": "geodata",
+                                "table": "planet_osm_line"}}
+  }
+  
+  "vector-shapefile-points":
+  {
+    "provider": {"name": "vector", "driver": "ESRI Shapefile",
+                 "parameters": {"file": "oakland-uptown-point.shp"},
+                 "properties": ["NAME", "HIGHWAY"]}
+  }
+  
+  "vector-shapefile-lines":
+  {
+    "provider": {"name": "vector", "driver": "shapefile",
+                 "parameters": {"file": "oakland-uptown-line.shp"},
+                 "properties": {"NAME": "name", "HIGHWAY": "highway"}}
+  }
+  
+  "vector-postgis-query":
+  {
+    "provider": {"name": "vector", "driver": "PostgreSQL",
+                 "parameters": {"dbname": "geodata", "user": "geodata",
+                                "query": "SELECT osm_id, name, highway, way FROM planet_osm_line WHERE SUBSTR(name, 1, 1) = '1'"}}
+  }
+  
+  "vector-sf-streets":
+  {
+    "provider": {"name": "vector", "driver": "GeoJSON",
+                 "parameters": {"file": "stclines.json"},
+                 "properties": ["STREETNAME"]}
+  }
+
+Caveats:
+
+Your data source must have a valid defined projection, or OGR will not know
+how to correctly filter and reproject it. Although response tiles are typically
+in web (spherical) mercator projection, the actual vector content of responses
+is unprojected back to plain WGS84 latitude and longitude.
+
+If you are using PostGIS and spherical mercator a.k.a. SRID 900913,
+you can save yourself a world of trouble by using this definition:
+  http://github.com/straup/postgis-tools/raw/master/spatial_ref_900913-8.3.sql
+"""
+
 from re import compile
 from urlparse import urlparse, urljoin
 
@@ -19,29 +136,25 @@ class VectorResponse:
     """ Wrapper class for Vector response that makes it behave like a PIL.Image object.
     
         TileStache.getTile() expects to be able to save one of these to a buffer.
+        
+        Constructor arguments:
+        - content: Vector data to be serialized, typically a dictionary.
+        - verbose: Boolean flag to expand response for better legibility.
     """
-    def __init__(self, content, indent=2, precision=6):
+    def __init__(self, content, verbose):
         self.content = content
-        self.indent = indent
-        self.precision = precision
+        self.verbose = verbose
 
     def save(self, out, format):
         if format != 'GeoJSON':
             raise KnownUnknown('PostGeoJSON only saves .geojson tiles, not "%s"' % format)
 
-        indent = None
-        
-        if int(self.indent) > 0:
-            indent = self.indent
+        indent = self.verbose and 2 or None
         
         encoded = JSONEncoder(indent=indent).iterencode(self.content)
         float_pat = compile(r'^-?\d+\.\d+$')
 
         precision = 6
-
-        if int(self.precision) > 0:
-            precision = self.precision
-
         format = '%.' + str(precision) +  'f'
 
         for atom in encoded:
@@ -145,17 +258,22 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     # Set up the driver
     #
-    okay_drivers = 'Postgresql', 'ESRI Shapefile', 'GeoJSON'
+    okay_drivers = 'PostgreSQL', 'ESRI Shapefile', 'GeoJSON'
     
-    if driver_name not in okay_drivers:
+    okay_drivers = {'postgis': 'PostgreSQL', 'esri shapefile': 'ESRI Shapefile',
+                    'postgresql': 'PostgreSQL', 'shapefile': 'ESRI Shapefile',
+                    'geojson': 'GeoJSON'}
+    
+    if driver_name.lower() not in okay_drivers:
         raise KnownUnknown('Got a driver type Vector doesn\'t understand: "%s". Need one of %s.' % (driver_name, ', '.join(okay_drivers)))
 
+    driver_name = okay_drivers[driver_name.lower()]
     driver = ogr.GetDriverByName(str(driver_name))
     
     #
     # Set up the datasource
     #
-    if driver_name == 'Postgresql':
+    if driver_name == 'PostgreSQL':
         if 'dbname' not in parameters:
             raise KnownUnknown('Need at least a "dbname" parameter for postgis')
     
@@ -187,7 +305,7 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     # Set up the layer
     #
-    if driver_name == 'Postgresql':
+    if driver_name == 'PostgreSQL':
         if 'query' in parameters:
             layer = datasource.ExecuteSQL(str(parameters['query']))
         elif 'table' in parameters:
@@ -261,6 +379,8 @@ def _get_features(coord, properties, projection, layer, clip):
 
 class Provider:
     """ Vector Provider for OGR datasources.
+    
+        See module documentation for explanation of constructor arguments.
     """
     
     def __init__(self, layer, driver, parameters, clipped, verbose, properties):
@@ -272,18 +392,18 @@ class Provider:
         self.properties = properties
 
     def renderTile(self, width, height, srs, coord):
-        """ Render a single tile, return a SaveableResponse instance.
+        """ Render a single tile, return a VectorResponse instance.
         """
         layer, ds = _open_layer(self.driver, self.parameters, self.layer.config.dirpath)
         features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipped)
         response = {'type': 'FeatureCollection', 'features': features}
 
-        return VectorResponse(response, self.verbose and 2 or 0)
+        return VectorResponse(response, self.verbose)
         
     def getTypeByExtension(self, extension):
         """ Get mime-type and format by file extension.
         
-            This only accepts "geojson".
+            This only accepts "geojson" for the time being.
         """
         if extension.lower() != 'geojson':
             raise KnownUnknown('Vector Provider only makes .geojson tiles, not "%s"' % extension)
