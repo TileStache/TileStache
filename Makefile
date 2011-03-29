@@ -54,6 +54,7 @@ doc:
 	pydoc -w TileStache.Core
 	pydoc -w TileStache.Caches
 	pydoc -w TileStache.Config
+	pydoc -w TileStache.Vector
 	pydoc -w TileStache.Geography
 	pydoc -w TileStache.Providers
 	pydoc -w TileStache.Goodies
@@ -75,7 +76,7 @@ doc:
 
 	cp API.html doc/index.html
 	perl -pi -e 's#http://tilestache.org/doc/##' doc/index.html
-	perl -pi -e 's#\b\d+\.\d+\.\d+\b#$(VERSION)#' doc/index.html
+	perl -pi -e 's#\bN\.N\.N\b#$(VERSION)#' doc/index.html
 
 clean:
 	rm -rf $(TARBALL) doc

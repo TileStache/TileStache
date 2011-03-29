@@ -46,6 +46,8 @@
     dt { display: inline; font-weight: bold; }
     var { background-color: #fe7; }
 
+    dd dl { margin: 0; }
+
     samp, pre, var { padding: 0 2px; margin: 0 -2px; border-radius: 2px; }
     pre { margin: -4px 10px; padding: 4px; border: 1px solid #ddd; border-radius: 3px; }
 
@@ -67,7 +69,7 @@
     </p>
 
     <p>
-    <strong>This document covers TileStache version 0.0.0</strong>.
+    <strong>This document covers TileStache version N.N.N</strong>.
     </p>
 
     <p>
@@ -679,6 +681,108 @@ Proxy provider parameters:
 <p>
 See
 <a href="http://tilestache.org/doc/TileStache.Providers.html#Proxy">TileStache.Providers.Proxy</a>
+for more information.
+</p>
+
+<h4><a id="vector-provider" name="vector-provider">Vector</a></h4>
+
+<p>
+Provider that returns vector representation of features in a data source.
+</p>
+
+<p>
+Example Vector provider configurations:
+</p>
+
+<pre>
+<span class="bg">{
+  "cache": { … }.
+  "layers":
+  {
+    "vector-postgis-points":
+    {</span>
+      "provider": {"name": "vector", "driver": "PostgreSQL",
+                   "parameters": {"dbname": "geodata", "user": "geodata",
+                                  "table": "planet_osm_point"}}
+    <span class="bg">},
+    "vector-shapefile-lines":
+    {</span>
+      "provider": {"name": "vector", "driver": "shapefile",
+                   "parameters": {"file": "oakland-uptown-line.latlon.shp"},
+                   "properties": {"NAME": "name", "HIGHWAY": "highway"}}
+    <span class="bg">},
+    "vector-sf-streets":
+    {</span>
+      "provider": {"name": "vector", "driver": "GeoJSON",
+                   "parameters": {"file": "stclines.json"},
+                   "properties": ["STREETNAME"]}
+    <span class="bg">}
+  }
+}</span>
+</pre>
+ 
+<p>
+Vector provider parameters:
+</p>
+
+<dl>
+    <dt>driver</dt>
+    <dd>
+    String used to identify an OGR driver. Currently, only
+    <samp>"ESRI Shapefile"</samp>, <samp>"PostgreSQL"</samp>, and
+    <samp>"GeoJSON"</samp> are supported as data source drivers, with
+    <samp>"postgis"</samp> and <samp>"shapefile"</samp> accepted as
+    synonyms. Not case-sensitive.
+    </dd>
+    <dt>parameters</dt>
+    <dd>
+    Dictionary of parameters for each driver.
+    <br>
+    <dl>
+        <dt>PostgreSQL</dt>
+        <dd>
+        <samp>"dbname"</samp> parameter is required, with name of database.
+        <samp>"host"</samp>, <samp>"user"</samp>, and <samp>"password"</samp>
+        are optional connection parameters. One of <samp>"table"</samp> or
+        <samp>"query"</samp> is required, with a table name in the first case
+        and a complete SQL query in the second.
+        </dd>
+        <dt>Shapefile and GeoJSON</dt>
+        <dd>
+        <samp>"file"</samp> parameter is required, with filesystem path to
+        data file.
+        </dd>
+    </dl>
+    </dd>
+    <dt>properties</dt>
+    <dd>
+    Optional list or dictionary of case-sensitive output property names.
+    <br>
+    If omitted, all fields from the data source will be included in response.
+    If a list, treated as a whitelist of field names to include in response.
+    If a dictionary, treated as a whitelist and re-mapping of field names.
+    </dd>
+    <dt>clipped</dt>
+    <dd>
+    Default is <samp>true</samp>.
+    <br>
+    Boolean flag for optionally clipping the output geometries to the
+    bounds of the enclosing tile. This results in incomplete geometries,
+    dramatically smaller file sizes, and improves performance and
+    compatibility with Polymaps (http://polymaps.org).
+    </dd>
+    <dt>verbose</dt>
+    <dd>
+    Default is <samp>false</samp>.
+    <br>
+    Boolean flag for optionally expanding output with additional whitespace
+    for readability. Results in larger but more readable GeoJSON responses.
+    </dd>
+</dl>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.Vector.html">TileStache.Vector</a>
 for more information.
 </p>
 
