@@ -1,3 +1,19 @@
+2011-03-28: 1.9.0
+- Added new Vector provider based on old PostGeoJSON provider.
+
+2011-03-28: 1.8.1
+- Merged Zain Memon's proxy provider update.
+
+2011-03-24: 1.8.0
+- Added new Core.NoTileLeftBehind exception class to suppress result caching.
+
+2011-03-17: 1.7.4
+- Fixed use of "layers.get(name)" to "name in layers" in WSGI server.
+- Made possible to build Composite docs without numpy or sympy.
+
+2011-03-17: 1.7.3
+- Made it possible to instantiate WSGI server with a configuration object instead of a file.
+
 2011-01-31: 1.7.2
 - Fixed json import to account for older Python versions, by checking for simplejson availability.
 

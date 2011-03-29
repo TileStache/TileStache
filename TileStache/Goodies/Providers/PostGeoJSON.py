@@ -1,5 +1,19 @@
 """ Provider that returns GeoJSON data responses from PostGIS queries.
 
+Note:
+
+The built-in TileStache Vector provider (new in version 1.9.0) offers a more
+complete method of generating vector tiles, and supports many kinds of data
+sources not avilable in PostGeoJSON such as shapefiles. PostGeoJSON will
+continue to be provided and supported in TileStache, but future development
+of vector support will be contentrated on the mainline Vector provider, not
+this one.
+
+More information:
+  http://tilestache.org/doc/TileStache.Vector.html
+
+Anyway.
+
 This is an example of a provider that does not return an image, but rather
 queries a database for raw data and replies with a string of GeoJSON. For
 example, it's possible to retrieve data for locations of OpenStreetMap points

@@ -5,9 +5,10 @@ providers are found here, but it's possible to define your own and pull them int
 TileStache dynamically by class name.
 
 Built-in providers:
-- mapnik
-- proxy
-- url template
+- mapnik (Mapnik)
+- proxy (Proxy)
+- vector (TileStache.Vector.Provider)
+- url template (UrlTemplate)
 
 Example built-in provider, for JSON configuration file:
 
@@ -19,7 +20,7 @@ Example built-in provider, for JSON configuration file:
 Example external provider, for JSON configuration file:
 
     "layer-name": {
-        "provider": {"class": "Module.Classname", "kwargs": {"frob": "yes"}},
+        "provider": {"class": "Module:Classname", "kwargs": {"frob": "yes"}},
         ...
     }
 
@@ -64,7 +65,7 @@ can accept a file-like object and a format name, e.g. this should word:
 
 Non-image providers and metatiles do not mix.
 
-For an example of a non-image provider, see TileStache.Goodies.Provider.PostGeoJSON.
+For an example of a non-image provider, see TileStache.Vector.Provider.
 """
 
 import os
@@ -95,6 +96,7 @@ import ModestMaps
 from ModestMaps.Core import Point, Coordinate
 
 import Geography
+import Vector
 
 def getProviderByName(name):
     """ Retrieve a provider object by name.
@@ -109,6 +111,9 @@ def getProviderByName(name):
 
     elif name.lower() == 'url template':
         return UrlTemplate
+
+    elif name.lower() == 'vector':
+        return Vector.Provider
 
     raise Exception('Unknown provider name: "%s"' % name)
 
@@ -160,7 +165,7 @@ class Proxy:
         if (width, height) != (256, 256):
             raise Exception("Image dimensions don't match expected tile size: %(width)dx%(height)d" % locals())
 
-        img = Image.new('RGB', (width, height))
+        img = Image.new('RGBA', (width, height))
         
         for url in self.provider.getTileUrls(coord):
             s, host, path, p, query, f = urlparse(url)

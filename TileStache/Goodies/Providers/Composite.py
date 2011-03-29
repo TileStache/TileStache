@@ -150,9 +150,14 @@ try:
 except ImportError:
     from simplejson import loads as jsonload
 
-import sympy
-import numpy
 import TileStache
+
+try:
+    import sympy
+    import numpy
+except ImportError:
+    # At least we can build the docs
+    pass
 
 try:
     from PIL import Image

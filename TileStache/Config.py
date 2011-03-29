@@ -244,6 +244,13 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         elif _class is Providers.UrlTemplate:
             provider_kwargs['template'] = provider_dict['template']
         
+        elif _class is Providers.Vector.Provider:
+            provider_kwargs['driver'] = provider_dict['driver']
+            provider_kwargs['parameters'] = provider_dict['parameters']
+            provider_kwargs['properties'] = provider_dict.get('properties', None)
+            provider_kwargs['clipped'] = bool(provider_dict.get('clipped', True))
+            provider_kwargs['verbose'] = bool(provider_dict.get('verbose', False))
+            
     elif provider_dict.has_key('class'):
         _class = loadClassPath(provider_dict['class'])
         provider_kwargs = provider_dict.get('kwargs', {})
