@@ -1,3 +1,6 @@
+2011-03-28: 1.8.1
+- Merged Zain Memon's proxy provider update.
+
 2011-03-24: 1.8.0
 - Added new Core.NoTileLeftBehind exception class to suppress result caching.
 
