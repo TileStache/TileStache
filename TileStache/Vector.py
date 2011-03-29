@@ -103,8 +103,9 @@ def _tile_perimeter_geom(coord, projection):
 def _feature_properties(feature, layer_definition, whitelist=None):
     """ Returns a dictionary of feature properties for a feature in a layer.
     
-        Third argument is an optional list of properties to whitelist
-        by case-sensitive name - leave it None to include everything.
+        Third argument is an optional list or dictionary of properties to
+        whitelist by case-sensitive name - leave it None to include everything.
+        A dictionary will cause property names to be re-mapped.
     
         OGR property types:
         OFTInteger (0), OFTIntegerList (1), OFTReal (2), OFTRealList (3),
@@ -128,10 +129,11 @@ def _feature_properties(feature, layer_definition, whitelist=None):
 
         name = field_definition.GetNameRef()
         
-        if type(whitelist) is list and name not in whitelist:
+        if type(whitelist) in (list, dict) and name not in whitelist:
             continue
         
-        properties[name] = feature.GetField(name)
+        property = type(whitelist) is dict and whitelist[name] or name
+        properties[property] = feature.GetField(name)
     
     return properties
 
@@ -261,21 +263,22 @@ class Provider:
     """ Vector Provider for OGR datasources.
     """
     
-    def __init__(self, layer, driver, parameters, clipping, properties):
+    def __init__(self, layer, driver, parameters, clipped, verbose, properties):
         self.layer = layer
         self.driver = driver
+        self.clipped = clipped
+        self.verbose = verbose
         self.parameters = parameters
         self.properties = properties
-        self.clipping = clipping
 
     def renderTile(self, width, height, srs, coord):
         """ Render a single tile, return a SaveableResponse instance.
         """
         layer, ds = _open_layer(self.driver, self.parameters, self.layer.config.dirpath)
-        features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipping)
+        features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipped)
         response = {'type': 'FeatureCollection', 'features': features}
 
-        return VectorResponse(response)
+        return VectorResponse(response, self.verbose and 2 or 0)
         
     def getTypeByExtension(self, extension):
         """ Get mime-type and format by file extension.
