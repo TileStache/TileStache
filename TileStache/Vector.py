@@ -12,10 +12,24 @@ which can be effectively created using this provider.
 Vector functionality is provided by OGR (http://www.gdal.org/ogr/).
 Thank you, Frank Warmerdam.
 
-Currently, only GeoJSON format (tile name extension: ".geojson") is supported
-for output. Possible future supported formats might include KML, ESRI JSON,
-AMF (ActionScript message format), and others. Feel free to get in touch via
-Github to suggest new formats: http://github.com/migurski/TileStache.
+Currently two serializations and three encodings are supported for a total
+of six possible kinds of output with these tile name extensions:
+
+  GeoJSON (.geojson):
+    See http://geojson.org/geojson-spec.html
+
+  Arc GeoServices JSON (.arcjson):
+    See http://www.esri.com/library/whitepapers/pdfs/geoservices-rest-spec.pdf
+  
+  GeoBSON (.geobson) and Arc GeoServices BSON (.arcbson):
+    BSON-encoded GeoJSON and Arc JSON, see http://bsonspec.org/#/specification
+  
+  GeoAMF (.geoamf) and Arc GeoServices AMF (.arcamf):
+    AMF0-encoded GeoJSON and Arc JSON, see:
+    http://opensource.adobe.com/wiki/download/attachments/1114283/amf0_spec_121207.pdf
+
+Possible future supported formats might include KML and others. Get in touch
+via Github to suggest other formats: http://github.com/migurski/TileStache.
 
 Common parameters:
 
@@ -116,6 +130,7 @@ you can save yourself a world of trouble by using this definition:
 """
 
 from re import compile
+from operator import add
 from urlparse import urlparse, urljoin
 
 try:
@@ -146,22 +161,105 @@ class VectorResponse:
         self.verbose = verbose
 
     def save(self, out, format):
-        if format != 'GeoJSON':
-            raise KnownUnknown('PostGeoJSON only saves .geojson tiles, not "%s"' % format)
+        """
+        """
+        #
+        # Serialize
+        #
+        if format in ('GeoJSON', 'GeoBSON', 'GeoAMF'):
+            content = self.content
 
-        indent = self.verbose and 2 or None
+        elif format in ('ArcJSON', 'ArcBSON', 'ArcAMF'):
+            content = _reserialize_to_arc(self.content)
         
-        encoded = JSONEncoder(indent=indent).iterencode(self.content)
-        float_pat = compile(r'^-?\d+\.\d+$')
+        else:
+            raise KnownUnknown('Vector response only saves .geojson, .arcjson, .geobson, .arcbson, .geoamf and .arcamf tiles, not "%s"' % format)
 
-        precision = 6
-        format = '%.' + str(precision) +  'f'
+        #
+        # Encode
+        #
+        if format in ('GeoJSON', 'ArcJSON'):
+            indent = self.verbose and 2 or None
+            
+            encoded = JSONEncoder(indent=indent).iterencode(content)
+            float_pat = compile(r'^-?\d+\.\d+$')
+    
+            for atom in encoded:
+                if float_pat.match(atom):
+                    out.write('%.6f' % float(atom))
+                else:
+                    out.write(atom)
+        
+        elif format in ('GeoBSON', 'ArcBSON'):
+            import bson
 
-        for atom in encoded:
-            if float_pat.match(atom):
-                out.write(format % float(atom))
-            else:
-                out.write(atom)
+            encoded = bson.dumps(content)
+            out.write(encoded)
+        
+        elif format in ('GeoAMF', 'ArcAMF'):
+            import pyamf
+
+            encoded = pyamf.encode(content, 0).read()
+            out.write(encoded)
+
+def _reserialize_to_arc(content):
+    """ Convert from "geo" (GeoJSON) to ESRI's GeoServices REST serialization.
+    
+        Much of this cribbed from sample server queries and page 191+ of:
+          http://www.esri.com/library/whitepapers/pdfs/geoservices-rest-spec.pdf
+    """
+    arc_geometry_types = {
+        'Point': 'esriGeometryPoint',
+        'LineString': 'esriGeometryPolyline',
+        'Polygon': 'esriGeometryPolygon',
+        'MultiPoint': 'esriGeometryMultipoint',
+        'MultiLineString': 'esriGeometryPolyline',
+        'MultiPolygon': 'esriGeometryPolygon'
+      }
+    
+    found_geometry_types = set([feat['geometry']['type'] for feat in content['features']])
+    found_geometry_types = set([arc_geometry_types.get(type) for type in found_geometry_types])
+    
+    if len(found_geometry_types) > 1:
+        raise KnownUnknown('Arc serialization needs a single geometry type, not ' + ', '.join(found_geometry_types))
+    
+    response = {'spatialReference': {'wkid': 4326}, 'features': []}
+    
+    for feature in content['features']:
+        geometry = feature['geometry']
+
+        if geometry['type'] == 'Point':
+            x, y = geometry['coordinates']
+            arc_geometry = {'x': x, 'y': y}
+        
+        elif geometry['type'] == 'LineString':
+            path = geometry['coordinates']
+            arc_geometry = {'paths': [path]}
+
+        elif geometry['type'] == 'Polygon':
+            rings = geometry['coordinates']
+            arc_geometry = {'rings': rings}
+
+        elif geometry['type'] == 'MultiPoint':
+            points = geometry['coordinates']
+            arc_geometry = {'points': points}
+
+        elif geometry['type'] == 'MultiLineString':
+            paths = geometry['coordinates']
+            arc_geometry = {'paths': paths}
+
+        elif geometry['type'] == 'MultiPolygon':
+            rings = reduce(add, geometry['coordinates'])
+            arc_geometry = {'rings': rings}
+
+        else:
+            raise Exception(geometry['type'])
+        
+        arc_feature = {'attributes': feature['properties'], 'geometry': arc_geometry}
+        response['geometryType'] = arc_geometry_types[geometry['type']]
+        response['features'].append(arc_feature)
+    
+    return response
 
 def _tile_perimeter(coord, projection):
     """ Get a tile's outer edge for a coordinate and a projection.
@@ -405,7 +503,22 @@ class Provider:
         
             This only accepts "geojson" for the time being.
         """
-        if extension.lower() != 'geojson':
-            raise KnownUnknown('Vector Provider only makes .geojson tiles, not "%s"' % extension)
+        if extension.lower() == 'geojson':
+            return 'text/json', 'GeoJSON'
     
-        return 'text/json', 'GeoJSON'
+        elif extension.lower() == 'arcjson':
+            return 'text/json', 'ArcJSON'
+            
+        elif extension.lower() == 'geobson':
+            return 'application/x-bson', 'GeoBSON'
+            
+        elif extension.lower() == 'arcbson':
+            return 'application/x-bson', 'ArcBSON'
+            
+        elif extension.lower() == 'geoamf':
+            return 'application/x-amf', 'GeoAMF'
+            
+        elif extension.lower() == 'arcamf':
+            return 'application/x-amf', 'ArcAMF'
+
+        raise KnownUnknown('Vector Provider only makes .geojson, .arcjson, .geobson, .arcbson, .geoamf and .arcamf tiles, not "%s"' % extension)
