@@ -285,7 +285,7 @@ to change these defaults.
 </p>
 
 <p>Alternatively, any WSGI server can be pointed at an instance of
-<tt>TileStache.WSGITileServer</tt>. Here's how to use it with
+<tt>TileStache.WSGITileServer</tt>. Here’s how to use it with
 <a href="http://gunicorn.org/">gunicorn</a>:
 </p>
 
@@ -691,6 +691,30 @@ Provider that returns vector representation of features in a data source.
 </p>
 
 <p>
+Currently two serializations and three encodings are supported for a total
+of six possible kinds of output with these tile name extensions:
+</p>
+
+<dl>
+    <dt>GeoJSON (<samp>.geojson</samp>)</dt>
+    <dd>
+    Conforms to the <a href="http://geojson.org/geojson-spec.html">GeoJSON specification</a>.
+    </dd>
+    <dt>Arc GeoServices JSON (<samp>.arcjson</samp>)</dt>
+    <dd>
+    Conforms to ESRI’s <a href="http://www.esri.com/library/whitepapers/pdfs/geoservices-rest-spec.pdf">GeoServices REST specification</a>.
+    </dd>
+    <dt>GeoBSON (<samp>.geobson</samp>) and Arc GeoServices BSON (<samp>.arcbson</samp>)</dt>
+    <dd>
+    <a href="http://bsonspec.org/#/specification">BSON-encoded</a> GeoJSON and Arc JSON.
+    </dd>
+    <dt>GeoAMF (<samp>.geoamf</samp>) and Arc GeoServices AMF (<samp>.arcamf</samp>)</dt>
+    <dd>
+    <a href="http://opensource.adobe.com/wiki/download/attachments/1114283/amf0_spec_121207.pdf">AMF0-encoded</a> GeoJSON and Arc JSON.
+    </dd>
+</dl>
+
+<p>
 Example Vector provider configurations:
 </p>
 
@@ -770,6 +794,15 @@ Vector provider parameters:
     bounds of the enclosing tile. This results in incomplete geometries,
     dramatically smaller file sizes, and improves performance and
     compatibility with Polymaps (http://polymaps.org).
+    </dd>
+    <dt>projected</dt>
+    <dd>
+    Default is <samp>false</samp>.
+    <br>
+    Boolean flag for optionally returning geometries in projected rather than
+    geographic coordinates. Typically this means <samp>EPSG:900913</samp> a.k.a.
+    spherical mercator projection. Stylistically a poor fit for GeoJSON, but
+    useful when returning Arc GeoServices responses.
     </dd>
     <dt>verbose</dt>
     <dd>

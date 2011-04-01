@@ -68,6 +68,13 @@ Common parameters:
     dramatically smaller file sizes, and improves performance and
     compatibility with Polymaps (http://polymaps.org).
   
+  projected:
+    Default is false.
+    Boolean flag for optionally returning geometries in projected rather than
+    geographic coordinates. Typically this means EPSG:900913 a.k.a. spherical
+    mercator projection. Stylistically a poor fit for GeoJSON, but useful
+    when returning Arc GeoServices responses.
+  
   verbose:
     Default is false.
     Boolean flag for optionally expanding output with additional whitespace
