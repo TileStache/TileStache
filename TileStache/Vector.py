@@ -166,14 +166,27 @@ class VectorResponse:
         #
         # Serialize
         #
+        if format == 'WKT':
+            if 'wkt' in self.content['crs']:
+                out.write(self.content['crs']['wkt'])
+            else:
+                out.write(_sref_4326().ExportToWkt())
+            
+            return
+        
         if format in ('GeoJSON', 'GeoBSON', 'GeoAMF'):
             content = self.content
+            
+            if 'wkt' in content['crs']:
+                content['crs'] = {'type': 'link', 'properties': {'href': '0.wkt', 'type': 'ogcwkt'}}
+            else:
+                del content['crs']
 
         elif format in ('ArcJSON', 'ArcBSON', 'ArcAMF'):
             content = _reserialize_to_arc(self.content)
         
         else:
-            raise KnownUnknown('Vector response only saves .geojson, .arcjson, .geobson, .arcbson, .geoamf and .arcamf tiles, not "%s"' % format)
+            raise KnownUnknown('Vector response only saves .geojson, .arcjson, .geobson, .arcbson, .geoamf, .arcamf and .wkt tiles, not "%s"' % format)
 
         #
         # Encode
@@ -202,6 +215,15 @@ class VectorResponse:
             encoded = pyamf.encode(content, 0).read()
             out.write(encoded)
 
+def _sref_4326():
+    """
+    """
+    sref = osr.SpatialReference()
+    proj = getProjectionByName('WGS84')
+    sref.ImportFromProj4(proj.srs)
+    
+    return sref
+
 def _reserialize_to_arc(content):
     """ Convert from "geo" (GeoJSON) to ESRI's GeoServices REST serialization.
     
@@ -224,6 +246,9 @@ def _reserialize_to_arc(content):
         raise KnownUnknown('Arc serialization needs a single geometry type, not ' + ', '.join(found_geometry_types))
     
     response = {'spatialReference': {'wkid': 4326}, 'features': []}
+    
+    if 'wkt' in content['crs']:
+        response['spatialReference'] = {'wkt': content['crs']['wkt']}
     
     for feature in content['features']:
         geometry = feature['geometry']
@@ -425,7 +450,7 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     return layer, datasource
 
-def _get_features(coord, properties, projection, layer, clip):
+def _get_features(coord, properties, projection, layer, clipped, projected):
     """ Return a list of features in an OGR layer with properties in GeoJSON form.
     
         Optionally clip features to coordinate bounding box.
@@ -433,9 +458,11 @@ def _get_features(coord, properties, projection, layer, clip):
     #
     # Prepare output spatial reference - always WGS84.
     #
-    output_sref = osr.SpatialReference()
-    output_proj = getProjectionByName('WGS84')
-    output_sref.ImportFromProj4(output_proj.srs)
+    if projected:
+        output_sref = osr.SpatialReference()
+        output_sref.ImportFromProj4(projection.srs)
+    else:
+        output_sref = _sref_4326()
     
     #
     # Load layer information
@@ -458,7 +485,7 @@ def _get_features(coord, properties, projection, layer, clip):
         if not geometry.Intersect(bbox):
             continue
         
-        if clip:
+        if clipped:
             geometry = geometry.Intersection(bbox)
         
         if geometry is None:
@@ -481,11 +508,12 @@ class Provider:
         See module documentation for explanation of constructor arguments.
     """
     
-    def __init__(self, layer, driver, parameters, clipped, verbose, properties):
+    def __init__(self, layer, driver, parameters, clipped, verbose, projected, properties):
         self.layer = layer
         self.driver = driver
         self.clipped = clipped
         self.verbose = verbose
+        self.projected = projected
         self.parameters = parameters
         self.properties = properties
 
@@ -493,8 +521,15 @@ class Provider:
         """ Render a single tile, return a VectorResponse instance.
         """
         layer, ds = _open_layer(self.driver, self.parameters, self.layer.config.dirpath)
-        features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipped)
+        features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipped, self.projected)
         response = {'type': 'FeatureCollection', 'features': features}
+        
+        if self.projected:
+            sref = osr.SpatialReference()
+            sref.ImportFromProj4(self.layer.projection.srs)
+            response['crs'] = {'wkt': sref.ExportToWkt()}
+        else:
+            response['crs'] = {'srid': 4326}
 
         return VectorResponse(response, self.verbose)
         
@@ -520,5 +555,8 @@ class Provider:
             
         elif extension.lower() == 'arcamf':
             return 'application/x-amf', 'ArcAMF'
+            
+        elif extension.lower() == 'wkt':
+            return 'text/x-wkt', 'WKT'
 
-        raise KnownUnknown('Vector Provider only makes .geojson, .arcjson, .geobson, .arcbson, .geoamf and .arcamf tiles, not "%s"' % extension)
+        raise KnownUnknown('Vector Provider only makes .geojson, .arcjson, .geobson, .arcbson, .geoamf, .arcamf and .wkt tiles, not "%s"' % extension)

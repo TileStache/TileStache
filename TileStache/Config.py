@@ -248,6 +248,7 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
             provider_kwargs['driver'] = provider_dict['driver']
             provider_kwargs['parameters'] = provider_dict['parameters']
             provider_kwargs['properties'] = provider_dict.get('properties', None)
+            provider_kwargs['projected'] = bool(provider_dict.get('projected', False))
             provider_kwargs['clipped'] = bool(provider_dict.get('clipped', True))
             provider_kwargs['verbose'] = bool(provider_dict.get('verbose', False))
             
