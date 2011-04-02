@@ -151,8 +151,9 @@ except ImportError:
     # At least we'll be able to build the documentation.
     pass
 
-from Core import KnownUnknown
-from Geography import getProjectionByName
+from TileStache.Core import KnownUnknown
+from TileStache.Geography import getProjectionByName
+from Arc import reserialize_to_arc
 
 class VectorResponse:
     """ Wrapper class for Vector response that makes it behave like a PIL.Image object.
@@ -190,7 +191,7 @@ class VectorResponse:
                 del content['crs']
 
         elif format in ('ArcJSON', 'ArcBSON', 'ArcAMF'):
-            content = _reserialize_to_arc(self.content)
+            content = reserialize_to_arc(self.content)
         
         else:
             raise KnownUnknown('Vector response only saves .geojson, .arcjson, .geobson, .arcbson, .geoamf, .arcamf and .wkt tiles, not "%s"' % format)
@@ -230,71 +231,6 @@ def _sref_4326():
     sref.ImportFromProj4(proj.srs)
     
     return sref
-
-def _reserialize_to_arc(content):
-    """ Convert from "geo" (GeoJSON) to ESRI's GeoServices REST serialization.
-    
-        Much of this cribbed from sample server queries and page 191+ of:
-          http://www.esri.com/library/whitepapers/pdfs/geoservices-rest-spec.pdf
-    """
-    arc_geometry_types = {
-        'Point': 'esriGeometryPoint',
-        'LineString': 'esriGeometryPolyline',
-        'Polygon': 'esriGeometryPolygon',
-        'MultiPoint': 'esriGeometryMultipoint',
-        'MultiLineString': 'esriGeometryPolyline',
-        'MultiPolygon': 'esriGeometryPolygon'
-      }
-    
-    found_geometry_types = set([feat['geometry']['type'] for feat in content['features']])
-    found_geometry_types = set([arc_geometry_types.get(type) for type in found_geometry_types])
-    
-    if len(found_geometry_types) > 1:
-        raise KnownUnknown('Arc serialization needs a single geometry type, not ' + ', '.join(found_geometry_types))
-    
-    response = {'spatialReference': {'wkid': 4326}, 'features': []}
-    
-    if 'wkid' in content['crs']:
-        response['spatialReference'] = {'wkid': content['crs']['wkid']}
-    
-    elif 'wkt' in content['crs']:
-        response['spatialReference'] = {'wkt': content['crs']['wkt']}
-    
-    for feature in content['features']:
-        geometry = feature['geometry']
-
-        if geometry['type'] == 'Point':
-            x, y = geometry['coordinates']
-            arc_geometry = {'x': x, 'y': y}
-        
-        elif geometry['type'] == 'LineString':
-            path = geometry['coordinates']
-            arc_geometry = {'paths': [path]}
-
-        elif geometry['type'] == 'Polygon':
-            rings = geometry['coordinates']
-            arc_geometry = {'rings': rings}
-
-        elif geometry['type'] == 'MultiPoint':
-            points = geometry['coordinates']
-            arc_geometry = {'points': points}
-
-        elif geometry['type'] == 'MultiLineString':
-            paths = geometry['coordinates']
-            arc_geometry = {'paths': paths}
-
-        elif geometry['type'] == 'MultiPolygon':
-            rings = reduce(add, geometry['coordinates'])
-            arc_geometry = {'rings': rings}
-
-        else:
-            raise Exception(geometry['type'])
-        
-        arc_feature = {'attributes': feature['properties'], 'geometry': arc_geometry}
-        response['geometryType'] = arc_geometry_types[geometry['type']]
-        response['features'].append(arc_feature)
-    
-    return response
 
 def _tile_perimeter(coord, projection):
     """ Get a tile's outer edge for a coordinate and a projection.
