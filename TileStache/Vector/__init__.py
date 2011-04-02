@@ -137,7 +137,6 @@ you can save yourself a world of trouble by using this definition:
 """
 
 from re import compile
-from operator import add
 from urlparse import urlparse, urljoin
 
 try:
