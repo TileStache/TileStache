@@ -153,7 +153,7 @@ except ImportError:
 
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
-from Arc import reserialize_to_arc
+from Arc import reserialize_to_arc, pyamf_classes
 
 class VectorResponse:
     """ Wrapper class for Vector response that makes it behave like a PIL.Image object.
@@ -219,6 +219,9 @@ class VectorResponse:
         
         elif format in ('GeoAMF', 'ArcAMF'):
             import pyamf
+            
+            for class_name in pyamf_classes.items():
+                pyamf.register_class(*class_name)
 
             encoded = pyamf.encode(content, 0).read()
             out.write(encoded)

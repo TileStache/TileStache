@@ -11,6 +11,31 @@ geometry_types = {
     'MultiPolygon': 'esriGeometryPolygon'
   }
 
+class amfSpatialReference(dict):
+    """ Registered PyAMF class for com.esri.ags.SpatialReference
+    
+        http://help.arcgis.com/en/webapi/flex/apiref/com/esri/ags/SpatialReference.html
+    """
+    def __init__(self, wkid, wkt):
+        self.wkid = wkid
+        self.wkt = wkt
+        dict.__init__(self, {'wkid': wkid, 'wkt': wkt})
+
+class amfGeometryMapPoint(dict):
+    """ Registered PyAMF class for com.esri.ags.geometry.MapPoint
+    
+        http://help.arcgis.com/en/webapi/flex/apiref/com/esri/ags/geometry/MapPoint.html
+    """
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        dict.__init__(self, {'x': x, 'y': y})
+
+pyamf_classes = {
+    amfSpatialReference: 'com.esri.ags.SpatialReference',
+    amfGeometryMapPoint: 'com.esri.ags.geometry.MapPoint'
+  }
+
 def reserialize_to_arc(content):
     """ Convert from "geo" (GeoJSON) to ESRI's GeoServices REST serialization.
     
@@ -23,20 +48,16 @@ def reserialize_to_arc(content):
     if len(found_geometry_types) > 1:
         raise KnownUnknown('Arc serialization needs a single geometry type, not ' + ', '.join(found_geometry_types))
     
-    response = {'spatialReference': {'wkid': 4326}, 'features': []}
+    crs = content['crs']
+    sref = amfSpatialReference(crs.get('wkid', None), crs.get('wkt', None))
     
-    if 'wkid' in content['crs']:
-        response['spatialReference'] = {'wkid': content['crs']['wkid']}
-    
-    elif 'wkt' in content['crs']:
-        response['spatialReference'] = {'wkt': content['crs']['wkt']}
+    response = {'spatialReference': sref, 'features': []}
     
     for feature in content['features']:
         geometry = feature['geometry']
 
         if geometry['type'] == 'Point':
-            x, y = geometry['coordinates']
-            arc_geometry = {'x': x, 'y': y}
+            arc_geometry = amfGeometryMapPoint(*geometry['coordinates'])
         
         elif geometry['type'] == 'LineString':
             path = geometry['coordinates']
