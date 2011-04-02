@@ -254,7 +254,10 @@ def _reserialize_to_arc(content):
     
     response = {'spatialReference': {'wkid': 4326}, 'features': []}
     
-    if 'wkt' in content['crs']:
+    if 'wkid' in content['crs']:
+        response['spatialReference'] = {'wkid': content['crs']['wkid']}
+    
+    elif 'wkt' in content['crs']:
         response['spatialReference'] = {'wkt': content['crs']['wkt']}
     
     for feature in content['features']:
@@ -535,8 +538,11 @@ class Provider:
             sref = osr.SpatialReference()
             sref.ImportFromProj4(self.layer.projection.srs)
             response['crs'] = {'wkt': sref.ExportToWkt()}
+            
+            if srs == getProjectionByName('spherical mercator').srs:
+                response['crs']['wkid'] = 102113
         else:
-            response['crs'] = {'srid': 4326}
+            response['crs'] = {'srid': 4326, 'wkid': 4326}
 
         return VectorResponse(response, self.verbose)
         
