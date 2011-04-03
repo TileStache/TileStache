@@ -190,7 +190,7 @@ class VectorResponse:
                 del content['crs']
 
         elif format in ('ArcJSON', 'ArcBSON', 'ArcAMF'):
-            content = reserialize_to_arc(self.content)
+            content = reserialize_to_arc(self.content, format == 'ArcAMF')
         
         else:
             raise KnownUnknown('Vector response only saves .geojson, .arcjson, .geobson, .arcbson, .geoamf, .arcamf and .wkt tiles, not "%s"' % format)
