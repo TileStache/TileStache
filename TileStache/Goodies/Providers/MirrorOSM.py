@@ -32,35 +32,6 @@ def coordinate_api_url(coord, projection):
     
     return url
 
-def clean_extra_nodes(doc, coord):
-    """ Remove tags on nodes that shouldn't show up in the points table.
-    
-        Check each node in the XML doc for whether it's outside the tile bounds.
-    """
-    projection = getProjectionByName('spherical mercator')
-    
-    ul = projection.coordinateLocation(coord)
-    lr = projection.coordinateLocation(coord.down().right())
-    
-    north, west, south, east = ul.lat, ul.lon, lr.lat, lr.lon
-    
-    for node in doc.firstChild.childNodes:
-        if node.nodeType is not node.ELEMENT_NODE:
-            continue
-
-        if node.tagName != 'node':
-            continue
-
-        lat, lon = [float(node.getAttribute(a)) for a in ('lat', 'lon')]
-        
-        if lat < south or north < lat or lon < west or east < lon:
-            # The current node is outside the bounding box.
-            # It'll be needed by a way somewhere, but strip it of
-            # any tags so it doesn't appear in the points table.
-
-            while node.firstChild:
-                node.removeChild(node.firstChild)
-
 def clean_existing_rows(db, prefix, coord):
     """ Remove all geometries inside the tile bounds from each table.
     """
@@ -127,9 +98,6 @@ class Provider:
         doc = parse(urlopen(url))
         raw = doc.toxml('utf-8')
 
-        # modify doc in-place
-        clean_extra_nodes(doc, coord)
-        
         handle, filename = mkstemp(prefix='mirrorosm-', suffix='.osm')
         write(handle, doc.toxml('utf-8'))
         close(handle)
@@ -140,6 +108,10 @@ class Provider:
             if key in self.dbkwargs:
                 osm2pgsql += flag, self.dbkwargs[key]
         
+        ne = self.layer.projection.coordinateLocation(coord.right())
+        sw = self.layer.projection.coordinateLocation(coord.down())
+        
+        osm2pgsql += ['--bbox', ','.join(['%.6f' % n for n in (sw.lon, sw.lat, ne.lon, ne.lat)])]
         osm2pgsql += [filename]
         
         db = _connect(**self.dbkwargs).cursor()
