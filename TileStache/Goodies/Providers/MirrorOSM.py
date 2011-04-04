@@ -1,12 +1,11 @@
 from sys import stderr
 from os import write, close, unlink
-from re import search
 from tempfile import mkstemp
-from xml.dom.minidom import parse
 from subprocess import Popen, PIPE
 from httplib import HTTPConnection
-from urlparse import urlparse
 from StringIO import StringIO
+from os.path import basename
+from base64 import b16encode
 from gzip import GzipFile
 
 from TileStache.Core import KnownUnknown
@@ -33,7 +32,7 @@ def coordinate_latlon_bbox(coord, projection):
     
     return w, s, e, n
 
-def _download_api_data(coord, handle, projection):
+def download_api_data(filename, coord, projection):
     """
     """
     bbox = coordinate_latlon_bbox(coord, projection)
@@ -46,25 +45,84 @@ def _download_api_data(coord, handle, projection):
     assert resp.status == 200
     
     if resp.getheader('Content-Encoding') == 'gzip':
-        buff = StringIO(resp.read())
-        data = GzipFile(fileobj=buff, mode='r')
+        disk = open(filename, 'w')
+        disk.write(resp.read())
+        disk.close()
     else:
-        data = resp
+        disk = GzipFile(filename, 'w')
+        disk.write(resp.read())
+        disk.close()
 
-    write(handle, data.read())
-
-def clean_existing_rows(db, prefix, coord):
-    """ Remove all geometries inside the tile bounds from each table.
+def prepare_data(filename, prefix, dbargs, projection):
     """
-    projection = getProjectionByName('spherical mercator')
+    """
+    osm2pgsql = 'osm2pgsql --create --merc --utf8-sanitize'.split()
+    osm2pgsql += ['--prefix', prefix]
     
-    ul = projection.coordinateProj(coord)
-    lr = projection.coordinateProj(coord.down().right())
+    for (flag, key) in [('-d', 'database'), ('-U', 'user'), ('-W', 'password'), ('-H', 'host')]:
+        if key in dbargs:
+            osm2pgsql += flag, dbargs[key]
     
-    bbox = 'ST_SetSRID(ST_MakeBox2D(ST_MakePoint(%.7f, %.7f), ST_MakePoint(%.7f, %.7f)), 900913)' % (ul.x, ul.y, lr.x, lr.y)
+    osm2pgsql += [filename]
+
+    create = Popen(osm2pgsql, stderr=PIPE, stdout=PIPE)
+    create.wait()
     
-    for table in ('point', 'line', 'polygon', 'roads'):
-        db.execute('DELETE FROM %(prefix)s_%(table)s WHERE way && %(bbox)s' % locals())
+    assert create.returncode == 0, \
+        "It's important that osm2pgsql actually worked." + create.stderr.read()
+
+def create_tables(db, prefix):
+    """
+    """
+    for table in ('point', 'line', 'roads', 'polygon'):
+        db.execute('BEGIN')
+        
+        try:
+            db.execute('CREATE TABLE mirrorosm_%(table)s ( LIKE %(prefix)s_%(table)s )' % locals())
+
+        except ProgrammingError, e:
+            db.execute('ROLLBACK')
+
+            if e.pgcode != '42P07':
+                # 42P07 is a duplicate table, the only error we expect.
+                raise
+
+        else:
+            db.execute("""INSERT INTO geometry_columns
+                          (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+                          SELECT f_table_catalog, f_table_schema, 'mirrorosm_%(table)s', f_geometry_column, coord_dimension, srid, type
+                          FROM geometry_columns WHERE f_table_name = '%(prefix)s_%(table)s'""" \
+                        % locals())
+
+            db.execute('COMMIT')
+
+def populate_tables(db, prefix, bounds):
+    """
+    """
+    bbox = 'ST_SetSRID(ST_MakeBox2D(ST_MakePoint(%.6f, %.6f), ST_MakePoint(%.6f, %.6f)), 900913)' % bounds
+    
+    db.execute('BEGIN')
+    
+    for table in ('point', 'line', 'roads', 'polygon'):
+        db.execute('DELETE FROM mirrorosm_%(table)s WHERE ST_Intersects(way, %(bbox)s)' % locals())
+
+        db.execute("""INSERT INTO mirrorosm_%(table)s
+                      SELECT * FROM %(prefix)s_%(table)s
+                      WHERE ST_Intersects(way, %(bbox)s)""" \
+                    % locals())
+    
+    db.execute('COMMIT')
+
+def clean_up_tables(db, prefix):
+    """
+    """
+    db.execute('BEGIN')
+    
+    for table in ('point', 'line', 'roads', 'polygon'):
+        db.execute('DROP TABLE %(prefix)s_%(table)s' % locals())
+        db.execute("DELETE FROM geometry_columns WHERE f_table_name = '%(prefix)s_%(table)s'" % locals())
+    
+    db.execute('COMMIT')
 
 class SaveableResponse:
     """ Wrapper class for JSON response that makes it behave like a PIL.Image object.
@@ -115,66 +173,30 @@ class Provider:
     def renderTile(self, width, height, srs, coord):
         """ Render a single tile, return a SaveableResponse instance.
         """
-        handle, filename = mkstemp(prefix='mirrorosm-', suffix='.osm')
-        _download_api_data(coord, handle, self.layer.projection)
+        garbage = []
+        
+        handle, filename = mkstemp(prefix='mirrorosm-', suffix='.tablename')
+        prefix = 'mirrorosm_' + b16encode(basename(filename)[10:-10]).lower()
+        garbage.append(filename)
         close(handle)
         
-        osm2pgsql = 'osm2pgsql --append --merc --utf8-sanitize --prefix mirrorosm'.split()
+        handle, filename = mkstemp(prefix='mirrorosm-', suffix='.osm.gz')
+        garbage.append(filename)
+        close(handle)
         
-        for (flag, key) in [('-d', 'database'), ('-U', 'user')]:
-            if key in self.dbkwargs:
-                osm2pgsql += flag, self.dbkwargs[key]
-        
-        ne = self.layer.projection.coordinateLocation(coord.right())
-        sw = self.layer.projection.coordinateLocation(coord.down())
-        
-        osm2pgsql += ['--bbox', ','.join(['%.6f' % n for n in (sw.lon, sw.lat, ne.lon, ne.lat)])]
-        osm2pgsql += [filename]
-        
+        download_api_data(filename, coord, self.layer.projection)
+        prepare_data(filename, prefix, self.dbkwargs, self.layer.projection)
+
         db = _connect(**self.dbkwargs).cursor()
         
-        try:
-            # Start by attempting to remove existing
-            # data from this tile in the database.
-
-            db.execute('BEGIN')
-            clean_existing_rows(db, 'mirrorosm', coord)
-
-        except ProgrammingError, e:
-            # If something went wrong, check whether
-            # it's that the tables don't yet exist.
+        ul = self.layer.projection.coordinateProj(coord)
+        lr = self.layer.projection.coordinateProj(coord.down().right())
         
-            if not search(r'relation "\w+" does not exist', str(e)):
-                # it's because of something other than a missing table
-                raise e
-    
-                # Connection to database failed: FATAL:  database "gis" does not exist
-                # Connection to database failed: FATAL:  role "www-data" does not exist
-                # Error, failed to query table mirrorosm_point
-
-            db.execute('ROLLBACK')
-            db.close()
-    
-            osm2pgsql[1] = '--create'
-            
-            create = Popen(osm2pgsql, stderr=PIPE, stdout=PIPE)
-            create.wait()
-            
-            returncode = create.returncode
-
-        else:
-            # If nothing went wrong, we're probably in good shape to append data.
-
-            db.execute('COMMIT')
-            db.close()
-    
-            append = Popen(osm2pgsql, stderr=PIPE, stdout=PIPE)
-            append.wait()
-            
-            returncode = append.returncode
-
-        unlink(filename)
+        create_tables(db, prefix)
+        populate_tables(db, prefix, (ul.x, ul.y, lr.x, lr.y))
+        clean_up_tables(db, prefix)
         
-        assert returncode == 0, "It's important that osm2pgsql actually worked."
-        
+        for filename in garbage:
+            unlink(filename)
+
         return SaveableResponse('<res>OK</res>' + '\n')
