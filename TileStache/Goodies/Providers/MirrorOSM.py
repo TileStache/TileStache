@@ -1,10 +1,13 @@
 from sys import stderr
 from os import write, close, unlink
 from re import search
-from urllib import urlopen
 from tempfile import mkstemp
 from xml.dom.minidom import parse
 from subprocess import Popen, PIPE
+from httplib import HTTPConnection
+from urlparse import urlparse
+from StringIO import StringIO
+from gzip import GzipFile
 
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
@@ -15,7 +18,7 @@ except ImportError:
     # well it won't work but we can still make the documentation.
     pass
 
-def coordinate_api_url(coord, projection):
+def coordinate_latlon_bbox(coord, projection):
     """
     """
     ul = projection.coordinateLocation(coord)
@@ -28,9 +31,27 @@ def coordinate_api_url(coord, projection):
     e = max(ul.lon, ur.lon, ll.lon, lr.lon)
     w = min(ul.lon, ur.lon, ll.lon, lr.lon)
     
-    url = 'http://api.openstreetmap.org/api/0.6/map?bbox=%(w).6f,%(s).6f,%(e).6f,%(n).6f' % locals()
+    return w, s, e, n
+
+def _download_api_data(coord, handle, projection):
+    """
+    """
+    bbox = coordinate_latlon_bbox(coord, projection)
+    path = '/api/0.6/map?bbox=%.6f,%.6f,%.6f,%.6f' % bbox
+
+    conn = HTTPConnection('api.openstreetmap.org')
+    conn.request('GET', path, headers={'Accept-Encoding': 'compress, gzip'})
+    resp = conn.getresponse()
     
-    return url
+    assert resp.status == 200
+    
+    if resp.getheader('Content-Encoding') == 'gzip':
+        buff = StringIO(resp.read())
+        data = GzipFile(fileobj=buff, mode='r')
+    else:
+        data = resp
+
+    write(handle, data.read())
 
 def clean_existing_rows(db, prefix, coord):
     """ Remove all geometries inside the tile bounds from each table.
@@ -94,12 +115,8 @@ class Provider:
     def renderTile(self, width, height, srs, coord):
         """ Render a single tile, return a SaveableResponse instance.
         """
-        url = coordinate_api_url(coord, self.layer.projection)
-        doc = parse(urlopen(url))
-        raw = doc.toxml('utf-8')
-
         handle, filename = mkstemp(prefix='mirrorosm-', suffix='.osm')
-        write(handle, doc.toxml('utf-8'))
+        _download_api_data(coord, handle, self.layer.projection)
         close(handle)
         
         osm2pgsql = 'osm2pgsql --append --merc --utf8-sanitize --prefix mirrorosm'.split()
@@ -160,4 +177,4 @@ class Provider:
         
         assert returncode == 0, "It's important that osm2pgsql actually worked."
         
-        return SaveableResponse(raw + '\n')
+        return SaveableResponse('<res>OK</res>' + '\n')
