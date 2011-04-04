@@ -46,12 +46,11 @@ def download_api_data(filename, coord, projection):
     
     if resp.getheader('Content-Encoding') == 'gzip':
         disk = open(filename, 'w')
-        disk.write(resp.read())
-        disk.close()
     else:
         disk = GzipFile(filename, 'w')
-        disk.write(resp.read())
-        disk.close()
+
+    disk.write(resp.read())
+    disk.close()
 
 def prepare_data(filename, prefix, dbargs, projection):
     """
@@ -184,19 +183,23 @@ class Provider:
         garbage.append(filename)
         close(handle)
         
-        download_api_data(filename, coord, self.layer.projection)
-        prepare_data(filename, prefix, self.dbkwargs, self.layer.projection)
-
-        db = _connect(**self.dbkwargs).cursor()
+        try:
+            download_api_data(filename, coord, self.layer.projection)
+            prepare_data(filename, prefix, self.dbkwargs, self.layer.projection)
+    
+            db = _connect(**self.dbkwargs).cursor()
+            
+            ul = self.layer.projection.coordinateProj(coord)
+            lr = self.layer.projection.coordinateProj(coord.down().right())
+            
+            create_tables(db, prefix)
+            populate_tables(db, prefix, (ul.x, ul.y, lr.x, lr.y))
+            clean_up_tables(db, prefix)
+            
+            db.close()
+    
+            return SaveableResponse('<res>OK</res>' + '\n')
         
-        ul = self.layer.projection.coordinateProj(coord)
-        lr = self.layer.projection.coordinateProj(coord.down().right())
-        
-        create_tables(db, prefix)
-        populate_tables(db, prefix, (ul.x, ul.y, lr.x, lr.y))
-        clean_up_tables(db, prefix)
-        
-        for filename in garbage:
-            unlink(filename)
-
-        return SaveableResponse('<res>OK</res>' + '\n')
+        finally:
+            for filename in garbage:
+                unlink(filename)
