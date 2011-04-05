@@ -4,9 +4,11 @@ from tempfile import mkstemp
 from subprocess import Popen, PIPE
 from httplib import HTTPConnection
 from StringIO import StringIO
+from datetime import datetime
 from os.path import basename
 from base64 import b16encode
 from gzip import GzipFile
+from time import time
 
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
@@ -49,8 +51,11 @@ def download_api_data(filename, coord, projection):
     else:
         disk = GzipFile(filename, 'w')
 
-    disk.write(resp.read())
+    bytes = resp.read()
+    disk.write(bytes)
     disk.close()
+    
+    return len(bytes) / 1024.
 
 def prepare_data(filename, prefix, dbargs, projection):
     """
@@ -123,7 +128,7 @@ def clean_up_tables(db, prefix):
     
     db.execute('COMMIT')
 
-class SaveableResponse:
+class ConfirmationResponse:
     """ Wrapper class for JSON response that makes it behave like a PIL.Image object.
     
         TileStache.getTile() expects to be able to save one of these to a buffer.
@@ -132,8 +137,8 @@ class SaveableResponse:
         self.content = content
         
     def save(self, out, format):
-        if format != 'XML':
-            raise KnownUnknown('MirrorOSM only saves .xml tiles, not "%s"' % format)
+        if format != 'TXT':
+            raise KnownUnknown('MirrorOSM only saves .txt tiles, not "%s"' % format)
 
         out.write(self.content)
 
@@ -162,16 +167,17 @@ class Provider:
     def getTypeByExtension(self, extension):
         """ Get mime-type and format by file extension.
         
-            This only accepts "xml".
+            This only accepts "txt".
         """
-        if extension.lower() != 'xml':
-            raise KnownUnknown('MirrorOSM only makes .xml tiles, not "%s"' % extension)
+        if extension.lower() != 'txt':
+            raise KnownUnknown('MirrorOSM only makes .txt tiles, not "%s"' % extension)
     
-        return 'text/xml', 'XML'
+        return 'text/plain', 'TXT'
 
     def renderTile(self, width, height, srs, coord):
-        """ Render a single tile, return a SaveableResponse instance.
+        """ Render a single tile, return a ConfirmationResponse instance.
         """
+        start = time()
         garbage = []
         
         handle, filename = mkstemp(prefix='mirrorosm-', suffix='.tablename')
@@ -184,7 +190,7 @@ class Provider:
         close(handle)
         
         try:
-            download_api_data(filename, coord, self.layer.projection)
+            length = download_api_data(filename, coord, self.layer.projection)
             prepare_data(filename, prefix, self.dbkwargs, self.layer.projection)
     
             db = _connect(**self.dbkwargs).cursor()
@@ -197,8 +203,11 @@ class Provider:
             clean_up_tables(db, prefix)
             
             db.close()
-    
-            return SaveableResponse('<res>OK</res>' + '\n')
+            
+            message = 'Retrieved %dK of OpenStreetMap data in %.2fsec (%s).\n' \
+                    % (length, (time() - start), datetime.now())
+
+            return ConfirmationResponse(message)
         
         finally:
             for filename in garbage:
