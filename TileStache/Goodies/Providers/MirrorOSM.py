@@ -37,14 +37,28 @@ def coordinate_latlon_bbox(coord, projection):
 def download_api_data(filename, coord, projection):
     """
     """
-    bbox = coordinate_latlon_bbox(coord, projection)
-    path = '/api/0.6/map?bbox=%.6f,%.6f,%.6f,%.6f' % bbox
+    merc = getProjectionByName('spherical mercator')
+    
+    if projection.srs == merc.srs and coord.zoom == 14:
+        #
+        # We can use the TRAPI!
+        # http://wiki.openstreetmap.org/wiki/Trapi
+        #
+        host = 'api1.osm.absolight.net'
+        path = '/api/0.6/map?tile=%(zoom)d,%(column)d,%(row)d' % coord.__dict__
+    else:
+        #
+        # No, just use the regular API.
+        #
+        host = 'api.openstreetmap.org'
+        bbox = coordinate_latlon_bbox(coord, projection)
+        path = '/api/0.6/map?bbox=%.6f,%.6f,%.6f,%.6f' % bbox
 
-    conn = HTTPConnection('api.openstreetmap.org')
+    conn = HTTPConnection(host)
     conn.request('GET', path, headers={'Accept-Encoding': 'compress, gzip'})
     resp = conn.getresponse()
     
-    assert resp.status == 200
+    assert resp.status == 200, (resp.status, resp.read())
     
     if resp.getheader('Content-Encoding') == 'gzip':
         disk = open(filename, 'w')
