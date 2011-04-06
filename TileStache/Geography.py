@@ -33,7 +33,7 @@ You can also instantiate a projection class using this syntax:
 """
 
 from ModestMaps.Core import Point, Coordinate
-from ModestMaps.Geo import deriveTransformation, MercatorProjection, LinearProjection
+from ModestMaps.Geo import deriveTransformation, MercatorProjection, LinearProjection, Location
 from math import log as _log, pi as _pi
 
 import Core
