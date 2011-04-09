@@ -3,9 +3,10 @@ from os import write, close, unlink
 from tempfile import mkstemp
 from subprocess import Popen, PIPE
 from httplib import HTTPConnection
+from os.path import basename, join
 from StringIO import StringIO
 from datetime import datetime
-from os.path import basename
+from urlparse import urlparse
 from base64 import b16encode
 from gzip import GzipFile
 from time import time
@@ -34,26 +35,13 @@ def coordinate_latlon_bbox(coord, projection):
     
     return w, s, e, n
 
-def download_api_data(filename, coord, projection):
+def download_api_data(filename, coord, api_base, projection):
     """
     """
-    merc = getProjectionByName('spherical mercator')
+    s, host, path, p, q, f = urlparse(api_base)
+    bbox = coordinate_latlon_bbox(coord, projection)
+    path = join(path, 'api/0.6/map?bbox=%.6f,%.6f,%.6f,%.6f' % bbox)
     
-    if projection.srs == merc.srs and coord.zoom == 14:
-        #
-        # We can use the TRAPI!
-        # http://wiki.openstreetmap.org/wiki/Trapi
-        #
-        host = 'api1.osm.absolight.net'
-        path = '/api/0.6/map?tile=%(zoom)d,%(column)d,%(row)d' % coord.__dict__
-    else:
-        #
-        # No, just use the regular API.
-        #
-        host = 'api.openstreetmap.org'
-        bbox = coordinate_latlon_bbox(coord, projection)
-        path = '/api/0.6/map?bbox=%.6f,%.6f,%.6f,%.6f' % bbox
-
     conn = HTTPConnection(host)
     conn.request('GET', path, headers={'Accept-Encoding': 'compress, gzip'})
     resp = conn.getresponse()
@@ -63,6 +51,7 @@ def download_api_data(filename, coord, projection):
     if resp.getheader('Content-Encoding') == 'gzip':
         disk = open(filename, 'w')
     else:
+        raise Exception((host, path))
         disk = GzipFile(filename, 'w')
 
     bytes = resp.read()
@@ -71,32 +60,31 @@ def download_api_data(filename, coord, projection):
     
     return len(bytes) / 1024.
 
-def prepare_data(filename, prefix, dbargs, projection):
+def prepare_data(filename, tmp_prefix, dbargs, osm2pgsql, projection):
     """
     """
-    osm2pgsql = 'osm2pgsql --create --merc --utf8-sanitize'.split()
-    osm2pgsql += ['--prefix', prefix]
+    args = [osm2pgsql, '--create', '--merc', '--utf8-sanitize', '--prefix', tmp_prefix]
     
     for (flag, key) in [('-d', 'database'), ('-U', 'user'), ('-W', 'password'), ('-H', 'host')]:
         if key in dbargs:
-            osm2pgsql += flag, dbargs[key]
+            args += flag, dbargs[key]
     
-    osm2pgsql += [filename]
+    args += [filename]
 
-    create = Popen(osm2pgsql, stderr=PIPE, stdout=PIPE)
+    create = Popen(args, stderr=PIPE, stdout=PIPE)
     create.wait()
     
     assert create.returncode == 0, \
         "It's important that osm2pgsql actually worked." + create.stderr.read()
 
-def create_tables(db, prefix):
+def create_tables(db, prefix, tmp_prefix):
     """
     """
     for table in ('point', 'line', 'roads', 'polygon'):
         db.execute('BEGIN')
         
         try:
-            db.execute('CREATE TABLE mirrorosm_%(table)s ( LIKE %(prefix)s_%(table)s )' % locals())
+            db.execute('CREATE TABLE %(prefix)s_%(table)s ( LIKE %(tmp_prefix)s_%(table)s )' % locals())
 
         except ProgrammingError, e:
             db.execute('ROLLBACK')
@@ -108,13 +96,13 @@ def create_tables(db, prefix):
         else:
             db.execute("""INSERT INTO geometry_columns
                           (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
-                          SELECT f_table_catalog, f_table_schema, 'mirrorosm_%(table)s', f_geometry_column, coord_dimension, srid, type
-                          FROM geometry_columns WHERE f_table_name = '%(prefix)s_%(table)s'""" \
+                          SELECT f_table_catalog, f_table_schema, '%(prefix)s_%(table)s', f_geometry_column, coord_dimension, srid, type
+                          FROM geometry_columns WHERE f_table_name = '%(tmp_prefix)s_%(table)s'""" \
                         % locals())
 
             db.execute('COMMIT')
 
-def populate_tables(db, prefix, bounds):
+def populate_tables(db, prefix, tmp_prefix, bounds):
     """
     """
     bbox = 'ST_SetSRID(ST_MakeBox2D(ST_MakePoint(%.6f, %.6f), ST_MakePoint(%.6f, %.6f)), 900913)' % bounds
@@ -122,23 +110,23 @@ def populate_tables(db, prefix, bounds):
     db.execute('BEGIN')
     
     for table in ('point', 'line', 'roads', 'polygon'):
-        db.execute('DELETE FROM mirrorosm_%(table)s WHERE ST_Intersects(way, %(bbox)s)' % locals())
+        db.execute('DELETE FROM %(prefix)s_%(table)s WHERE ST_Intersects(way, %(bbox)s)' % locals())
 
-        db.execute("""INSERT INTO mirrorosm_%(table)s
-                      SELECT * FROM %(prefix)s_%(table)s
+        db.execute("""INSERT INTO %(prefix)s_%(table)s
+                      SELECT * FROM %(tmp_prefix)s_%(table)s
                       WHERE ST_Intersects(way, %(bbox)s)""" \
                     % locals())
     
     db.execute('COMMIT')
 
-def clean_up_tables(db, prefix):
+def clean_up_tables(db, tmp_prefix):
     """
     """
     db.execute('BEGIN')
     
     for table in ('point', 'line', 'roads', 'polygon'):
-        db.execute('DROP TABLE %(prefix)s_%(table)s' % locals())
-        db.execute("DELETE FROM geometry_columns WHERE f_table_name = '%(prefix)s_%(table)s'" % locals())
+        db.execute('DROP TABLE %(tmp_prefix)s_%(table)s' % locals())
+        db.execute("DELETE FROM geometry_columns WHERE f_table_name = '%(tmp_prefix)s_%(table)s'" % locals())
     
     db.execute('COMMIT')
 
@@ -160,20 +148,21 @@ class Provider:
     """
     """
     
-    def __init__(self, layer, database=None, username=None, password=None, hostname=None):
+    def __init__(self, layer, database, username=None, password=None, hostname=None, table_prefix='mirrorosm', api_base='http://open.mapquestapi.com/xapi/', osm2pgsql='osm2pgsql'):
         """
         """
         self.layer = layer
-        self.dbkwargs = {}
+        self.dbkwargs = {'database': database}
+        
+        self.api_base = api_base
+        self.prefix = table_prefix
+        self.osm2pgsql = osm2pgsql
         
         if hostname:
             self.dbkwargs['host'] = hostname
         
         if username:
             self.dbkwargs['user'] = username
-        
-        if database:
-            self.dbkwargs['database'] = database
         
         if password:
             self.dbkwargs['password'] = password
@@ -195,7 +184,7 @@ class Provider:
         garbage = []
         
         handle, filename = mkstemp(prefix='mirrorosm-', suffix='.tablename')
-        prefix = 'mirrorosm_' + b16encode(basename(filename)[10:-10]).lower()
+        tmp_prefix = 'mirrorosm_' + b16encode(basename(filename)[10:-10]).lower()
         garbage.append(filename)
         close(handle)
         
@@ -204,22 +193,22 @@ class Provider:
         close(handle)
         
         try:
-            length = download_api_data(filename, coord, self.layer.projection)
-            prepare_data(filename, prefix, self.dbkwargs, self.layer.projection)
+            length = download_api_data(filename, coord, self.api_base, self.layer.projection)
+            prepare_data(filename, tmp_prefix, self.dbkwargs, self.osm2pgsql, self.layer.projection)
     
             db = _connect(**self.dbkwargs).cursor()
             
             ul = self.layer.projection.coordinateProj(coord)
             lr = self.layer.projection.coordinateProj(coord.down().right())
             
-            create_tables(db, prefix)
-            populate_tables(db, prefix, (ul.x, ul.y, lr.x, lr.y))
-            clean_up_tables(db, prefix)
+            create_tables(db, self.prefix, tmp_prefix)
+            populate_tables(db, self.prefix, tmp_prefix, (ul.x, ul.y, lr.x, lr.y))
+            clean_up_tables(db, tmp_prefix)
             
             db.close()
             
-            message = 'Retrieved %dK of OpenStreetMap data in %.2fsec (%s).\n' \
-                    % (length, (time() - start), datetime.now())
+            message = 'Retrieved %dK of OpenStreetMap data in %.2fsec from %s (%s).\n' \
+                    % (length, (time() - start), self.api_base, datetime.now())
 
             return ConfirmationResponse(message)
         
