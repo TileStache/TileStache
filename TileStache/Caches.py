@@ -8,6 +8,7 @@ Built-in providers:
 - test
 - disk
 - memcache
+- s3
 
 Example built-in cache, for JSON configuration file:
 
@@ -53,6 +54,7 @@ from os.path import isdir, exists, dirname, basename, join as pathjoin
 
 from .Core import KnownUnknown
 from . import Memcache
+from . import S3
 
 def getCacheByName(name):
     """ Retrieve a cache object by name.
@@ -67,6 +69,9 @@ def getCacheByName(name):
 
     elif name.lower() == 'memcache':
         return Memcache.Cache
+
+    elif name.lower() == 's3':
+        return S3.Cache
 
     raise Exception('Unknown cache name: "%s"' % name)
 

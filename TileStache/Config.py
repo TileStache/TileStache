@@ -157,6 +157,13 @@ def _parseConfigfileCache(cache_dict, dirpath):
         _class = Caches.getCacheByName(cache_dict['name'])
         kwargs = {}
         
+        def add_kwargs(*keys):
+            """ Populate named keys in kwargs from cache_dict.
+            """
+            for key in keys:
+                if key in cache_dict:
+                    kwargs[key] = cache_dict[key]
+        
         if _class is Caches.Test:
             if cache_dict.get('verbose', False):
                 kwargs['logfunc'] = lambda msg: stderr.write(msg + '\n')
@@ -167,14 +174,13 @@ def _parseConfigfileCache(cache_dict, dirpath):
             if cache_dict.has_key('umask'):
                 kwargs['umask'] = int(cache_dict['umask'], 8)
             
-            for key in ('dirs', 'gzip'):
-                if key in cache_dict:
-                    kwargs[key] = cache_dict[key]
+            add_kwargs('dirs', 'gzip')
         
         elif _class is Caches.Memcache.Cache:
-            for key in ('servers', 'lifespan', 'revision'):
-                if key in cache_dict:
-                    kwargs[key] = cache_dict[key]
+            add_kwargs('servers', 'lifespan', 'revision')
+    
+        elif _class is Caches.S3.Cache:
+            add_kwargs('bucket', 'access', 'secret')
     
         else:
             raise Exception('Unknown cache: %s' % cache_dict['name'])
