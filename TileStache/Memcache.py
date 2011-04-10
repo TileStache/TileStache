@@ -1,27 +1,27 @@
 """ Caches tiles to Memcache, requires python-memcached.
 
-    Example configuration:
-    
-      "cache": {
-        "name": "Memcache",
-        "servers": ["127.0.0.1:11211"],
-        "lifespan": 86400,
-        "revision": 0
-      }
+Example configuration:
 
-    Memcache cache parameters:
-    
-      servers
-        Optional array of servers, list of "{host}:{port}" pairs.
-        Defaults to ["127.0.0.1:11211"] if omitted.
+  "cache": {
+    "name": "Memcache",
+    "servers": ["127.0.0.1:11211"],
+    "lifespan": 86400,
+    "revision": 0
+  }
 
-      lifespan
-        Optional number of seconds to keep cached tiles.
-        Defaults to forever, 0.
+Memcache cache parameters:
 
-      revision
-        Optional revision number for mass-expiry of cached tiles
-        regardless of lifespan. Defaults to 0.
+  servers
+    Optional array of servers, list of "{host}:{port}" pairs.
+    Defaults to ["127.0.0.1:11211"] if omitted.
+
+  lifespan
+    Optional number of seconds to keep cached tiles.
+    Defaults to forever, 0.
+
+  revision
+    Optional revision number for mass-expiry of cached tiles
+    regardless of lifespan. Defaults to 0.
 """
 from time import time as _time, sleep as _sleep
 
