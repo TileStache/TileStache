@@ -1,3 +1,31 @@
+""" Caches tiles to Amazon S3.
+
+Requires boto (2.0+):
+  http://pypi.python.org/pypi/boto
+
+Example configuration:
+
+  "cache": {
+    "name": "S3",
+    "bucket": "<bucket name>",
+    "access": "<access key>",
+    "secret": "<secret key>"
+  }
+
+S3 cache parameters:
+
+  bucket
+    Required bucket name for S3. If it doesn't exist, it will be created.
+
+  access
+    Required access key ID for your S3 account.
+
+  secret
+    Required secret access key for your S3 account.
+
+Access and secret keys are under "Security Credentials" at your AWS account page:
+  http://aws.amazon.com/account/
+"""
 from time import time as _time, sleep as _sleep
 from mimetypes import guess_type
 

@@ -112,6 +112,7 @@
           <li><a href="#test-cache">Test</a></li>
           <li><a href="#disk-cache">Disk</a></li>
           <li><a href="#memcache-cache">Memcache</a></li>
+          <li><a href="#s3-cache">Memcache</a></li>
         </ul>
  -->
       </li>
@@ -532,6 +533,58 @@ Memcache cache parameters:
 <p>
 See
 <a href="http://tilestache.org/doc/TileStache.Memcache.html#Cache">TileStache.Memcache.Cache</a>
+documentation for more information.
+</p>
+
+<h4><a id="s3-cache" name="s3-cache">S3</a></h4>
+
+<p>
+Caches tiles to <a href="https://s3.amazonaws.com/">Amazon S3</a>,
+requires <a href="http://pypi.python.org/pypi/boto">boto</a> (2.0+).
+</p>
+ 
+<p>
+Example configuration:
+</p>
+ 
+<pre>
+<span class="bg">{</span>
+  "cache": {
+    "name": "S3",
+    "bucket": "&lt;bucket name&gt;",
+    "access": "&lt;access key&gt;",
+    "secret": "&lt;secret key&gt;"
+  }<span class="bg">,
+  "layers": { … }
+}</span>
+</pre>
+ 
+<p>
+S3 cache parameters:
+</p>
+
+<dl>
+    <dt>bucket</dt>
+    <dd>
+    Required bucket name for S3. If it doesn’t exist, it will be created.
+    </dd>
+
+    <dt>access</dt>
+    <dd>
+    Required access key ID for your S3 account. You can find this under “Security
+    Credentials” at your <a href="http://aws.amazon.com/account/">AWS account page</a>.
+    </dd>
+
+    <dt>secret</dt>
+    <dd>
+    Required secret access key for your S3 account. You can find this under “Security
+    Credentials” at your <a href="http://aws.amazon.com/account/">AWS account page</a>.
+    </dd>
+</dl>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.S3.html#Cache">TileStache.S3.Cache</a>
 documentation for more information.
 </p>
 

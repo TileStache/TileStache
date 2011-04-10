@@ -1,4 +1,7 @@
-""" Caches tiles to Memcache, requires python-memcached.
+""" Caches tiles to Memcache.
+
+Requires python-memcached:
+  http://pypi.python.org/pypi/python-memcached
 
 Example configuration:
 
