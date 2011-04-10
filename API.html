@@ -111,6 +111,7 @@
         <ul>
           <li><a href="#test-cache">Test</a></li>
           <li><a href="#disk-cache">Disk</a></li>
+          <li><a href="#multi-cache">Multi</a></li>
           <li><a href="#memcache-cache">Memcache</a></li>
           <li><a href="#s3-cache">Memcache</a></li>
         </ul>
@@ -481,6 +482,62 @@ be an unambiguous filesystem path, e.g. <samp>"file:///tmp/cache"</samp>.
 <p>
 See
 <a href="http://tilestache.org/doc/TileStache.Caches.html#Disk">TileStache.Caches.Disk</a>
+documentation for more information.
+</p>
+
+<h4><a id="multi-cache" name="multi-cache">Multi</a></h4>
+
+<p>
+Caches tiles to multiple, ordered caches.
+</p>
+ 
+<p>
+Multi cache is well-suited for a speed-to-capacity gradient, for example a
+combination of <a href="#memcache-cache">Memcache</a> and <a href="#s3-cache">S3</a>
+to take advantage of the high speed of memcache and the high capacity of S3.
+Each tier of caching is checked sequentially when reading from the cache, while
+all tiers are used together for writing. Locks are only used with the first cache.
+</p>
+ 
+<p>
+Example configuration:
+</p>
+ 
+<pre>
+<span class="bg">{</span>
+  "cache": {
+    "name": "Multi",
+    "tiers": [
+        {
+           "name": "Memcache",
+           "servers": ["127.0.0.1:11211"]
+        },
+        {
+           "name": "Disk",
+           "path": "/tmp/stache"
+        }
+    ]
+  }<span class="bg">,
+  "layers": { … }
+}</span>
+</pre>
+ 
+<p>
+Multi cache parameters:
+</p>
+
+<dl>
+    <dt>tiers</dt>
+    <dd>
+    Required list of cache configurations. The fastest, most local cache should
+    be at the beginning of the list while the slowest or most remote cache
+    should be at the end. Memcache and S3 together make a great pair.
+    </dd>
+</dl>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.Caches.html#Multi">TileStache.Caches.Multi</a>
 documentation for more information.
 </p>
 

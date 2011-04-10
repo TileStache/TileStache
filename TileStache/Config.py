@@ -176,6 +176,10 @@ def _parseConfigfileCache(cache_dict, dirpath):
             
             add_kwargs('dirs', 'gzip')
         
+        elif _class is Caches.Multi:
+            kwargs['tiers'] = [_parseConfigfileCache(tier_dict, dirpath)
+                               for tier_dict in cache_dict['tiers']]
+    
         elif _class is Caches.Memcache.Cache:
             add_kwargs('servers', 'lifespan', 'revision')
     
