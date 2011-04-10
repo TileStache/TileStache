@@ -7,6 +7,7 @@ own and pull them into TileStache dynamically by class name.
 Built-in providers:
 - test
 - disk
+- memcache
 
 Example built-in cache, for JSON configuration file:
 
@@ -19,7 +20,7 @@ Example built-in cache, for JSON configuration file:
 Example external cache, for JSON configuration file:
 
     "cache": {
-      "class": "Module.Classname",
+      "class": "Module:Classname",
       "kwargs": {"frob": "yes"}
     }
 
