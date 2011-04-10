@@ -1,4 +1,29 @@
-from time import time, sleep
+""" Caches tiles to Memcache, requires python-memcached.
+
+    Example configuration:
+    
+      "cache": {
+        "name": "Memcache",
+        "servers": ["127.0.0.1:11211"],
+        "lifespan": 86400,
+        "revision": 0
+      }
+
+    Memcache cache parameters:
+    
+      servers
+        Optional array of servers, list of "{host}:{port}" pairs.
+        Defaults to ["127.0.0.1:11211"] if omitted.
+
+      lifespan
+        Optional number of seconds to keep cached tiles.
+        Defaults to forever, 0.
+
+      revision
+        Optional revision number for mass-expiry of cached tiles
+        regardless of lifespan. Defaults to 0.
+"""
+from time import time as _time, sleep as _sleep
 
 try:
     from memcache import Client
@@ -7,30 +32,35 @@ except ImportError:
     pass
 
 def tile_key(layer, coord, format, rev):
-    """
+    """ Return a tile key string.
     """
     name = layer.name()
     tile = '%(zoom)d/%(column)d/%(row)d' % coord.__dict__
     return str('%(rev)s/%(name)s/%(tile)s.%(format)s' % locals())
 
 class Cache:
-
+    """
+    """
     def __init__(self, servers=['127.0.0.1:11211'], lifespan=0, revision=0):
         self.servers = servers
         self.lifespan = lifespan
         self.revision = revision
 
     def lock(self, layer, coord, format):
+        """ Acquire a cache lock for this tile.
+        
+            Returns nothing, but blocks until the lock has been acquired.
+        """
         mem = Client(self.servers)
         key = tile_key(layer, coord, format, self.revision)
-        due = time() + layer.stale_lock_timeout
+        due = _time() + layer.stale_lock_timeout
         
         try:
-            while time() < due:
+            while _time() < due:
                 if mem.add(key+'-lock', 'locked.', layer.stale_lock_timeout):
                     return
                 
-                sleep(.2)
+                _sleep(.2)
             
             mem.set(key+'-lock', 'locked.', layer.stale_lock_timeout)
             return
@@ -39,6 +69,8 @@ class Cache:
             mem.disconnect_all()
         
     def unlock(self, layer, coord, format):
+        """ Release a cache lock for this tile.
+        """
         mem = Client(self.servers)
         key = tile_key(layer, coord, format, self.revision)
         
@@ -46,6 +78,8 @@ class Cache:
         mem.disconnect_all()
         
     def read(self, layer, coord, format):
+        """ Read a cached tile.
+        """
         mem = Client(self.servers)
         key = tile_key(layer, coord, format, self.revision)
         
@@ -55,6 +89,8 @@ class Cache:
         return value
         
     def save(self, body, layer, coord, format):
+        """ Save a cached tile.
+        """
         mem = Client(self.servers)
         key = tile_key(layer, coord, format, self.revision)
         
