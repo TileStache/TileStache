@@ -40,6 +40,8 @@ Each method accepts three arguments:
 The save() method accepts an additional argument before the others:
 
 - body: raw content to save to the cache.
+
+TODO: add stale_lock_timeout and cache_lifespan to cache API in v2.
 """
 
 import os

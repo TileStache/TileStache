@@ -523,6 +523,7 @@ Example layer configuration:
       "metatile": { … },
       "preview": { … },
       "stale lock timeout": …,
+      "cache lifespan": …,
       "projection": …
     }
   <span class="bg">}
@@ -577,6 +578,13 @@ Shared layer parameters:
     cache at one time, because you may have different expectations for the
     rendering speeds of different layer configurations. Defaults to
     <samp>15</samp>.
+    </dd>
+
+    <dt>cache lifespan</dt>
+    <dd>
+    An optional number of seconds that cached tiles should be stored. This is
+    defined on a per-layer basis. Defaults to forever if <samp>None</samp>,
+    <samp>0</samp> or omitted..
     </dd>
 </dl>
 

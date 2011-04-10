@@ -198,6 +198,9 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     
     layer_kwargs = {}
     
+    if layer_dict.has_key('cache lifespan'):
+        layer_kwargs['cache_lifespan'] = int(layer_dict['cache lifespan'])
+    
     if layer_dict.has_key('stale lock timeout'):
         layer_kwargs['stale_lock_timeout'] = int(layer_dict['stale lock timeout'])
     
