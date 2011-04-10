@@ -168,7 +168,12 @@ def _parseConfigfileCache(cache_dict, dirpath):
                 kwargs['umask'] = int(cache_dict['umask'], 8)
             
             for key in ('dirs', 'gzip'):
-                if cache_dict.has_key(key):
+                if key in cache_dict:
+                    kwargs[key] = cache_dict[key]
+        
+        elif _class is Caches.Memcache.Cache:
+            for key in ('servers', 'lifespan', 'revision'):
+                if key in cache_dict:
                     kwargs[key] = cache_dict[key]
     
         else:

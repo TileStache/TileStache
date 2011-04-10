@@ -50,7 +50,8 @@ import gzip
 from tempfile import mkstemp
 from os.path import isdir, exists, dirname, basename, join as pathjoin
 
-from Core import KnownUnknown
+from .Core import KnownUnknown
+from . import Memcache
 
 def getCacheByName(name):
     """ Retrieve a cache object by name.
@@ -62,6 +63,9 @@ def getCacheByName(name):
 
     elif name.lower() == 'disk':
         return Disk
+
+    elif name.lower() == 'memcache':
+        return Memcache.Cache
 
     raise Exception('Unknown cache name: "%s"' % name)
 
