@@ -8,6 +8,9 @@ to render OSM data. It would be normal to use this provider outside the regular
 confines of a web server, perhaps with a call to tilestache-seed.py governed
 by a cron job or some other out-of-band process.
 
+This provider is made tenable by MapQuest's hosting of the XAPI service:
+  http://open.mapquestapi.com/xapi/
+
 Example configuration:
 
   "mirror-osm":
@@ -287,6 +290,9 @@ class Provider:
     def renderTile(self, width, height, srs, coord):
         """ Render a single tile, return a ConfirmationResponse instance.
         """
+        if coord.zoom < 12:
+            raise KnownUnknown('MirrorOSM provider only handles data at zoom 12 or higher, not %d.' % coord.zoom)
+        
         start = time()
         garbage = []
         
