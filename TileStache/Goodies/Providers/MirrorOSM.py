@@ -196,12 +196,12 @@ class ConfirmationResponse:
         if format == 'TXT':
             out.write(self.content)
         
-        elif format in ('PNG', 'JPEG'):
+        elif format == 'PNG':
             image = self.do_I_have_to_draw_you_a_picture()
             image.save(out, format)
 
         else:
-            raise KnownUnknown('MirrorOSM only saves .txt, .png and .jpg tiles, not "%s"' % format)
+            raise KnownUnknown('MirrorOSM only saves .txt and .png tiles, not "%s"' % format)
 
 class Provider:
     """
@@ -235,9 +235,6 @@ class Provider:
         
         elif extension.lower() == 'png':
             return 'image/png', 'PNG'
-        
-        elif extension.lower() == 'jpg':
-            return 'image/jpeg', 'JPEG'
         
         else:
             raise KnownUnknown('MirrorOSM only makes .txt and .png tiles, not "%s"' % extension)
