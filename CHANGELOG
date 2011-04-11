@@ -1,3 +1,5 @@
+- Added new caches: Multi, Memcache, and S3.
+
 2011-03-28: 1.9.0
 - Added new Vector provider based on old PostGeoJSON provider.
 
