@@ -1,3 +1,6 @@
+- Added new MirrorOSM provider for populating PostGIS with piecemeal OpenStreetMap data.
+- Added "cache lifespan" to core Layer configuration.
+
 2011-03-28: 1.9.0
 - Added new Vector provider based on old PostGeoJSON provider.
 
