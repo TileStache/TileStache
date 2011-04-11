@@ -7,6 +7,51 @@ successful, while the stored data is expected to be used in other providers
 to render OSM data. It would be normal to use this provider outside the regular
 confines of a web server, perhaps with a call to tilestache-seed.py governed
 by a cron job or some other out-of-band process.
+
+Example configuration:
+
+  "mirror-osm":
+  {
+    "provider":
+    {
+      "class": "TileStache.Goodies.Providers.MirrorOSM:Provider",
+      "kwargs":
+      {
+        "username": "osm",
+        "database": "planet",
+        "api_base": "http://open.mapquestapi.com/xapi/"
+      }
+    }
+  }
+
+Provider parameters:
+
+  database:
+    Required Postgres database name.
+  
+  username:
+    Required Postgres user name.
+  
+  password:
+    Optional Postgres password.
+  
+  hostname:
+    Optional Postgres host name.
+  
+  table_prefix:
+    Optional table prefix for osm2pgsql. Defaults to "mirrorosm" if omitted.
+    Four tables will be created with this prefix: <prefix>_point, <prefix>_line,
+    <prefix>_polygon, and <prefix>_roads. Must result in valid table names!
+  
+  api_base:
+    Optional OSM API base URL. Because we don't want to overtax the main OSM
+    API, this defaults to MapQuest's XAPI, "http://open.mapquestapi.com/xapi/".
+    The trailing slash must be included, up to but not including the "api/0.6"
+    portion of a URL.
+  
+  osm2pgsql:
+    Optional filesystem path to osm2pgsql, just in case it's someplace outside
+    /usr/bin or /usr/local/bin. Defaults to "osm2pgsql".
 """
 from sys import stderr
 from os import write, close, unlink
@@ -206,7 +251,7 @@ class ConfirmationResponse:
 class Provider:
     """
     """
-    def __init__(self, layer, database, username=None, password=None, hostname=None, table_prefix='mirrorosm', api_base='http://open.mapquestapi.com/xapi/', osm2pgsql='osm2pgsql'):
+    def __init__(self, layer, database, username, password=None, hostname=None, table_prefix='mirrorosm', api_base='http://open.mapquestapi.com/xapi/', osm2pgsql='osm2pgsql'):
         """
         """
         self.layer = layer
