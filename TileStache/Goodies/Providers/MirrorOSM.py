@@ -8,8 +8,11 @@ to render OSM data. It would be normal to use this provider outside the regular
 confines of a web server, perhaps with a call to tilestache-seed.py governed
 by a cron job or some other out-of-band process.
 
-This provider is made tenable by MapQuest's hosting of the XAPI service:
+MirrorOSM is made tenable by MapQuest's hosting of the XAPI service:
   http://open.mapquestapi.com/xapi/
+
+Osm2pgsql is an external utility:
+  http://wiki.openstreetmap.org/wiki/Osm2pgsql
 
 Example configuration:
 
@@ -50,7 +53,8 @@ Provider parameters:
     Optional OSM API base URL. Because we don't want to overtax the main OSM
     API, this defaults to MapQuest's XAPI, "http://open.mapquestapi.com/xapi/".
     The trailing slash must be included, up to but not including the "api/0.6"
-    portion of a URL.
+    portion of a URL. If you're careful to limit your usage, the primary
+    OSM API can be specified with "http://api.openstreetmap.org/".
   
   osm2pgsql:
     Optional filesystem path to osm2pgsql, just in case it's someplace outside

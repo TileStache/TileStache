@@ -892,6 +892,19 @@ Layered, composite rendering for TileStache. See
 for more information.
 </p>
 
+<h5>MirrorOSM</h5>
+
+<p>
+Requests for tiles have the side effect of running
+<a href="http://wiki.openstreetmap.org/wiki/Osm2pgsql">osm2pgsql</a> to populate
+a PostGIS database of OpenStreetMap data from a remote API source. It would be
+normal to use this provider outside the regular confines of a web server,
+perhaps with a call to <code>tilestache-seed.py</code> governed by a cron job or
+some other out-of-band process. See
+<a href="http://tilestache.org/doc/TileStache.Goodies.Providers.MirrorOSM.html">TileStache.Goodies.Providers.MirrorOSM</a>
+for more information.
+</p>
+
 <h3><a id="projections" name="projections">Projections</a></h3>
 
 <p>
