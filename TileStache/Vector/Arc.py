@@ -118,13 +118,13 @@ def reserialize_to_arc(content, point_objects):
         
         elif geometry['type'] == 'LineString':
             path = geometry['coordinates']
-            path = [mapPointList(*xy) for xy in path]
-            paths = [_amfGeometryPolyline(path)]
+            path = [mapPointList(sref, *xy) for xy in path]
+            paths = [_amfGeometryPolyline(sref, path)]
             arc_geometry = {'paths': paths}
 
         elif geometry['type'] == 'Polygon':
             rings = geometry['coordinates']
-            rings = [[mapPointList(*xy) for xy in ring] for ring in rings]
+            rings = [[mapPointList(sref, *xy) for xy in ring] for ring in rings]
             rings = [_amfGeometryPolygon(sref, ring) for ring in rings]
             arc_geometry = {'rings': rings}
 
@@ -135,13 +135,13 @@ def reserialize_to_arc(content, point_objects):
 
         elif geometry['type'] == 'MultiLineString':
             paths = geometry['coordinates']
-            paths = [[mapPointList(*xy) for xy in path] for path in paths]
+            paths = [[mapPointList(sref, *xy) for xy in path] for path in paths]
             paths = [_amfGeometryPolyline(sref, path) for path in paths]
             arc_geometry = {'paths': paths}
 
         elif geometry['type'] == 'MultiPolygon':
             rings = reduce(add, geometry['coordinates'])
-            rings = [[mapPointList(*xy) for xy in ring] for ring in rings]
+            rings = [[mapPointList(sref, *xy) for xy in ring] for ring in rings]
             rings = [_amfGeometryPolygon(sref, ring) for ring in rings]
             arc_geometry = {'rings': rings}
 
