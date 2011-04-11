@@ -1,3 +1,5 @@
+- Added several new Vector response types: ESRI GeoServices JSON, ESRI AMF, and BSON encoding.
+
 2011-03-28: 1.9.0
 - Added new Vector provider based on old PostGeoJSON provider.
 
