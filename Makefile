@@ -80,4 +80,5 @@ doc:
 	perl -pi -e 's#\bN\.N\.N\b#$(VERSION)#' doc/index.html
 
 clean:
+	find TileStache -name '*.pyc' -delete
 	rm -rf $(TARBALL) doc
