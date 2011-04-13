@@ -12,10 +12,24 @@ which can be effectively created using this provider.
 Vector functionality is provided by OGR (http://www.gdal.org/ogr/).
 Thank you, Frank Warmerdam.
 
-Currently, only GeoJSON format (tile name extension: ".geojson") is supported
-for output. Possible future supported formats might include KML, ESRI JSON,
-AMF (ActionScript message format), and others. Feel free to get in touch via
-Github to suggest new formats: http://github.com/migurski/TileStache.
+Currently two serializations and three encodings are supported for a total
+of six possible kinds of output with these tile name extensions:
+
+  GeoJSON (.geojson):
+    See http://geojson.org/geojson-spec.html
+
+  Arc GeoServices JSON (.arcjson):
+    See http://www.esri.com/library/whitepapers/pdfs/geoservices-rest-spec.pdf
+  
+  GeoBSON (.geobson) and Arc GeoServices BSON (.arcbson):
+    BSON-encoded GeoJSON and Arc JSON, see http://bsonspec.org/#/specification
+  
+  GeoAMF (.geoamf) and Arc GeoServices AMF (.arcamf):
+    AMF0-encoded GeoJSON and Arc JSON, see:
+    http://opensource.adobe.com/wiki/download/attachments/1114283/amf0_spec_121207.pdf
+
+Possible future supported formats might include KML and others. Get in touch
+via Github to suggest other formats: http://github.com/migurski/TileStache.
 
 Common parameters:
 
@@ -53,6 +67,13 @@ Common parameters:
     bounds of the enclosing tile. This results in incomplete geometries,
     dramatically smaller file sizes, and improves performance and
     compatibility with Polymaps (http://polymaps.org).
+  
+  projected:
+    Default is false.
+    Boolean flag for optionally returning geometries in projected rather than
+    geographic coordinates. Typically this means EPSG:900913 a.k.a. spherical
+    mercator projection. Stylistically a poor fit for GeoJSON, but useful
+    when returning Arc GeoServices responses.
   
   verbose:
     Default is false.
@@ -129,8 +150,9 @@ except ImportError:
     # At least we'll be able to build the documentation.
     pass
 
-from Core import KnownUnknown
-from Geography import getProjectionByName
+from TileStache.Core import KnownUnknown
+from TileStache.Geography import getProjectionByName
+from Arc import reserialize_to_arc, pyamf_classes
 
 class VectorResponse:
     """ Wrapper class for Vector response that makes it behave like a PIL.Image object.
@@ -146,22 +168,71 @@ class VectorResponse:
         self.verbose = verbose
 
     def save(self, out, format):
-        if format != 'GeoJSON':
-            raise KnownUnknown('PostGeoJSON only saves .geojson tiles, not "%s"' % format)
-
-        indent = self.verbose and 2 or None
-        
-        encoded = JSONEncoder(indent=indent).iterencode(self.content)
-        float_pat = compile(r'^-?\d+\.\d+$')
-
-        precision = 6
-        format = '%.' + str(precision) +  'f'
-
-        for atom in encoded:
-            if float_pat.match(atom):
-                out.write(format % float(atom))
+        """
+        """
+        #
+        # Serialize
+        #
+        if format == 'WKT':
+            if 'wkt' in self.content['crs']:
+                out.write(self.content['crs']['wkt'])
             else:
-                out.write(atom)
+                out.write(_sref_4326().ExportToWkt())
+            
+            return
+        
+        if format in ('GeoJSON', 'GeoBSON', 'GeoAMF'):
+            content = self.content
+            
+            if 'wkt' in content['crs']:
+                content['crs'] = {'type': 'link', 'properties': {'href': '0.wkt', 'type': 'ogcwkt'}}
+            else:
+                del content['crs']
+
+        elif format in ('ArcJSON', 'ArcBSON', 'ArcAMF'):
+            content = reserialize_to_arc(self.content, format == 'ArcAMF')
+        
+        else:
+            raise KnownUnknown('Vector response only saves .geojson, .arcjson, .geobson, .arcbson, .geoamf, .arcamf and .wkt tiles, not "%s"' % format)
+
+        #
+        # Encode
+        #
+        if format in ('GeoJSON', 'ArcJSON'):
+            indent = self.verbose and 2 or None
+            
+            encoded = JSONEncoder(indent=indent).iterencode(content)
+            float_pat = compile(r'^-?\d+\.\d+$')
+    
+            for atom in encoded:
+                if float_pat.match(atom):
+                    out.write('%.6f' % float(atom))
+                else:
+                    out.write(atom)
+        
+        elif format in ('GeoBSON', 'ArcBSON'):
+            import bson
+
+            encoded = bson.dumps(content)
+            out.write(encoded)
+        
+        elif format in ('GeoAMF', 'ArcAMF'):
+            import pyamf
+            
+            for class_name in pyamf_classes.items():
+                pyamf.register_class(*class_name)
+
+            encoded = pyamf.encode(content, 0).read()
+            out.write(encoded)
+
+def _sref_4326():
+    """
+    """
+    sref = osr.SpatialReference()
+    proj = getProjectionByName('WGS84')
+    sref.ImportFromProj4(proj.srs)
+    
+    return sref
 
 def _tile_perimeter(coord, projection):
     """ Get a tile's outer edge for a coordinate and a projection.
@@ -258,14 +329,12 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     # Set up the driver
     #
-    okay_drivers = 'PostgreSQL', 'ESRI Shapefile', 'GeoJSON'
-    
     okay_drivers = {'postgis': 'PostgreSQL', 'esri shapefile': 'ESRI Shapefile',
                     'postgresql': 'PostgreSQL', 'shapefile': 'ESRI Shapefile',
                     'geojson': 'GeoJSON'}
     
     if driver_name.lower() not in okay_drivers:
-        raise KnownUnknown('Got a driver type Vector doesn\'t understand: "%s". Need one of %s.' % (driver_name, ', '.join(okay_drivers)))
+        raise KnownUnknown('Got a driver type Vector doesn\'t understand: "%s". Need one of %s.' % (driver_name, ', '.join(okay_drivers.keys())))
 
     driver_name = okay_drivers[driver_name.lower()]
     driver = ogr.GetDriverByName(str(driver_name))
@@ -327,7 +396,7 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     return layer, datasource
 
-def _get_features(coord, properties, projection, layer, clip):
+def _get_features(coord, properties, projection, layer, clipped, projected):
     """ Return a list of features in an OGR layer with properties in GeoJSON form.
     
         Optionally clip features to coordinate bounding box.
@@ -335,9 +404,11 @@ def _get_features(coord, properties, projection, layer, clip):
     #
     # Prepare output spatial reference - always WGS84.
     #
-    output_sref = osr.SpatialReference()
-    output_proj = getProjectionByName('WGS84')
-    output_sref.ImportFromProj4(output_proj.srs)
+    if projected:
+        output_sref = osr.SpatialReference()
+        output_sref.ImportFromProj4(projection.srs)
+    else:
+        output_sref = _sref_4326()
     
     #
     # Load layer information
@@ -360,7 +431,7 @@ def _get_features(coord, properties, projection, layer, clip):
         if not geometry.Intersect(bbox):
             continue
         
-        if clip:
+        if clipped:
             geometry = geometry.Intersection(bbox)
         
         if geometry is None:
@@ -383,11 +454,12 @@ class Provider:
         See module documentation for explanation of constructor arguments.
     """
     
-    def __init__(self, layer, driver, parameters, clipped, verbose, properties):
+    def __init__(self, layer, driver, parameters, clipped, verbose, projected, properties):
         self.layer = layer
         self.driver = driver
         self.clipped = clipped
         self.verbose = verbose
+        self.projected = projected
         self.parameters = parameters
         self.properties = properties
 
@@ -395,8 +467,18 @@ class Provider:
         """ Render a single tile, return a VectorResponse instance.
         """
         layer, ds = _open_layer(self.driver, self.parameters, self.layer.config.dirpath)
-        features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipped)
+        features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipped, self.projected)
         response = {'type': 'FeatureCollection', 'features': features}
+        
+        if self.projected:
+            sref = osr.SpatialReference()
+            sref.ImportFromProj4(self.layer.projection.srs)
+            response['crs'] = {'wkt': sref.ExportToWkt()}
+            
+            if srs == getProjectionByName('spherical mercator').srs:
+                response['crs']['wkid'] = 102113
+        else:
+            response['crs'] = {'srid': 4326, 'wkid': 4326}
 
         return VectorResponse(response, self.verbose)
         
@@ -405,7 +487,25 @@ class Provider:
         
             This only accepts "geojson" for the time being.
         """
-        if extension.lower() != 'geojson':
-            raise KnownUnknown('Vector Provider only makes .geojson tiles, not "%s"' % extension)
+        if extension.lower() == 'geojson':
+            return 'text/json', 'GeoJSON'
     
-        return 'text/json', 'GeoJSON'
+        elif extension.lower() == 'arcjson':
+            return 'text/json', 'ArcJSON'
+            
+        elif extension.lower() == 'geobson':
+            return 'application/x-bson', 'GeoBSON'
+            
+        elif extension.lower() == 'arcbson':
+            return 'application/x-bson', 'ArcBSON'
+            
+        elif extension.lower() == 'geoamf':
+            return 'application/x-amf', 'GeoAMF'
+            
+        elif extension.lower() == 'arcamf':
+            return 'application/x-amf', 'ArcAMF'
+            
+        elif extension.lower() == 'wkt':
+            return 'text/x-wkt', 'WKT'
+
+        raise KnownUnknown('Vector Provider only makes .geojson, .arcjson, .geobson, .arcbson, .geoamf, .arcamf and .wkt tiles, not "%s"' % extension)

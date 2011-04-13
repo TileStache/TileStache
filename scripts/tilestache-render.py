@@ -57,7 +57,7 @@ if __name__ == '__main__':
         config = parseConfigfile(options.config)
         
         if options.layer not in config.layers:
-            raise KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (options.layer, ', '.join(config.layers.keys())))
+            raise KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (options.layer, ', '.join(sorted(config.layers.keys()))))
         
         layer = config.layers[options.layer]
         

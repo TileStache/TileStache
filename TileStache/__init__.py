@@ -170,7 +170,7 @@ def requestHandler(config, path_info, query_string):
         layername, coord, extension = splitPathInfo(path_info)
         
         if layername not in config.layers:
-            raise Core.KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (layername, ', '.join(config.layers.keys())))
+            raise Core.KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (layername, ', '.join(sorted(config.layers.keys()))))
         
         query = parse_qs(query_string or '')
         layer = config.layers[layername]

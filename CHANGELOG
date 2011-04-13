@@ -1,4 +1,5 @@
 - Added new caches: Multi, Memcache, and S3.
+- Added several new Vector response types: ESRI GeoServices JSON, ESRI AMF, and BSON encoding.
 
 2011-04-08: 1.9.1
 - Bug fix from kaolin: Geography.py was missing import of ModestMaps.Geo Location
