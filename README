@@ -37,10 +37,14 @@ http://tilestache.org/doc/
 Rendering providers:
 - Mapnik
 - Proxy
+- Vector
+- Templated URLs
 
 Caching backends:
 - Local disk
 - Test
+- Memcache
+- S3
 
 ---- Design Goals ----
 

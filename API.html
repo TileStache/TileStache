@@ -111,6 +111,9 @@
         <ul>
           <li><a href="#test-cache">Test</a></li>
           <li><a href="#disk-cache">Disk</a></li>
+          <li><a href="#multi-cache">Multi</a></li>
+          <li><a href="#memcache-cache">Memcache</a></li>
+          <li><a href="#s3-cache">S3</a></li>
         </ul>
  -->
       </li>
@@ -479,6 +482,166 @@ be an unambiguous filesystem path, e.g. <samp>"file:///tmp/cache"</samp>.
 <p>
 See
 <a href="http://tilestache.org/doc/TileStache.Caches.html#Disk">TileStache.Caches.Disk</a>
+documentation for more information.
+</p>
+
+<h4><a id="multi-cache" name="multi-cache">Multi</a></h4>
+
+<p>
+Caches tiles to multiple, ordered caches.
+</p>
+ 
+<p>
+Multi cache is well-suited for a speed-to-capacity gradient, for example a
+combination of <a href="#memcache-cache">Memcache</a> and <a href="#s3-cache">S3</a>
+to take advantage of the high speed of memcache and the high capacity of S3.
+Each tier of caching is checked sequentially when reading from the cache, while
+all tiers are used together for writing. Locks are only used with the first cache.
+</p>
+ 
+<p>
+Example configuration:
+</p>
+ 
+<pre>
+<span class="bg">{</span>
+  "cache": {
+    "name": "Multi",
+    "tiers": [
+        {
+           "name": "Memcache",
+           "servers": ["127.0.0.1:11211"]
+        },
+        {
+           "name": "Disk",
+           "path": "/tmp/stache"
+        }
+    ]
+  }<span class="bg">,
+  "layers": { … }
+}</span>
+</pre>
+ 
+<p>
+Multi cache parameters:
+</p>
+
+<dl>
+    <dt>tiers</dt>
+    <dd>
+    Required list of cache configurations. The fastest, most local cache should
+    be at the beginning of the list while the slowest or most remote cache
+    should be at the end. Memcache and S3 together make a great pair.
+    </dd>
+</dl>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.Caches.html#Multi">TileStache.Caches.Multi</a>
+documentation for more information.
+</p>
+
+<h4><a id="memcache-cache" name="memcache-cache">Memcache</a></h4>
+
+<p>
+Caches tiles to <a href="http://memcached.org/">Memcache</a>,
+requires <a href="http://www.tummy.com/Community/software/python-memcached/">python-memcached</a>.
+</p>
+ 
+<p>
+Example configuration:
+</p>
+ 
+<pre>
+<span class="bg">{</span>
+  "cache": {
+    "name": "Memcache",
+    "servers": ["127.0.0.1:11211"],
+    "lifespan": 86400,
+    "revision": 0
+  }<span class="bg">,
+  "layers": { … }
+}</span>
+</pre>
+ 
+<p>
+Memcache cache parameters:
+</p>
+
+<dl>
+    <dt>servers</dt>
+    <dd>
+    Optional array of servers, list of <samp>"{host}:{port}"</samp> pairs.
+    Defaults to <samp>["127.0.0.1:11211"]</samp> if omitted.
+    </dd>
+
+    <dt>lifespan</dt>
+    <dd>
+    Optional number of seconds to keep cached tiles. Defaults to forever, <samp>0</samp>.
+    </dd>
+
+    <dt>revision</dt>
+    <dd>
+    Optional revision number for mass-expiry of cached tiles regardless of lifespan.
+    Defaults to <samp>0</samp>.
+    </dd>
+</dl>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.Memcache.html#Cache">TileStache.Memcache.Cache</a>
+documentation for more information.
+</p>
+
+<h4><a id="s3-cache" name="s3-cache">S3</a></h4>
+
+<p>
+Caches tiles to <a href="https://s3.amazonaws.com/">Amazon S3</a>,
+requires <a href="http://pypi.python.org/pypi/boto">boto</a> (2.0+).
+</p>
+ 
+<p>
+Example configuration:
+</p>
+ 
+<pre>
+<span class="bg">{</span>
+  "cache": {
+    "name": "S3",
+    "bucket": "&lt;bucket name&gt;",
+    "access": "&lt;access key&gt;",
+    "secret": "&lt;secret key&gt;"
+  }<span class="bg">,
+  "layers": { … }
+}</span>
+</pre>
+ 
+<p>
+S3 cache parameters:
+</p>
+
+<dl>
+    <dt>bucket</dt>
+    <dd>
+    Required bucket name for S3. If it doesn’t exist, it will be created.
+    </dd>
+
+    <dt>access</dt>
+    <dd>
+    Required access key ID for your S3 account. You can find this under “Security
+    Credentials” at your <a href="http://aws.amazon.com/account/">AWS account page</a>.
+    </dd>
+
+    <dt>secret</dt>
+    <dd>
+    Required secret access key for your S3 account. You can find this under “Security
+    Credentials” at your <a href="http://aws.amazon.com/account/">AWS account page</a>.
+    </dd>
+</dl>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.S3.html#Cache">TileStache.S3.Cache</a>
 documentation for more information.
 </p>
 
@@ -1090,7 +1253,7 @@ Example external provider configuration:
     {</span>
       "provider":
       {
-        "class": "Module.Classname",
+        "class": "Module:Classname",
         "kwargs": {"frob": "yes"}
       }
     <span class="bg">}
@@ -1304,7 +1467,7 @@ Example external provider configuration:
 <span class="bg">{</span>
   "cache":
   {
-    "class": "Module.Classname",
+    "class": "Module:Classname",
     "kwargs": {"frob": "yes"}
   },
   <span class="bg">"layers": { … }
