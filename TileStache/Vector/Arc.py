@@ -32,9 +32,12 @@ class _amfSpatialReference(dict):
         http://help.arcgis.com/en/webapi/flex/apiref/com/esri/ags/SpatialReference.html
     """
     def __init__(self, wkid, wkt):
-        self.wkid = wkid
-        self.wkt = wkt
-        dict.__init__(self, {'wkid': wkid, 'wkt': wkt})
+        if wkid:
+            self.wkid = wkid
+            dict.__init__(self, {'wkid': wkid})
+        elif wkt:
+            self.wkt = wkt
+            dict.__init__(self, {'wkt': wkt})
 
 class _amfFeature(dict):
     """ Registered PyAMF class for com.esri.ags.Feature
@@ -118,15 +121,13 @@ def reserialize_to_arc(content, point_objects):
         
         elif geometry['type'] == 'LineString':
             path = geometry['coordinates']
-            path = [mapPointList(sref, *xy) for xy in path]
-            paths = [_amfGeometryPolyline(sref, path)]
-            arc_geometry = {'paths': paths}
+            paths = [[mapPointList(sref, *xy) for xy in path]]
+            arc_geometry = _amfGeometryPolyline(sref, paths)
 
         elif geometry['type'] == 'Polygon':
             rings = geometry['coordinates']
             rings = [[mapPointList(sref, *xy) for xy in ring] for ring in rings]
-            rings = [_amfGeometryPolygon(sref, ring) for ring in rings]
-            arc_geometry = {'rings': rings}
+            arc_geometry = _amfGeometryPolygon(sref, rings)
 
         elif geometry['type'] == 'MultiPoint':
             points = geometry['coordinates']
@@ -136,14 +137,12 @@ def reserialize_to_arc(content, point_objects):
         elif geometry['type'] == 'MultiLineString':
             paths = geometry['coordinates']
             paths = [[mapPointList(sref, *xy) for xy in path] for path in paths]
-            paths = [_amfGeometryPolyline(sref, path) for path in paths]
-            arc_geometry = {'paths': paths}
+            arc_geometry = _amfGeometryPolyline(sref, paths)
 
         elif geometry['type'] == 'MultiPolygon':
             rings = reduce(add, geometry['coordinates'])
             rings = [[mapPointList(sref, *xy) for xy in ring] for ring in rings]
-            rings = [_amfGeometryPolygon(sref, ring) for ring in rings]
-            arc_geometry = {'rings': rings}
+            arc_geometry = _amfGeometryPolygon(sref, rings)
 
         else:
             raise Exception(geometry['type'])
