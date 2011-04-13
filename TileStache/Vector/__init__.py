@@ -329,14 +329,12 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     # Set up the driver
     #
-    okay_drivers = 'PostgreSQL', 'ESRI Shapefile', 'GeoJSON'
-    
     okay_drivers = {'postgis': 'PostgreSQL', 'esri shapefile': 'ESRI Shapefile',
                     'postgresql': 'PostgreSQL', 'shapefile': 'ESRI Shapefile',
                     'geojson': 'GeoJSON'}
     
     if driver_name.lower() not in okay_drivers:
-        raise KnownUnknown('Got a driver type Vector doesn\'t understand: "%s". Need one of %s.' % (driver_name, ', '.join(okay_drivers)))
+        raise KnownUnknown('Got a driver type Vector doesn\'t understand: "%s". Need one of %s.' % (driver_name, ', '.join(okay_drivers.keys())))
 
     driver_name = okay_drivers[driver_name.lower()]
     driver = ogr.GetDriverByName(str(driver_name))
