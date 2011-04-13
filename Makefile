@@ -67,6 +67,7 @@ doc:
 	pydoc -w TileStache.Goodies.Providers.Composite
 	pydoc -w TileStache.Goodies.Providers.PostGeoJSON
 	pydoc -w TileStache.Goodies.Providers.SolrGeoJSON
+	pydoc -w TileStache.Goodies.Providers.MirrorOSM
 	pydoc -w TileStache.Goodies.Providers.Grid
 
 	pydoc -w scripts/tilestache-*.py
@@ -82,4 +83,5 @@ doc:
 	perl -pi -e 's#\bN\.N\.N\b#$(VERSION)#' doc/index.html
 
 clean:
+	find TileStache -name '*.pyc' -delete
 	rm -rf $(TARBALL) doc

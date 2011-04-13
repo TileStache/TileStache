@@ -43,6 +43,8 @@ Each method accepts three arguments:
 The save() method accepts an additional argument before the others:
 
 - body: raw content to save to the cache.
+
+TODO: add stale_lock_timeout and cache_lifespan to cache API in v2.
 """
 
 import os
@@ -259,8 +261,14 @@ class Disk:
         fullpath = self._fullpath(layer, coord, format)
         
         if exists(fullpath):
-            if self._is_compressed(format):
+            age = time.time() - os.stat(fullpath).st_mtime
+            
+            if age > layer.cache_lifespan:
+                return None
+        
+            elif self._is_compressed(format):
                 return gzip.open(fullpath, 'r').read()
+
             else:
                 return open(fullpath, 'r').read()
 

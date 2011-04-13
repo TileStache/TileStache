@@ -686,6 +686,7 @@ Example layer configuration:
       "metatile": { … },
       "preview": { … },
       "stale lock timeout": …,
+      "cache lifespan": …,
       "projection": …
     }
   <span class="bg">}
@@ -740,6 +741,13 @@ Shared layer parameters:
     cache at one time, because you may have different expectations for the
     rendering speeds of different layer configurations. Defaults to
     <samp>15</samp>.
+    </dd>
+
+    <dt>cache lifespan</dt>
+    <dd>
+    An optional number of seconds that cached tiles should be stored. This is
+    defined on a per-layer basis. Defaults to forever if <samp>None</samp>,
+    <samp>0</samp> or omitted..
     </dd>
 </dl>
 
@@ -1077,6 +1085,19 @@ for more information.
 <p>
 Layered, composite rendering for TileStache. See
 <a href="http://tilestache.org/doc/TileStache.Goodies.Providers.Composite.html">TileStache.Goodies.Providers.Composite</a>
+for more information.
+</p>
+
+<h5>MirrorOSM</h5>
+
+<p>
+Requests for tiles have the side effect of running
+<a href="http://wiki.openstreetmap.org/wiki/Osm2pgsql">osm2pgsql</a> to populate
+a PostGIS database of OpenStreetMap data from a remote API source. It would be
+normal to use this provider outside the regular confines of a web server,
+perhaps with a call to <code>tilestache-seed.py</code> governed by a cron job or
+some other out-of-band process. See
+<a href="http://tilestache.org/doc/TileStache.Goodies.Providers.MirrorOSM.html">TileStache.Goodies.Providers.MirrorOSM</a>
 for more information.
 </p>
 

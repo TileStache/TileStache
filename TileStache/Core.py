@@ -16,8 +16,9 @@ configuration file as a dictionary:
           "provider": { ... },
           "metatile": { ... },
           "preview": { ... },
+          "projection": ...,
           "stale lock timeout": ...,
-          "projection": ...
+          "cache lifespan": ...
         }
       }
     }
@@ -35,6 +36,9 @@ configuration file as a dictionary:
   a lock that might be stuck. This is defined on a per-layer basis, rather than
   for an entire cache at one time, because you may have different expectations
   for the rendering speeds of different layer configurations. Defaults to 15.
+- "cache lifespan" is an optional number of seconds that cached tiles should
+  be stored. This is defined on a per-layer basis. Defaults to forever if None,
+  0 or omitted.
 
 The public-facing URL of a single tile for this layer might look like this:
 
@@ -161,13 +165,14 @@ class Layer:
           preview_ext:
             Tile name extension for slippy map layer preview, default "png".
     """
-    def __init__(self, config, projection, metatile, stale_lock_timeout=15, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png'):
+    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png'):
         self.provider = None
         self.config = config
         self.projection = projection
         self.metatile = metatile
         
         self.stale_lock_timeout = stale_lock_timeout
+        self.cache_lifespan = cache_lifespan
         
         self.preview_lat = preview_lat
         self.preview_lon = preview_lon
