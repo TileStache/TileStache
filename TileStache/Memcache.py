@@ -8,7 +8,6 @@ Example configuration:
   "cache": {
     "name": "Memcache",
     "servers": ["127.0.0.1:11211"],
-    "lifespan": 86400,
     "revision": 0
   }
 
@@ -17,10 +16,6 @@ Memcache cache parameters:
   servers
     Optional array of servers, list of "{host}:{port}" pairs.
     Defaults to ["127.0.0.1:11211"] if omitted.
-
-  lifespan
-    Optional number of seconds to keep cached tiles.
-    Defaults to forever, 0.
 
   revision
     Optional revision number for mass-expiry of cached tiles
@@ -44,9 +39,8 @@ def tile_key(layer, coord, format, rev):
 class Cache:
     """
     """
-    def __init__(self, servers=['127.0.0.1:11211'], lifespan=0, revision=0):
+    def __init__(self, servers=['127.0.0.1:11211'], revision=0):
         self.servers = servers
-        self.lifespan = lifespan
         self.revision = revision
 
     def lock(self, layer, coord, format):
@@ -97,4 +91,4 @@ class Cache:
         mem = Client(self.servers)
         key = tile_key(layer, coord, format, self.revision)
         
-        mem.set(key, body, self.lifespan)
+        mem.set(key, body, layer.cache_lifespan)

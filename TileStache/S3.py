@@ -28,6 +28,8 @@ Access and secret keys are under "Security Credentials" at your AWS account page
 """
 from time import time as _time, sleep as _sleep
 from mimetypes import guess_type
+from time import strptime, time
+from calendar import timegm
 
 try:
     from boto.s3.connection import S3Connection
@@ -81,6 +83,12 @@ class Cache:
         
         if key is None:
             return None
+        
+        if layer.cache_lifespan:
+            t = timegm(strptime(key.last_modified, '%a, %d %b %Y %H:%M:%S %Z'))
+
+            if (time() - t) > layer.cache_lifespan:
+                return None
         
         return key.get_contents_as_string()
         
