@@ -91,4 +91,4 @@ class Cache:
         mem = Client(self.servers)
         key = tile_key(layer, coord, format, self.revision)
         
-        mem.set(key, body, layer.cache_lifespan)
+        mem.set(key, body, layer.cache_lifespan or 0)
