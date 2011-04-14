@@ -1,3 +1,4 @@
+2011-04-13: 1.10.0
 - Added new caches: Multi, Memcache, and S3.
 - Added several new Vector response types: ESRI GeoServices JSON, ESRI AMF, and BSON encoding.
 - Added new MirrorOSM provider for populating PostGIS with piecemeal OpenStreetMap data.

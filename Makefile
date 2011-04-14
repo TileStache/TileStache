@@ -22,6 +22,9 @@ $(TARBALL): doc
 	mkdir $(PACKAGE)/TileStache
 	ln TileStache/*.py $(PACKAGE)/TileStache/
 
+	mkdir $(PACKAGE)/TileStache/Vector
+	ln TileStache/Vector/*.py $(PACKAGE)/TileStache/Vector/
+
 	mkdir $(PACKAGE)/TileStache/Goodies
 	ln TileStache/Goodies/*.py $(PACKAGE)/TileStache/Goodies/
 
