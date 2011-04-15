@@ -260,19 +260,19 @@ class Disk:
         """
         fullpath = self._fullpath(layer, coord, format)
         
-        if exists(fullpath):
-            age = time.time() - os.stat(fullpath).st_mtime
-            
-            if age > layer.cache_lifespan:
-                return None
+        if not exists(fullpath):
+            return None
+
+        age = time.time() - os.stat(fullpath).st_mtime
         
-            elif self._is_compressed(format):
-                return gzip.open(fullpath, 'r').read()
+        if layer.cache_lifespan and age > layer.cache_lifespan:
+            return None
+    
+        elif self._is_compressed(format):
+            return gzip.open(fullpath, 'r').read()
 
-            else:
-                return open(fullpath, 'r').read()
-
-        return None
+        else:
+            return open(fullpath, 'r').read()
     
     def save(self, body, layer, coord, format):
         """ Save a cached tile.
