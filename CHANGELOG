@@ -1,3 +1,6 @@
+2011-04-18: 1.10.4
+- Fixed Grid provider font path bug.
+
 2011-04-15: 1.10.3
 - Fixed cache lifespan flub in TileStache.Caches.Disk.
 

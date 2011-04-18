@@ -7,7 +7,7 @@ Example TileStache provider configuration:
 
 "grid":
 {
-    "provider": {"class": "TileStache.Goodies.Providers.Grid.UTM",
+    "provider": {"class": "TileStache.Goodies.Providers.Grid:UTM",
                  "kwargs": {"display": "MGRS", "spacing": 200, "tick": 10}}
 }
 """
@@ -141,6 +141,7 @@ class UTM:
 
         file = 'DejaVuSansMono-alphanumeric.ttf'
         dirs = [dirname(__file__),
+                pathjoin(dirname(__file__), '../../share/tilestache'),
                 sys.prefix + '/local/share/tilestache',
                 sys.prefix + '/share/tilestache']
 
