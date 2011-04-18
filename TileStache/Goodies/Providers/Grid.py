@@ -15,7 +15,7 @@ Example TileStache provider configuration:
 import sys
 
 from math import log as _log, pow as _pow, hypot as _hypot, ceil as _ceil
-from os.path import dirname, join as pathjoin
+from os.path import dirname, join as pathjoin, abspath
 
 try:
     import PIL
@@ -141,7 +141,7 @@ class UTM:
 
         file = 'DejaVuSansMono-alphanumeric.ttf'
         dirs = [dirname(__file__),
-                pathjoin(dirname(__file__), '../../share/tilestache'),
+                abspath(pathjoin(dirname(__file__), '../../../share/tilestache')),
                 sys.prefix + '/local/share/tilestache',
                 sys.prefix + '/share/tilestache']
 
