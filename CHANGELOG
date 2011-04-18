@@ -1,3 +1,6 @@
+2011-04-18: 1.10.6
+- Added faint mapnik tile image to MirrorOSM image responses.
+
 2011-04-18: 1.10.5
 - Fixed Grid provider font path bug, again.
 
