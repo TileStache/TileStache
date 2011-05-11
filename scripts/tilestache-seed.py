@@ -66,6 +66,9 @@ parser.add_option('-i', '--include-path', dest='include',
 parser.add_option('-d', '--output-directory', dest='outputdirectory',
                   help='Optional output directory for tiles, to override configured cache with the equivalent of: {"name": "Disk", "path": <output directory>, "dirs": "portable", "gzip": []}. More information in http://tilestache.org/doc/#caches.')
 
+parser.add_option('-x', '--cache-bust', action='store_true', dest='cachebust',
+                  help='Re-render every tile, whether it is in the cache already or not.')
+
 def generateCoordinates(ul, lr, zooms, padding):
     """ Generate a stream of (offset, count, coordinate) tuples for seeding.
     """
@@ -160,7 +163,7 @@ if __name__ == '__main__':
         if options.verbose:
             print >> stderr, '%(offset)d of %(total)d...' % progress,
 
-        mimetype, content = getTile(layer, coord, extension)
+        mimetype, content = getTile(layer, coord, extension, options.cachebust)
         progress['size'] = '%dKB' % (len(content) / 1024)
 
         if options.verbose:

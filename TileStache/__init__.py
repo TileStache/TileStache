@@ -32,13 +32,14 @@ import Config
 _pathinfo_pat = re.compile(r'^/?(?P<l>\w.+)/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)\.(?P<e>\w+)$')
 _preview_pat = re.compile(r'^/?(?P<l>\w.+)/preview\.html$')
 
-def getTile(layer, coord, extension):
+def getTile(layer, coord, extension, cachebust=False):
     """ Get a type string and tile binary for a given request layer tile.
     
         Arguments:
         - layer: instance of Core.Layer to render.
         - coord: one ModestMaps.Core.Coordinate corresponding to a single tile.
         - extension: filename extension to choose response type, e.g. "png" or "jpg".
+        - cachebust: force re-calculating the tile, whether it's in the cache or not
     
         This is the main entry point, after site configuration has been loaded
         and individual tiles need to be rendered.
@@ -46,8 +47,12 @@ def getTile(layer, coord, extension):
     mimetype, format = layer.getTypeByExtension(extension)
     cache = layer.config.cache
     
-    # Start by checking for a tile in the cache.
-    body = cache.read(layer, coord, format)
+    if not cachebust:
+        # Start by checking for a tile in the cache.
+        body = cache.read(layer, coord, format)
+    else:
+        # Bypass the cache
+        body = None
     
     # If no tile was found, dig deeper
     if body is None:
@@ -58,9 +63,13 @@ def getTile(layer, coord, extension):
             # We may need to write a new tile, so acquire a lock.
             cache.lock(layer, lockCoord, format)
             
-            # There's a chance that some other process has
-            # written the tile while the lock was being acquired.
-            body = cache.read(layer, coord, format)
+            if not cachebust:
+                # There's a chance that some other process has
+                # written the tile while the lock was being acquired.
+                body = cache.read(layer, coord, format)
+            else:
+                # Bypass the cache again
+                body = None
     
             # If no one else wrote the tile, do it here.
             if body is None:
