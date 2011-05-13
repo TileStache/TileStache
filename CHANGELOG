@@ -1,3 +1,6 @@
+2011-05-13: 1.11.0
+- Added ignore-cache parameter to tile rendering; renamed from Zain's cache-bust parameter.
+
 2011-04-18: 1.10.6
 - Added faint mapnik tile image to MirrorOSM image responses.
 
