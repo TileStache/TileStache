@@ -70,6 +70,7 @@ from StringIO import StringIO
 from datetime import datetime
 from urlparse import urlparse
 from base64 import b16encode
+from urllib import urlopen
 from gzip import GzipFile
 from time import time
 
@@ -213,7 +214,8 @@ class ConfirmationResponse:
     
         TileStache.getTile() expects to be able to save one of these to a buffer.
     """
-    def __init__(self, content, success):
+    def __init__(self, coord, content, success):
+        self.coord = coord
         self.content = content
         self.success = success
         
@@ -228,6 +230,11 @@ class ConfirmationResponse:
         thumb = Image.open(StringIO(bytes))
         image = Image.new('RGB', (256, 256), color)
         image.paste(thumb.resize((128, 128)), (64, 80))
+        
+        mapnik_url = 'http://tile.openstreetmap.org/%(zoom)d/%(column)d/%(row)d.png' % self.coord.__dict__
+        mapnik_img = Image.open(StringIO(urlopen(mapnik_url).read()))
+        mapnik_img = mapnik_img.convert('L').convert('RGB')
+        image = Image.blend(image, mapnik_img, .15)
         
         draw = ImageDraw(image)
         margin, leading = 8, 12
@@ -328,12 +335,12 @@ class Provider:
                     % (length, coord.zoom, coord.column, coord.row,
                        (time() - start), self.api_base, datetime.now())
 
-            return ConfirmationResponse(message, True)
+            return ConfirmationResponse(coord, message, True)
         
         except Exception, e:
             message = 'Error in tile %d/%d/%d: %s' % (coord.zoom, coord.column, coord.row, e)
             
-            raise NoTileLeftBehind(ConfirmationResponse(message, False))
+            raise NoTileLeftBehind(ConfirmationResponse(coord, message, False))
         
         finally:
             for filename in garbage:
