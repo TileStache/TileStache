@@ -7,8 +7,8 @@ minimal sample configuration:
     {
       "cache": {"name": "Test"},
       "layers": {
-        "ex": {
-            "provider": {"name": "mapnik", "mapfile": "style.xml"},
+        "example": {
+            "provider": {"name": "mapnik", "mapfile": "examples/style.xml"},,
             "projection": "spherical mercator"
         } 
       }
