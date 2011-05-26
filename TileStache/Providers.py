@@ -80,11 +80,14 @@ from urllib import urlopen
 from glob import glob
 
 try:
-    import mapnik
+    import mapnik2 as mapnik
 except ImportError:
-    # It's possible to get by without mapnik,
-    # if you don't plan to use the mapnik provider.
-    pass
+    try:
+        import mapnik
+    except ImportError:
+        # It's possible to get by without mapnik,
+        # if you don't plan to use the mapnik provider.
+        pass
 
 try:
     from PIL import Image
