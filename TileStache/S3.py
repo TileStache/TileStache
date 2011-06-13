@@ -32,7 +32,7 @@ from time import strptime, time
 from calendar import timegm
 
 try:
-    from boto.s3.connection import S3Connection
+    from boto import s3
 except ImportError:
     # at least we can build the documentation
     pass
@@ -50,7 +50,7 @@ class Cache:
     """
     """
     def __init__(self, bucket, access, secret):
-        self.bucket = S3Connection(access, secret).create_bucket(bucket)
+        self.bucket = s3.Bucket(s3.Connection(access, secret), bucket)
 
     def lock(self, layer, coord, format):
         """ Acquire a cache lock for this tile.
