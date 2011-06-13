@@ -14,23 +14,78 @@ designers and cartographers.
     config = {
       "cache": {"name": "Test"},
       "layers": {
-        "ex": {
-            "provider": {"name": "mapnik", "mapfile": "style.xml"},
+        "example": {
+            "provider": {"name": "mapnik", "mapfile": "examples/style.xml"},
             "projection": "spherical mercator"
         } 
       }
     }
     
-    # like http://tile.openstreetmap.org/12/656/1582.png
-    coord = ModestMaps.Core.Coordinate(1582, 656, 12)
+    # like http://tile.openstreetmap.org/1/0/0.png
+    coord = ModestMaps.Core.Coordinate(0, 0, 1)
     config = TileStache.Config.buildConfiguration(config)
     type, bytes = TileStache.getTile(config.layers['ex'], coord, 'png')
     
     open('tile.png', 'w').write(bytes)
 
+
+
+---- Dependencies ----
+
+- ModestMaps: http://modestmaps.com, http://github.com/migurski/modestmaps-py
+- Python Imaging Library (PIL):http://www.pythonware.com/products/pil
+- Simplejson: https://github.com/simplejson/simplejson (optional if using >= python 2.6)
+- mapnik: http://mapnik.org (optional)
+- werkzeug: http://werkzeug.pocoo.org/ (optional)
+
+Install them with pip:
+
+    sudo pip install -U simplejson modestmaps werkzeug PIL
+
+Install pip (http://www.pip-installer.org/) like:
+
+    curl -O https://github.com/pypa/pip/raw/master/contrib/get-pip.py
+    sudo python get-pip.py
+
+
+---- Installation ----
+
+TileStache can be run from the download directory as is. For example the scripts:
+
+    tilestache-render.py tilestache-seed.py tilestache-server.py
+
+Can all be run locally like:
+
+    ./scripts tilestache-server.py
+
+To install globally do:
+
+    python setup.py install
+    
+  * Note: you may need to prefix that command with 'sudo' to have permissions
+to fully install TileStache.
+
+
+---- Quickstart ----
+
+To make sure TileStache is working start the development server:
+
+    ./scripts tilestache-server.py
+
+Then open a modern web browser and you should be able to preview tiles at:
+
+    http://localhost:8080/osm/preview.html
+
+This is a previewer that uses ModestMaps and OpenStreetMap tiles 
+from http://tile.osm.org as defined in the default config file 'tilestache.cfg'
+
+
 ---- Documentation ----
 
-http://tilestache.org/doc/
+The next step is to learn how build custom layers and serve them.
+
+See http://tilestache.org/doc/ for details.
+
 
 ---- Features ----
 
@@ -45,6 +100,7 @@ Caching backends:
 - Test
 - Memcache
 - S3
+
 
 ---- Design Goals ----
 
@@ -78,11 +134,6 @@ Yahoo! and others. It should be possible to make TileStache do whatever is
 necessary to support any external system, but we eschew complex, impenetrable
 standards in favor of pragmatic, fast utility with basic web clients.
 
----- Dependencies ----
-
-- ModestMaps: http://modestmaps.com, http://github.com/migurski/modestmaps-py
-- mapnik: http://mapnik.org (optional)
-- werkzeug: http://werkzeug.pocoo.org/ (optional)
 
 ---- License ----
 
