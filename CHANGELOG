@@ -1,3 +1,7 @@
+2011-06-14: 1.11.1
+- Stopped using wasteful boto.s3.Connection.create_bucket() call in S3 cache provider.
+- Mega-update from Dane Springmeyer with fixes to examples, documentation, and projections.
+
 2011-05-13: 1.11.0
 - Added ignore-cache parameter to tile rendering; renamed from Zain's cache-bust parameter.
 
