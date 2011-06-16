@@ -1,3 +1,6 @@
+2011-06-16: 1.12.0
+- Changed argument structure of osm2pgsql in MirrorOSM provider to allow kept coastlines.
+
 2011-06-14: 1.11.1
 - Stopped using wasteful boto.s3.Connection.create_bucket() call in S3 cache provider.
 - Mega-update from Dane Springmeyer with fixes to examples, documentation, and projections.

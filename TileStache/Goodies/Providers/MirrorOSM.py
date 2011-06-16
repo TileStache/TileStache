@@ -58,7 +58,9 @@ Provider parameters:
   
   osm2pgsql:
     Optional filesystem path to osm2pgsql, just in case it's someplace outside
-    /usr/bin or /usr/local/bin. Defaults to "osm2pgsql".
+    /usr/bin or /usr/local/bin. Defaults to "osm2pgsql --utf8-sanitize".
+    Additional arguments such as "--keep-coastlines" can be added to this string,
+    e.g. "/home/user/bin/osm2pgsql --keep-coastlines --utf8-sanitize".
 """
 from sys import stderr
 from os import write, close, unlink
@@ -140,7 +142,7 @@ def download_api_data(filename, coord, api_base, projection):
 def prepare_data(filename, tmp_prefix, dbargs, osm2pgsql, projection):
     """ Stage OSM data into a temporary set of tables using osm2pgsql.
     """
-    args = [osm2pgsql, '--create', '--merc', '--utf8-sanitize', '--prefix', tmp_prefix]
+    args = osm2pgsql.split() + ['--create', '--merc', '--prefix', tmp_prefix]
     
     for (flag, key) in [('-d', 'database'), ('-U', 'user'), ('-W', 'password'), ('-H', 'host')]:
         if key in dbargs:
@@ -265,7 +267,7 @@ class ConfirmationResponse:
 class Provider:
     """
     """
-    def __init__(self, layer, database, username, password=None, hostname=None, table_prefix='mirrorosm', api_base='http://open.mapquestapi.com/xapi/', osm2pgsql='osm2pgsql'):
+    def __init__(self, layer, database, username, password=None, hostname=None, table_prefix='mirrorosm', api_base='http://open.mapquestapi.com/xapi/', osm2pgsql='osm2pgsql --utf8-sanitize'):
         """
         """
         self.layer = layer
