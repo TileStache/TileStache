@@ -33,7 +33,8 @@ This example layer is blended using the "hard light" mode at 50% opacity:
 
     {"src": "hillshading", "mode": "hard light", "opacity": 0.5}
 
-Currently-supported blend modes include "screen", "multiply", and "hard light".
+Currently-supported blend modes include "screen", "multiply", "linear light",
+and "hard light".
 
 Layers can also be affected by adjustments. Adjustments are specified as an
 array of names and parameters. This example layer has been slightly darkened
@@ -569,7 +570,7 @@ def blend_images(bottom_rgba, top_rgb, mask_chan, opacity, blendmode):
     """ Blend images using a given mask, opacity, and blend mode.
     
         Working blend modes:
-        None for plain pass-through, "screen", "multiply", and "hard light".
+        None for plain pass-through, "screen", "multiply", "linear light", and "hard light".
     """
     if opacity == 0 or not mask_chan.any():
         # no-op for zero opacity or empty mask
@@ -585,6 +586,7 @@ def blend_images(bottom_rgba, top_rgb, mask_chan, opacity, blendmode):
     else:
         blend_functions = {'screen': blend_channels_screen,
                            'multiply': blend_channels_multiply,
+                           'linear light': blend_channels_linear_light,
                            'hard light': blend_channels_hard_light}
 
         if blendmode in blend_functions:
@@ -626,6 +628,13 @@ def blend_channels_multiply(output_chan, bottom_chan, top_chan):
         Math from http://illusions.hu/effectwiki/doku.php?id=multiply_blending
     """
     output_chan[:,:] = bottom_chan[:,:] * top_chan[:,:]
+
+def blend_channels_linear_light(output_chan, bottom_chan, top_chan):
+    """ Modify output channel in-place with the combination of bottom and top channels.
+    
+        Math from http://illusions.hu/effectwiki/doku.php?id=linear_light_blending
+    """
+    output_chan[:,:] = numpy.clip(bottom_chan[:,:] + 2 * top_chan[:,:] - 1, 0, 1)
 
 def blend_channels_hard_light(output_chan, bottom_chan, top_chan):
     """ Modify output channel in-place with the combination of bottom and top channels.
