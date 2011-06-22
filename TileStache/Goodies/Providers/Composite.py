@@ -44,6 +44,7 @@ to 50% gray while leaving black and white alone:
     {"src": "hillshading", "adjustments": [ ["curves", [0, 181, 255]] ]}
 
 Available adjustments:
+  "threshold" - apply_threshold_adjustment()
   "curves" - apply_curves_adjustment()
   "curves2" - apply_curves2_adjustment()
 
@@ -443,8 +444,14 @@ def apply_adjustments(rgba, adjustments):
     
         Working adjustments:
         
+          threshold:
+            Calls apply_threshold_adjustment()
+        
           curves:
             Calls apply_curves_adjustment()
+        
+          curves2:
+            Calls apply_curves2_adjustment()
     """
     if not adjustments:
         return rgba
@@ -452,7 +459,10 @@ def apply_adjustments(rgba, adjustments):
     for adjustment in adjustments:
         name, args = adjustment[0], adjustment[1:]
 
-        if name == 'curves':
+        if name == 'threshold':
+            rgba = apply_threshold_adjustment(rgba, *args)
+        
+        elif name == 'curves':
             rgba = apply_curves_adjustment(rgba, *args)
         
         elif name == 'curves2':
@@ -462,6 +472,30 @@ def apply_adjustments(rgba, adjustments):
             raise KnownUnknown('Unrecognized composite adjustment: "%s" with args %s' % (name, repr(args)))
     
     return rgba
+
+def apply_threshold_adjustment(rgba, red_value, green_value=None, blue_value=None):
+    """
+    """
+    if green_value is None or blue_value is None:
+        # if there aren't three provided, use the one
+        green_value, blue_value = red_value, red_value
+
+    # channels
+    red, green, blue, alpha = rgba
+    
+    # knowns are given in 0-255 range, need to be converted to floats
+    red_value, green_value, blue_value = red_value / 255.0, green_value / 255.0, blue_value / 255.0
+    
+    red[red > red_value] = 1
+    red[red <= red_value] = 0
+    
+    green[green > green_value] = 1
+    green[green <= green_value] = 0
+    
+    blue[blue > blue_value] = 1
+    blue[blue <= blue_value] = 0
+    
+    return red, green, blue, alpha
 
 def apply_curves_adjustment(rgba, black_grey_white):
     """ Adjustment inspired by Photoshop "Curves" feature.
