@@ -1,4 +1,5 @@
 from sqlite3 import connect
+from urlparse import urlparse, urljoin
 from os.path import exists
 
 def create_tileset(filename, name, type, version, description, format, bounds=None):
@@ -76,11 +77,47 @@ def get_tile(filename, coord):
     """
     db = connect(filename)
     
-    format = db.execute("SELECT value FROM metadata WHERE name='format'").fetchone()[0]
-    content = db.execute("""SELECT tile_data FROM tiles
-                            WHERE zoom_level=? AND tile_column=? AND tile_row=?""",
-                         (coord.zoom, coord.column, coord.row)).fetchone()[0]
-
-    mime_type = {'png': 'image/png', 'jpg': 'image/jpeg'}[format]
+    formats = {'png': 'image/png', 'jpg': 'image/jpeg', None: None}
+    format = db.execute("SELECT value FROM metadata WHERE name='format'").fetchone()
+    format = format and format[0] or None
+    mime_type = formats[format]
     
+    tile_row = (2**coord.zoom - 1) - coord.row # Hello, Paul Ramsey.
+    q = 'SELECT tile_data FROM tiles WHERE zoom_level=? AND tile_column=? AND tile_row=?'
+    content = db.execute(q, (coord.zoom, coord.column, tile_row)).fetchone()
+    content = content and content[0] or None
+
     return mime_type, content
+
+class Provider:
+    """
+    """
+    def __init__(self, layer, tileset):
+        """
+        """
+        sethref = urljoin(layer.config.dirpath, tileset)
+        scheme, h, path, q, p, f = urlparse(sethref)
+        
+        if scheme not in ('file', ''):
+            raise Exception('Bad scheme in MBTiles provider: "%s"' % scheme)
+        
+        self.tileset = path
+        self.layer = layer
+    
+    def renderTile(self, width, height, srs, coord):
+        """
+        """
+        mime_type, content = get_tile(self.tileset, coord)
+        formats = {'image/png': 'PNG', 'image/jpeg': 'JPEG', None: None}
+        return SaveableTile(formats[mime_type], content)
+
+class SaveableTile:
+    def __init__(self, format, content):
+        self.format = format
+        self.content = content
+    
+    def save(self, out, format):
+        if self.format is not None and format != self.format:
+            raise Exception('fuck')
+
+        out.write(self.content)

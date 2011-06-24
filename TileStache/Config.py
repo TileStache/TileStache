@@ -269,6 +269,9 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
             provider_kwargs['projected'] = bool(provider_dict.get('projected', False))
             provider_kwargs['clipped'] = bool(provider_dict.get('clipped', True))
             provider_kwargs['verbose'] = bool(provider_dict.get('verbose', False))
+        
+        elif _class is Providers.MBTiles.Provider:
+            provider_kwargs['tileset'] = provider_dict['tileset']
             
     elif provider_dict.has_key('class'):
         _class = loadClassPath(provider_dict['class'])
