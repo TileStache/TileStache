@@ -9,6 +9,7 @@ Built-in providers:
 - proxy (Proxy)
 - vector (TileStache.Vector.Provider)
 - url template (UrlTemplate)
+- mbtiles (TileStache.MBTiles.Provider)
 
 Example built-in provider, for JSON configuration file:
 
