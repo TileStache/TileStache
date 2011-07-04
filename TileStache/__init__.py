@@ -8,6 +8,7 @@ designers and cartographers.
 
 Documentation available at http://tilestache.org/doc/
 """
+__version__ = 'N.N.N'
 
 import re
 
