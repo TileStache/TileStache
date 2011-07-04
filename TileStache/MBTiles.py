@@ -100,6 +100,7 @@ def tileset_exists(filename):
     
     # this always works
     db = _connect(filename)
+    db.text_factory = bytes
     
     try:
         db.execute('SELECT name, value FROM metadata LIMIT 1')
@@ -115,6 +116,7 @@ def get_tile(filename, coord):
         If the tile does not exist, None is returned for the content.
     """
     db = _connect(filename)
+    db.text_factory = bytes
     
     formats = {'png': 'image/png', 'jpg': 'image/jpeg', None: None}
     format = db.execute("SELECT value FROM metadata WHERE name='format'").fetchone()
@@ -127,6 +129,19 @@ def get_tile(filename, coord):
     content = content and content[0] or None
 
     return mime_type, content
+
+def put_tile(filename, coord, content):
+    """
+    """
+    db = _connect(filename)
+    db.text_factory = bytes
+    
+    tile_row = (2**coord.zoom - 1) - coord.row # Hello, Paul Ramsey.
+    q = 'REPLACE INTO tiles (zoom_level, tile_column, tile_row, tile_data) VALUES (?, ?, ?, ?)'
+    db.execute(q, (coord.zoom, coord.column, tile_row, content))
+
+    db.commit()
+    db.close()
 
 class Provider:
     """ MBTiles provider.
@@ -170,3 +185,37 @@ class TileResponse:
             raise Exception('Requested format "%s" does not match tileset format "%s"' % (format, self.format))
 
         out.write(self.content)
+
+class Cache:
+    """ Cache provider for writing to MBTiles files.
+    
+        This class is not exposed as a normal cache provider for TileStache,
+        because MBTiles has restrictions on file formats that aren't quite
+        compatible with some of the looser assumptions made by TileStache.
+        Instead, this cache provider is provided for use with the script
+        tilestache-seed.py, which can be called with --to-mbtiles option
+        to write cached tiles to a new tileset.
+    """
+    def __init__(self, filename, format, name):
+        """
+        """
+        self.filename = filename
+        
+        if not tileset_exists(filename):
+            create_tileset(filename, name, 'baselayer', '0', '', format.lower())
+    
+    def lock(self, layer, coord, format):
+        return
+    
+    def unlock(self, layer, coord, format):
+        return
+    
+    def read(self, layer, coord, format):
+        """ Return raw tile content from tileset.
+        """
+        return get_tile(self.filename, coord)[1]
+    
+    def save(self, body, layer, coord, format):
+        """ Write raw tile content to tileset.
+        """
+        put_tile(self.filename, coord, body)
