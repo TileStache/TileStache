@@ -17,12 +17,9 @@ try:
 except ImportError:
     from simplejson import dump as json_dump
 
-from TileStache import parseConfigfile, getTile
-from TileStache.Core import KnownUnknown
-from TileStache.Caches import Disk
-
-from ModestMaps.Core import Coordinate
-from ModestMaps.Geo import Location
+#
+# Most imports can be found below, after the --include-path option is known.
+#
 
 parser = OptionParser(usage="""%prog [options] [zoom...]
 
@@ -66,6 +63,9 @@ parser.add_option('-i', '--include-path', dest='include',
 parser.add_option('-d', '--output-directory', dest='outputdirectory',
                   help='Optional output directory for tiles, to override configured cache with the equivalent of: {"name": "Disk", "path": <output directory>, "dirs": "portable", "gzip": []}. More information in http://tilestache.org/doc/#caches.')
 
+parser.add_option('--to-mbtiles', dest='mbtiles_output',
+                  help='Optional output file for tiles, will be created as an MBTiles 1.1 tileset. See http://mbtiles.org for more information.')
+
 parser.add_option('-x', '--ignore-cached', action='store_true', dest='ignore_cached',
                   help='Re-render every tile, whether it is in the cache already or not.')
 
@@ -104,9 +104,16 @@ if __name__ == '__main__':
     options, zooms = parser.parse_args()
 
     if options.include:
-
         for p in options.include.split(':'):
             path.insert(0, p)
+
+    from TileStache import parseConfigfile, getTile
+    from TileStache.Core import KnownUnknown
+    from TileStache.Caches import Disk, Multi
+    from TileStache import MBTiles
+    
+    from ModestMaps.Core import Coordinate
+    from ModestMaps.Geo import Location
 
     try:
         if options.config is None:
@@ -116,9 +123,6 @@ if __name__ == '__main__':
             raise KnownUnknown('Missing required layer (--layer) parameter.')
 
         config = parseConfigfile(options.config)
-        
-        if options.outputdirectory:
-            config.cache = Disk(options.outputdirectory, dirs='portable', gzip=[])
 
         if options.layer not in config.layers:
             raise KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (options.layer, ', '.join(sorted(config.layers.keys()))))
@@ -128,6 +132,17 @@ if __name__ == '__main__':
         verbose = options.verbose
         extension = options.extension
         progressfile = options.progressfile
+        
+        if options.outputdirectory and options.mbtiles_output:
+            cache1 = Disk(options.outputdirectory, dirs='portable', gzip=[])
+            cache2 = MBTiles.Cache(options.mbtiles_output, extension, options.layer)
+            config.cache = Multi([cache1, cache2])
+
+        elif options.outputdirectory:
+            config.cache = Disk(options.outputdirectory, dirs='portable', gzip=[])
+
+        elif options.mbtiles_output:
+            config.cache = MBTiles.Cache(options.mbtiles_output, extension, options.layer)
 
         lat1, lon1, lat2, lon2 = options.bbox
         south, west = min(lat1, lat2), min(lon1, lon2)

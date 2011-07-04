@@ -1,3 +1,12 @@
+2011-07-04: 1.13.0
+- Added support for MBTiles format. Tilesets can be providers or destinations for seeded tiles.
+
+2011-06-22: 1.12.1
+- Added new adjustments and blend mode to Composite provider: threshold, curves2, and linear light.
+
+2011-06-16: 1.12.0
+- Changed argument structure of osm2pgsql in MirrorOSM provider to allow kept coastlines.
+
 2011-06-14: 1.11.1
 - Stopped using wasteful boto.s3.Connection.create_bucket() call in S3 cache provider.
 - Mega-update from Dane Springmeyer with fixes to examples, documentation, and projections.

@@ -22,6 +22,10 @@ $(TARBALL): doc
 	mkdir $(PACKAGE)/TileStache
 	ln TileStache/*.py $(PACKAGE)/TileStache/
 
+	rm $(PACKAGE)/TileStache/__init__.py
+	cp TileStache/__init__.py $(PACKAGE)/TileStache/__init__.py
+	perl -pi -e 's#\bN\.N\.N\b#$(VERSION)#' $(PACKAGE)/TileStache/__init__.py
+
 	mkdir $(PACKAGE)/TileStache/Vector
 	ln TileStache/Vector/*.py $(PACKAGE)/TileStache/Vector/
 
@@ -63,6 +67,7 @@ doc:
 	pydoc -w TileStache.Vector.Arc
 	pydoc -w TileStache.Geography
 	pydoc -w TileStache.Providers
+	pydoc -w TileStache.MBTiles
 	pydoc -w TileStache.Goodies
 	pydoc -w TileStache.Goodies.Caches
 	pydoc -w TileStache.Goodies.Caches.LimitedDisk

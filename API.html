@@ -125,6 +125,7 @@
           <li><a href="#mapnik-provider">Mapnik</a></li>
           <li><a href="#proxy-provider">Proxy</a></li>
           <li><a href="#url-template-provider">URL Template</a></li>
+          <li><a href="#mbtiles-provider">MBTiles</a></li>
         </ul>
  -->
       </li>
@@ -1039,6 +1040,50 @@ UrlTemplate provider parameters:
 <p>
 See
 <a href="http://tilestache.org/doc/TileStache.Providers.html#UrlTemplate">TileStache.Providers.UrlTemplate</a>
+for more information.
+</p>
+
+<h4><a id="mbtiles-provider" name="mbtiles-provider">MBTiles</a></h4>
+
+<p>
+Provider that reads stored images from <a href="http://mbtiles.org/">MBTiles tilesets</a>.
+</p>
+ 
+<p>
+Example MBTiles provider configuration:
+</p>
+
+<pre>
+<span class="bg">{
+  "cache": { … }.
+  "layers":
+  {
+    "roads":
+    {</span>
+      "provider":
+      {
+        "name": "mbtiles", 
+        "tileset": "collection.mbtiles"
+      }
+    <span class="bg">}
+  }
+}</span>
+</pre>
+ 
+<p>
+MBTiles provider parameters:
+</p>
+
+<dl>
+    <dt>tileset</dt>
+    <dd>
+    Required local file path to MBTiles tileset file, a SQLite 3 database file.
+    </dd>
+</dl>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.MBTiles.html#Provider">TileStache.MBTiles.Provider</a>
 for more information.
 </p>
 
