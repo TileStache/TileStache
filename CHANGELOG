@@ -1,3 +1,6 @@
+2011-07-04: 1.13.0
+- Added support for MBTiles format. Tilesets can be providers or destinations for seeded tiles.
+
 2011-06-22: 1.12.1
 - Added new adjustments and blend mode to Composite provider: threshold, curves2, and linear light.
 
