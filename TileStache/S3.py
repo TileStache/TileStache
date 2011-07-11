@@ -50,7 +50,17 @@ class Cache:
     """
     """
     def __init__(self, bucket, access, secret):
-        self.bucket = s3.Bucket(s3.Connection(access, secret), bucket)
+
+	# 1.x -isms
+        try:
+            self.bucket = s3.Bucket(s3.Connection(access, secret), bucket)
+
+        # 2.x -isms
+
+        except Exception, e:
+            from boto.s3 import bucket as _bucket
+            from boto.s3 import connection as _conn
+            self.bucket = _bucket.Bucket(_conn.S3Connection(access, secret), bucket)
 
     def lock(self, layer, coord, format):
         """ Acquire a cache lock for this tile.
@@ -79,8 +89,9 @@ class Cache:
         """ Read a cached tile.
         """
         key_name = tile_key(layer, coord, format)
+
         key = self.bucket.get_key(key_name)
-        
+
         if key is None:
             return None
         
