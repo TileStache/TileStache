@@ -30,7 +30,7 @@ of tile paths as they are created.
 
 Configuration, bbox, and layer options are required; see `%prog --help` for info.""")
 
-defaults = dict(extension='png', padding=0, verbose=True, bbox=(37.777, -122.352, 37.839, -122.226))
+defaults = dict(extension='png', padding=0, verbose=True, enable_retries=False, bbox=(37.777, -122.352, 37.839, -122.226))
 
 parser.set_defaults(**defaults)
 
@@ -71,6 +71,10 @@ parser.add_option('--from-mbtiles', dest='mbtiles_input',
 
 parser.add_option('--tile-list', dest='tile_list',
                   help='Optional file of tile coordinates, a simple text list of Z/X/Y coordinates. Overrides --bbox and --padding.')
+
+parser.add_option('--enable-retries', dest='enable_retries',
+                  help='If true this will cause tilestache-seed to retry failed tile renderings up to (3) times. Default value is %s.' % repr(defaults['enable_retries']),
+                  action='store_true')
 
 parser.add_option('-x', '--ignore-cached', action='store_true', dest='ignore_cached',
                   help='Re-render every tile, whether it is in the cache already or not.')
@@ -164,6 +168,7 @@ if __name__ == '__main__':
 
         verbose = options.verbose
         extension = options.extension
+        enable_retries = options.enable_retries
         progressfile = options.progressfile
         src_mbtiles = options.mbtiles_input
         
@@ -222,15 +227,42 @@ if __name__ == '__main__':
                     "offset": offset + 1,
                     "total": count}
 
-        if options.verbose:
-            print >> stderr, '%(offset)d of %(total)d...' % progress,
+        #
+        # Fetch a tile.
+        #
+        
+        attempts = enable_retries and 3 or 1
+        rendered = False
+        
+        while not rendered:
+            if options.verbose:
+                print >> stderr, '%(offset)d of %(total)d...' % progress,
+    
+            try:
+                mimetype, content = getTile(layer, coord, extension, options.ignore_cached)
+            
+            except:
+                #
+                # Something went wrong: try again?
+                #
+                attempts -= 1
 
-        mimetype, content = getTile(layer, coord, extension, options.ignore_cached)
-        progress['size'] = '%dKB' % (len(content) / 1024)
-
-        if options.verbose:
-            print >> stderr, '%(tile)s (%(size)s)' % progress
-
+                if options.verbose:
+                    print >> stderr, 'Failed %s, will try %s more.' % (progress['tile'], ['no', 'once', 'twice'][attempts])
+                
+                if attempts == 0:
+                    raise
+            
+            else:
+                #
+                # Successfully got the tile.
+                #
+                rendered = True
+                progress['size'] = '%dKB' % (len(content) / 1024)
+        
+                if options.verbose:
+                    print >> stderr, '%(tile)s (%(size)s)' % progress
+                
         if progressfile:
             fp = open(progressfile, 'w')
             json_dump(progress, fp)
