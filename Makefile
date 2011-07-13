@@ -77,6 +77,7 @@ doc:
 	pydoc -w TileStache.Goodies.Providers.SolrGeoJSON
 	pydoc -w TileStache.Goodies.Providers.MirrorOSM
 	pydoc -w TileStache.Goodies.Providers.Grid
+	pydoc -w TileStache.Goodies.Providers.GDAL
 
 	pydoc -w scripts/tilestache-*.py
 
