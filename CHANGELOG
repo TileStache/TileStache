@@ -1,3 +1,9 @@
+2011-07-12: 1.14.0
+- Added per-layer "write cache" option.
+- Added --tile-list option to tilestache-seed.py, so that tiles to seed can be explicitly enumerated.
+- Fixed S3 cache provider to work with boto 1.9 and 2.0 equally.
+- Added the simplest GDAL provider that could possibly work.
+
 2011-07-04: 1.13.0
 - Added support for MBTiles format. Tilesets can be providers or destinations for seeded tiles.
 

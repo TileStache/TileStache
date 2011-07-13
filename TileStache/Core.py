@@ -153,6 +153,12 @@ class Layer:
           stale_lock_timeout:
             Number of seconds until a cache lock is forced, default 15.
 
+          cache_lifespan:
+            Number of seconds that cached tiles should be stored, default 15.
+
+          write_cache:
+            Allow skipping cache write altogether, default true.
+
           preview_lat:
             Starting latitude for slippy map layer preview, default 37.80.
 
@@ -165,7 +171,7 @@ class Layer:
           preview_ext:
             Tile name extension for slippy map layer preview, default "png".
     """
-    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png'):
+    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, write_cache=True, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png'):
         self.provider = None
         self.config = config
         self.projection = projection
@@ -173,6 +179,7 @@ class Layer:
         
         self.stale_lock_timeout = stale_lock_timeout
         self.cache_lifespan = cache_lifespan
+        self.write_cache = write_cache
         
         self.preview_lat = preview_lat
         self.preview_lon = preview_lon
@@ -193,8 +200,10 @@ class Layer:
 
     def doMetatile(self):
         """ Return True if we have a real metatile and the provider is OK with it.
+        
+            self.write_cache == False will cause this to return False.
         """
-        return self.metatile.isForReal() and hasattr(self.provider, 'renderArea')
+        return self.metatile.isForReal() and hasattr(self.provider, 'renderArea') and self.write_cache
     
     def render(self, coord, format):
         """ Render a tile for a coordinate, return PIL Image-like object.

@@ -58,11 +58,12 @@ def getTile(layer, coord, extension, ignore_cached=False):
     # If no tile was found, dig deeper
     if body is None:
         try:
-            # this is the coordinate that actually gets locked.
-            lockCoord = layer.metatile.firstCoord(coord)
-            
-            # We may need to write a new tile, so acquire a lock.
-            cache.lock(layer, lockCoord, format)
+            if layer.write_cache:
+                # this is the coordinate that actually gets locked.
+                lockCoord = layer.metatile.firstCoord(coord)
+                
+                # We may need to write a new tile, so acquire a lock.
+                cache.lock(layer, lockCoord, format)
             
             if not ignore_cached:
                 # There's a chance that some other process has
@@ -84,6 +85,9 @@ def getTile(layer, coord, extension, ignore_cached=False):
                 else:
                     save = True
 
+                if not layer.write_cache:
+                    save = False
+                
                 tile.save(buff, format)
                 body = buff.getvalue()
                 
@@ -91,8 +95,9 @@ def getTile(layer, coord, extension, ignore_cached=False):
                     cache.save(body, layer, coord, format)
 
         finally:
-            # Always clean up a lock when it's no longer being used.
-            cache.unlock(layer, lockCoord, format)
+            if layer.write_cache:
+                # Always clean up a lock when it's no longer being used.
+                cache.unlock(layer, lockCoord, format)
     
     return mimetype, body
 
