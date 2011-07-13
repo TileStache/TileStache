@@ -30,7 +30,7 @@ of tile paths as they are created.
 
 Configuration, bbox, and layer options are required; see `%prog --help` for info.""")
 
-defaults = dict(extension='png', padding=0, verbose=True, bbox=(37.777, -122.352, 37.839, -122.226), retries=False)
+defaults = dict(extension='png', padding=0, verbose=True, bbox=(37.777, -122.352, 37.839, -122.226), retries=False, graceful=False)
 
 parser.set_defaults(**defaults)
 
@@ -54,9 +54,6 @@ parser.add_option('-e', '--extension', dest='extension',
 parser.add_option('-f', '--progress-file', dest='progressfile',
                   help="Optional JSON progress file that gets written on each iteration, so you don't have to pay close attention.")
 
-parser.add_option('-r', '--enable-retries', dest='retries',
-                  help='If true this will cause tilestache-seed to retry failed tile renderings up to (3) times. Default value is %s.' % repr(defaults['retries']))
-
 parser.add_option('-q', action='store_false', dest='verbose',
                   help='Suppress chatty output, --progress-file works well with this.')
 
@@ -71,6 +68,12 @@ parser.add_option('--to-mbtiles', dest='mbtiles_output',
 
 parser.add_option('--tile-list', dest='tile_list',
                   help='Optional file of tile coordinates, a simple text list of Z/X/Y coordinates. Overrides --bbox and --padding.')
+
+parser.add_option('--enable-retries', dest='enable_retries', action='store_true', default=False,
+                  help='If true this will cause tilestache-seed to retry failed tile renderings up to (3) times. Default value is %s.' % repr(defaults['retries']))
+
+parser.add_option('--fail-gracefully', dest='fail_gracefully', action='store_true', default=False,
+                  help='If true tilestache-seed will not throw a fatal exception if a tile fails to render. Instead it will write the tile to a log file and try to render the next tile. The log file is named "failed-{LAYER NAME}.log" and is written in such a way that it can (later) be passed to the --tile-list argument. Default value is %s.' % repr(defaults['graceful']))
 
 parser.add_option('-x', '--ignore-cached', action='store_true', dest='ignore_cached',
                   help='Re-render every tile, whether it is in the cache already or not.')
@@ -206,6 +209,8 @@ if __name__ == '__main__':
         if options.verbose:
             print >> stderr, '%(offset)d of %(total)d...' % progress,
 
+        # Now we fetch a tile.
+
         max_tries = 3
         tries = 0
         ok = False
@@ -213,23 +218,58 @@ if __name__ == '__main__':
         while not ok:
 
             try:
+
+                # See this? This is where we fetch the tile. Just
+                # about everything below is error-handling...
+
                 mimetype, content = getTile(layer, coord, extension, options.ignore_cached)
                 progress['size'] = '%dKB' % (len(content) / 1024)
                 ok = True
+
             except Exception, e:
 
-                if not options.retries:
+                # Plain old tilestache-seed, something went wrong
+                # so just stop until we can fix the problem
+
+                if not options.enable_retries and not options.fail_gracefully:
                     raise Exception, e
+
+                failed_log = "failed-%s.log" % options.layer
+
+                # Something went wrong, but we are not going to
+                # retry. Instead we're just going to write to a log
+                # file and carry on.
+
+                if not options.enable_retries and options.fail_gracefully:
+
+                    fh = open(failed_log, 'a')
+                    fh.write("%s/%s/%s\n" % (coord.zoom, coord.column, coord.row))
+                    fh.close()
+                    break
+
+                # Something went wrong but we *are* going to retry to
+                # render the tile (up to 'max_tries' times).
+
+                tries += 1
 
                 if options.verbose:
                     print >> stderr, "tile rendering failed (%s of %s attempts) : %s" % (tries, max_tries, e)
 
-                tries += 1
+                # Okay, just give up. The tile will not render so now
+                # the only question is whether we throw a fatal error
+                # or just move on to the next tile.
 
                 if tries >= max_tries:
+
+                    if not options.fail_gracefully:
+                        raise Exception, "Failed to render tiles"
+
+                    fh = open(failed_log, 'a')
+                    fh.write("%s/%s/%s\n" % (coord.zoom, coord.column, coord.row))
+                    fh.close()
                     break
 
-        if options.verbose:
+        if options.verbose and ok:
             print >> stderr, '%(tile)s (%(size)s)' % progress
 
         if progressfile:
