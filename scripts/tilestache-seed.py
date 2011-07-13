@@ -30,7 +30,7 @@ of tile paths as they are created.
 
 Configuration, bbox, and layer options are required; see `%prog --help` for info.""")
 
-defaults = dict(extension='png', padding=0, verbose=True, bbox=(37.777, -122.352, 37.839, -122.226))
+defaults = dict(extension='png', padding=0, verbose=True, bbox=(37.777, -122.352, 37.839, -122.226), retries=False, graceful=False)
 
 parser.set_defaults(**defaults)
 
@@ -69,30 +69,36 @@ parser.add_option('--to-mbtiles', dest='mbtiles_output',
 parser.add_option('--tile-list', dest='tile_list',
                   help='Optional file of tile coordinates, a simple text list of Z/X/Y coordinates. Overrides --bbox and --padding.')
 
+parser.add_option('--enable-retries', dest='enable_retries', action='store_true', default=False,
+                  help='If true this will cause tilestache-seed to retry failed tile renderings up to (3) times. Default value is %s.' % repr(defaults['retries']))
+
+parser.add_option('--fail-gracefully', dest='fail_gracefully', action='store_true', default=False,
+                  help='If true tilestache-seed will not throw a fatal exception if a tile fails to render. Instead it will write the tile to a log file and try to render the next tile. The log file is named "failed-{LAYER NAME}.log" and is written in such a way that it can (later) be passed to the --tile-list argument. Default value is %s.' % repr(defaults['graceful']))
+
 parser.add_option('-x', '--ignore-cached', action='store_true', dest='ignore_cached',
                   help='Re-render every tile, whether it is in the cache already or not.')
 
 def generateCoordinates(ul, lr, zooms, padding):
     """ Generate a stream of (offset, count, coordinate) tuples for seeding.
-    
+
         Flood-fill coordinates based on two corners, a list of zooms and padding.
     """
     # start with a simple total of all the coordinates we will need.
     count = 0
-    
+
     for zoom in zooms:
         ul_ = ul.zoomTo(zoom).container().left(padding).up(padding)
         lr_ = lr.zoomTo(zoom).container().right(padding).down(padding)
-        
+
         rows = lr_.row + 1 - ul_.row
         cols = lr_.column + 1 - ul_.column
-        
+
         count += int(rows * cols)
 
     # now generate the actual coordinates.
     # offset starts at zero
     offset = 0
-    
+
     for zoom in zooms:
         ul_ = ul.zoomTo(zoom).container().left(padding).up(padding)
         lr_ = lr.zoomTo(zoom).container().right(padding).down(padding)
@@ -100,22 +106,22 @@ def generateCoordinates(ul, lr, zooms, padding):
         for row in range(int(ul_.row), int(lr_.row + 1)):
             for column in range(int(ul_.column), int(lr_.column + 1)):
                 coord = Coordinate(row, column, zoom)
-                
+
                 yield (offset, count, coord)
-                
+
                 offset += 1
 
 def listCoordinates(filename):
     """ Generate a stream of (offset, count, coordinate) tuples for seeding.
-    
+
         Read coordinates from a file with one Z/X/Y coordinate per line.
     """
     coords = (line.strip().split('/') for line in open(filename, 'r'))
     coords = (map(int, (row, column, zoom)) for (zoom, column, row) in coords)
     coords = [Coordinate(*args) for args in coords]
-    
+
     count = len(coords)
-    
+
     for (offset, coord) in enumerate(coords):
         yield (offset, count, coord)
 
@@ -130,7 +136,7 @@ if __name__ == '__main__':
     from TileStache.Core import KnownUnknown
     from TileStache.Caches import Disk, Multi
     from TileStache import MBTiles
-    
+
     from ModestMaps.Core import Coordinate
     from ModestMaps.Geo import Location
 
@@ -151,7 +157,7 @@ if __name__ == '__main__':
         verbose = options.verbose
         extension = options.extension
         progressfile = options.progressfile
-        
+
         if options.outputdirectory and options.mbtiles_output:
             cache1 = Disk(options.outputdirectory, dirs='portable', gzip=[])
             cache2 = MBTiles.Cache(options.mbtiles_output, extension, options.layer)
@@ -178,7 +184,7 @@ if __name__ == '__main__':
                 raise KnownUnknown('"%s" is not a valid numeric zoom level.' % zoom)
 
             zooms[i] = int(zoom)
-        
+
         if options.padding < 0:
             raise KnownUnknown('A negative padding will not work.')
 
@@ -192,7 +198,7 @@ if __name__ == '__main__':
         coordinates = listCoordinates(tile_list)
     else:
         coordinates = generateCoordinates(ul, lr, zooms, padding)
-    
+
     for (offset, count, coord) in coordinates:
         path = '%s/%d/%d/%d.%s' % (layer.name(), coord.zoom, coord.column, coord.row, extension)
 
@@ -203,10 +209,67 @@ if __name__ == '__main__':
         if options.verbose:
             print >> stderr, '%(offset)d of %(total)d...' % progress,
 
-        mimetype, content = getTile(layer, coord, extension, options.ignore_cached)
-        progress['size'] = '%dKB' % (len(content) / 1024)
+        # Now we fetch a tile.
 
-        if options.verbose:
+        max_tries = 3
+        tries = 0
+        ok = False
+
+        while not ok:
+
+            try:
+
+                # See this? This is where we fetch the tile. Just
+                # about everything below is error-handling...
+
+                mimetype, content = getTile(layer, coord, extension, options.ignore_cached)
+                progress['size'] = '%dKB' % (len(content) / 1024)
+                ok = True
+
+            except Exception, e:
+
+                # Plain old tilestache-seed, something went wrong
+                # so just stop until we can fix the problem
+
+                if not options.enable_retries and not options.fail_gracefully:
+                    raise Exception, e
+
+                failed_log = "failed-%s.log" % options.layer
+
+                # Something went wrong, but we are not going to
+                # retry. Instead we're just going to write to a log
+                # file and carry on.
+
+                if not options.enable_retries and options.fail_gracefully:
+
+                    fh = open(failed_log, 'a')
+                    fh.write("%s/%s/%s\n" % (coord.zoom, coord.column, coord.row))
+                    fh.close()
+                    break
+
+                # Something went wrong but we *are* going to retry to
+                # render the tile (up to 'max_tries' times).
+
+                tries += 1
+
+                if options.verbose:
+                    print >> stderr, "tile rendering failed (%s of %s attempts) : %s" % (tries, max_tries, e)
+
+                # Okay, just give up. The tile will not render so now
+                # the only question is whether we throw a fatal error
+                # or just move on to the next tile.
+
+                if tries >= max_tries:
+
+                    if not options.fail_gracefully:
+                        raise Exception, "Failed to render tiles"
+
+                    fh = open(failed_log, 'a')
+                    fh.write("%s/%s/%s\n" % (coord.zoom, coord.column, coord.row))
+                    fh.close()
+                    break
+
+        if options.verbose and ok:
             print >> stderr, '%(tile)s (%(size)s)' % progress
 
         if progressfile:

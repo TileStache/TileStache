@@ -80,8 +80,9 @@ class Cache:
         """ Read a cached tile.
         """
         key_name = tile_key(layer, coord, format)
+
         key = self.bucket.get_key(key_name)
-        
+
         if key is None:
             return None
         
