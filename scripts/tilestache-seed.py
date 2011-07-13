@@ -66,6 +66,9 @@ parser.add_option('-d', '--output-directory', dest='outputdirectory',
 parser.add_option('--to-mbtiles', dest='mbtiles_output',
                   help='Optional output file for tiles, will be created as an MBTiles 1.1 tileset. See http://mbtiles.org for more information.')
 
+parser.add_option('--from-mbtiles', dest='mbtiles_input',
+                  help='Optional input file for tiles, will be read as an MBTiles 1.1 tileset. See http://mbtiles.org for more information. Overrides --extension, --bbox and --padding (this may change).')
+
 parser.add_option('--tile-list', dest='tile_list',
                   help='Optional file of tile coordinates, a simple text list of Z/X/Y coordinates. Overrides --bbox and --padding.')
 
@@ -119,6 +122,17 @@ def listCoordinates(filename):
     for (offset, coord) in enumerate(coords):
         yield (offset, count, coord)
 
+def tilesetCoordinates(filename):
+    """ Generate a stream of (offset, count, coordinate) tuples for seeding.
+    
+        Read coordinates from an MBTiles tileset filename.
+    """
+    coords = MBTiles.list_tiles(filename)
+    count = len(coords)
+    
+    for (offset, coord) in enumerate(coords):
+        yield (offset, count, coord)
+
 if __name__ == '__main__':
     options, zooms = parser.parse_args()
 
@@ -151,6 +165,12 @@ if __name__ == '__main__':
         verbose = options.verbose
         extension = options.extension
         progressfile = options.progressfile
+        src_mbtiles = options.mbtiles_input
+        
+        if src_mbtiles:
+            layer.provider = MBTiles.Provider(layer, src_mbtiles)
+            n, t, v, d, format, b = MBTiles.tileset_info(src_mbtiles)
+            extension = format or extension
         
         if options.outputdirectory and options.mbtiles_output:
             cache1 = Disk(options.outputdirectory, dirs='portable', gzip=[])
@@ -190,6 +210,8 @@ if __name__ == '__main__':
 
     if tile_list:
         coordinates = listCoordinates(tile_list)
+    elif src_mbtiles:
+        coordinates = tilesetCoordinates(src_mbtiles)
     else:
         coordinates = generateCoordinates(ul, lr, zooms, padding)
     
