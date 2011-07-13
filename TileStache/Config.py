@@ -219,6 +219,9 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     if layer_dict.has_key('stale lock timeout'):
         layer_kwargs['stale_lock_timeout'] = int(layer_dict['stale lock timeout'])
     
+    if layer_dict.has_key('write cache'):
+        layer_kwargs['write_cache'] = bool(layer_dict['write cache'])
+    
     if layer_dict.has_key('preview'):
         preview_dict = layer_dict['preview']
         
