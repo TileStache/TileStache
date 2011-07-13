@@ -66,11 +66,16 @@ parser.add_option('-d', '--output-directory', dest='outputdirectory',
 parser.add_option('--to-mbtiles', dest='mbtiles_output',
                   help='Optional output file for tiles, will be created as an MBTiles 1.1 tileset. See http://mbtiles.org for more information.')
 
+parser.add_option('--tile-list', dest='tile_list',
+                  help='Optional file of tile coordinates, a simple text list of Z/X/Y coordinates. Overrides --bbox and --padding.')
+
 parser.add_option('-x', '--ignore-cached', action='store_true', dest='ignore_cached',
                   help='Re-render every tile, whether it is in the cache already or not.')
 
 def generateCoordinates(ul, lr, zooms, padding):
     """ Generate a stream of (offset, count, coordinate) tuples for seeding.
+    
+        Flood-fill coordinates based on two corners, a list of zooms and padding.
     """
     # start with a simple total of all the coordinates we will need.
     count = 0
@@ -99,6 +104,20 @@ def generateCoordinates(ul, lr, zooms, padding):
                 yield (offset, count, coord)
                 
                 offset += 1
+
+def listCoordinates(filename):
+    """ Generate a stream of (offset, count, coordinate) tuples for seeding.
+    
+        Read coordinates from a file with one Z/X/Y coordinate per line.
+    """
+    coords = (line.strip().split('/') for line in open(filename, 'r'))
+    coords = (map(int, (row, column, zoom)) for (zoom, column, row) in coords)
+    coords = [Coordinate(*args) for args in coords]
+    
+    count = len(coords)
+    
+    for (offset, coord) in enumerate(coords):
+        yield (offset, count, coord)
 
 if __name__ == '__main__':
     options, zooms = parser.parse_args()
@@ -164,11 +183,17 @@ if __name__ == '__main__':
             raise KnownUnknown('A negative padding will not work.')
 
         padding = options.padding
+        tile_list = options.tile_list
 
     except KnownUnknown, e:
         parser.error(str(e))
 
-    for (offset, count, coord) in generateCoordinates(ul, lr, zooms, padding):
+    if tile_list:
+        coordinates = listCoordinates(tile_list)
+    else:
+        coordinates = generateCoordinates(ul, lr, zooms, padding)
+    
+    for (offset, count, coord) in coordinates:
         path = '%s/%d/%d/%d.%s' % (layer.name(), coord.zoom, coord.column, coord.row, extension)
 
         progress = {"tile": path,
