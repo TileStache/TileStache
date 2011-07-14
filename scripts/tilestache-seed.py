@@ -72,6 +72,9 @@ parser.add_option('--from-mbtiles', dest='mbtiles_input',
 parser.add_option('--tile-list', dest='tile_list',
                   help='Optional file of tile coordinates, a simple text list of Z/X/Y coordinates. Overrides --bbox and --padding.')
 
+parser.add_option('--error-list', dest='error_list',
+                  help='Optional file of failed tile coordinates, a simple text list of Z/X/Y coordinates. If provided, failed tiles will be logged to this file instead of stopping tilestache-seed.')
+
 parser.add_option('--enable-retries', dest='enable_retries',
                   help='If true this will cause tilestache-seed to retry failed tile renderings up to (3) times. Default value is %s.' % repr(defaults['enable_retries']),
                   action='store_true')
@@ -209,6 +212,7 @@ if __name__ == '__main__':
 
         padding = options.padding
         tile_list = options.tile_list
+        error_list = options.error_list
 
     except KnownUnknown, e:
         parser.error(str(e))
@@ -243,7 +247,7 @@ if __name__ == '__main__':
             
             except:
                 #
-                # Something went wrong: try again?
+                # Something went wrong: try again? Log the error?
                 #
                 attempts -= 1
 
@@ -251,7 +255,13 @@ if __name__ == '__main__':
                     print >> stderr, 'Failed %s, will try %s more.' % (progress['tile'], ['no', 'once', 'twice'][attempts])
                 
                 if attempts == 0:
-                    raise
+                    if not error_list:
+                        raise
+                    
+                    fp = open(error_list, 'a')
+                    fp.write('%(zoom)d/%(column)d/%(row)d\n' % coord.__dict__)
+                    fp.close()
+                    break
             
             else:
                 #

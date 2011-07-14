@@ -59,6 +59,9 @@ Optional input file for tiles, will be read as an MBTiles 1.1 tileset. See http:
 .B \-\-tile\-list
 Optional file of tile coordinates, a simple text list of Z/X/Y coordinates. Overrides --bbox and --padding.
 .TP
+.B \-\-error\-list
+Optional file of failed tile coordinates, a simple text list of Z/X/Y coordinates. If provided, failed tiles will be logged to this file instead of stopping tilestache-seed.
+.TP
 .B \-\-enable\-retries
 If true this will cause tilestache-seed to retry failed tile renderings up to (3) times. Default value is False.
 .TP
