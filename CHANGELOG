@@ -1,3 +1,6 @@
+2011-07-13: 1.15.0
+- Added three new options to tilestache seed: --from-mbtiles, --enable-retries and --error-list.
+
 2011-07-12: 1.14.0
 - Added per-layer "write cache" option.
 - Added --tile-list option to tilestache-seed.py, so that tiles to seed can be explicitly enumerated.
