@@ -58,6 +58,8 @@ def getTile(layer, coord, extension, ignore_cached=False):
     # If no tile was found, dig deeper
     if body is None:
         try:
+            lockCoord = None
+
             if layer.write_cache:
                 # this is the coordinate that actually gets locked.
                 lockCoord = layer.metatile.firstCoord(coord)
@@ -69,21 +71,17 @@ def getTile(layer, coord, extension, ignore_cached=False):
                 # There's a chance that some other process has
                 # written the tile while the lock was being acquired.
                 body = cache.read(layer, coord, format)
-            else:
-                # Bypass the cache again
-                body = None
     
-            # If no one else wrote the tile, do it here.
             if body is None:
+                # No one else wrote the tile, do it here.
                 buff = StringIO()
 
                 try:
                     tile = layer.render(coord, format)
+                    save = True
                 except Core.NoTileLeftBehind, e:
                     tile = e.tile
                     save = False
-                else:
-                    save = True
 
                 if not layer.write_cache:
                     save = False
@@ -100,7 +98,7 @@ def getTile(layer, coord, extension, ignore_cached=False):
                     cache.save(body, layer, coord, format)
 
         finally:
-            if layer.write_cache:
+            if lockCoord:
                 # Always clean up a lock when it's no longer being used.
                 cache.unlock(layer, lockCoord, format)
     
