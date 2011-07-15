@@ -64,7 +64,8 @@ Sample JPEG creation options:
 Sample PNG creation options:
 
     {
-      "optimize": true
+      "optimize": true,
+      "palette": "filename.act"
     }
 
 Metatile represents a larger area to be rendered at one time. Metatiles are
@@ -100,6 +101,9 @@ The preview can be accessed through a URL like /<layer name>/preview.html:
 """
 
 from StringIO import StringIO
+from urlparse import urljoin
+
+from Pixels import load_palette, apply_palette
 
 from ModestMaps.Core import Coordinate
 
@@ -209,6 +213,7 @@ class Layer:
         self.preview_zoom = preview_zoom
         self.preview_ext = preview_ext
         
+        self.bitmap_palette = None
         self.jpeg_options = {}
         self.png_options = {}
 
@@ -268,6 +273,13 @@ class Layer:
 
         if hasattr(tile, 'size') and tile.size != (width, height):
             raise KnownUnknown('Your provider returned the wrong image size: %s.' % repr(tile.size))
+        
+        if self.bitmap_palette:
+            # this is where we apply the palette if there is one
+
+            if format.lower() == 'png':
+                t_index = self.png_options.get('transparency', None)
+                tile = apply_palette(tile, self.bitmap_palette, t_index)
         
         if self.doMetatile():
             # tile will be set again later
@@ -376,14 +388,26 @@ class Layer:
         if progressive is not None:
             self.jpeg_options['progressive'] = bool(progressive)
 
-    def setSaveOptionsPNG(self, optimize=None):
+    def setSaveOptionsPNG(self, optimize=None, palette=None):
         """ Optional arguments are added to self.png_options for pickup when saving.
+        
+            Palette argument is a URL relative to the configuration file,
+            and it implies bits and optional transparency options.
         
             More information about options:
                 http://www.pythonware.com/library/pil/handbook/format-png.htm
         """
         if optimize is not None:
             self.png_options['optimize'] = bool(optimize)
+        
+        if palette is not None:
+            palette = urljoin(self.config.dirpath, palette)
+            palette, bits, t_index = load_palette(palette)
+            
+            self.bitmap_palette, self.png_options['bits'] = palette, bits
+            
+            if t_index is not None:
+                self.png_options['transparency'] = t_index
 
 class KnownUnknown(Exception):
     """ There are known unknowns. That is to say, there are things that we now know we don't know.
