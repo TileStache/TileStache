@@ -689,7 +689,8 @@ Example layer configuration:
       "stale lock timeout": …,
       "cache lifespan": …,
       "projection": …,
-      "write cache": …
+      "write cache": …,
+      "jpeg options": …
     }
   <span class="bg">}
 }</span>
@@ -756,6 +757,14 @@ Shared layer parameters:
     <dd>
     An optional boolean value to allow skipping cache write altogether.
     This is defined on a per-layer basis. Defaults to true if omitted.
+    </dd>
+
+    <dt>jpeg options</dt>
+    <dd>
+    An optional dictionary of JPEG creation options, passed through
+    <a href="http://www.pythonware.com/library/pil/handbook/format-jpeg.htm">to PIL</a>.
+    Valid options include <var>quality</var> (integer), <var>progressive</var>
+    (boolean), and <var>optimize</var> (boolean).
     </dd>
 </dl>
 

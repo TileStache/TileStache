@@ -18,7 +18,9 @@ configuration file as a dictionary:
           "preview": { ... },
           "projection": ...,
           "stale lock timeout": ...,
-          "cache lifespan": ...
+          "cache lifespan": ...,
+          "write cache": ...,
+          "jpeg options": ...
         }
       }
     }
@@ -39,10 +41,22 @@ configuration file as a dictionary:
 - "cache lifespan" is an optional number of seconds that cached tiles should
   be stored. This is defined on a per-layer basis. Defaults to forever if None,
   0 or omitted.
+- "write cache" is an optional boolean value to allow skipping cache write
+  altogether. This is defined on a per-layer basis. Defaults to true if omitted.
+- "jpeg options" is an optional dictionary of JPEG creation options, passed
+  through to PIL: http://www.pythonware.com/library/pil/handbook/format-jpeg.htm.
 
 The public-facing URL of a single tile for this layer might look like this:
 
     http://example.com/tilestache.cgi/example-name/0/0/0.png
+
+Sample JPEG creation options:
+
+    {
+      "quality": 90,
+      "progressive": true,
+      "optimized": true
+    }
 
 Metatile represents a larger area to be rendered at one time. Metatiles are
 represented in the configuration file as a dictionary:
@@ -185,6 +199,8 @@ class Layer:
         self.preview_lon = preview_lon
         self.preview_zoom = preview_zoom
         self.preview_ext = preview_ext
+        
+        self.jpeg_options = {}
 
     def name(self):
         """ Figure out what I'm called, return a name if there is one.
@@ -261,7 +277,7 @@ class Layer:
                     tile = subtile
         
         return tile
-
+    
     def envelope(self, coord):
         """ Projected rendering envelope (xmin, ymin, xmax, ymax) for a Coordinate.
         """
@@ -334,6 +350,21 @@ class Layer:
     
         else:
             raise KnownUnknown('Unknown extension in configuration: "%s"' % extension)
+
+    def setSaveOptionsJPEG(self, quality=None, optimize=None, progressive=None):
+        """ Optional arguments are added to self.jpeg_options for pickup when saving.
+        
+            More information about options:
+                http://www.pythonware.com/library/pil/handbook/format-jpeg.htm
+        """
+        if quality is not None:
+            self.jpeg_options['quality'] = int(quality)
+
+        if optimize is not None:
+            self.jpeg_options['optimize'] = bool(optimize)
+
+        if progressive is not None:
+            self.jpeg_options['progressive'] = bool(progressive)
 
 class KnownUnknown(Exception):
     """ There are known unknowns. That is to say, there are things that we now know we don't know.

@@ -88,7 +88,12 @@ def getTile(layer, coord, extension, ignore_cached=False):
                 if not layer.write_cache:
                     save = False
                 
-                tile.save(buff, format)
+                if format.lower() == 'jpeg':
+                    save_kwargs = layer.jpeg_options
+                else:
+                    save_kwargs = {}
+                
+                tile.save(buff, format, **save_kwargs)
                 body = buff.getvalue()
                 
                 if save:

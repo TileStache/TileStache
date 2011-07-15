@@ -243,6 +243,15 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     metatile = Core.Metatile(**metatile_kwargs)
     
     #
+    # Do the per-format options
+    #
+    
+    jpeg_kwargs = {}
+
+    if 'jpeg options' in layer_dict:
+        jpeg_kwargs = dict([(str(k), v) for (k, v) in layer_dict['jpeg options'].items()])
+
+    #
     # Do the provider
     #
 
@@ -290,6 +299,7 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
 
     layer = Core.Layer(config, projection, metatile, **layer_kwargs)
     layer.provider = _class(layer, **provider_kwargs)
+    layer.setSaveOptionsJPEG(**jpeg_kwargs)
     
     return layer
 
