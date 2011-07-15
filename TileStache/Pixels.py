@@ -1,3 +1,26 @@
+""" Support for 8-bit image palettes in PNG output.
+
+PNG images can be significantly cut down in size by using a color look-up table.
+TileStache layers support Adobe Photoshop's .act file format for PNG output,
+and can be referenced in a layer configuration file like this:
+
+    "osm":
+    {
+      "provider": {"name": "proxy", "provider": "OPENSTREETMAP"},
+      "png options": {"palette": "http://tilestache.org/example-palette-openstreetmap-mapnik.act"}
+    }
+
+The example OSM palette above is a real file with a 32 color (5 bit) selection
+of colors appropriate for use with OpenStreetMap's default Mapnik cartography.
+
+To generate an .act file, convert an existing image in Photoshop to indexed
+color, and access the color table under Image -> Mode -> Color Table. Saving
+the color table results in a usable .act file, internally structured as a
+fixed-size 772-byte table with 256 3-byte RGB triplets, followed by a two-byte
+unsigned int with the number of defined colors (may be less than 256) and a
+finaly two-byte unsigned int with the optional index of a transparent color
+in the lookup table. If the final byte is 0xFFFF, there is no transparency.
+"""
 from struct import unpack, pack
 from math import sqrt, ceil, log
 from urllib import urlopen
