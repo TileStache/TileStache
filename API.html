@@ -690,7 +690,8 @@ Example layer configuration:
       "cache lifespan": …,
       "projection": …,
       "write cache": …,
-      "jpeg options": …
+      "jpeg options": …,
+      "png options": …
     }
   <span class="bg">}
 }</span>
@@ -765,6 +766,13 @@ Shared layer parameters:
     <a href="http://www.pythonware.com/library/pil/handbook/format-jpeg.htm">to PIL</a>.
     Valid options include <var>quality</var> (integer), <var>progressive</var>
     (boolean), and <var>optimize</var> (boolean).
+    </dd>
+
+    <dt>png options</dt>
+    <dd>
+    An optional dictionary of PNG creation options, passed through
+    <a href="http://www.pythonware.com/library/pil/handbook/format-png.htm">to PIL</a>.
+    The only valid option is <var>optimize</var> (boolean).
     </dd>
 </dl>
 

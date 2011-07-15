@@ -88,6 +88,8 @@ def getTile(layer, coord, extension, ignore_cached=False):
                 
                 if format.lower() == 'jpeg':
                     save_kwargs = layer.jpeg_options
+                elif format.lower() == 'png':
+                    save_kwargs = layer.png_options
                 else:
                     save_kwargs = {}
                 

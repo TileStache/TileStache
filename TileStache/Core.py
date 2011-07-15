@@ -20,7 +20,8 @@ configuration file as a dictionary:
           "stale lock timeout": ...,
           "cache lifespan": ...,
           "write cache": ...,
-          "jpeg options": ...
+          "jpeg options": ...,
+          "png options": ...
         }
       }
     }
@@ -45,6 +46,8 @@ configuration file as a dictionary:
   altogether. This is defined on a per-layer basis. Defaults to true if omitted.
 - "jpeg options" is an optional dictionary of JPEG creation options, passed
   through to PIL: http://www.pythonware.com/library/pil/handbook/format-jpeg.htm.
+- "png options" is an optional dictionary of PNG creation options, passed
+  through to PIL: http://www.pythonware.com/library/pil/handbook/format-png.htm.
 
 The public-facing URL of a single tile for this layer might look like this:
 
@@ -55,7 +58,13 @@ Sample JPEG creation options:
     {
       "quality": 90,
       "progressive": true,
-      "optimized": true
+      "optimize": true
+    }
+
+Sample PNG creation options:
+
+    {
+      "optimize": true
     }
 
 Metatile represents a larger area to be rendered at one time. Metatiles are
@@ -201,6 +210,7 @@ class Layer:
         self.preview_ext = preview_ext
         
         self.jpeg_options = {}
+        self.png_options = {}
 
     def name(self):
         """ Figure out what I'm called, return a name if there is one.
@@ -365,6 +375,15 @@ class Layer:
 
         if progressive is not None:
             self.jpeg_options['progressive'] = bool(progressive)
+
+    def setSaveOptionsPNG(self, optimize=None):
+        """ Optional arguments are added to self.png_options for pickup when saving.
+        
+            More information about options:
+                http://www.pythonware.com/library/pil/handbook/format-png.htm
+        """
+        if optimize is not None:
+            self.png_options['optimize'] = bool(optimize)
 
 class KnownUnknown(Exception):
     """ There are known unknowns. That is to say, there are things that we now know we don't know.
