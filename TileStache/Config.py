@@ -153,7 +153,7 @@ def enforcedLocalPath(relpath, dirpath, context='Path'):
 def _parseConfigfileCache(cache_dict, dirpath):
     """ Used by parseConfigfile() to parse just the cache parts of a config.
     """
-    if cache_dict.has_key('name'):
+    if 'name' in cache_dict:
         _class = Caches.getCacheByName(cache_dict['name'])
         kwargs = {}
         
@@ -171,7 +171,7 @@ def _parseConfigfileCache(cache_dict, dirpath):
         elif _class is Caches.Disk:
             kwargs['path'] = enforcedLocalPath(cache_dict['path'], dirpath, 'Disk cache path')
             
-            if cache_dict.has_key('umask'):
+            if 'umask' in cache_dict:
                 kwargs['umask'] = int(cache_dict['umask'], 8)
             
             add_kwargs('dirs', 'gzip')
@@ -189,7 +189,7 @@ def _parseConfigfileCache(cache_dict, dirpath):
         else:
             raise Exception('Unknown cache: %s' % cache_dict['name'])
         
-    elif cache_dict.has_key('class'):
+    elif 'class' in cache_dict:
         _class = loadClassPath(cache_dict['class'])
         kwargs = cache_dict.get('kwargs', {})
         kwargs = dict( [(str(k), v) for (k, v) in kwargs.items()] )
@@ -213,16 +213,16 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     
     layer_kwargs = {}
     
-    if layer_dict.has_key('cache lifespan'):
+    if 'cache lifespan' in layer_dict:
         layer_kwargs['cache_lifespan'] = int(layer_dict['cache lifespan'])
     
-    if layer_dict.has_key('stale lock timeout'):
+    if 'stale lock timeout' in layer_dict:
         layer_kwargs['stale_lock_timeout'] = int(layer_dict['stale lock timeout'])
     
-    if layer_dict.has_key('write cache'):
+    if 'write cache' in layer_dict:
         layer_kwargs['write_cache'] = bool(layer_dict['write cache'])
     
-    if layer_dict.has_key('preview'):
+    if 'preview' in layer_dict:
         preview_dict = layer_dict['preview']
         
         for (key, func) in zip(('lat', 'lon', 'zoom', 'ext'), (float, float, int, str)):
@@ -237,7 +237,7 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     metatile_kwargs = {}
 
     for k in ('buffer', 'rows', 'columns'):
-        if meta_dict.has_key(k):
+        if k in meta_dict:
             metatile_kwargs[k] = int(meta_dict[k])
     
     metatile = Core.Metatile(**metatile_kwargs)
@@ -257,7 +257,7 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
 
     provider_dict = layer_dict['provider']
 
-    if provider_dict.has_key('name'):
+    if 'name' in provider_dict:
         _class = Providers.getProviderByName(provider_dict['name'])
         provider_kwargs = {}
         
@@ -266,9 +266,9 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
             provider_kwargs['fonts'] = provider_dict.get('fonts', None)
         
         elif _class is Providers.Proxy:
-            if provider_dict.has_key('url'):
+            if 'url' in provider_dict:
                 provider_kwargs['url'] = provider_dict['url']
-            if provider_dict.has_key('provider'):
+            if 'provider' in provider_dict:
                 provider_kwargs['provider_name'] = provider_dict['provider']
         
         elif _class is Providers.UrlTemplate:
@@ -285,7 +285,7 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         elif _class is Providers.MBTiles.Provider:
             provider_kwargs['tileset'] = provider_dict['tileset']
             
-    elif provider_dict.has_key('class'):
+    elif 'class' in provider_dict:
         _class = loadClassPath(provider_dict['class'])
         provider_kwargs = provider_dict.get('kwargs', {})
         provider_kwargs = dict( [(str(k), v) for (k, v) in provider_kwargs.items()] )
