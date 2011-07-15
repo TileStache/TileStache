@@ -1,3 +1,6 @@
+2011-07-15: 1.16.0
+- Added configuration for JPEG and PNG creation options, including 8-bit PNG output and Photoshop color table support.
+
 2011-07-13: 1.15.0
 - Added three new options to tilestache seed: --from-mbtiles, --enable-retries and --error-list.
 
