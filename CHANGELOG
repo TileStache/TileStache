@@ -1,3 +1,7 @@
+2011-07-18: 1.17.0
+- Added configuration for HTTP Access-Control-Allow-Origin response header for cross-origin resource sharing (CORS).
+- Added --include-path option to tilestache-server.py.
+
 2011-07-15: 1.16.0
 - Added configuration for JPEG and PNG creation options, including 8-bit PNG output and Photoshop color table support.
 
