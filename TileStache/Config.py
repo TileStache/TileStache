@@ -222,6 +222,9 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     if 'write cache' in layer_dict:
         layer_kwargs['write_cache'] = bool(layer_dict['write cache'])
     
+    if 'allowed origin' in layer_dict:
+        layer_kwargs['allowed_origin'] = str(layer_dict['allowed origin'])
+    
     if 'preview' in layer_dict:
         preview_dict = layer_dict['preview']
         
