@@ -20,6 +20,7 @@ configuration file as a dictionary:
           "stale lock timeout": ...,
           "cache lifespan": ...,
           "write cache": ...,
+          "allowed origin": ...,
           "jpeg options": ...,
           "png options": ...
         }
@@ -44,6 +45,10 @@ configuration file as a dictionary:
   0 or omitted.
 - "write cache" is an optional boolean value to allow skipping cache write
   altogether. This is defined on a per-layer basis. Defaults to true if omitted.
+- "allowed origin" is an optional string that shows up in the response HTTP
+  header Access-Control-Allow-Origin, useful for when you need to provide
+  javascript direct access to response data such as GeoJSON or pixel values.
+  The header is part of a W3C working draft (http://www.w3.org/TR/cors/).
 - "jpeg options" is an optional dictionary of JPEG creation options, passed
   through to PIL: http://www.pythonware.com/library/pil/handbook/format-jpeg.htm.
 - "png options" is an optional dictionary of PNG creation options, passed
@@ -186,6 +191,9 @@ class Layer:
           write_cache:
             Allow skipping cache write altogether, default true.
 
+          allowed_origin:
+            Value for the Access-Control-Allow-Origin HTTP response header.
+
           preview_lat:
             Starting latitude for slippy map layer preview, default 37.80.
 
@@ -198,7 +206,7 @@ class Layer:
           preview_ext:
             Tile name extension for slippy map layer preview, default "png".
     """
-    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, write_cache=True, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png'):
+    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, write_cache=True, allowed_origin=None, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png'):
         self.provider = None
         self.config = config
         self.projection = projection
@@ -207,6 +215,7 @@ class Layer:
         self.stale_lock_timeout = stale_lock_timeout
         self.cache_lifespan = cache_lifespan
         self.write_cache = write_cache
+        self.allowed_origin = allowed_origin
         
         self.preview_lat = preview_lat
         self.preview_lon = preview_lon
