@@ -28,8 +28,7 @@ Check tilestache-server.py --help to change these defaults.
 if __name__ == '__main__':
     from datetime import datetime
     from optparse import OptionParser, OptionValueError
-    from werkzeug.serving import run_simple
-    import os, sys, TileStache
+    import os, sys
 
     parser = OptionParser()
     parser.add_option("-c", "--config", dest="file", default="tilestache.cfg",
@@ -38,7 +37,16 @@ if __name__ == '__main__':
         help="the IP address to listen on")
     parser.add_option("-p", "--port", dest="port", type="int", default=8080,
         help="the port number to listen on")
+    parser.add_option('--include-path', dest='include',
+        help="Add the following colon-separated list of paths to Python's include path (aka sys.path)")
     (options, args) = parser.parse_args()
+
+    if options.include:
+        for p in options.include.split(':'):
+            sys.path.insert(0, p)
+
+    from werkzeug.serving import run_simple
+    import TileStache
 
     if not os.path.exists(options.file):
         print >> sys.stderr, "Config file not found. Use -c to pick a tilestache config file."
