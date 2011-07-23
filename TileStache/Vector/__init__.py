@@ -64,7 +64,8 @@ Common parameters:
   clipped:
     Default is true.
     Boolean flag for optionally clipping the output geometries to the
-    bounds of the enclosing tile. This results in incomplete geometries,
+    bounds of the enclosing tile, or the string value "padded" for clipping
+    to the bounds of the tile plus 5%. This results in incomplete geometries,
     dramatically smaller file sizes, and improves performance and
     compatibility with Polymaps (http://polymaps.org).
   
@@ -234,15 +235,21 @@ def _sref_4326():
     
     return sref
 
-def _tile_perimeter(coord, projection):
+def _tile_perimeter(coord, projection, padded):
     """ Get a tile's outer edge for a coordinate and a projection.
     
         Returns a list of 17 (x, y) coordinates corresponding to a clockwise
         circumambulation of a tile boundary in a given projection. Projection
         is like those found in TileStache.Geography, used for tile output.
+        
+        If padded argument is True, pad bbox by 5% on all sides.
     """
-    ul = projection.coordinateProj(coord)
-    lr = projection.coordinateProj(coord.right().down())
+    if padded:
+        ul = projection.coordinateProj(coord.left(0.05).up(0.05))
+        lr = projection.coordinateProj(coord.down(1.05).right(1.05))
+    else:
+        ul = projection.coordinateProj(coord)
+        lr = projection.coordinateProj(coord.right().down())
     
     xmin, ymin, xmax, ymax = ul.x, ul.y, lr.x, lr.y
     xspan, yspan = xmax - xmin, ymax - ymin
@@ -269,12 +276,12 @@ def _tile_perimeter(coord, projection):
     
     return perimeter
 
-def _tile_perimeter_geom(coord, projection):
+def _tile_perimeter_geom(coord, projection, padded):
     """ Get an OGR Geometry object for a coordinate tile polygon.
     
         Uses _tile_perimeter().
     """
-    perimeter = _tile_perimeter(coord, projection)
+    perimeter = _tile_perimeter(coord, projection, padded)
     wkt = 'POLYGON((%s))' % ', '.join(['%.3f %.3f' % xy for xy in perimeter])
     geom = ogr.CreateGeometryFromWkt(wkt)
     
@@ -419,7 +426,7 @@ def _get_features(coord, properties, projection, layer, clipped, projected):
     #
     # Spatially filter the layer
     #
-    bbox = _tile_perimeter_geom(coord, projection)
+    bbox = _tile_perimeter_geom(coord, projection, clipped == 'padded')
     bbox.TransformTo(layer_sref)
     layer.SetSpatialFilter(bbox)
     

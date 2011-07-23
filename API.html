@@ -1000,9 +1000,10 @@ Vector provider parameters:
     Default is <samp>true</samp>.
     <br>
     Boolean flag for optionally clipping the output geometries to the
-    bounds of the enclosing tile. This results in incomplete geometries,
-    dramatically smaller file sizes, and improves performance and
-    compatibility with Polymaps (http://polymaps.org).
+    bounds of the enclosing tile, or the string value <samp>"padded"</samp>
+    for clipping to the bounds of the tile plus 5%. This results in incomplete
+    geometries, dramatically smaller file sizes, and improves performance and
+    compatibility with <a href="http://polymaps.org">Polymaps</a>.
     </dd>
     <dt>projected</dt>
     <dd>

@@ -286,8 +286,12 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
             provider_kwargs['parameters'] = provider_dict['parameters']
             provider_kwargs['properties'] = provider_dict.get('properties', None)
             provider_kwargs['projected'] = bool(provider_dict.get('projected', False))
-            provider_kwargs['clipped'] = bool(provider_dict.get('clipped', True))
             provider_kwargs['verbose'] = bool(provider_dict.get('verbose', False))
+            
+            if provider_dict.get('clipped', None) == 'padded':
+                provider_kwargs['clipped'] = 'padded'
+            else:
+                provider_kwargs['clipped'] = bool(provider_dict.get('clipped', True))
         
         elif _class is Providers.MBTiles.Provider:
             provider_kwargs['tileset'] = provider_dict['tileset']
