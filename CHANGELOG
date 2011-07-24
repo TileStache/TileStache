@@ -1,3 +1,6 @@
+2011-07-23: 1.18.0
+- Added new configuration options to vector provider: clipped=padded for Polymaps and spacing.
+
 2011-07-18: 1.17.0
 - Added configuration for HTTP Access-Control-Allow-Origin response header for cross-origin resource sharing (CORS).
 - Added --include-path option to tilestache-server.py.
