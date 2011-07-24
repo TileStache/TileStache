@@ -1014,6 +1014,13 @@ Vector provider parameters:
     spherical mercator projection. Stylistically a poor fit for GeoJSON, but
     useful when returning Arc GeoServices responses.
     </dd>
+    <dt>spacing</dt>
+    <dd>
+    Optional number of tile pixels for spacing geometries in responses. Used
+    to cut down on the number of returned features by ensuring that only those
+    features at least this many pixels apart are returned. Order of features
+    in the data source matters: early features beat out later features.
+    </dd>
     <dt>verbose</dt>
     <dd>
     Default is <samp>false</samp>.

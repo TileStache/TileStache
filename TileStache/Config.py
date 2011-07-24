@@ -288,6 +288,11 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
             provider_kwargs['projected'] = bool(provider_dict.get('projected', False))
             provider_kwargs['verbose'] = bool(provider_dict.get('verbose', False))
             
+            if 'spacing' in provider_kwargs:
+                provider_kwargs['spacing'] = float(provider_dict.get('spacing', 0.0))
+            else:
+                provider_kwargs['spacing'] = None
+            
             if provider_dict.get('clipped', None) == 'padded':
                 provider_kwargs['clipped'] = 'padded'
             else:
