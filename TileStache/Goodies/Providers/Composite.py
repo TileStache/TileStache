@@ -371,10 +371,7 @@ class Stack:
                 # TODO: regret this later.
                 pass
 
-        output_rgba = [chan.copy() for chan in input_rgba]
-        output_rgba = stack_rgba # TODO: no no no no
-        
-        return output_rgba
+        return blend_images(input_rgba, stack_rgba[:3], stack_rgba[3], 1.0, None)
 
 def make_color(color):
     """ Convert colors expressed as HTML-style RGB(A) strings to tuples.
