@@ -173,15 +173,29 @@ class Proxy:
         if (width, height) != (256, 256):
             raise Exception("Image dimensions don't match expected tile size: %(width)dx%(height)d" % locals())
 
-        img = Image.new('RGBA', (width, height))
+        img = None
+        urls = self.provider.getTileUrls(coord)
         
-        for url in self.provider.getTileUrls(coord):
+        for url in urls:
             s, host, path, p, query, f = urlparse(url)
             conn = HTTPConnection(host, 80)
             conn.request('GET', path+'?'+query)
 
             body = conn.getresponse().read()
             tile = Image.open(StringIO(body)).convert('RGBA')
+
+            if len(urls) == 1:
+                #
+                # if there is only one URL, don't bother
+                # with PIL's non-Porter-Duff alpha channeling.
+                #
+                return tile
+            elif img is None:
+                #
+                # for many URLs, paste them to a new image.
+                #
+                img = Image.new('RGBA', (width, height))
+            
             img.paste(tile, (0, 0), tile)
         
         return img
