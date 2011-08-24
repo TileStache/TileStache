@@ -216,11 +216,11 @@ class Provider:
         
     def renderTile(self, width, height, srs, coord):
     
-        image = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+        rgba = [numpy.zeros((width, height), int) for chan in range(4)]
         
-        image = self.stack.render(self.layer.config, image, coord)
+        rgba = self.stack.render(self.layer.config, rgba, coord)
         
-        return image
+        return _rgba2img(rgba)
 
 class Composite(Provider):
     """ An old name for the Provider class, deprecated for the next version.
@@ -275,7 +275,7 @@ class Layer:
         self.blendmode = blendmode
         self.adjustments = adjustments
 
-    def render(self, config, input_img, coord):
+    def render(self, config, input_rgba, coord):
         """ Render this image layer.
 
             Given a configuration object, starting image, and coordinate,
@@ -283,7 +283,7 @@ class Layer:
         """
         has_layer, has_color, has_mask = False, False, False
         
-        output_rgba = _img2rgba(input_img)
+        output_rgba = [chan.copy() for chan in input_rgba]
     
         if self.layername:
             layer = config.layers[self.layername]
@@ -338,9 +338,7 @@ class Layer:
         else:
             raise KnownUnknown("You have to provide at least some combination of src, color and mask to Composite Layer")
 
-        output_img = _rgba2img(output_rgba)
-        
-        return output_img
+        return output_rgba
 
 class Stack:
     """ A stack of image layers.
@@ -355,28 +353,28 @@ class Stack:
         """
         self.layers = layers
 
-    def render(self, config, input_img, coord):
+    def render(self, config, input_rgba, coord):
         """ Render this image stack.
 
             Given a configuration object, starting image, and coordinate,
             return an output image with the results of all the layers in
             this stack pasted on in turn.
         """
-        stack_img = Image.new('RGBA', input_img.size, (0, 0, 0, 0))
+        stack_rgba = [numpy.zeros(chan.shape, chan.dtype) for chan in input_rgba]
         
         for layer in self.layers:
             try:
-                stack_img = layer.render(config, stack_img, coord)
+                stack_rgba = layer.render(config, stack_rgba, coord)
             except IOError:
                 # Be permissive of I/O errors getting sub-layers, for example if a
                 # proxy layer referenced here doesn't have an image for a zoom level.
                 # TODO: regret this later.
                 pass
 
-        output_img = input_img.copy()
-        output_img.paste(stack_img, (0, 0), stack_img)
+        output_rgba = [chan.copy() for chan in input_rgba]
+        output_rgba = stack_rgba # TODO: no no no no
         
-        return output_img
+        return output_rgba
 
 def make_color(color):
     """ Convert colors expressed as HTML-style RGB(A) strings to tuples.
@@ -738,6 +736,15 @@ if __name__ == '__main__':
     import TileStache.Config
     import ModestMaps.Core
     
+    class SizelessImage:
+        """ Wrap an image without wrapping the size() method, for Layer.render().
+        """
+        def __init__(self, img):
+            self.img = img
+        
+        def save(self, out, format):
+            self.img.save(out, format)
+    
     class TinyBitmap:
         """ A minimal provider that only returns 3x3 bitmaps from strings.
         """
@@ -745,7 +752,7 @@ if __name__ == '__main__':
             self.img = Image.fromstring('RGBA', (3, 3), string)
 
         def renderTile(self, *args, **kwargs):
-            return self.img
+            return SizelessImage(self.img)
 
     def tinybitmap_layer(config, string):
         """ Gin up a fake layer with a TinyBitmap provider.
