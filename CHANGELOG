@@ -1,3 +1,6 @@
+2011-08-24: 1.18.2
+- Fixed alpha channel handling for mixed-alpha combinations in Composite provider.
+
 2011-07-23: 1.18.1
 - Fixed new spacing configuration option on vector provider.
 
