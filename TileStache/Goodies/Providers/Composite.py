@@ -216,7 +216,7 @@ class Provider:
         
     def renderTile(self, width, height, srs, coord):
     
-        rgba = [numpy.zeros((width, height), int) for chan in range(4)]
+        rgba = [numpy.zeros((width, height), float) for chan in range(4)]
         
         rgba = self.stack.render(self.layer.config, rgba, coord)
         
@@ -371,7 +371,7 @@ class Stack:
                 # TODO: regret this later.
                 pass
 
-        return blend_images(input_rgba, stack_rgba[:3], stack_rgba[3], 1.0, None)
+        return blend_images(input_rgba, stack_rgba[:3], stack_rgba[3], 1, None)
 
 def make_color(color):
     """ Convert colors expressed as HTML-style RGB(A) strings to tuples.
@@ -636,12 +636,25 @@ def blend_images(bottom_rgba, top_rgb, mask_chan, opacity, blendmode):
     if gr.any():
         # we have some shades of gray to take care of
         for c in (0, 1, 2):
-            output_rgba[c][gr] = (1 - mask_chan[gr]) * bottom_rgba[c][gr] \
-                                     + mask_chan[gr] * output_rgba[c][gr]
+            #
+            # Math borrowed from Wikipedia; C0 is the variable alpha_denom:
+            # http://en.wikipedia.org/wiki/Alpha_compositing#Analytical_derivation_of_the_over_operator
+            #
+            
+            alpha_denom = 1 - (1 - mask_chan) * (1 - bottom_rgba[3])
+            nz = alpha_denom > 0 # non-zero alpha denominator
+            
+            alpha_ratio = mask_chan[nz] / alpha_denom[nz]
+            
+            output_rgba[c][nz] = output_rgba[c][nz] * alpha_ratio \
+                               + bottom_rgba[c][nz] * (1 - alpha_ratio)
+            
+            # let the zeros perish
+            output_rgba[c][~nz] = 0
     
     # output mask is the screen of the existing and overlaid alphas
     blend_channels_screen(output_rgba[3], bottom_rgba[3], mask_chan)
-    
+
     return output_rgba
 
 def blend_channels_screen(output_chan, bottom_chan, top_chan):
@@ -1005,6 +1018,9 @@ if __name__ == '__main__':
                 # 50% gray all over
                 'gray':       tinybitmap_layer(self.config, _808f * 9),
                 
+                # nothing anywhere
+                'nothing':    tinybitmap_layer(self.config, _0000 * 9),
+                
                 # opaque horizontal gradient, black to white
                 'h gradient': tinybitmap_layer(self.config, (_000f + _808f + _ffff) * 3),
                 
@@ -1108,5 +1124,28 @@ if __name__ == '__main__':
             assert img.getpixel((0, 2)) == (0x80, 0x80, 0x80, 0xFF), 'bottom left pixel'
             assert img.getpixel((1, 2)) == (0x40, 0x40, 0x40, 0xFF), 'bottom center pixel'
             assert img.getpixel((2, 2)) == (0x00, 0x00, 0x00, 0xFF), 'bottom right pixel'
+        
+        def test4(self):
+            
+            stack = \
+                [
+                    [
+                        {"src": "nothing"},
+                        {"src": "white wipe"}
+                    ]
+                ]
+            
+            layer = minimal_stack_layer(self.config, stack)
+            img = layer.provider.renderTile(3, 3, None, ModestMaps.Core.Coordinate(0, 0, 0))
+            
+            assert img.getpixel((0, 0)) == (0x00, 0x00, 0x00, 0x00), 'top left pixel'
+            assert img.getpixel((1, 0)) == (0x00, 0x00, 0x00, 0x00), 'top center pixel'
+            assert img.getpixel((2, 0)) == (0x00, 0x00, 0x00, 0x00), 'top right pixel'
+            assert img.getpixel((0, 1)) == (0xFF, 0xFF, 0xFF, 0x80), 'center left pixel'
+            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0x80), 'middle pixel'
+            assert img.getpixel((2, 1)) == (0xFF, 0xFF, 0xFF, 0x80), 'center right pixel'
+            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom left pixel'
+            assert img.getpixel((1, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom center pixel'
+            assert img.getpixel((2, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom right pixel'
     
     unittest.main()
