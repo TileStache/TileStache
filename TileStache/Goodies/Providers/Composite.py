@@ -621,7 +621,7 @@ def blend_images(bottom_rgba, top_rgb, mask_chan, opacity, blendmode):
         if blendmode in blend_functions:
             for c in (0, 1, 2):
                 blend_function = blend_functions[blendmode]
-                blend_function(output_rgba[c], bottom_rgba[c], top_rgb[c])
+                output_rgba[c] = blend_function(bottom_rgba[c], top_rgb[c])
         
         else:
             raise KnownUnknown('Unrecognized blend mode: "%s"' % blendmode)
@@ -653,41 +653,44 @@ def blend_images(bottom_rgba, top_rgb, mask_chan, opacity, blendmode):
             output_rgba[c][~nz] = 0
     
     # output mask is the screen of the existing and overlaid alphas
-    blend_channels_screen(output_rgba[3], bottom_rgba[3], mask_chan)
+    output_rgba[3] = blend_channels_screen(bottom_rgba[3], mask_chan)
 
     return output_rgba
 
-def blend_channels_screen(output_chan, bottom_chan, top_chan):
-    """ Modify output channel in-place with the combination of bottom and top channels.
+def blend_channels_screen(bottom_chan, top_chan):
+    """ Return combination of bottom and top channels.
     
         Math from http://illusions.hu/effectwiki/doku.php?id=screen_blending
     """
-    output_chan[:,:] = 1 - (1 - bottom_chan[:,:]) * (1 - top_chan[:,:])
+    return 1 - (1 - bottom_chan[:,:]) * (1 - top_chan[:,:])
 
-def blend_channels_multiply(output_chan, bottom_chan, top_chan):
-    """ Modify output channel in-place with the combination of bottom and top channels.
+def blend_channels_multiply(bottom_chan, top_chan):
+    """ Return combination of bottom and top channels.
     
         Math from http://illusions.hu/effectwiki/doku.php?id=multiply_blending
     """
-    output_chan[:,:] = bottom_chan[:,:] * top_chan[:,:]
+    return bottom_chan[:,:] * top_chan[:,:]
 
-def blend_channels_linear_light(output_chan, bottom_chan, top_chan):
-    """ Modify output channel in-place with the combination of bottom and top channels.
+def blend_channels_linear_light(bottom_chan, top_chan):
+    """ Return combination of bottom and top channels.
     
         Math from http://illusions.hu/effectwiki/doku.php?id=linear_light_blending
     """
-    output_chan[:,:] = numpy.clip(bottom_chan[:,:] + 2 * top_chan[:,:] - 1, 0, 1)
+    return numpy.clip(bottom_chan[:,:] + 2 * top_chan[:,:] - 1, 0, 1)
 
-def blend_channels_hard_light(output_chan, bottom_chan, top_chan):
-    """ Modify output channel in-place with the combination of bottom and top channels.
+def blend_channels_hard_light(bottom_chan, top_chan):
+    """ Return combination of bottom and top channels.
     
         Math from http://illusions.hu/effectwiki/doku.php?id=hard_light_blending
     """
     # different pixel subsets for dark and light parts of overlay
     dk, lt = top_chan < .5, top_chan >= .5
     
+    output_chan = numpy.empty(bottom_chan.shape, bottom_chan.dtype)
     output_chan[dk] = 2 * bottom_chan[dk] * top_chan[dk]
     output_chan[lt] = 1 - 2 * (1 - bottom_chan[lt]) * (1 - top_chan[lt])
+    
+    return output_chan
 
 def makeColor(color):
     """ An old name for the make_color function, deprecated for the next version.
