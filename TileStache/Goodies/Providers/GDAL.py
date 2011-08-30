@@ -49,9 +49,11 @@ class Provider:
         src_ds = gdal.Open(str(self.filename))
         driver = gdal.GetDriverByName('GTiff')
         
+        grayscale_src = (src_ds.RasterCount == 1)
+
         try:
             # Prepare output gdal datasource -----------------------------------
-
+            
             area_ds = driver.Create('/vsimem/output', width, height, 3)
             
             if area_ds is None:
@@ -72,7 +74,8 @@ class Provider:
             
             gdal.ReprojectImage(src_ds, area_ds, src_ds.GetProjection(), area_ds.GetProjection(), gdal.GRA_Cubic)
             
-            r, g, b = [area_ds.GetRasterBand(i).ReadRaster(0, 0, width, height) for i in (1, 2, 3)]
+            channel = grayscale_src and (1, 1, 1) or (1, 2, 3)
+            r, g, b = [area_ds.GetRasterBand(i).ReadRaster(0, 0, width, height) for i in channel]
             data = ''.join([''.join(pixel) for pixel in zip(r, g, b)])
             area = Image.fromstring('RGB', (width, height), data)
 
