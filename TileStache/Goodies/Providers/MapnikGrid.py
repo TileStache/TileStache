@@ -1,12 +1,16 @@
 """ Mapnik UTFGrid Provider.
+Only works with mapnik2 (Where the Grid functionality was introduced)
 
 Sample configuration:
 
     "provider":
     {
       "class": "TileStache.Goodies.Providers.MapnikGrid:Provider",
-      "kwargs": { "mapfile": "mymap.xml" }
+      "kwargs": { "mapfile": "mymap.xml", "fields":["name","address"] }
     }
+
+mapfile: the mapnik xml file to load the map from
+fields: The fields that should be added to the resulting grid json.
 
 """
 import json
@@ -15,56 +19,40 @@ from TileStache.Geography import getProjectionByName
 
 class Provider:
 
-    def __init__(self, layer, mapfile):
+    def __init__(self, layer, mapfile, fields):
         """
         """
-	self.mapnik = None
+        self.mapnik = None
         self.layer = layer
-	self.mapfile = mapfile
+        self.mapfile = mapfile
+        #De-Unicode the strings or mapnik gets upset
+        self.fields = list(str(x) for x in fields)
 
-	self.mercator = getProjectionByName('spherical mercator')
+        self.mercator = getProjectionByName('spherical mercator')
 
     def renderTile(self, width, height, srs, coord):
         """
         """
         if self.mapnik is None:
             self.mapnik = mapnik.Map(0, 0)
-
- #       if exists(self.mapfile):
             mapnik.load_map(self.mapnik, str(self.mapfile))
 
-  #      else:
-   #         handle, filename = mkstemp()
-    #        os.write(handle, urlopen(self.mapfile).read())
-     #       os.close(handle)
-
-      #      mapnik.load_map(self.mapnik, filename)
-       #     os.unlink(filename)
-
-	nw = self.layer.projection.coordinateLocation(coord)
-	se = self.layer.projection.coordinateLocation(coord.right().down())
-	ul = self.mercator.locationProj(nw)
+        nw = self.layer.projection.coordinateLocation(coord)
+        se = self.layer.projection.coordinateLocation(coord.right().down())
+        ul = self.mercator.locationProj(nw)
         lr = self.mercator.locationProj(se)
 
 
         self.mapnik.width = width
         self.mapnik.height = height
-        #self.mapnik.zoom_to_box(mapnik.Envelope(xmin, ymin, xmax, ymax))
-        #self.mapnik.zoom_to_box(mapnik.Envelope(ul.x, ul.y, lr.x, lr.y))
         self.mapnik.zoom_to_box(mapnik.Box2d(ul.x, ul.y, lr.x, lr.y))
 
-        #img = mapnik.Image(width, height)
-        #mapnik.render(self.mapnik, img)
-
-        #img = Image.fromstring('RGBA', (width, height), img.tostring())
-
-	# create grid as same size as map/image
-	grid = mapnik.Grid(width, height)
-	#FIXME: Fields should be passed as a parameter
-	# render a layer to that grid array
-	mapnik.render_layer(self.mapnik,grid,layer=0,fields=['name','address'])
-	# then encode the grid array as utf, resample to 1/4 the size, and dump features
-	grid_utf = grid.encode('utf',resolution=4,add_features=True)
+        # create grid as same size as map/image
+        grid = mapnik.Grid(width, height)
+        # render a layer to that grid array
+        mapnik.render_layer(self.mapnik,grid,layer=0,fields=self.fields)
+        # then encode the grid array as utf, resample to 1/4 the size, and dump features
+        grid_utf = grid.encode('utf',resolution=4,add_features=True)
 
         return SaveableResponse('grid(' + json.dumps(grid_utf) + ')')
 
@@ -74,7 +62,7 @@ class Provider:
             This only accepts "json".
         """
         if extension.lower() != 'json':
-            raise KnownUnknown('PostGeoJSON only makes .json tiles, not "%s"' % extension)
+            raise KnownUnknown('MapnikGrid only makes .json tiles, not "%s"' % extension)
 
         return 'text/json', 'JSON'
 
@@ -85,11 +73,9 @@ class SaveableResponse:
     """
     def __init__(self, content):
         self.content = content
-#        self.indent = indent
- #       self.precision = precision
 
     def save(self, out, format):
         if format != 'JSON':
-            raise KnownUnknown('PostGeoJSON only saves .json tiles, not "%s"' % format)
+            raise KnownUnknown('MapnikGrid only saves .json tiles, not "%s"' % format)
 
-	out.write(self.content)
+        out.write(self.content)
