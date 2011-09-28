@@ -8,8 +8,10 @@ Sample configuration:
     "provider":
     {
       "class": "TileStache.Goodies.Providers.GDAL:Provider",
-      "kwargs": { "filename": "landcover-1km.tif" }
+      "kwargs": { "filename": "landcover-1km.tif", "resample": "linear" }
     }
+
+Valid values for resample are "cubic", "linear", and "nearest".
 
 With a bit more work, this provider will be ready for fully-supported inclusion
 in TileStache proper. Until then, it will remain here in the Goodies package.
@@ -28,9 +30,11 @@ except ImportError:
     # well it won't work but we can still make the documentation.
     pass
 
+resamplings = {'cubic': gdal.GRA_Cubic, 'linear': gdal.GRA_Bilinear, 'nearest': gdal.GRA_NearestNeighbour}
+
 class Provider:
 
-    def __init__(self, layer, filename):
+    def __init__(self, layer, filename, resample='cubic'):
         """
         """
         self.layer = layer
@@ -41,7 +45,11 @@ class Provider:
         if scheme not in ('', 'file'):
             raise Exception('GDAL file must be on the local filesystem, not: '+fileurl)
         
+        if resample not in resamplings:
+            raise Exception('Resample must be "cubic", "linear", or "nearest", not: '+resample)
+        
         self.filename = file_path
+        self.resample = resamplings[resample]
     
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """
@@ -49,9 +57,11 @@ class Provider:
         src_ds = gdal.Open(str(self.filename))
         driver = gdal.GetDriverByName('GTiff')
         
+        grayscale_src = (src_ds.RasterCount == 1)
+
         try:
             # Prepare output gdal datasource -----------------------------------
-
+            
             area_ds = driver.Create('/vsimem/output', width, height, 3)
             
             if area_ds is None:
@@ -70,9 +80,10 @@ class Provider:
             
             # Create rendered area ---------------------------------------------
             
-            gdal.ReprojectImage(src_ds, area_ds, src_ds.GetProjection(), area_ds.GetProjection(), gdal.GRA_Cubic)
+            gdal.ReprojectImage(src_ds, area_ds, src_ds.GetProjection(), area_ds.GetProjection(), self.resample)
             
-            r, g, b = [area_ds.GetRasterBand(i).ReadRaster(0, 0, width, height) for i in (1, 2, 3)]
+            channel = grayscale_src and (1, 1, 1) or (1, 2, 3)
+            r, g, b = [area_ds.GetRasterBand(i).ReadRaster(0, 0, width, height) for i in channel]
             data = ''.join([''.join(pixel) for pixel in zip(r, g, b)])
             area = Image.fromstring('RGB', (width, height), data)
 

@@ -1,3 +1,9 @@
+2011-09-04: 1.19.0
+- Added new resampling option to GDAL provider in Goodies.
+
+2011-08-30: 1.18.3
+- Fixed incorrect handling of grayscale datasources in GDAL provider.
+
 2011-08-24: 1.18.2
 - Fixed alpha channel handling for mixed-alpha combinations in Composite provider.
 
