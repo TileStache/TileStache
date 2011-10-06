@@ -1,3 +1,6 @@
+2011-10-06: 1.19.1
+- Fixed TypeError bug with Access-Control-Allow-Origin in WSGITileServer.
+
 2011-09-04: 1.19.0
 - Added new resampling option to GDAL provider in Goodies.
 

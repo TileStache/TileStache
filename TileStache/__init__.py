@@ -329,11 +329,12 @@ class WSGITileServer:
     def _response(self, start_response, code, content='', mimetype='text/plain', allowed_origin=''):
         """
         """
-        start_response(code, [
-            ('Content-Type', mimetype),
-            ('Content-Length', str(len(content))),
-            ('Access-Control-Allow-Origin', allowed_origin)
-        ])
+        headers = [('Content-Type', mimetype), ('Content-Length', str(len(content)))]
+        
+        if allowed_origin:
+            headers.append(('Access-Control-Allow-Origin', allowed_origin))
+        
+        start_response(code, headers)
         return [content]
 
 def modpythonHandler(request):
