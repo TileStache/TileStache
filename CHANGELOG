@@ -1,3 +1,6 @@
+2011-10-09: 1.19.2
+- Added support for GCPs and cubicspline in GDAL provider.
+
 2011-10-06: 1.19.1
 - Fixed TypeError bug with Access-Control-Allow-Origin in WSGITileServer.
 

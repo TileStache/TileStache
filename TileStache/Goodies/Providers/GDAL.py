@@ -11,7 +11,7 @@ Sample configuration:
       "kwargs": { "filename": "landcover-1km.tif", "resample": "linear" }
     }
 
-Valid values for resample are "cubic", "linear", and "nearest".
+Valid values for resample are "cubic", "cubicspline", "linear", and "nearest".
 
 With a bit more work, this provider will be ready for fully-supported inclusion
 in TileStache proper. Until then, it will remain here in the Goodies package.
@@ -30,7 +30,7 @@ except ImportError:
     # well it won't work but we can still make the documentation.
     pass
 
-resamplings = {'cubic': gdal.GRA_Cubic, 'linear': gdal.GRA_Bilinear, 'nearest': gdal.GRA_NearestNeighbour}
+resamplings = {'cubic': gdal.GRA_Cubic, 'cubicspline': gdal.GRA_CubicSpline, 'linear': gdal.GRA_Bilinear, 'nearest': gdal.GRA_NearestNeighbour}
 
 class Provider:
 
@@ -57,6 +57,9 @@ class Provider:
         src_ds = gdal.Open(str(self.filename))
         driver = gdal.GetDriverByName('GTiff')
         
+        if src_ds.GetGCPs():
+            src_ds.SetProjection(src_ds.GetGCPProjection())
+        
         grayscale_src = (src_ds.RasterCount == 1)
 
         try:
@@ -70,7 +73,7 @@ class Provider:
             merc = osr.SpatialReference()
             merc.ImportFromProj4(srs)
             area_ds.SetProjection(merc.ExportToWkt())
-    
+            
             # note that 900913 points north and east
             x, y = xmin, ymax
             w, h = xmax - xmin, ymin - ymax
