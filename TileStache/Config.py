@@ -49,11 +49,15 @@ documentation for TileStache.Providers, TileStache.Core, and TileStache.Geograph
 from sys import stderr, modules
 from os.path import realpath, join as pathjoin
 from urlparse import urljoin, urlparse
+from json import dumps
 
 try:
     from json import dumps as json_dumps
 except ImportError:
     from simplejson import dumps as json_dumps
+
+from ModestMaps.Geo import Location
+from ModestMaps.Core import Coordinate
 
 import Core
 import Caches
@@ -98,6 +102,53 @@ class Configuration:
         self.cache = cache
         self.dirpath = dirpath
         self.layers = {}
+
+class Bounds:
+    """ Coordinate bounding box for tiles.
+    """
+    def __init__(self, upper_left_high, lower_right_low):
+        """ Two required Coordinate objects defining tile pyramid bounds.
+        """
+        self.upper_left_high = upper_left_high
+        self.lower_right_low = lower_right_low
+    
+    def __contains__(self, tile):
+        """ Check a tile Coordinate against the bounds, return true/false.
+        """
+        if tile.zoom > self.upper_left_high.zoom:
+            # too zoomed-in
+            return False
+        
+        if tile.zoom < self.lower_right_low.zoom:
+            # too zoomed-out
+            return False
+
+        # check the top-left tile corner against the lower-right bound
+        _tile = tile.zoomTo(self.lower_right_low.zoom)
+        
+        if _tile.column > self.lower_right_low.column:
+            # too far right
+            return False
+        
+        if _tile.row > self.lower_right_low.row:
+            # too far down
+            return False
+
+        # check the bottom-right tile corner against the upper-left bound
+        _tile = tile.right().down().zoomTo(self.upper_left_high.zoom)
+        
+        if _tile.column < self.upper_left_high.column:
+            # too far left
+            return False
+        
+        if _tile.row < self.upper_left_high.row:
+            # too far up
+            return False
+        
+        return True
+    
+    def __str__(self):
+        return 'Bound %s - %s' % (self.upper_left_high, self.lower_right_low)
 
 def buildConfiguration(config_dict, dirpath='.'):
     """ Build a configuration dictionary into a Configuration object.
@@ -201,6 +252,21 @@ def _parseConfigfileCache(cache_dict, dirpath):
 
     return cache
 
+def _parseLayerBounds(bounds_dict, projection):
+    """
+    """
+    north, west = bounds_dict.get('north', None), bounds_dict.get('west', None)
+    south, east = bounds_dict.get('south', None), bounds_dict.get('east', None)
+    high, low = bounds_dict.get('high', None), bounds_dict.get('low', None)
+    
+    try:
+        ul_hi = projection.locationCoordinate(Location(north, west)).zoomTo(high)
+        lr_lo = projection.locationCoordinate(Location(south, east)).zoomTo(low)
+    except TypeError:
+        raise Core.KnownUnknown('Missing part of bounds for layer, need north, south, east, west, high, and low: ' + dumps(bounds_dict))
+    
+    return Bounds(ul_hi, lr_lo)
+
 def _parseConfigfileLayer(layer_dict, config, dirpath):
     """ Used by parseConfigfile() to parse just the layer parts of a config.
     """
@@ -231,6 +297,16 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         for (key, func) in zip(('lat', 'lon', 'zoom', 'ext'), (float, float, int, str)):
             if key in preview_dict:
                 layer_kwargs['preview_' + key] = func(preview_dict[key])
+    
+    #
+    # Do the bounds
+    #
+    
+    if 'bounds' in layer_dict:
+        if type(layer_dict['bounds']) is not dict:
+            raise Core.KnownUnknown('Layer bounds must be a dictionary, not: ' + dumps(layer_dict['bounds']))
+    
+        bounds = _parseLayerBounds(layer_dict['bounds'], projection)
     
     #
     # Do the metatile
