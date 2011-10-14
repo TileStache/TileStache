@@ -135,13 +135,13 @@ class Bounds:
             return False
 
         # check the bottom-right tile corner against the upper-left bound
-        _tile = tile.right().down().zoomTo(self.upper_left_high.zoom)
+        __tile = tile.right().down().zoomTo(self.upper_left_high.zoom)
         
-        if _tile.column < self.upper_left_high.column:
+        if __tile.column < self.upper_left_high.column:
             # too far left
             return False
         
-        if _tile.row < self.upper_left_high.row:
+        if __tile.row < self.upper_left_high.row:
             # too far up
             return False
         
@@ -306,7 +306,7 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         if type(layer_dict['bounds']) is not dict:
             raise Core.KnownUnknown('Layer bounds must be a dictionary, not: ' + dumps(layer_dict['bounds']))
     
-        bounds = _parseLayerBounds(layer_dict['bounds'], projection)
+        layer_kwargs['bounds'] = _parseLayerBounds(layer_dict['bounds'], projection)
     
     #
     # Do the metatile

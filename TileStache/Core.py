@@ -110,6 +110,11 @@ from urlparse import urljoin
 
 from Pixels import load_palette, apply_palette
 
+try:
+    from PIL import Image
+except ImportError:
+    import Image
+
 from ModestMaps.Core import Coordinate
 
 class Metatile:
@@ -206,7 +211,7 @@ class Layer:
           preview_ext:
             Tile name extension for slippy map layer preview, default "png".
     """
-    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, write_cache=True, allowed_origin=None, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png'):
+    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, write_cache=True, allowed_origin=None, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png', bounds=None):
         self.provider = None
         self.config = config
         self.projection = projection
@@ -221,6 +226,8 @@ class Layer:
         self.preview_lon = preview_lon
         self.preview_zoom = preview_zoom
         self.preview_ext = preview_ext
+        
+        self.bounds = bounds
         
         self.bitmap_palette = None
         self.jpeg_options = {}
@@ -251,6 +258,9 @@ class Layer:
             Perform metatile slicing here as well, if required, writing the
             full set of rendered tiles to cache as we go.
         """
+        if self.bounds and coord not in self.bounds:
+            raise NoTileLeftBehind(Image.new('RGB', (256, 256), (0x99, 0x99, 0x99)))
+        
         srs = self.projection.srs
         xmin, ymin, xmax, ymax = self.envelope(coord)
         width, height = 256, 256
