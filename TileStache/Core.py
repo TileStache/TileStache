@@ -20,6 +20,7 @@ configuration file as a dictionary:
           "stale lock timeout": ...,
           "cache lifespan": ...,
           "write cache": ...,
+          "bounds": { ... },
           "allowed origin": ...,
           "jpeg options": ...,
           "png options": ...
@@ -45,6 +46,9 @@ configuration file as a dictionary:
   0 or omitted.
 - "write cache" is an optional boolean value to allow skipping cache write
   altogether. This is defined on a per-layer basis. Defaults to true if omitted.
+- "bounds" is an optional dictionary of six tile boundaries to limit the
+  rendered area: low (lowest zoom level), high (highest zoom level), north,
+  west, south, and east (all in degrees).
 - "allowed origin" is an optional string that shows up in the response HTTP
   header Access-Control-Allow-Origin, useful for when you need to provide
   javascript direct access to response data such as GeoJSON or pixel values.
@@ -71,6 +75,14 @@ Sample PNG creation options:
     {
       "optimize": true,
       "palette": "filename.act"
+    }
+
+Sample bounds:
+
+    {
+        "low": 9, "high": 15,
+        "south": 37.749, "west": -122.358,
+        "north": 37.860, "east": -122.113
     }
 
 Metatile represents a larger area to be rendered at one time. Metatiles are
@@ -196,6 +208,9 @@ class Layer:
           write_cache:
             Allow skipping cache write altogether, default true.
 
+          bounds:
+            Instance of Config.Bounds for limiting rendered tiles.
+          
           allowed_origin:
             Value for the Access-Control-Allow-Origin HTTP response header.
 
@@ -258,7 +273,7 @@ class Layer:
             Perform metatile slicing here as well, if required, writing the
             full set of rendered tiles to cache as we go.
         """
-        if self.bounds and coord not in self.bounds:
+        if self.bounds and self.bounds.excludes(coord):
             raise NoTileLeftBehind(Image.new('RGB', (256, 256), (0x99, 0x99, 0x99)))
         
         srs = self.projection.srs

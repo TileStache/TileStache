@@ -108,44 +108,48 @@ class Bounds:
     """
     def __init__(self, upper_left_high, lower_right_low):
         """ Two required Coordinate objects defining tile pyramid bounds.
+        
+            Boundaries are inclusive: upper_left_high is the left-most column,
+            upper-most row, and highest zoom level; lower_right_low is the
+            right-most column, furthest-dwn row, and lowest zoom level.
         """
         self.upper_left_high = upper_left_high
         self.lower_right_low = lower_right_low
     
-    def __contains__(self, tile):
+    def excludes(self, tile):
         """ Check a tile Coordinate against the bounds, return true/false.
         """
         if tile.zoom > self.upper_left_high.zoom:
             # too zoomed-in
-            return False
+            return True
         
         if tile.zoom < self.lower_right_low.zoom:
             # too zoomed-out
-            return False
+            return True
 
         # check the top-left tile corner against the lower-right bound
         _tile = tile.zoomTo(self.lower_right_low.zoom)
         
         if _tile.column > self.lower_right_low.column:
             # too far right
-            return False
+            return True
         
         if _tile.row > self.lower_right_low.row:
             # too far down
-            return False
+            return True
 
         # check the bottom-right tile corner against the upper-left bound
         __tile = tile.right().down().zoomTo(self.upper_left_high.zoom)
         
         if __tile.column < self.upper_left_high.column:
             # too far left
-            return False
+            return True
         
         if __tile.row < self.upper_left_high.row:
             # too far up
-            return False
+            return True
         
-        return True
+        return False
     
     def __str__(self):
         return 'Bound %s - %s' % (self.upper_left_high, self.lower_right_low)
