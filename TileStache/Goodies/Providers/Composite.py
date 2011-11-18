@@ -350,6 +350,9 @@ class Layer:
 
         return output_rgba
 
+    def __str__(self):
+        return self.layername
+
 class Stack:
     """ A stack of image layers.
     """
