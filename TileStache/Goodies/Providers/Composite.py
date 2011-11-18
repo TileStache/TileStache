@@ -227,21 +227,21 @@ class Composite(Provider):
     """
     pass
 
-def build_stack(object):
+def build_stack(obj):
     """ Build up a data structure of Stack and Layer objects from lists of dictionaries.
     
         Normally, this is applied to the "stack" parameter to Composite.Provider.
     """
-    if type(object) is list:
-        layers = map(build_stack, object)
+    if type(obj) is list:
+        layers = map(build_stack, obj)
         return Stack(layers)
     
-    elif type(object) is dict:
+    elif type(obj) is dict:
         keys = ('src', 'layername'), ('color', 'colorname'), \
                ('mask', 'maskname'), ('opacity', 'opacity'), \
                ('mode', 'blendmode'), ('adjustments', 'adjustments')
 
-        args = [(arg, object[key]) for (key, arg) in keys if key in object]
+        args = [(arg, obj[key]) for (key, arg) in keys if key in obj]
         
         return Layer(**dict(args))
 
