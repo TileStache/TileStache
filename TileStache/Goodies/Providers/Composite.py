@@ -237,9 +237,10 @@ def build_stack(obj):
         return Stack(layers)
     
     elif type(obj) is dict:
-        keys = ('src', 'layername'), ('color', 'colorname'), \
-               ('mask', 'maskname'), ('opacity', 'opacity'), \
-               ('mode', 'blendmode'), ('adjustments', 'adjustments')
+        keys = (('src', 'layername'), ('color', 'colorname'),
+                ('mask', 'maskname'), ('opacity', 'opacity'),
+                ('mode', 'blendmode'), ('adjustments', 'adjustments'),
+                ('zoom', 'zoom'))
 
         args = [(arg, obj[key]) for (key, arg) in keys if key in obj]
         
