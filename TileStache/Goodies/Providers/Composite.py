@@ -142,6 +142,7 @@ This complete example can be found in the included examples directory.
 """
 
 import sys
+import re
 
 from urllib import urlopen
 from urlparse import urljoin
@@ -255,9 +256,10 @@ class Layer:
         Can include a reference to another layer for the source image, a second
         reference to another layer for the mask, and a color name for the fill.
     """
-    def __init__(self, layername=None, colorname=None, maskname=None, opacity=1.0, blendmode=None, adjustments=None):
+    def __init__(self, layername=None, colorname=None, maskname=None, opacity=1.0,
+                       blendmode=None, adjustments=None, zoom=""):
         """ A new image layer.
-        
+
             Arguments:
             
               layername:
@@ -275,6 +277,13 @@ class Layer:
         self.opacity = opacity
         self.blendmode = blendmode
         self.adjustments = adjustments
+        self.zoom = re.search("^\s*([><=]=?)\s*(\d+)", zoom)
+
+        if self.zoom:
+            op, level = self.zoom.groups()
+            self.zoom = eval("lambda x: x %s %d" % (op, int(level)))
+        else:
+            self.zoom = lambda: True
 
     def render(self, config, input_rgba, coord):
         """ Render this image layer.
@@ -365,7 +374,11 @@ class Stack:
         
         for layer in self.layers:
             try:
-                stack_rgba = layer.render(config, stack_rgba, coord)
+
+                if layer.zoom(coord.zoom):
+                    print "rendering layer: %s" % layer
+                    stack_rgba = layer.render(config, stack_rgba, coord)
+
             except IOError:
                 # Be permissive of I/O errors getting sub-layers, for example if a
                 # proxy layer referenced here doesn't have an image for a zoom level.
