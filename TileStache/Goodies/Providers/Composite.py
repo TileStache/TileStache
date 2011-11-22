@@ -19,6 +19,12 @@ as in this example stack that simply echoes another layer:
 
     {"src": "layer-name"}
 
+Layers can be limited to appear at certain zoom levels, given either as a range
+or as a single number:
+
+    {"src": "layer-name", "zoom": "12"}
+    {"src": "layer-name", "zoom": "12-18"}
+
 Layers can also be used as masks, as in this example that uses one layer
 to mask another layer:
 
