@@ -277,13 +277,16 @@ class Layer:
         self.opacity = opacity
         self.blendmode = blendmode
         self.adjustments = adjustments
-        self.zoom = re.search("^\s*([><=]=?)\s*(\d+)", zoom)
+        self.zoom = re.search("^(\d+)-(\d+)$|^(\d+)$", zoom) if zoom else None
 
         if self.zoom:
-            op, level = self.zoom.groups()
-            self.zoom = eval("lambda x: x %s %d" % (op, int(level)))
+            minlvl, maxlvl, level = self.zoom.groups()
+            if minlvl and maxlvl:
+                self.zoom = lambda z: int(minlvl) <= z <= int(maxlvl)
+            else:
+                self.zoom = lambda z: z == level
         else:
-            self.zoom = lambda: True
+            self.zoom = lambda z: True
 
     def render(self, config, input_rgba, coord):
         """ Render this image layer.
