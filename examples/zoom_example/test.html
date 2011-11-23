@@ -1,0 +1,12 @@
+<html><head><title>Zoom Levels Example</title></head><body>
+If these images are not loading, make sure the server is running on port 7890!
+"run_server.sh" contains an example of how to run the server.
+
+<p>At zoom level 9 and below, the composite layer serves tiles from the mbtiles file.
+This image is from level 9:
+<p><img src="http://localhost:7890/composite/9/154/190.png">
+
+<p>Above zoom level 9, the proxy layer is set to serve tiles from the openstreetmaps
+server. Here's a tile from level 10:
+<p><img src="http://localhost:7890/composite/10/308/380.png">
+</body></html>

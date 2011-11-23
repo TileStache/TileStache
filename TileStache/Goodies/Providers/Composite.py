@@ -19,6 +19,12 @@ as in this example stack that simply echoes another layer:
 
     {"src": "layer-name"}
 
+Layers can be limited to appear at certain zoom levels, given either as a range
+or as a single number:
+
+    {"src": "layer-name", "zoom": "12"}
+    {"src": "layer-name", "zoom": "12-18"}
+
 Layers can also be used as masks, as in this example that uses one layer
 to mask another layer:
 
@@ -142,6 +148,7 @@ This complete example can be found in the included examples directory.
 """
 
 import sys
+import re
 
 from urllib import urlopen
 from urlparse import urljoin
@@ -227,21 +234,22 @@ class Composite(Provider):
     """
     pass
 
-def build_stack(object):
+def build_stack(obj):
     """ Build up a data structure of Stack and Layer objects from lists of dictionaries.
     
         Normally, this is applied to the "stack" parameter to Composite.Provider.
     """
-    if type(object) is list:
-        layers = map(build_stack, object)
+    if type(obj) is list:
+        layers = map(build_stack, obj)
         return Stack(layers)
     
-    elif type(object) is dict:
-        keys = ('src', 'layername'), ('color', 'colorname'), \
-               ('mask', 'maskname'), ('opacity', 'opacity'), \
-               ('mode', 'blendmode'), ('adjustments', 'adjustments')
+    elif type(obj) is dict:
+        keys = (('src', 'layername'), ('color', 'colorname'),
+                ('mask', 'maskname'), ('opacity', 'opacity'),
+                ('mode', 'blendmode'), ('adjustments', 'adjustments'),
+                ('zoom', 'zoom'))
 
-        args = [(arg, object[key]) for (key, arg) in keys if key in object]
+        args = [(arg, obj[key]) for (key, arg) in keys if key in obj]
         
         return Layer(**dict(args))
 
@@ -254,9 +262,10 @@ class Layer:
         Can include a reference to another layer for the source image, a second
         reference to another layer for the mask, and a color name for the fill.
     """
-    def __init__(self, layername=None, colorname=None, maskname=None, opacity=1.0, blendmode=None, adjustments=None):
+    def __init__(self, layername=None, colorname=None, maskname=None, opacity=1.0,
+                       blendmode=None, adjustments=None, zoom=""):
         """ A new image layer.
-        
+
             Arguments:
             
               layername:
@@ -274,6 +283,16 @@ class Layer:
         self.opacity = opacity
         self.blendmode = blendmode
         self.adjustments = adjustments
+        self.zoom = re.search("^(\d+)-(\d+)$|^(\d+)$", zoom) if zoom else None
+
+        if self.zoom:
+            minlvl, maxlvl, level = self.zoom.groups()
+            if minlvl and maxlvl:
+                self.zoom = lambda z: int(minlvl) <= z <= int(maxlvl)
+            else:
+                self.zoom = lambda z: z == level
+        else:
+            self.zoom = lambda z: True
 
     def render(self, config, input_rgba, coord):
         """ Render this image layer.
@@ -340,6 +359,9 @@ class Layer:
 
         return output_rgba
 
+    def __str__(self):
+        return self.layername
+
 class Stack:
     """ A stack of image layers.
     """
@@ -364,7 +386,10 @@ class Stack:
         
         for layer in self.layers:
             try:
-                stack_rgba = layer.render(config, stack_rgba, coord)
+
+                if layer.zoom(coord.zoom):
+                    stack_rgba = layer.render(config, stack_rgba, coord)
+
             except IOError:
                 # Be permissive of I/O errors getting sub-layers, for example if a
                 # proxy layer referenced here doesn't have an image for a zoom level.
