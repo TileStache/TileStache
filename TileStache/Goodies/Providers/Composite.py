@@ -388,7 +388,6 @@ class Stack:
             try:
 
                 if layer.zoom(coord.zoom):
-                    print "rendering layer: %s" % layer
                     stack_rgba = layer.render(config, stack_rgba, coord)
 
             except IOError:
