@@ -1,3 +1,6 @@
+2011-11-23: 1.19.3
+- Merged llimllib's support for zoom limits in Composite provider.
+
 2011-10-09: 1.19.2
 - Added support for GCPs and cubicspline in GDAL provider.
 
