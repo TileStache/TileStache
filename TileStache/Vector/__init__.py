@@ -64,7 +64,8 @@ Common parameters:
   clipped:
     Default is true.
     Boolean flag for optionally clipping the output geometries to the
-    bounds of the enclosing tile. This results in incomplete geometries,
+    bounds of the enclosing tile, or the string value "padded" for clipping
+    to the bounds of the tile plus 5%. This results in incomplete geometries,
     dramatically smaller file sizes, and improves performance and
     compatibility with Polymaps (http://polymaps.org).
   
@@ -74,6 +75,12 @@ Common parameters:
     geographic coordinates. Typically this means EPSG:900913 a.k.a. spherical
     mercator projection. Stylistically a poor fit for GeoJSON, but useful
     when returning Arc GeoServices responses.
+  
+  spacing:
+    Optional number of tile pixels for spacing geometries in responses. Used
+    to cut down on the number of returned features by ensuring that only those
+    features at least this many pixels apart are returned. Order of features
+    in the data source matters: early features beat out later features.
   
   verbose:
     Default is false.
@@ -234,15 +241,21 @@ def _sref_4326():
     
     return sref
 
-def _tile_perimeter(coord, projection):
+def _tile_perimeter(coord, projection, padded):
     """ Get a tile's outer edge for a coordinate and a projection.
     
         Returns a list of 17 (x, y) coordinates corresponding to a clockwise
         circumambulation of a tile boundary in a given projection. Projection
         is like those found in TileStache.Geography, used for tile output.
+        
+        If padded argument is True, pad bbox by 5% on all sides.
     """
-    ul = projection.coordinateProj(coord)
-    lr = projection.coordinateProj(coord.right().down())
+    if padded:
+        ul = projection.coordinateProj(coord.left(0.05).up(0.05))
+        lr = projection.coordinateProj(coord.down(1.05).right(1.05))
+    else:
+        ul = projection.coordinateProj(coord)
+        lr = projection.coordinateProj(coord.right().down())
     
     xmin, ymin, xmax, ymax = ul.x, ul.y, lr.x, lr.y
     xspan, yspan = xmax - xmin, ymax - ymin
@@ -269,12 +282,20 @@ def _tile_perimeter(coord, projection):
     
     return perimeter
 
-def _tile_perimeter_geom(coord, projection):
+def _tile_perimeter_width(coord, projection):
+    """ Get the width in projected coordinates of the coordinate tile polygon.
+    
+        Uses _tile_perimeter().
+    """
+    perimeter = _tile_perimeter(coord, projection, False)
+    return perimeter[8][0] - perimeter[0][0]
+
+def _tile_perimeter_geom(coord, projection, padded):
     """ Get an OGR Geometry object for a coordinate tile polygon.
     
         Uses _tile_perimeter().
     """
-    perimeter = _tile_perimeter(coord, projection)
+    perimeter = _tile_perimeter(coord, projection, padded)
     wkt = 'POLYGON((%s))' % ', '.join(['%.3f %.3f' % xy for xy in perimeter])
     geom = ogr.CreateGeometryFromWkt(wkt)
     
@@ -396,10 +417,12 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     return layer, datasource
 
-def _get_features(coord, properties, projection, layer, clipped, projected):
+def _get_features(coord, properties, projection, layer, clipped, projected, spacing):
     """ Return a list of features in an OGR layer with properties in GeoJSON form.
     
-        Optionally clip features to coordinate bounding box.
+        Optionally clip features to coordinate bounding box, and optionally
+        limit returned features to only those separated by number of pixels
+        given as spacing.
     """
     #
     # Prepare output spatial reference - always WGS84.
@@ -419,16 +442,23 @@ def _get_features(coord, properties, projection, layer, clipped, projected):
     #
     # Spatially filter the layer
     #
-    bbox = _tile_perimeter_geom(coord, projection)
+    bbox = _tile_perimeter_geom(coord, projection, clipped == 'padded')
     bbox.TransformTo(layer_sref)
     layer.SetSpatialFilter(bbox)
     
     features = []
+    mask = None
     
+    if spacing is not None:
+        buffer = spacing * _tile_perimeter_width(coord, projection) / 256.
+
     for feature in layer:
         geometry = feature.geometry().Clone()
         
         if not geometry.Intersect(bbox):
+            continue
+        
+        if mask and geometry.Intersect(mask):
             continue
         
         if clipped:
@@ -437,6 +467,12 @@ def _get_features(coord, properties, projection, layer, clipped, projected):
         if geometry is None:
             # may indicate a TopologyException
             continue
+        
+        # mask out subsequent features if spacing is defined
+        if mask and buffer:
+            mask = geometry.Buffer(buffer, 2).Union(mask)
+        elif spacing is not None:
+            mask = geometry.Buffer(buffer, 2)
         
         geometry.AssignSpatialReference(layer_sref)
         geometry.TransformTo(output_sref)
@@ -454,12 +490,13 @@ class Provider:
         See module documentation for explanation of constructor arguments.
     """
     
-    def __init__(self, layer, driver, parameters, clipped, verbose, projected, properties):
+    def __init__(self, layer, driver, parameters, clipped, verbose, projected, spacing, properties):
         self.layer = layer
         self.driver = driver
         self.clipped = clipped
         self.verbose = verbose
         self.projected = projected
+        self.spacing = spacing
         self.parameters = parameters
         self.properties = properties
 
@@ -467,7 +504,7 @@ class Provider:
         """ Render a single tile, return a VectorResponse instance.
         """
         layer, ds = _open_layer(self.driver, self.parameters, self.layer.config.dirpath)
-        features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipped, self.projected)
+        features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipped, self.projected, self.spacing)
         response = {'type': 'FeatureCollection', 'features': features}
         
         if self.projected:

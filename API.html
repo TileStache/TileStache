@@ -688,7 +688,12 @@ Example layer configuration:
       "preview": { … },
       "stale lock timeout": …,
       "cache lifespan": …,
-      "projection": …
+      "projection": …,
+      "write cache": …,
+      "bounds": { … },
+      "allowed origin": …,
+      "jpeg options": …,
+      "png options": …
     }
   <span class="bg">}
 }</span>
@@ -748,7 +753,48 @@ Shared layer parameters:
     <dd>
     An optional number of seconds that cached tiles should be stored. This is
     defined on a per-layer basis. Defaults to forever if <samp>None</samp>,
-    <samp>0</samp> or omitted..
+    <samp>0</samp> or omitted.
+    </dd>
+
+    <dt>write cache</dt>
+    <dd>
+    An optional boolean value to allow skipping cache write altogether.
+    This is defined on a per-layer basis. Defaults to true if omitted.
+    </dd>
+    
+    <dt>bounds</dt>
+    <dd>
+    An optional dictionary of six tile boundaries to limit the rendered area:
+    <var>low</var> (lowest zoom level), <var>high</var> (highest zoom level),
+    <var>north</var>, <var>west</var>, <var>south</var>, and <var>east</var>
+    (all in degrees).
+    </dd>
+
+    <dt>allowed origin</dt>
+    <dd>
+    An optional string that shows up in the response HTTP header
+    <a href="http://www.w3.org/TR/cors/#access-control-allow-origin-response-hea">Access-Control-Allow-Origin</a>,
+    useful for when you need to provide javascript direct access to response
+    data such as GeoJSON or pixel values. The header is part of a
+    <a href="http://www.w3.org/TR/cors/">W3C working draft</a>.
+    Pro-tip: if you want to allow maximum permissions and minimal
+    security headache, use a value of <samp>"*"</samp> for this.
+    </dd>
+
+    <dt>jpeg options</dt>
+    <dd>
+    An optional dictionary of JPEG creation options, passed through
+    <a href="http://www.pythonware.com/library/pil/handbook/format-jpeg.htm">to PIL</a>.
+    Valid options include <var>quality</var> (integer), <var>progressive</var>
+    (boolean), and <var>optimize</var> (boolean).
+    </dd>
+
+    <dt>png options</dt>
+    <dd>
+    An optional dictionary of PNG creation options, passed through
+    <a href="http://www.pythonware.com/library/pil/handbook/format-png.htm">to PIL</a>.
+    Valid options include <var>palette</var> (URL or filename) and
+    <var>optimize</var> (boolean).
     </dd>
 </dl>
 
@@ -963,9 +1009,10 @@ Vector provider parameters:
     Default is <samp>true</samp>.
     <br>
     Boolean flag for optionally clipping the output geometries to the
-    bounds of the enclosing tile. This results in incomplete geometries,
-    dramatically smaller file sizes, and improves performance and
-    compatibility with Polymaps (http://polymaps.org).
+    bounds of the enclosing tile, or the string value <samp>"padded"</samp>
+    for clipping to the bounds of the tile plus 5%. This results in incomplete
+    geometries, dramatically smaller file sizes, and improves performance and
+    compatibility with <a href="http://polymaps.org">Polymaps</a>.
     </dd>
     <dt>projected</dt>
     <dd>
@@ -975,6 +1022,13 @@ Vector provider parameters:
     geographic coordinates. Typically this means <samp>EPSG:900913</samp> a.k.a.
     spherical mercator projection. Stylistically a poor fit for GeoJSON, but
     useful when returning Arc GeoServices responses.
+    </dd>
+    <dt>spacing</dt>
+    <dd>
+    Optional number of tile pixels for spacing geometries in responses. Used
+    to cut down on the number of returned features by ensuring that only those
+    features at least this many pixels apart are returned. Order of features
+    in the data source matters: early features beat out later features.
     </dd>
     <dt>verbose</dt>
     <dd>

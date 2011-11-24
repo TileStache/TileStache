@@ -30,7 +30,7 @@ of tile paths as they are created.
 
 Configuration, bbox, and layer options are required; see `%prog --help` for info.""")
 
-defaults = dict(extension='png', padding=0, verbose=True, bbox=(37.777, -122.352, 37.839, -122.226))
+defaults = dict(extension='png', padding=0, verbose=True, enable_retries=False, bbox=(37.777, -122.352, 37.839, -122.226))
 
 parser.set_defaults(**defaults)
 
@@ -66,11 +66,26 @@ parser.add_option('-d', '--output-directory', dest='outputdirectory',
 parser.add_option('--to-mbtiles', dest='mbtiles_output',
                   help='Optional output file for tiles, will be created as an MBTiles 1.1 tileset. See http://mbtiles.org for more information.')
 
+parser.add_option('--from-mbtiles', dest='mbtiles_input',
+                  help='Optional input file for tiles, will be read as an MBTiles 1.1 tileset. See http://mbtiles.org for more information. Overrides --extension, --bbox and --padding (this may change).')
+
+parser.add_option('--tile-list', dest='tile_list',
+                  help='Optional file of tile coordinates, a simple text list of Z/X/Y coordinates. Overrides --bbox and --padding.')
+
+parser.add_option('--error-list', dest='error_list',
+                  help='Optional file of failed tile coordinates, a simple text list of Z/X/Y coordinates. If provided, failed tiles will be logged to this file instead of stopping tilestache-seed.')
+
+parser.add_option('--enable-retries', dest='enable_retries',
+                  help='If true this will cause tilestache-seed to retry failed tile renderings up to (3) times. Default value is %s.' % repr(defaults['enable_retries']),
+                  action='store_true')
+
 parser.add_option('-x', '--ignore-cached', action='store_true', dest='ignore_cached',
                   help='Re-render every tile, whether it is in the cache already or not.')
 
 def generateCoordinates(ul, lr, zooms, padding):
     """ Generate a stream of (offset, count, coordinate) tuples for seeding.
+    
+        Flood-fill coordinates based on two corners, a list of zooms and padding.
     """
     # start with a simple total of all the coordinates we will need.
     count = 0
@@ -99,6 +114,31 @@ def generateCoordinates(ul, lr, zooms, padding):
                 yield (offset, count, coord)
                 
                 offset += 1
+
+def listCoordinates(filename):
+    """ Generate a stream of (offset, count, coordinate) tuples for seeding.
+    
+        Read coordinates from a file with one Z/X/Y coordinate per line.
+    """
+    coords = (line.strip().split('/') for line in open(filename, 'r'))
+    coords = (map(int, (row, column, zoom)) for (zoom, column, row) in coords)
+    coords = [Coordinate(*args) for args in coords]
+    
+    count = len(coords)
+    
+    for (offset, coord) in enumerate(coords):
+        yield (offset, count, coord)
+
+def tilesetCoordinates(filename):
+    """ Generate a stream of (offset, count, coordinate) tuples for seeding.
+    
+        Read coordinates from an MBTiles tileset filename.
+    """
+    coords = MBTiles.list_tiles(filename)
+    count = len(coords)
+    
+    for (offset, coord) in enumerate(coords):
+        yield (offset, count, coord)
 
 if __name__ == '__main__':
     options, zooms = parser.parse_args()
@@ -131,7 +171,14 @@ if __name__ == '__main__':
 
         verbose = options.verbose
         extension = options.extension
+        enable_retries = options.enable_retries
         progressfile = options.progressfile
+        src_mbtiles = options.mbtiles_input
+        
+        if src_mbtiles:
+            layer.provider = MBTiles.Provider(layer, src_mbtiles)
+            n, t, v, d, format, b = MBTiles.tileset_info(src_mbtiles)
+            extension = format or extension
         
         if options.outputdirectory and options.mbtiles_output:
             cache1 = Disk(options.outputdirectory, dirs='portable', gzip=[])
@@ -164,26 +211,68 @@ if __name__ == '__main__':
             raise KnownUnknown('A negative padding will not work.')
 
         padding = options.padding
+        tile_list = options.tile_list
+        error_list = options.error_list
 
     except KnownUnknown, e:
         parser.error(str(e))
 
-    for (offset, count, coord) in generateCoordinates(ul, lr, zooms, padding):
+    if tile_list:
+        coordinates = listCoordinates(tile_list)
+    elif src_mbtiles:
+        coordinates = tilesetCoordinates(src_mbtiles)
+    else:
+        coordinates = generateCoordinates(ul, lr, zooms, padding)
+    
+    for (offset, count, coord) in coordinates:
         path = '%s/%d/%d/%d.%s' % (layer.name(), coord.zoom, coord.column, coord.row, extension)
 
         progress = {"tile": path,
                     "offset": offset + 1,
                     "total": count}
 
-        if options.verbose:
-            print >> stderr, '%(offset)d of %(total)d...' % progress,
+        #
+        # Fetch a tile.
+        #
+        
+        attempts = enable_retries and 3 or 1
+        rendered = False
+        
+        while not rendered:
+            if options.verbose:
+                print >> stderr, '%(offset)d of %(total)d...' % progress,
+    
+            try:
+                mimetype, content = getTile(layer, coord, extension, options.ignore_cached)
+            
+            except:
+                #
+                # Something went wrong: try again? Log the error?
+                #
+                attempts -= 1
 
-        mimetype, content = getTile(layer, coord, extension, options.ignore_cached)
-        progress['size'] = '%dKB' % (len(content) / 1024)
-
-        if options.verbose:
-            print >> stderr, '%(tile)s (%(size)s)' % progress
-
+                if options.verbose:
+                    print >> stderr, 'Failed %s, will try %s more.' % (progress['tile'], ['no', 'once', 'twice'][attempts])
+                
+                if attempts == 0:
+                    if not error_list:
+                        raise
+                    
+                    fp = open(error_list, 'a')
+                    fp.write('%(zoom)d/%(column)d/%(row)d\n' % coord.__dict__)
+                    fp.close()
+                    break
+            
+            else:
+                #
+                # Successfully got the tile.
+                #
+                rendered = True
+                progress['size'] = '%dKB' % (len(content) / 1024)
+        
+                if options.verbose:
+                    print >> stderr, '%(tile)s (%(size)s)' % progress
+                
         if progressfile:
             fp = open(progressfile, 'w')
             json_dump(progress, fp)

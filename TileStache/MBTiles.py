@@ -39,6 +39,8 @@ from sqlite3 import connect as _connect
 from urlparse import urlparse, urljoin
 from os.path import exists
 
+from ModestMaps.Core import Coordinate
+
 def create_tileset(filename, name, type, version, description, format, bounds=None):
     """ Create a tileset 1.1 with the given filename and metadata.
     
@@ -109,6 +111,37 @@ def tileset_exists(filename):
         return False
     
     return True
+
+def tileset_info(filename):
+    """ Return name, type, version, description, format, and bounds for a tileset.
+    
+        Returns None if tileset does not exist.
+    """
+    if not tileset_exists(filename):
+        return None
+    
+    db = _connect(filename)
+    db.text_factory = bytes
+    
+    info = []
+    
+    for key in ('name', 'type', 'version', 'description', 'format', 'bounds'):
+        value = db.execute('SELECT value FROM metadata WHERE name = ?', (key, )).fetchone()
+        info.append(value and value[0] or None)
+    
+    return info
+
+def list_tiles(filename):
+    """ Get a list of tile coordinates.
+    """
+    db = _connect(filename)
+    db.text_factory = bytes
+    
+    tiles = db.execute('SELECT tile_row, tile_column, zoom_level FROM tiles')
+    tiles = (((2**z - 1) - y, x, z) for (y, x, z) in tiles) # Hello, Paul Ramsey.
+    tiles = [Coordinate(row, column, zoom) for (row, column, zoom) in tiles]
+    
+    return tiles
 
 def get_tile(filename, coord):
     """ Retrieve the mime-type and raw content of a tile by coordinate.

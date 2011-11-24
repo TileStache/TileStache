@@ -18,7 +18,12 @@ configuration file as a dictionary:
           "preview": { ... },
           "projection": ...,
           "stale lock timeout": ...,
-          "cache lifespan": ...
+          "cache lifespan": ...,
+          "write cache": ...,
+          "bounds": { ... },
+          "allowed origin": ...,
+          "jpeg options": ...,
+          "png options": ...
         }
       }
     }
@@ -39,10 +44,46 @@ configuration file as a dictionary:
 - "cache lifespan" is an optional number of seconds that cached tiles should
   be stored. This is defined on a per-layer basis. Defaults to forever if None,
   0 or omitted.
+- "write cache" is an optional boolean value to allow skipping cache write
+  altogether. This is defined on a per-layer basis. Defaults to true if omitted.
+- "bounds" is an optional dictionary of six tile boundaries to limit the
+  rendered area: low (lowest zoom level), high (highest zoom level), north,
+  west, south, and east (all in degrees).
+- "allowed origin" is an optional string that shows up in the response HTTP
+  header Access-Control-Allow-Origin, useful for when you need to provide
+  javascript direct access to response data such as GeoJSON or pixel values.
+  The header is part of a W3C working draft (http://www.w3.org/TR/cors/).
+- "jpeg options" is an optional dictionary of JPEG creation options, passed
+  through to PIL: http://www.pythonware.com/library/pil/handbook/format-jpeg.htm.
+- "png options" is an optional dictionary of PNG creation options, passed
+  through to PIL: http://www.pythonware.com/library/pil/handbook/format-png.htm.
 
 The public-facing URL of a single tile for this layer might look like this:
 
     http://example.com/tilestache.cgi/example-name/0/0/0.png
+
+Sample JPEG creation options:
+
+    {
+      "quality": 90,
+      "progressive": true,
+      "optimize": true
+    }
+
+Sample PNG creation options:
+
+    {
+      "optimize": true,
+      "palette": "filename.act"
+    }
+
+Sample bounds:
+
+    {
+        "low": 9, "high": 15,
+        "south": 37.749, "west": -122.358,
+        "north": 37.860, "east": -122.113
+    }
 
 Metatile represents a larger area to be rendered at one time. Metatiles are
 represented in the configuration file as a dictionary:
@@ -77,6 +118,14 @@ The preview can be accessed through a URL like /<layer name>/preview.html:
 """
 
 from StringIO import StringIO
+from urlparse import urljoin
+
+from Pixels import load_palette, apply_palette
+
+try:
+    from PIL import Image
+except ImportError:
+    import Image
 
 from ModestMaps.Core import Coordinate
 
@@ -153,6 +202,18 @@ class Layer:
           stale_lock_timeout:
             Number of seconds until a cache lock is forced, default 15.
 
+          cache_lifespan:
+            Number of seconds that cached tiles should be stored, default 15.
+
+          write_cache:
+            Allow skipping cache write altogether, default true.
+
+          bounds:
+            Instance of Config.Bounds for limiting rendered tiles.
+          
+          allowed_origin:
+            Value for the Access-Control-Allow-Origin HTTP response header.
+
           preview_lat:
             Starting latitude for slippy map layer preview, default 37.80.
 
@@ -165,7 +226,7 @@ class Layer:
           preview_ext:
             Tile name extension for slippy map layer preview, default "png".
     """
-    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png'):
+    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, write_cache=True, allowed_origin=None, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png', bounds=None):
         self.provider = None
         self.config = config
         self.projection = projection
@@ -173,11 +234,19 @@ class Layer:
         
         self.stale_lock_timeout = stale_lock_timeout
         self.cache_lifespan = cache_lifespan
+        self.write_cache = write_cache
+        self.allowed_origin = allowed_origin
         
         self.preview_lat = preview_lat
         self.preview_lon = preview_lon
         self.preview_zoom = preview_zoom
         self.preview_ext = preview_ext
+        
+        self.bounds = bounds
+        
+        self.bitmap_palette = None
+        self.jpeg_options = {}
+        self.png_options = {}
 
     def name(self):
         """ Figure out what I'm called, return a name if there is one.
@@ -193,8 +262,10 @@ class Layer:
 
     def doMetatile(self):
         """ Return True if we have a real metatile and the provider is OK with it.
+        
+            self.write_cache == False will cause this to return False.
         """
-        return self.metatile.isForReal() and hasattr(self.provider, 'renderArea')
+        return self.metatile.isForReal() and hasattr(self.provider, 'renderArea') and self.write_cache
     
     def render(self, coord, format):
         """ Render a tile for a coordinate, return PIL Image-like object.
@@ -202,6 +273,9 @@ class Layer:
             Perform metatile slicing here as well, if required, writing the
             full set of rendered tiles to cache as we go.
         """
+        if self.bounds and self.bounds.excludes(coord):
+            raise NoTileLeftBehind(Image.new('RGB', (256, 256), (0x99, 0x99, 0x99)))
+        
         srs = self.projection.srs
         xmin, ymin, xmax, ymax = self.envelope(coord)
         width, height = 256, 256
@@ -234,6 +308,13 @@ class Layer:
         if hasattr(tile, 'size') and tile.size != (width, height):
             raise KnownUnknown('Your provider returned the wrong image size: %s.' % repr(tile.size))
         
+        if self.bitmap_palette:
+            # this is where we apply the palette if there is one
+
+            if format.lower() == 'png':
+                t_index = self.png_options.get('transparency', None)
+                tile = apply_palette(tile, self.bitmap_palette, t_index)
+        
         if self.doMetatile():
             # tile will be set again later
             tile, surtile = None, tile
@@ -252,7 +333,7 @@ class Layer:
                     tile = subtile
         
         return tile
-
+    
     def envelope(self, coord):
         """ Projected rendering envelope (xmin, ymin, xmax, ymax) for a Coordinate.
         """
@@ -325,6 +406,42 @@ class Layer:
     
         else:
             raise KnownUnknown('Unknown extension in configuration: "%s"' % extension)
+
+    def setSaveOptionsJPEG(self, quality=None, optimize=None, progressive=None):
+        """ Optional arguments are added to self.jpeg_options for pickup when saving.
+        
+            More information about options:
+                http://www.pythonware.com/library/pil/handbook/format-jpeg.htm
+        """
+        if quality is not None:
+            self.jpeg_options['quality'] = int(quality)
+
+        if optimize is not None:
+            self.jpeg_options['optimize'] = bool(optimize)
+
+        if progressive is not None:
+            self.jpeg_options['progressive'] = bool(progressive)
+
+    def setSaveOptionsPNG(self, optimize=None, palette=None):
+        """ Optional arguments are added to self.png_options for pickup when saving.
+        
+            Palette argument is a URL relative to the configuration file,
+            and it implies bits and optional transparency options.
+        
+            More information about options:
+                http://www.pythonware.com/library/pil/handbook/format-png.htm
+        """
+        if optimize is not None:
+            self.png_options['optimize'] = bool(optimize)
+        
+        if palette is not None:
+            palette = urljoin(self.config.dirpath, palette)
+            palette, bits, t_index = load_palette(palette)
+            
+            self.bitmap_palette, self.png_options['bits'] = palette, bits
+            
+            if t_index is not None:
+                self.png_options['transparency'] = t_index
 
 class KnownUnknown(Exception):
     """ There are known unknowns. That is to say, there are things that we now know we don't know.

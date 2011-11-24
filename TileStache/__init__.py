@@ -18,6 +18,7 @@ from StringIO import StringIO
 from os.path import dirname, join as pathjoin, realpath
 from urlparse import urljoin, urlparse
 from urllib import urlopen
+from os import getcwd
 
 try:
     from json import load as json_load
@@ -28,6 +29,9 @@ from ModestMaps.Core import Coordinate
 
 import Core
 import Config
+
+# dictionary of configuration objects for requestLayer().
+_previous_configs = {}
 
 # regular expression for PATH_INFO
 _pathinfo_pat = re.compile(r'^/?(?P<l>\w.+)/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)\.(?P<e>\w+)$')
@@ -58,41 +62,51 @@ def getTile(layer, coord, extension, ignore_cached=False):
     # If no tile was found, dig deeper
     if body is None:
         try:
-            # this is the coordinate that actually gets locked.
-            lockCoord = layer.metatile.firstCoord(coord)
-            
-            # We may need to write a new tile, so acquire a lock.
-            cache.lock(layer, lockCoord, format)
+            lockCoord = None
+
+            if layer.write_cache:
+                # this is the coordinate that actually gets locked.
+                lockCoord = layer.metatile.firstCoord(coord)
+                
+                # We may need to write a new tile, so acquire a lock.
+                cache.lock(layer, lockCoord, format)
             
             if not ignore_cached:
                 # There's a chance that some other process has
                 # written the tile while the lock was being acquired.
                 body = cache.read(layer, coord, format)
-            else:
-                # Bypass the cache again
-                body = None
     
-            # If no one else wrote the tile, do it here.
             if body is None:
+                # No one else wrote the tile, do it here.
                 buff = StringIO()
 
                 try:
                     tile = layer.render(coord, format)
+                    save = True
                 except Core.NoTileLeftBehind, e:
                     tile = e.tile
                     save = False
-                else:
-                    save = True
 
-                tile.save(buff, format)
+                if not layer.write_cache:
+                    save = False
+                
+                if format.lower() == 'jpeg':
+                    save_kwargs = layer.jpeg_options
+                elif format.lower() == 'png':
+                    save_kwargs = layer.png_options
+                else:
+                    save_kwargs = {}
+                
+                tile.save(buff, format, **save_kwargs)
                 body = buff.getvalue()
                 
                 if save:
                     cache.save(body, layer, coord, format)
 
         finally:
-            # Always clean up a lock when it's no longer being used.
-            cache.unlock(layer, lockCoord, format)
+            if lockCoord:
+                # Always clean up a lock when it's no longer being used.
+                cache.unlock(layer, lockCoord, format)
     
     return mimetype, body
 
@@ -154,6 +168,42 @@ def splitPathInfo(pathinfo):
 
     return layer, coord, extension
 
+def requestLayer(config, path_info):
+    """ Return a Layer.
+    
+        Requires a configuration and PATH_INFO (e.g. "/example/0/0/0.png").
+        
+        Config parameter can be a file path string for a JSON configuration file
+        or a configuration object with 'cache', 'layers', and 'dirpath' properties.
+    """
+    if type(config) in (str, unicode):
+        #
+        # Should be a path to a configuration file we can load;
+        # build a tuple key into previously-seen config objects.
+        #
+        key = hasattr(config, '__hash__') and (config, getcwd())
+        
+        if key in _previous_configs:
+            config = _previous_configs[key]
+        
+        else:
+            config = parseConfigfile(config)
+            
+            if key:
+                _previous_configs[key] = config
+    
+    else:
+        assert hasattr(config, 'cache'), 'Configuration object must have a cache.'
+        assert hasattr(config, 'layers'), 'Configuration object must have layers.'
+        assert hasattr(config, 'dirpath'), 'Configuration object must have a dirpath.'
+    
+    layername = splitPathInfo(path_info)[0]
+    
+    if layername not in config.layers:
+        raise Core.KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (layername, ', '.join(sorted(config.layers.keys()))))
+    
+    return config.layers[layername]
+
 def requestHandler(config, path_info, query_string):
     """ Generate a mime-type and response body for a given request.
     
@@ -169,21 +219,10 @@ def requestHandler(config, path_info, query_string):
         if path_info is None:
             raise Core.KnownUnknown('Missing path_info in requestHandler().')
     
-        if type(config) in (str, unicode):
-            # should be a path to a configuration file we can load
-            config = parseConfigfile(config)
-        else:
-            assert hasattr(config, 'cache'), 'Configuration object must have a cache.'
-            assert hasattr(config, 'layers'), 'Configuration object must have layers.'
-            assert hasattr(config, 'dirpath'), 'Configuration object must have a dirpath.'
-        
-        layername, coord, extension = splitPathInfo(path_info)
-        
-        if layername not in config.layers:
-            raise Core.KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (layername, ', '.join(sorted(config.layers.keys()))))
-        
+        layer = requestLayer(config, path_info)
         query = parse_qs(query_string or '')
-        layer = config.layers[layername]
+        
+        coord, extension = splitPathInfo(path_info)[1:]
         
         if extension == 'html' and coord is None:
             mimetype, content = getPreview(layer)
@@ -219,7 +258,11 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     query_string = environ.get('QUERY_STRING', None)
     
     mimetype, content = requestHandler(config, path_info, query_string)
-
+    layer = requestLayer(config, path_info)
+    
+    if layer.allowed_origin:
+        print >> stdout, 'Access-Control-Allow-Origin:', layer.allowed_origin
+    
     print >> stdout, 'Content-Length: %d' % len(content)
     print >> stdout, 'Content-Type: %s\n' % mimetype
     print >> stdout, content
@@ -280,15 +323,18 @@ class WSGITileServer:
             return self._response(start_response, '404 Not Found')
 
         mimetype, content = requestHandler(self.config, environ['PATH_INFO'], environ['QUERY_STRING'])
-        return self._response(start_response, '200 OK', str(content), mimetype)
+        allowed_origin = requestLayer(self.config, environ['PATH_INFO']).allowed_origin
+        return self._response(start_response, '200 OK', str(content), mimetype, allowed_origin)
 
-    def _response(self, start_response, code, content='', mimetype='text/plain'):
+    def _response(self, start_response, code, content='', mimetype='text/plain', allowed_origin=''):
         """
         """
-        start_response(code, [
-            ('Content-Type', mimetype),
-            ('Content-Length', str(len(content))),
-        ])
+        headers = [('Content-Type', mimetype), ('Content-Length', str(len(content)))]
+        
+        if allowed_origin:
+            headers.append(('Access-Control-Allow-Origin', allowed_origin))
+        
+        start_response(code, headers)
         return [content]
 
 def modpythonHandler(request):

@@ -68,6 +68,7 @@ doc:
 	pydoc -w TileStache.Geography
 	pydoc -w TileStache.Providers
 	pydoc -w TileStache.MBTiles
+	pydoc -w TileStache.Pixels
 	pydoc -w TileStache.Goodies
 	pydoc -w TileStache.Goodies.Caches
 	pydoc -w TileStache.Goodies.Caches.LimitedDisk
@@ -77,6 +78,7 @@ doc:
 	pydoc -w TileStache.Goodies.Providers.SolrGeoJSON
 	pydoc -w TileStache.Goodies.Providers.MirrorOSM
 	pydoc -w TileStache.Goodies.Providers.Grid
+	pydoc -w TileStache.Goodies.Providers.GDAL
 
 	pydoc -w scripts/tilestache-*.py
 

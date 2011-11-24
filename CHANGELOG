@@ -1,3 +1,46 @@
+2011-11-23: 1.19.4
+- Fixed a silly bug where I was comparing ints and strings.
+
+2011-11-23: 1.19.3
+- Merged llimllib's support for zoom limits in Composite provider.
+
+2011-10-09: 1.19.2
+- Added support for GCPs and cubicspline in GDAL provider.
+
+2011-10-06: 1.19.1
+- Fixed TypeError bug with Access-Control-Allow-Origin in WSGITileServer.
+
+2011-09-04: 1.19.0
+- Added new resampling option to GDAL provider in Goodies.
+
+2011-08-30: 1.18.3
+- Fixed incorrect handling of grayscale datasources in GDAL provider.
+
+2011-08-24: 1.18.2
+- Fixed alpha channel handling for mixed-alpha combinations in Composite provider.
+
+2011-07-23: 1.18.1
+- Fixed new spacing configuration option on vector provider.
+
+2011-07-23: 1.18.0
+- Added new configuration options to vector provider: clipped=padded for Polymaps and spacing.
+
+2011-07-18: 1.17.0
+- Added configuration for HTTP Access-Control-Allow-Origin response header for cross-origin resource sharing (CORS).
+- Added --include-path option to tilestache-server.py.
+
+2011-07-15: 1.16.0
+- Added configuration for JPEG and PNG creation options, including 8-bit PNG output and Photoshop color table support.
+
+2011-07-13: 1.15.0
+- Added three new options to tilestache seed: --from-mbtiles, --enable-retries and --error-list.
+
+2011-07-12: 1.14.0
+- Added per-layer "write cache" option.
+- Added --tile-list option to tilestache-seed.py, so that tiles to seed can be explicitly enumerated.
+- Fixed S3 cache provider to work with boto 1.9 and 2.0 equally.
+- Added the simplest GDAL provider that could possibly work.
+
 2011-07-04: 1.13.0
 - Added support for MBTiles format. Tilesets can be providers or destinations for seeded tiles.
 
