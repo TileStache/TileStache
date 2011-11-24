@@ -283,17 +283,25 @@ class Layer:
         self.opacity = opacity
         self.blendmode = blendmode
         self.adjustments = adjustments
-        self.zoom = re.search("^(\d+)-(\d+)$|^(\d+)$", zoom) if zoom else None
-
-        if self.zoom:
-            minlvl, maxlvl, level = self.zoom.groups()
-            if minlvl and maxlvl:
-                self.zoom = lambda z: int(minlvl) <= z <= int(maxlvl)
-            else:
-                self.zoom = lambda z: z == level
+        
+        zooms = re.search("^(\d+)-(\d+)$|^(\d+)$", zoom) if zoom else None
+        
+        if zooms:
+            min_zoom, max_zoom, at_zoom = zooms.groups()
+            
+            if min_zoom is not None and max_zoom is not None:
+                self.min_zoom, self.max_zoom = min_zoom, max_zoom
+            elif at_zoom is not None:
+                self.min_zoom, self.max_zoom = at_zoom, at_zoom
+        
         else:
-            self.zoom = lambda z: True
+            self.min_zoom, self.max_zoom = 0, float('inf')
 
+    def in_zoom(self, zoom):
+        """ Return true if the requested zoom level is valid for this layer.
+        """
+        return self.min_zoom <= zoom and zoom <= self.max_zoom
+    
     def render(self, config, input_rgba, coord):
         """ Render this image layer.
 
@@ -386,8 +394,7 @@ class Stack:
         
         for layer in self.layers:
             try:
-
-                if layer.zoom(coord.zoom):
+                if layer.in_zoom(coord.zoom):
                     stack_rgba = layer.render(config, stack_rgba, coord)
 
             except IOError:
