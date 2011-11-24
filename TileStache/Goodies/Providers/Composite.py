@@ -290,9 +290,9 @@ class Layer:
             min_zoom, max_zoom, at_zoom = zooms.groups()
             
             if min_zoom is not None and max_zoom is not None:
-                self.min_zoom, self.max_zoom = min_zoom, max_zoom
+                self.min_zoom, self.max_zoom = int(min_zoom), int(max_zoom)
             elif at_zoom is not None:
-                self.min_zoom, self.max_zoom = at_zoom, at_zoom
+                self.min_zoom, self.max_zoom = int(at_zoom), int(at_zoom)
         
         else:
             self.min_zoom, self.max_zoom = 0, float('inf')
