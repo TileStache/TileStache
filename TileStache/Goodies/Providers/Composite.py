@@ -383,6 +383,11 @@ class Stack:
         """
         self.layers = layers
 
+    def in_zoom(self, level):
+        """
+        """
+        return True
+    
     def render(self, config, input_rgba, coord):
         """ Render this image stack.
 
