@@ -273,7 +273,6 @@ class Disk:
 
         else:
             body = open(fullpath, 'rb').read()
-            print "Read %d bytes from %s" % (len(body), fullpath)
             return body
     
     def save(self, body, layer, coord, format):
