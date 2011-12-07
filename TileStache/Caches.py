@@ -272,7 +272,9 @@ class Disk:
             return gzip.open(fullpath, 'r').read()
 
         else:
-            return open(fullpath, 'r').read()
+            body = open(fullpath, 'rb').read()
+            print "Read %d bytes from %s" % (len(body), fullpath)
+            return body
     
     def save(self, body, layer, coord, format):
         """ Save a cached tile.
