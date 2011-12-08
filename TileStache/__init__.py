@@ -34,7 +34,7 @@ import Config
 _previous_configs = {}
 
 # regular expression for PATH_INFO
-_pathinfo_pat = re.compile(r'^/?(?P<l>\w.+)/(?P<z>\d+)/(?P<x>[\-\d]+)/(?P<y>[\-\d]+)\.(?P<e>\w+)$')
+_pathinfo_pat = re.compile(r'^/?(?P<l>\w.+)/(?P<z>\d+)/(?P<x>-?\d+)/(?P<y>-?\d+)\.(?P<e>\w+)$')
 _preview_pat = re.compile(r'^/?(?P<l>\w.+)/preview\.html$')
 
 def getTile(layer, coord, extension, ignore_cached=False):
