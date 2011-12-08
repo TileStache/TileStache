@@ -1,3 +1,7 @@
+2011-12-07: 1.20.0
+- Tile URLs can now contain negative integers.
+- Now reading files in Disk Cache using 'rb' mode for Windows compatibility.
+
 2011-11-23: 1.19.4
 - Fixed a silly bug where I was comparing ints and strings.
 
