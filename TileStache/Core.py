@@ -479,7 +479,7 @@ def _preview(layer):
 <html>
 <head>
 	<title>TileStache Preview: %(layername)s</title>
-    <script src="http://code.modestmaps.com/0.13.2/modestmaps.min.js" type="text/javascript"></script>
+    <script src="http://code.modestmaps.com/tilestache/modestmaps.min.js" type="text/javascript"></script>
 </head>
 <body>
     <script type="text/javascript">
@@ -487,9 +487,10 @@ def _preview(layer):
     
         var template = '{Z}/{X}/{Y}.%(ext)s';
         var provider = new com.modestmaps.TemplatedMapProvider(template);
-        var map = new com.modestmaps.Map(document.body, provider);
+        var map = new MM.Map(document.body, provider);
         map.setCenterZoom(new com.modestmaps.Location(%(lat).6f, %(lon).6f), %(zoom)d);
-        map.draw();
+        // hashify it
+        new MM.Hash(map);
     
     //-->
     </script>
