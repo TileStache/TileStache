@@ -478,10 +478,10 @@ def _preview(layer):
     return """<!DOCTYPE html>
 <html>
 <head>
-	<title>TileStache Preview: %(layername)s</title>
+    <title>TileStache Preview: %(layername)s</title>
     <script src="http://code.modestmaps.com/tilestache/modestmaps.min.js" type="text/javascript"></script>
 </head>
-<body>
+<body style="position: absolute; width: 100%%; height: 100%%;">
     <script type="text/javascript">
     <!--
     
