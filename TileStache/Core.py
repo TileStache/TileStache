@@ -265,7 +265,7 @@ class Layer:
         
             self.write_cache == False will cause this to return False.
         """
-        return self.metatile.isForReal() and hasattr(self.provider, 'renderArea') and self.write_cache
+        return self.metatile.isForReal() and hasattr(self.provider, 'renderArea')
     
     def render(self, coord, format):
         """ Render a tile for a coordinate, return PIL Image-like object.
@@ -282,6 +282,9 @@ class Layer:
         
         provider = self.provider
         metatile = self.metatile
+        
+        if self.doMetatile() and not self.write_cache:
+            raise Exception('FIXME: make metatile buffer work when write cache = 0.')
         
         if self.doMetatile():
             # adjust render size and coverage for metatile
