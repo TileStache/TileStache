@@ -1,3 +1,6 @@
+2011-12-12: 1.20.1
+- Fixed body style to account for full-page map.
+
 2011-12-07: 1.20.0
 - Tile URLs can now contain negative integers.
 - Now reading files in Disk Cache using 'rb' mode for Windows compatibility.
