@@ -24,7 +24,7 @@ designers and cartographers.
     # like http://tile.openstreetmap.org/1/0/0.png
     coord = ModestMaps.Core.Coordinate(0, 0, 1)
     config = TileStache.Config.buildConfiguration(config)
-    type, bytes = TileStache.getTile(config.layers['ex'], coord, 'png')
+    type, bytes = TileStache.getTile(config.layers['example'], coord, 'png')
     
     open('tile.png', 'w').write(bytes)
 
@@ -32,20 +32,29 @@ designers and cartographers.
 
 ---- Dependencies ----
 
+Required:
+
 - ModestMaps: http://modestmaps.com, http://github.com/migurski/modestmaps-py
-- Python Imaging Library (PIL):http://www.pythonware.com/products/pil
+- Python Imaging Library (PIL): http://www.pythonware.com/products/pil
+
+Optional:
+
 - Simplejson: https://github.com/simplejson/simplejson (optional if using >= python 2.6)
 - mapnik: http://mapnik.org (optional)
 - werkzeug: http://werkzeug.pocoo.org/ (optional)
 
-Install them with pip:
+Install the pure python modules with pip:
 
-    sudo pip install -U simplejson modestmaps werkzeug PIL
+    sudo pip install -U PIL modestmaps simplejson werkzeug
 
 Install pip (http://www.pip-installer.org/) like:
 
     curl -O https://raw.github.com/pypa/pip/master/contrib/get-pip.py
     sudo python get-pip.py
+
+Install Mapnik via instructions at:
+
+    http://mapnik.org/download
 
 
 ---- Installation ----
@@ -56,7 +65,7 @@ TileStache can be run from the download directory as is. For example the scripts
 
 Can all be run locally like:
 
-    ./scripts tilestache-server.py
+    ./scripts/tilestache-server.py
 
 To install globally do:
 
@@ -70,14 +79,14 @@ to fully install TileStache.
 
 To make sure TileStache is working start the development server:
 
-    ./scripts tilestache-server.py
+    ./scripts/tilestache-server.py
 
 Then open a modern web browser and you should be able to preview tiles at:
 
     http://localhost:8080/osm/preview.html
 
-This is a previewer that uses ModestMaps and OpenStreetMap tiles 
-from http://tile.osm.org as defined in the default config file 'tilestache.cfg'
+This is a previewer that uses ModestMaps and OpenStreetMap tiles from
+http://tile.osm.org as defined in the default config file 'tilestache.cfg'
 
 
 ---- Documentation ----
