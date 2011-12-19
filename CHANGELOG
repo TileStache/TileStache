@@ -1,3 +1,7 @@
+2011-12-18: 1.20.2
+- Added new tilestache-compose.py script.
+- Fixed preview body style to account for iOS viewport.
+
 2011-12-12: 1.20.1
 - Fixed body style to account for full-page map.
 
