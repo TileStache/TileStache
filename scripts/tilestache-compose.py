@@ -9,12 +9,16 @@ import TileStache
 import ModestMaps
 
 class Provider (ModestMaps.Providers.IMapProvider):
-
-    def __init__(self, layer, use_threads=None):
+    """ Wrapper for TileStache Layer objects that makes them behave like ModestMaps Provider objects.
+    
+        Requires ModestMaps 1.3.0 or better to support "file://" URLs.
+    """
+    def __init__(self, layer, verbose=False, use_threads=None):
         self.projection = layer.projection
         self.layer = layer
         self.files = []
 
+        self.verbose = bool(verbose)
         self.lock = allocate_lock()
         
         #
@@ -47,6 +51,10 @@ class Provider (ModestMaps.Providers.IMapProvider):
             if self.lock.locked():
                 self.lock.release()
     
+            if self.verbose:
+                size = len(tile_data) / 1024.
+                printlocked(self.lock, self.layer.name() + '/%(zoom)d/%(column)d/%(row)d.png' % coord.__dict__, '(%dKB)' % size)
+            
             return ('file://' + abspath(filename), )
     
     def __del__(self):
@@ -57,6 +65,13 @@ class Provider (ModestMaps.Providers.IMapProvider):
 
 class BadComposure(Exception):
     pass
+
+def printlocked(lock, *stuff):
+    """
+    """
+    if lock.acquire():
+        print ' '.join([str(thing) for thing in stuff])
+        lock.release()
 
 parser = OptionParser(usage="""tilestache-compose.py [options] file
 
@@ -123,7 +138,7 @@ if __name__ == '__main__':
         if options.layer not in config.layers:
             raise TileStache.Core.KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (options.layer, ', '.join(sorted(config.layers.keys()))))
 
-        provider = Provider(config.layers[options.layer])
+        provider = Provider(config.layers[options.layer], options.verbose)
         
         try:
             outfile = args[0]
@@ -181,4 +196,4 @@ if __name__ == '__main__':
     if options.verbose:
         print map.coordinate, map.offset, '->', outfile, (map.dimensions.x, map.dimensions.y)
 
-    map.draw(options.verbose).save(outfile)
+    map.draw(False).save(outfile)
