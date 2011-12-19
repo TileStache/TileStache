@@ -8,6 +8,11 @@ from os.path import abspath
 import TileStache
 import ModestMaps
 
+mmaps_version = tuple(map(int, getattr(ModestMaps, '__version__', '0.0.0').split('.')))
+
+if mmaps_version < (1, 3, 0):
+    raise ImportError('tilestache-compose.py requires ModestMaps 1.3.0 or newer.')
+
 class Provider (ModestMaps.Providers.IMapProvider):
     """ Wrapper for TileStache Layer objects that makes them behave like ModestMaps Provider objects.
     
