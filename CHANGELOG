@@ -1,4 +1,7 @@
-2011-12-18: 1.20.2
+2011-12-25: 1.21.1
+- Added current working directory to sys.path for new classes.
+
+2011-12-18: 1.21.0
 - Added new tilestache-compose.py script.
 - Fixed preview body style to account for iOS viewport.
 

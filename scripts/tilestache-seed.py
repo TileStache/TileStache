@@ -9,6 +9,7 @@ West Oakland (http://sta.mn/ck) in the "osm" layer, for zoom levels 12-15:
 See `tilestache-seed.py --help` for more information.
 """
 
+from os import getcwd
 from sys import stderr, path
 from optparse import OptionParser
 
@@ -142,6 +143,8 @@ def tilesetCoordinates(filename):
 
 if __name__ == '__main__':
     options, zooms = parser.parse_args()
+    
+    path.insert(0, getcwd())
 
     if options.include:
         for p in options.include.split(':'):
@@ -168,6 +171,7 @@ if __name__ == '__main__':
             raise KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (options.layer, ', '.join(sorted(config.layers.keys()))))
 
         layer = config.layers[options.layer]
+        layer.write_cache = True # Override to make seeding guaranteed useful.
 
         verbose = options.verbose
         extension = options.extension
