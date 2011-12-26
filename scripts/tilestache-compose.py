@@ -79,7 +79,8 @@ def printlocked(lock, *stuff):
     """
     if lock.acquire():
         print ' '.join([str(thing) for thing in stuff])
-        lock.release()
+        if self.lock.locked():
+            self.lock.release()
 
 parser = OptionParser(usage="""tilestache-compose.py [options] file
 

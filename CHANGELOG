@@ -1,3 +1,6 @@
+2011-12-25: 1.21.2
+- Fixed a locking bug in tilestache-compose.py.
+
 2011-12-25: 1.21.1
 - Added current working directory to sys.path for new classes.
 
