@@ -56,7 +56,8 @@ class Provider (ModestMaps.Providers.IMapProvider):
             
             self.files.append(filename)
             
-            if self.lock.locked():
+            if not self.threadsafe:
+                # must be locked, right?
                 self.lock.release()
     
             if self.verbose:
@@ -79,8 +80,7 @@ def printlocked(lock, *stuff):
     """
     if lock.acquire():
         print ' '.join([str(thing) for thing in stuff])
-        if lock.locked():
-            lock.release()
+        lock.release()
 
 parser = OptionParser(usage="""tilestache-compose.py [options] file
 
