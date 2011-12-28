@@ -262,8 +262,6 @@ class Layer:
 
     def doMetatile(self):
         """ Return True if we have a real metatile and the provider is OK with it.
-        
-            self.write_cache == False will cause this to return False.
         """
         return self.metatile.isForReal() and hasattr(self.provider, 'renderArea')
     
@@ -282,9 +280,6 @@ class Layer:
         
         provider = self.provider
         metatile = self.metatile
-        
-        if self.doMetatile() and not self.write_cache:
-            raise Exception('FIXME: make metatile buffer work when write cache = 0.')
         
         if self.doMetatile():
             # adjust render size and coverage for metatile
@@ -329,7 +324,8 @@ class Layer:
                 subtile.save(buff, format)
                 body = buff.getvalue()
                 
-                self.config.cache.save(body, self, other, format)
+                if self.write_cache:
+                    self.config.cache.save(body, self, other, format)
                 
                 if other == coord:
                     # the one that actually gets returned
