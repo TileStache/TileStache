@@ -57,7 +57,7 @@ parser.add_option('-f', '--progress-file', dest='progressfile',
 parser.add_option('-q', action='store_false', dest='verbose',
                   help='Suppress chatty output, --progress-file works well with this.')
 
-parser.add_option('-i', '--include-path', dest='include',
+parser.add_option('-i', '--include-path', dest='include_paths',
                   help="Add the following colon-separated list of paths to Python's include path (aka sys.path)")
 
 parser.add_option('-d', '--output-directory', dest='outputdirectory',
@@ -143,8 +143,8 @@ def tilesetCoordinates(filename):
 if __name__ == '__main__':
     options, zooms = parser.parse_args()
 
-    if options.include:
-        for p in options.include.split(':'):
+    if options.include_paths:
+        for p in options.include_paths.split(':'):
             path.insert(0, p)
 
     from TileStache import parseConfigfile, getTile

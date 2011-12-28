@@ -1,17 +1,20 @@
-from sys import stderr
+from sys import stderr, path
 from tempfile import mkstemp
 from thread import allocate_lock
 from os import close, write, unlink
 from optparse import OptionParser
 from os.path import abspath
 
-import TileStache
 import ModestMaps
 
 mmaps_version = tuple(map(int, getattr(ModestMaps, '__version__', '0.0.0').split('.')))
 
 if mmaps_version < (1, 3, 0):
     raise ImportError('tilestache-compose.py requires ModestMaps 1.3.0 or newer.')
+
+#
+# More imports can be found below, after the --include-path option is known.
+#
 
 class Provider (ModestMaps.Providers.IMapProvider):
     """ Wrapper for TileStache Layer objects that makes them behave like ModestMaps Provider objects.
@@ -128,9 +131,18 @@ parser.add_option('-v', '--verbose', dest='verbose',
                   help='Make a bunch of noise.',
                   action='store_true')
 
+parser.add_option('-i', '--include-path', dest='include_paths',
+                  help="Add the following colon-separated list of paths to Python's include path (aka sys.path)")
+
 if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
+
+    if options.include_paths:
+        for p in options.include_paths.split(':'):
+            path.insert(0, p)
+
+    import TileStache
     
     try:
         if options.config is None:
