@@ -46,6 +46,7 @@ In-depth explanations of the layer components can be found in the module
 documentation for TileStache.Providers, TileStache.Core, and TileStache.Geography.
 """
 
+import sys
 from sys import stderr, modules
 from os.path import realpath, join as pathjoin
 from urlparse import urljoin, urlparse
@@ -159,8 +160,14 @@ def buildConfiguration(config_dict, dirpath='.'):
     
         The second argument is an optional dirpath that specifies where in the
         local filesystem the parsed dictionary originated, to make it possible
-        to resolve relative paths.
+        to resolve relative paths. It might be a path or more likely a full
+        URL including the "file://" prefix.
     """
+    scheme, h, path, p, q, f = urlparse(dirpath)
+    
+    if scheme in ('', 'file'):
+        sys.path.insert(0, path)
+    
     cache_dict = config_dict.get('cache', {})
     cache = _parseConfigfileCache(cache_dict, dirpath)
     
