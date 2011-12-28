@@ -73,6 +73,7 @@ import os
 
 from StringIO import StringIO
 from posixpath import exists
+from thread import allocate_lock
 from urlparse import urlparse, urljoin
 from httplib import HTTPConnection
 from tempfile import mkstemp
@@ -232,6 +233,7 @@ class Mapnik:
         
         self.layer = layer
         self.mapnik = None
+        self.lock = allocate_lock()
         
         engine = mapnik.FontEngine.instance()
         
@@ -256,12 +258,17 @@ class Mapnik:
                 mapnik.load_map(self.mapnik, filename)
                 os.unlink(filename)
         
-        self.mapnik.width = width
-        self.mapnik.height = height
-        self.mapnik.zoom_to_box(mapnik.Envelope(xmin, ymin, xmax, ymax))
-        
-        img = mapnik.Image(width, height)
-        mapnik.render(self.mapnik, img)
+        #
+        # Mapnik can behave strangely when run in threads, so place a lock on the instance.
+        #
+        if self.lock.acquire():
+            self.mapnik.width = width
+            self.mapnik.height = height
+            self.mapnik.zoom_to_box(mapnik.Envelope(xmin, ymin, xmax, ymax))
+            
+            img = mapnik.Image(width, height)
+            mapnik.render(self.mapnik, img)
+            self.lock.release()
         
         img = Image.fromstring('RGBA', (width, height), img.tostring())
         
