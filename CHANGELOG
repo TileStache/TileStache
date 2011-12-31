@@ -1,5 +1,7 @@
 - Fixed inconsistencies with cache-ignore setting when using tilestache-compose.py.
 - Fixed use of write-cache setting in TileStache.Layer.
+- Adding configuration file's directory to sys.path in Config.buildConfiguration().
+- Stopped adding current working directory to sys.path for new classes.
 
 2011-12-25: 1.21.3
 - Fixed a bug where I'm an idiot.

@@ -1,12 +1,9 @@
-from os import getcwd
-from sys import stderr, path
+from sys import stderr
 from tempfile import mkstemp
 from thread import allocate_lock
 from os import close, write, unlink
 from optparse import OptionParser
 from os.path import abspath
-
-path.insert(0, getcwd())
 
 import TileStache
 import ModestMaps

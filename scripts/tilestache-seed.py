@@ -9,7 +9,6 @@ West Oakland (http://sta.mn/ck) in the "osm" layer, for zoom levels 12-15:
 See `tilestache-seed.py --help` for more information.
 """
 
-from os import getcwd
 from sys import stderr, path
 from optparse import OptionParser
 
@@ -143,8 +142,6 @@ def tilesetCoordinates(filename):
 
 if __name__ == '__main__':
     options, zooms = parser.parse_args()
-    
-    path.insert(0, getcwd())
 
     if options.include:
         for p in options.include.split(':'):
