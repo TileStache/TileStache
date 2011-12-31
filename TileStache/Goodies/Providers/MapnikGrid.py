@@ -1,4 +1,5 @@
 """ Mapnik UTFGrid Provider.
+
 Takes the first layer from the given mapnik xml file and renders it as UTFGrid
 https://github.com/mapbox/mbtiles-spec/blob/master/1.1/utfgrid.md
 It can then be used for this:
@@ -15,7 +16,7 @@ Sample configuration:
       "kwargs":
       {
         "mapfile": "mymap.xml", 
-        "fields":["name","address"],
+        "fields":["name", "address"],
         "layer_index": 0,
         "wrapper": "grid",
         "scale": 4
@@ -68,14 +69,14 @@ class Provider:
         # create grid as same size as map/image
         grid = mapnik.Grid(width, height)
         # render a layer to that grid array
-        mapnik.render_layer(self.mapnik,grid,layer=self.layer_index,fields=self.fields)
+        mapnik.render_layer(self.mapnik, grid, layer=self.layer_index, fields=self.fields)
         # then encode the grid array as utf, resample to 1/scale the size, and dump features
-        grid_utf = grid.encode('utf',resolution=self.scale,add_features=True)
+        grid_utf = grid.encode('utf', resolution=self.scale, features=True)
 
         if self.wrapper is None:
-                return SaveableResponse(json.dumps(grid_utf))
+            return SaveableResponse(json.dumps(grid_utf))
         else:
-                return SaveableResponse(self.wrapper + '(' + json.dumps(grid_utf) + ')')
+            return SaveableResponse(self.wrapper + '(' + json.dumps(grid_utf) + ')')
 
     def getTypeByExtension(self, extension):
         """ Get mime-type and format by file extension.
