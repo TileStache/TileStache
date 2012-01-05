@@ -369,7 +369,7 @@ def _open_layer(driver_name, parameters, dirpath):
     
         conn_parts = []
         
-        for part in ('dbname', 'user', 'host', 'password'):
+        for part in ('dbname', 'user', 'host', 'password', 'port'):
             if part in parameters:
                 conn_parts.append("%s='%s'" % (part, parameters[part]))
         
