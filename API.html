@@ -1636,8 +1636,8 @@ accept any of these keyword arguments, TileStache will throw an exception.
 </p>
 
 <p>
-A cache must provide all of these four methods: <code>lock</code>,
-<code>unlock</code>, <code>read</code>, and <code>save</code>.
+A cache must provide all of these five methods: <code>lock</code>,
+<code>unlock</code>, <code>remove</code>, <code>read</code>, and <code>save</code>.
 </p>
 
 <p>
@@ -1686,6 +1686,10 @@ class CacheStub:
 
   def unlock(self, layer, coord, format):
     # unlock a tile
+    raise NotImplementedError
+
+  def remove(self, layer, coord, format):
+    # remove a tile
     raise NotImplementedError
 
   def read(self, layer, coord, format):
