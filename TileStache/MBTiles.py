@@ -242,7 +242,13 @@ class Cache:
     
     def unlock(self, layer, coord, format):
         return
-    
+        
+    def remove(self, layer, coord, format):
+        """ Remove a cached tile.
+        """
+        # TODO: write me
+        raise NotImplementedError('MBTiles Cache does not yet implement the .remove() method.')
+        
     def read(self, layer, coord, format):
         """ Return raw tile content from tileset.
         """

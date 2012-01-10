@@ -74,6 +74,12 @@ class Cache:
         mem.delete(key+'-lock')
         mem.disconnect_all()
         
+    def remove(self, layer, coord, format):
+        """ Remove a cached tile.
+        """
+        # TODO: write me
+        raise NotImplementedError('Memcache Cache does not yet implement the .remove() method.')
+        
     def read(self, layer, coord, format):
         """ Read a cached tile.
         """
