@@ -74,7 +74,7 @@ import os
 from StringIO import StringIO
 from posixpath import exists
 from urlparse import urlparse, urljoin
-from httplib import HTTPConnection
+import urllib
 from tempfile import mkstemp
 from string import Template
 from urllib import urlopen
@@ -177,11 +177,7 @@ class Proxy:
         urls = self.provider.getTileUrls(coord)
         
         for url in urls:
-            s, host, path, p, query, f = urlparse(url)
-            conn = HTTPConnection(host, 80)
-            conn.request('GET', path+'?'+query)
-
-            body = conn.getresponse().read()
+            body = urllib.urlopen(url).read()
             tile = Image.open(StringIO(body)).convert('RGBA')
 
             if len(urls) == 1:
