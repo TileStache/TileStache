@@ -163,6 +163,16 @@ def get_tile(filename, coord):
 
     return mime_type, content
 
+def delete_tile(filename, coord):
+    """ Delete a tile by coordinate.
+    """
+    db = _connect(filename)
+    db.text_factory = bytes
+    
+    tile_row = (2**coord.zoom - 1) - coord.row # Hello, Paul Ramsey.
+    q = 'DELETE FROM tiles WHERE zoom_level=? AND tile_column=? AND tile_row=?'
+    db.execute(q, (coord.zoom, coord.column, tile_row))
+
 def put_tile(filename, coord, content):
     """
     """
@@ -246,8 +256,7 @@ class Cache:
     def remove(self, layer, coord, format):
         """ Remove a cached tile.
         """
-        # TODO: write me
-        raise NotImplementedError('MBTiles Cache does not yet implement the .remove() method.')
+        delete_tile(self.filename, coord)
         
     def read(self, layer, coord, format):
         """ Return raw tile content from tileset.

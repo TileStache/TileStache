@@ -77,8 +77,10 @@ class Cache:
     def remove(self, layer, coord, format):
         """ Remove a cached tile.
         """
-        # TODO: write me
-        raise NotImplementedError('Memcache Cache does not yet implement the .remove() method.')
+        mem = Client(self.servers)
+        key = tile_key(layer, coord, format, self.revision)
+        
+        mem.delete(key)
         
     def read(self, layer, coord, format):
         """ Read a cached tile.

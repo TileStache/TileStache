@@ -79,8 +79,8 @@ class Cache:
     def remove(self, layer, coord, format):
         """ Remove a cached tile.
         """
-        # TODO: write me
-        raise NotImplementedError('S3 Cache does not yet implement the .remove() method.')
+        key_name = tile_key(layer, coord, format)
+        self.bucket.delete_key(key_name)
         
     def read(self, layer, coord, format):
         """ Read a cached tile.

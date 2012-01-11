@@ -266,8 +266,14 @@ class Disk:
     def remove(self, layer, coord, format):
         """ Remove a cached tile.
         """
-        # TODO: write me
-        raise NotImplementedError('Disk Cache does not yet implement the .remove() method.')
+        fullpath = self._fullpath(layer, coord, format)
+        
+        try:
+            os.remove(fullpath)
+        except OSError, e:
+            # errno=2 means that the file does not exist, which is fine
+            if e.errno != 2:
+                raise
         
     def read(self, layer, coord, format):
         """ Read a cached tile.
