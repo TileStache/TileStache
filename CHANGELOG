@@ -1,3 +1,6 @@
+2012-01-10: 1.23.1
+- Added Nikolai's httplib patch in Proxy provider.
+
 2012-01-10: 1.23.0
 - Added new tilestache-clean.py script and required remove() method for caches.
 
