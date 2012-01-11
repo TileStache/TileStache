@@ -1,3 +1,6 @@
+2012-01-10: 1.23.0
+- Added new tilestache-clean.py script and required remove() method for caches.
+
 2012-01-01: 1.22.0
 - Fixed inconsistencies with cache-ignore setting when using tilestache-compose.py.
 - Fixed use of write-cache setting in TileStache.Layer.
