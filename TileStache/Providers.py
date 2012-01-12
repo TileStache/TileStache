@@ -99,9 +99,7 @@ except ImportError:
 import ModestMaps
 from ModestMaps.Core import Point, Coordinate
 
-import MBTiles
 import Geography
-import Vector
 
 def getProviderByName(name):
     """ Retrieve a provider object by name.
@@ -118,9 +116,11 @@ def getProviderByName(name):
         return UrlTemplate
 
     elif name.lower() == 'vector':
+        import Vector
         return Vector.Provider
 
     elif name.lower() == 'mbtiles':
+        import MBTiles
         return MBTiles.Provider
 
     raise Exception('Unknown provider name: "%s"' % name)

@@ -1,3 +1,6 @@
+2012-01-11: 1.23.2
+- Delayed import of MBTiles and Vector providers until last minute.
+
 2012-01-10: 1.23.1
 - Added Nikolai's httplib patch in Proxy provider.
 
