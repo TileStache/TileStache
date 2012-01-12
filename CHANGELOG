@@ -1,3 +1,6 @@
+2012-01-12: 1.23.3
+- Changed import delay from 1.23.2 to a specific conditional around sqlite3 for Heroku.
+
 2012-01-11: 1.23.2
 - Delayed import of MBTiles and Vector providers until last minute.
 

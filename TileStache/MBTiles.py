@@ -35,9 +35,16 @@ MBTiles provider parameters:
   tileset:
     Required local file path to MBTiles tileset file, a SQLite 3 database file.
 """
-from sqlite3 import connect as _connect
 from urlparse import urlparse, urljoin
 from os.path import exists
+
+try:
+    from sqlite3 import connect as _connect
+except ImportError:
+    # Heroku appears to be missing standard python's
+    # sqlite3 package, so throw an ImportError later
+    def _connect(filename):
+        raise ImportError('No module named sqlite3')
 
 from ModestMaps.Core import Coordinate
 
