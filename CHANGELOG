@@ -1,3 +1,6 @@
+2012-01-23: 1.23.4
+- Fixed a bug in Multi Cache provider remove().
+
 2012-01-12: 1.23.3
 - Changed import delay from 1.23.2 to a specific conditional around sqlite3 for Heroku.
 

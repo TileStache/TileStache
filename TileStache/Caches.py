@@ -384,7 +384,7 @@ class Multi:
         """ Remove a cached tile from every tier.
         """
         for (index, cache) in enumerate(self.tiers):
-            cache.remove(body, layer, coord)
+            cache.remove(layer, coord, format)
         
     def read(self, layer, coord, format):
         """ Read a cached tile.
