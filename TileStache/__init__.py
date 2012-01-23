@@ -16,6 +16,7 @@ from sys import stdout
 from cgi import parse_qs
 from StringIO import StringIO
 from os.path import dirname, join as pathjoin, realpath
+from datetime import datetime, timedelta
 from urlparse import urljoin, urlparse
 from urllib import urlopen
 from os import getcwd
@@ -281,9 +282,10 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     if layer.allowed_origin:
         print >> stdout, 'Access-Control-Allow-Origin:', layer.allowed_origin
     
-    if layer.max_cache_age:
-        # TODO write me
-        pass
+    if layer.max_cache_age is not None:
+        expires = datetime.utcnow() + timedelta(seconds=layer.max_cache_age)
+        print >> stdout, 'Expires:', expires.strftime('%a %d %b %Y %H:%M:%S GMT')
+        print >> stdout, 'Cache-Control: public, max-age=%d' % layer.max_cache_age
     
     print >> stdout, 'Content-Length: %d' % len(content)
     print >> stdout, 'Content-Type: %s\n' % mimetype
@@ -359,8 +361,9 @@ class WSGITileServer:
             headers.append(('Access-Control-Allow-Origin', allowed_origin))
         
         if max_cache_age is not None:
-            # TODO write me
-            pass
+            expires = datetime.utcnow() + timedelta(seconds=layer.max_cache_age)
+            headers.append(('Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT')))
+            headers.append(('Cache-Control', 'public, max-age=%d' % layer.max_cache_age))
         
         start_response(code, headers)
         return [content]
