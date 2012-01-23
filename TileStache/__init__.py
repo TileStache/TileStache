@@ -281,6 +281,10 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     if layer.allowed_origin:
         print >> stdout, 'Access-Control-Allow-Origin:', layer.allowed_origin
     
+    if layer.max_cache_age:
+        # TODO write me
+        pass
+    
     print >> stdout, 'Content-Length: %d' % len(content)
     print >> stdout, 'Content-Type: %s\n' % mimetype
     print >> stdout, content
@@ -341,16 +345,22 @@ class WSGITileServer:
             return self._response(start_response, '404 Not Found')
 
         mimetype, content = requestHandler(self.config, environ['PATH_INFO'], environ['QUERY_STRING'])
-        allowed_origin = requestLayer(self.config, environ['PATH_INFO']).allowed_origin
-        return self._response(start_response, '200 OK', str(content), mimetype, allowed_origin)
+        request_layer = requestLayer(self.config, environ['PATH_INFO'])
+        allowed_origin = request_layer.allowed_origin
+        max_cache_age = request_layer.max_cache_age
+        return self._response(start_response, '200 OK', str(content), mimetype, allowed_origin, max_cache_age)
 
-    def _response(self, start_response, code, content='', mimetype='text/plain', allowed_origin=''):
+    def _response(self, start_response, code, content='', mimetype='text/plain', allowed_origin='', max_cache_age=None):
         """
         """
         headers = [('Content-Type', mimetype), ('Content-Length', str(len(content)))]
         
         if allowed_origin:
             headers.append(('Access-Control-Allow-Origin', allowed_origin))
+        
+        if max_cache_age is not None:
+            # TODO write me
+            pass
         
         start_response(code, headers)
         return [content]
