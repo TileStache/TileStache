@@ -1,3 +1,7 @@
+2012-01-25: 1.24.0
+- Added support for HTTP Expires and Cache-Control headers with per-layer maximum cache age.
+- Merged Per Liedman's fox for disk cache lock directory removal bug.
+
 2012-01-23: 1.23.4
 - Fixed a bug in Multi Cache provider remove().
 
