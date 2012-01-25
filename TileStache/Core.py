@@ -54,7 +54,10 @@ configuration file as a dictionary:
   header Access-Control-Allow-Origin, useful for when you need to provide
   javascript direct access to response data such as GeoJSON or pixel values.
   The header is part of a W3C working draft (http://www.w3.org/TR/cors/).
-- "maximum cache age" is an optional string that ... TODO write me
+- "maximum cache age" is an optional number of seconds used to control behavior
+  of downstream caches. Causes TileStache responses to include Cache-Control
+  and Expires HTTP response headers. Useful when TileStache is itself hosted
+  behind an HTTP cache such as Squid, Cloudfront, or Akamai.
 - "jpeg options" is an optional dictionary of JPEG creation options, passed
   through to PIL: http://www.pythonware.com/library/pil/handbook/format-jpeg.htm.
 - "png options" is an optional dictionary of PNG creation options, passed
