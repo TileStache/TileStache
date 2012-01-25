@@ -253,7 +253,11 @@ class Disk:
             Lock is implemented as an empty directory next to the tile file.
         """
         lockpath = self._lockpath(layer, coord, format)
-        os.rmdir(lockpath)
+        try:
+            os.rmdir(lockpath)
+        except OSError:
+            # Ok, someone else deleted it already
+            pass
     
     def read(self, layer, coord, format):
         """ Read a cached tile.
