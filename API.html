@@ -692,6 +692,7 @@ Example layer configuration:
       "write cache": …,
       "bounds": { … },
       "allowed origin": …,
+      "maximum cache age": …,
       "jpeg options": …,
       "png options": …
     }
@@ -779,6 +780,16 @@ Shared layer parameters:
     <a href="http://www.w3.org/TR/cors/">W3C working draft</a>.
     Pro-tip: if you want to allow maximum permissions and minimal
     security headache, use a value of <samp>"*"</samp> for this.
+    </dd>
+
+    <dt>maximum cache age</dt>
+    <dd>
+    An optional number of seconds used to control behavior of downstream caches.
+    Causes TileStache responses to include
+    <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9">Cache-Control</a>
+    and <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.21">Expires</a>
+    HTTP response headers. Useful when TileStache is itself hosted behind an HTTP
+    cache such as Squid, Cloudfront, or Akamai.
     </dd>
 
     <dt>jpeg options</dt>

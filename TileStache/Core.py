@@ -22,6 +22,7 @@ configuration file as a dictionary:
           "write cache": ...,
           "bounds": { ... },
           "allowed origin": ...,
+          "maximum cache age": ...,
           "jpeg options": ...,
           "png options": ...
         }
@@ -53,6 +54,7 @@ configuration file as a dictionary:
   header Access-Control-Allow-Origin, useful for when you need to provide
   javascript direct access to response data such as GeoJSON or pixel values.
   The header is part of a W3C working draft (http://www.w3.org/TR/cors/).
+- "maximum cache age" is an optional string that ... TODO write me
 - "jpeg options" is an optional dictionary of JPEG creation options, passed
   through to PIL: http://www.pythonware.com/library/pil/handbook/format-jpeg.htm.
 - "png options" is an optional dictionary of PNG creation options, passed
@@ -214,6 +216,9 @@ class Layer:
           allowed_origin:
             Value for the Access-Control-Allow-Origin HTTP response header.
 
+          max_cache_age:
+            Number of seconds that tiles from this layer may be cached by downstream clients.
+
           preview_lat:
             Starting latitude for slippy map layer preview, default 37.80.
 
@@ -226,7 +231,7 @@ class Layer:
           preview_ext:
             Tile name extension for slippy map layer preview, default "png".
     """
-    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, write_cache=True, allowed_origin=None, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png', bounds=None):
+    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, write_cache=True, allowed_origin=None, max_cache_age=None, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png', bounds=None):
         self.provider = None
         self.config = config
         self.projection = projection
@@ -236,6 +241,7 @@ class Layer:
         self.cache_lifespan = cache_lifespan
         self.write_cache = write_cache
         self.allowed_origin = allowed_origin
+        self.max_cache_age = max_cache_age
         
         self.preview_lat = preview_lat
         self.preview_lon = preview_lon

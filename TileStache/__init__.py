@@ -16,6 +16,7 @@ from sys import stdout
 from cgi import parse_qs
 from StringIO import StringIO
 from os.path import dirname, join as pathjoin, realpath
+from datetime import datetime, timedelta
 from urlparse import urljoin, urlparse
 from urllib import urlopen
 from os import getcwd
@@ -281,6 +282,11 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     if layer.allowed_origin:
         print >> stdout, 'Access-Control-Allow-Origin:', layer.allowed_origin
     
+    if layer.max_cache_age is not None:
+        expires = datetime.utcnow() + timedelta(seconds=layer.max_cache_age)
+        print >> stdout, 'Expires:', expires.strftime('%a %d %b %Y %H:%M:%S GMT')
+        print >> stdout, 'Cache-Control: public, max-age=%d' % layer.max_cache_age
+    
     print >> stdout, 'Content-Length: %d' % len(content)
     print >> stdout, 'Content-Type: %s\n' % mimetype
     print >> stdout, content
@@ -341,16 +347,23 @@ class WSGITileServer:
             return self._response(start_response, '404 Not Found')
 
         mimetype, content = requestHandler(self.config, environ['PATH_INFO'], environ['QUERY_STRING'])
-        allowed_origin = requestLayer(self.config, environ['PATH_INFO']).allowed_origin
-        return self._response(start_response, '200 OK', str(content), mimetype, allowed_origin)
+        request_layer = requestLayer(self.config, environ['PATH_INFO'])
+        allowed_origin = request_layer.allowed_origin
+        max_cache_age = request_layer.max_cache_age
+        return self._response(start_response, '200 OK', str(content), mimetype, allowed_origin, max_cache_age)
 
-    def _response(self, start_response, code, content='', mimetype='text/plain', allowed_origin=''):
+    def _response(self, start_response, code, content='', mimetype='text/plain', allowed_origin='', max_cache_age=None):
         """
         """
         headers = [('Content-Type', mimetype), ('Content-Length', str(len(content)))]
         
         if allowed_origin:
             headers.append(('Access-Control-Allow-Origin', allowed_origin))
+        
+        if max_cache_age is not None:
+            expires = datetime.utcnow() + timedelta(seconds=layer.max_cache_age)
+            headers.append(('Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT')))
+            headers.append(('Cache-Control', 'public, max-age=%d' % layer.max_cache_age))
         
         start_response(code, headers)
         return [content]
