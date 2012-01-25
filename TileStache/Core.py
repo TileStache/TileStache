@@ -217,7 +217,7 @@ class Layer:
             Value for the Access-Control-Allow-Origin HTTP response header.
 
           max_cache_age:
-            TODO write me
+            Number of seconds that tiles from this layer may be cached by downstream clients.
 
           preview_lat:
             Starting latitude for slippy map layer preview, default 37.80.
