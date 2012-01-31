@@ -361,9 +361,9 @@ class WSGITileServer:
             headers.append(('Access-Control-Allow-Origin', allowed_origin))
         
         if max_cache_age is not None:
-            expires = datetime.utcnow() + timedelta(seconds=layer.max_cache_age)
+            expires = datetime.utcnow() + timedelta(seconds=max_cache_age)
             headers.append(('Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT')))
-            headers.append(('Cache-Control', 'public, max-age=%d' % layer.max_cache_age))
+            headers.append(('Cache-Control', 'public, max-age=%d' % max_cache_age))
         
         start_response(code, headers)
         return [content]

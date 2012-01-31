@@ -1,3 +1,6 @@
+2012-01-30: 1.24.1
+- Fixed an error in WSGITileServer._response().
+
 2012-01-25: 1.24.0
 - Added support for HTTP Expires and Cache-Control headers with per-layer maximum cache age.
 - Merged Per Liedman's fox for disk cache lock directory removal bug.
