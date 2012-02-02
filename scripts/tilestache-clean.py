@@ -38,7 +38,7 @@ parser.add_option('-c', '--config', dest='config',
                   help='Path to configuration file.')
 
 parser.add_option('-l', '--layer', dest='layer',
-                  help='Layer name from configuration.')
+                  help='Layer name from configuration. "ALL" is a special value that will clean all layers in turn. If you have an actual layer named "ALL", use "ALL LAYERS" instead.')
 
 parser.add_option('-b', '--bbox', dest='bbox',
                   help='Bounding box in floating point geographic coordinates: south west north east.',
@@ -133,12 +133,17 @@ if __name__ == '__main__':
 
         config = parseConfigfile(options.config)
 
-        if options.layer not in config.layers:
+        if options.layer in ('ALL', 'ALL LAYERS') and options.layer not in config.layers:
+            # clean every layer in the config
+            layers = config.layers.values()
+
+        elif options.layer not in config.layers:
             raise KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (options.layer, ', '.join(sorted(config.layers.keys()))))
 
-        layer = config.layers[options.layer]
-        layer.write_cache = True # Override to make seeding guaranteed useful.
-
+        else:
+            # clean just one layer in the config
+            layers = [config.layers[options.layer]]
+        
         verbose = options.verbose
         extension = options.extension
         progressfile = options.progressfile
@@ -149,9 +154,6 @@ if __name__ == '__main__':
 
         northwest = Location(north, west)
         southeast = Location(south, east)
-
-        ul = layer.projection.locationCoordinate(northwest)
-        lr = layer.projection.locationCoordinate(southeast)
 
         for (i, zoom) in enumerate(zooms):
             if not zoom.isdigit():
@@ -168,28 +170,33 @@ if __name__ == '__main__':
     except KnownUnknown, e:
         parser.error(str(e))
 
-    if tile_list:
-        coordinates = listCoordinates(tile_list)
-    else:
-        coordinates = generateCoordinates(ul, lr, zooms, padding)
+    for layer in layers:
+
+        if tile_list:
+            coordinates = listCoordinates(tile_list)
+        else:
+            ul = layer.projection.locationCoordinate(northwest)
+            lr = layer.projection.locationCoordinate(southeast)
     
-    for (offset, count, coord) in coordinates:
-        path = '%s/%d/%d/%d.%s' % (layer.name(), coord.zoom, coord.column, coord.row, extension)
-
-        progress = {"tile": path,
-                    "offset": offset + 1,
-                    "total": count}
-
-        if options.verbose:
-            print >> stderr, '%(offset)d of %(total)d...' % progress,
-
-        mimetype, format = layer.getTypeByExtension(extension)
-        config.cache.remove(layer, coord, format)
-
-        if options.verbose:
-            print >> stderr, '%(tile)s' % progress
-                
-        if progressfile:
-            fp = open(progressfile, 'w')
-            json_dump(progress, fp)
-            fp.close()
+            coordinates = generateCoordinates(ul, lr, zooms, padding)
+        
+        for (offset, count, coord) in coordinates:
+            path = '%s/%d/%d/%d.%s' % (layer.name(), coord.zoom, coord.column, coord.row, extension)
+    
+            progress = {"tile": path,
+                        "offset": offset + 1,
+                        "total": count}
+    
+            if options.verbose:
+                print >> stderr, '%(offset)d of %(total)d...' % progress,
+    
+            mimetype, format = layer.getTypeByExtension(extension)
+            config.cache.remove(layer, coord, format)
+    
+            if options.verbose:
+                print >> stderr, '%(tile)s' % progress
+                    
+            if progressfile:
+                fp = open(progressfile, 'w')
+                json_dump(progress, fp)
+                fp.close()
