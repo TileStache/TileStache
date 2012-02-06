@@ -190,8 +190,17 @@ if __name__ == '__main__':
             if options.verbose:
                 print >> stderr, '%(offset)d of %(total)d...' % progress,
     
-            mimetype, format = layer.getTypeByExtension(extension)
-            config.cache.remove(layer, coord, format)
+            try:
+                mimetype, format = layer.getTypeByExtension(extension)
+            except:
+                #
+                # It's not uncommon for layers to lack support for certain
+                # extensions, so just don't attempt to remove a cached tile
+                # for an unsupported format.
+                #
+                pass
+            else:
+                config.cache.remove(layer, coord, format)
     
             if options.verbose:
                 print >> stderr, '%(tile)s' % progress
