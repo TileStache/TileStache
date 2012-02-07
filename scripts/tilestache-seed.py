@@ -151,47 +151,86 @@ if __name__ == '__main__':
     from TileStache.Core import KnownUnknown
     from TileStache.Caches import Disk, Multi
     from TileStache import MBTiles
+    import TileStache
     
     from ModestMaps.Core import Coordinate
     from ModestMaps.Geo import Location
 
     try:
-        if options.config is None:
-            raise KnownUnknown('Missing required configuration (--config) parameter.')
-
-        if options.layer is None:
-            raise KnownUnknown('Missing required layer (--layer) parameter.')
-
-        config = parseConfigfile(options.config)
-
-        if options.layer not in config.layers:
-            raise KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (options.layer, ', '.join(sorted(config.layers.keys()))))
-
-        layer = config.layers[options.layer]
-        layer.write_cache = True # Override to make seeding guaranteed useful.
-
         verbose = options.verbose
         extension = options.extension
         enable_retries = options.enable_retries
         progressfile = options.progressfile
         src_mbtiles = options.mbtiles_input
         
-        if src_mbtiles:
-            layer.provider = MBTiles.Provider(layer, src_mbtiles)
-            n, t, v, d, format, b = MBTiles.tileset_info(src_mbtiles)
-            extension = format or extension
+        # check for cache overrides
         
         if options.outputdirectory and options.mbtiles_output:
             cache1 = Disk(options.outputdirectory, dirs='portable', gzip=[])
             cache2 = MBTiles.Cache(options.mbtiles_output, extension, options.layer)
-            config.cache = Multi([cache1, cache2])
+            fake_cache = Multi([cache1, cache2])
 
         elif options.outputdirectory:
-            config.cache = Disk(options.outputdirectory, dirs='portable', gzip=[])
+            fake_cache = Disk(options.outputdirectory, dirs='portable', gzip=[])
 
         elif options.mbtiles_output:
-            config.cache = MBTiles.Cache(options.mbtiles_output, extension, options.layer)
+            fake_cache = MBTiles.Cache(options.mbtiles_output, extension, options.layer)
+        
+        else:
+            fake_cache = False
+        
+        # build configuration
+        
+        if options.config is None and not fake_cache:
+            raise KnownUnknown('Missing required configuration (--config) parameter.')
 
+        elif options.config is None:
+            config = TileStache.Config.Configuration(fake_cache, '.')
+        
+        elif fake_cache:
+            config = parseConfigfile(options.config)
+            config.cache = fake_cache
+        
+        else:
+            config = parseConfigfile(options.config)
+
+        # check for layer overrides
+        
+        if src_mbtiles:
+            metatile = TileStache.Core.Metatile()
+            projection = TileStache.Geography.SphericalMercator()
+            layer = TileStache.Core.Layer(config, projection, metatile)
+            
+            if fake_cache:
+                layer_name = options.layer or 'your-mbtiles'
+            else:
+                layer_name = options.layer
+            
+                config.layers[layer_name] = layer
+
+            layer.provider = MBTiles.Provider(layer, src_mbtiles)
+            n, t, v, d, format, b = MBTiles.tileset_info(src_mbtiles)
+            extension = format or extension
+        
+        else:
+            layer_name = options.layer
+        
+        print config.layers
+
+        # build layer
+        
+        if layer_name not in config.layers:
+            raise KnownUnknown('"%s" is not a layer I know about.' % layer_name)
+        
+        elif layer_name is None:
+            raise KnownUnknown('Missing required layer (--layer) parameter.')
+
+        else:
+            layer = config.layers[layer_name]
+            layer.write_cache = True # Override to make seeding guaranteed useful.
+        
+        # do the actual work
+        
         lat1, lon1, lat2, lon2 = options.bbox
         south, west = min(lat1, lat2), min(lon1, lon2)
         north, east = max(lat1, lat2), max(lon1, lon2)
