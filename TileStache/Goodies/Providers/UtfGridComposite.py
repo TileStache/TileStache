@@ -1,5 +1,5 @@
 """ Composite Provider for UTFGrid layers
-https://github.com/mapbox/mbtiles-spec/blob/master/1.1/utfgrid.md
+https://github.com/mapbox/utfgrid-spec/blob/master/1.2/utfgrid.md
 
 Combines multiple UTFGrid layers to create a single result.
 The given layers will be added to the result in the order they are given.

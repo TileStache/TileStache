@@ -1,7 +1,7 @@
 """ Mapnik UTFGrid Provider.
 
 Takes the first layer from the given mapnik xml file and renders it as UTFGrid
-https://github.com/mapbox/mbtiles-spec/blob/master/1.1/utfgrid.md
+https://github.com/mapbox/utfgrid-spec/blob/master/1.2/utfgrid.md
 It can then be used for this:
 http://mapbox.github.com/wax/interaction-leaf.html
 Only works with mapnik2 (Where the Grid functionality was introduced)
