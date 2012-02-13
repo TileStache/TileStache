@@ -74,6 +74,14 @@ class Cache:
         mem.delete(key+'-lock')
         mem.disconnect_all()
         
+    def remove(self, layer, coord, format):
+        """ Remove a cached tile.
+        """
+        mem = Client(self.servers)
+        key = tile_key(layer, coord, format, self.revision)
+        
+        mem.delete(key)
+        
     def read(self, layer, coord, format):
         """ Read a cached tile.
         """

@@ -124,6 +124,14 @@ class Test:
         if self.logfunc:
             self.logfunc('Test cache unlock: ' + name)
     
+    def remove(self, layer, coord, format):
+        """ Pretend to remove a cached tile.
+        """
+        name = self._description(layer, coord, format)
+
+        if self.logfunc:
+            self.logfunc('Test cache remove: ' + name)
+    
     def read(self, layer, coord, format):
         """ Pretend to read a cached tile.
         """
@@ -253,8 +261,25 @@ class Disk:
             Lock is implemented as an empty directory next to the tile file.
         """
         lockpath = self._lockpath(layer, coord, format)
-        os.rmdir(lockpath)
-    
+
+        try:
+            os.rmdir(lockpath)
+        except OSError:
+            # Ok, someone else deleted it already
+            pass
+        
+    def remove(self, layer, coord, format):
+        """ Remove a cached tile.
+        """
+        fullpath = self._fullpath(layer, coord, format)
+        
+        try:
+            os.remove(fullpath)
+        except OSError, e:
+            # errno=2 means that the file does not exist, which is fine
+            if e.errno != 2:
+                raise
+        
     def read(self, layer, coord, format):
         """ Read a cached tile.
         """
@@ -359,7 +384,13 @@ class Multi:
         """ Release a cache lock for this tile in the first tier.
         """
         return self.tiers[0].unlock(layer, coord, format)
-    
+        
+    def remove(self, layer, coord, format):
+        """ Remove a cached tile from every tier.
+        """
+        for (index, cache) in enumerate(self.tiers):
+            cache.remove(layer, coord, format)
+        
     def read(self, layer, coord, format):
         """ Read a cached tile.
         

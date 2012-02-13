@@ -21,22 +21,19 @@ class Provider (ModestMaps.Providers.IMapProvider):
     
         Requires ModestMaps 1.3.0 or better to support "file://" URLs.
     """
-    def __init__(self, layer, verbose=False, use_threads=None):
+    def __init__(self, layer, verbose=False, ignore_cached=None):
         self.projection = layer.projection
         self.layer = layer
         self.files = []
 
         self.verbose = bool(verbose)
+        self.ignore_cached = bool(ignore_cached)
         self.lock = allocate_lock()
         
         #
         # It's possible that Mapnik is not thread-safe, best to be cautious.
-        # Otherwise, allow the constructor to specify whether to use threads.
         #
-        if use_threads is None:
-            self.threadsafe = self.layer.provider is not TileStache.Providers.Mapnik
-        else:
-            self.threadsafe = use_threads
+        self.threadsafe = self.layer.provider is not TileStache.Providers.Mapnik
 
     def tileWidth(self):
         return 256
@@ -48,7 +45,7 @@ class Provider (ModestMaps.Providers.IMapProvider):
         """ Return tile URLs that start with file://, by first retrieving them.
         """
         if self.threadsafe or self.lock.acquire():
-            mime_type, tile_data = TileStache.getTile(self.layer, coord, 'png')
+            mime_type, tile_data = TileStache.getTile(self.layer, coord, 'png', self.ignore_cached)
             
             handle, filename = mkstemp(prefix='tilestache-compose-', suffix='.png')
             write(handle, tile_data)
@@ -134,6 +131,9 @@ parser.add_option('-v', '--verbose', dest='verbose',
 parser.add_option('-i', '--include-path', dest='include_paths',
                   help="Add the following colon-separated list of paths to Python's include path (aka sys.path)")
 
+parser.add_option('-x', '--ignore-cached', action='store_true', dest='ignore_cached',
+                  help='Re-render every tile, whether it is in the cache already or not.')
+
 if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
@@ -156,7 +156,7 @@ if __name__ == '__main__':
         if options.layer not in config.layers:
             raise TileStache.Core.KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (options.layer, ', '.join(sorted(config.layers.keys()))))
 
-        provider = Provider(config.layers[options.layer], options.verbose)
+        provider = Provider(config.layers[options.layer], options.verbose, options.ignore_cached)
         
         try:
             outfile = args[0]

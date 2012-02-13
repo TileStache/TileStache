@@ -16,9 +16,11 @@ from sys import stdout
 from cgi import parse_qs
 from StringIO import StringIO
 from os.path import dirname, join as pathjoin, realpath
+from datetime import datetime, timedelta
 from urlparse import urljoin, urlparse
 from urllib import urlopen
 from os import getcwd
+from time import time
 
 try:
     from json import load as json_load
@@ -32,6 +34,9 @@ import Config
 
 # dictionary of configuration objects for requestLayer().
 _previous_configs = {}
+
+# dictionary of tiles seen recently in this process, when ignore_cached is on.
+_recent_tiles = {}
 
 # regular expression for PATH_INFO
 _pathinfo_pat = re.compile(r'^/?(?P<l>\w.+)/(?P<z>\d+)/(?P<x>-?\d+)/(?P<y>-?\d+)\.(?P<e>\w+)$')
@@ -51,10 +56,21 @@ def getTile(layer, coord, extension, ignore_cached=False):
     """
     mimetype, format = layer.getTypeByExtension(extension)
     cache = layer.config.cache
+
+    # key in _recent_tiles
+    _tile = (layer, coord, extension)
     
     if not ignore_cached:
         # Start by checking for a tile in the cache.
         body = cache.read(layer, coord, format)
+
+    elif _tile in _recent_tiles:
+        # Then look in the bag of recent tiles.
+        body, use_by = _recent_tiles[_tile]
+        if time() > use_by:
+            del _recent_tiles[_tile]
+            body = None
+
     else:
         # Bypass the cache
         body = None
@@ -107,6 +123,9 @@ def getTile(layer, coord, extension, ignore_cached=False):
             if lockCoord:
                 # Always clean up a lock when it's no longer being used.
                 cache.unlock(layer, lockCoord, format)
+    
+    if ignore_cached:
+        _recent_tiles[_tile] = body, time() + 300
     
     return mimetype, body
 
@@ -263,6 +282,11 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     if layer.allowed_origin:
         print >> stdout, 'Access-Control-Allow-Origin:', layer.allowed_origin
     
+    if layer.max_cache_age is not None:
+        expires = datetime.utcnow() + timedelta(seconds=layer.max_cache_age)
+        print >> stdout, 'Expires:', expires.strftime('%a %d %b %Y %H:%M:%S GMT')
+        print >> stdout, 'Cache-Control: public, max-age=%d' % layer.max_cache_age
+    
     print >> stdout, 'Content-Length: %d' % len(content)
     print >> stdout, 'Content-Type: %s\n' % mimetype
     print >> stdout, content
@@ -323,16 +347,23 @@ class WSGITileServer:
             return self._response(start_response, '404 Not Found')
 
         mimetype, content = requestHandler(self.config, environ['PATH_INFO'], environ['QUERY_STRING'])
-        allowed_origin = requestLayer(self.config, environ['PATH_INFO']).allowed_origin
-        return self._response(start_response, '200 OK', str(content), mimetype, allowed_origin)
+        request_layer = requestLayer(self.config, environ['PATH_INFO'])
+        allowed_origin = request_layer.allowed_origin
+        max_cache_age = request_layer.max_cache_age
+        return self._response(start_response, '200 OK', str(content), mimetype, allowed_origin, max_cache_age)
 
-    def _response(self, start_response, code, content='', mimetype='text/plain', allowed_origin=''):
+    def _response(self, start_response, code, content='', mimetype='text/plain', allowed_origin='', max_cache_age=None):
         """
         """
         headers = [('Content-Type', mimetype), ('Content-Length', str(len(content)))]
         
         if allowed_origin:
             headers.append(('Access-Control-Allow-Origin', allowed_origin))
+        
+        if max_cache_age is not None:
+            expires = datetime.utcnow() + timedelta(seconds=max_cache_age)
+            headers.append(('Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT')))
+            headers.append(('Cache-Control', 'public, max-age=%d' % max_cache_age))
         
         start_response(code, headers)
         return [content]

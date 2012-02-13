@@ -302,6 +302,9 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     if 'allowed origin' in layer_dict:
         layer_kwargs['allowed_origin'] = str(layer_dict['allowed origin'])
     
+    if 'maximum cache age' in layer_dict:
+        layer_kwargs['max_cache_age'] = int(layer_dict['maximum cache age'])
+    
     if 'preview' in layer_dict:
         preview_dict = layer_dict['preview']
         

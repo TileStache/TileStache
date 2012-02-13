@@ -75,7 +75,7 @@ from StringIO import StringIO
 from posixpath import exists
 from thread import allocate_lock
 from urlparse import urlparse, urljoin
-from httplib import HTTPConnection
+import urllib
 from tempfile import mkstemp
 from string import Template
 from urllib import urlopen
@@ -100,9 +100,9 @@ except ImportError:
 import ModestMaps
 from ModestMaps.Core import Point, Coordinate
 
+import Vector
 import MBTiles
 import Geography
-import Vector
 
 def getProviderByName(name):
     """ Retrieve a provider object by name.
@@ -178,11 +178,7 @@ class Proxy:
         urls = self.provider.getTileUrls(coord)
         
         for url in urls:
-            s, host, path, p, query, f = urlparse(url)
-            conn = HTTPConnection(host, 80)
-            conn.request('GET', path+'?'+query)
-
-            body = conn.getresponse().read()
+            body = urllib.urlopen(url).read()
             tile = Image.open(StringIO(body)).convert('RGBA')
 
             if len(urls) == 1:

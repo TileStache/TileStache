@@ -35,9 +35,16 @@ MBTiles provider parameters:
   tileset:
     Required local file path to MBTiles tileset file, a SQLite 3 database file.
 """
-from sqlite3 import connect as _connect
 from urlparse import urlparse, urljoin
 from os.path import exists
+
+try:
+    from sqlite3 import connect as _connect
+except ImportError:
+    # Heroku appears to be missing standard python's
+    # sqlite3 package, so throw an ImportError later
+    def _connect(filename):
+        raise ImportError('No module named sqlite3')
 
 from ModestMaps.Core import Coordinate
 
@@ -163,6 +170,16 @@ def get_tile(filename, coord):
 
     return mime_type, content
 
+def delete_tile(filename, coord):
+    """ Delete a tile by coordinate.
+    """
+    db = _connect(filename)
+    db.text_factory = bytes
+    
+    tile_row = (2**coord.zoom - 1) - coord.row # Hello, Paul Ramsey.
+    q = 'DELETE FROM tiles WHERE zoom_level=? AND tile_column=? AND tile_row=?'
+    db.execute(q, (coord.zoom, coord.column, tile_row))
+
 def put_tile(filename, coord, content):
     """
     """
@@ -242,7 +259,12 @@ class Cache:
     
     def unlock(self, layer, coord, format):
         return
-    
+        
+    def remove(self, layer, coord, format):
+        """ Remove a cached tile.
+        """
+        delete_tile(self.filename, coord)
+        
     def read(self, layer, coord, format):
         """ Return raw tile content from tileset.
         """
