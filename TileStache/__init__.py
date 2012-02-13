@@ -13,7 +13,10 @@ __version__ = 'N.N.N'
 import re
 
 from sys import stdout
-from cgi import parse_qs
+try:
+    from urlparse import parse_qs
+except ImportError:
+    from cgi import parse_qs
 from StringIO import StringIO
 from os.path import dirname, join as pathjoin, realpath
 from datetime import datetime, timedelta
@@ -240,6 +243,10 @@ def requestHandler(config, path_info, query_string):
     
         layer = requestLayer(config, path_info)
         query = parse_qs(query_string or '')
+        try:
+            callback = query['callback'][0]
+        except KeyError:
+            callback = None
         
         coord, extension = splitPathInfo(path_info)[1:]
         
@@ -258,6 +265,9 @@ def requestHandler(config, path_info, query_string):
         print >> out, '\n'.join(Core._rummy())
         
         mimetype, content = 'text/plain', out.getvalue()
+
+    if callback and 'json' in mimetype:
+        content = "%s(%s)" % (callback, content)
 
     return mimetype, content
 
