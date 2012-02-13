@@ -30,8 +30,13 @@ wrapper: If not included the json will be output raw, if included the json will 
 scale: What to divide the tile pixel size by to get the resulting grid size. Usually this is 4.
 """
 import json
-import mapnik2 as mapnik
 from TileStache.Geography import getProjectionByName
+
+try:
+    import mapnik2 as mapnik
+except ImportError:
+    # at least we can build documentation.
+    pass
 
 class Provider:
 
