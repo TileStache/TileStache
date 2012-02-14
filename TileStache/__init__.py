@@ -268,6 +268,7 @@ def requestHandler(config, path_info, query_string):
 
     if callback and 'json' in mimetype:
         content = "%s(%s)" % (callback, content)
+        mimetype = 'application/javascript'
 
     return mimetype, content
 
