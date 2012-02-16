@@ -1,3 +1,6 @@
+2012-02-15: 1.26.2
+- Fixed os.rmdir() error handling in Caches.Disk.
+
 2012-02-15: 1.26.1
 - Changed lock in Providers.Mapnik to be a single global lock for the entire process instead of per-layer.
 

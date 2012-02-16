@@ -244,7 +244,11 @@ class Disk:
                 
                 if time.time() > due:
                     # someone left the door locked.
-                    os.rmdir(lockpath)
+                    try:
+                        os.rmdir(lockpath)
+                    except OSError:
+                        # Oh - no they didn't.
+                        pass
                 
                 os.makedirs(lockpath, 0777&~self.umask)
                 break
