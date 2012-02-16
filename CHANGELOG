@@ -1,3 +1,6 @@
+2012-02-15: 1.26.1
+- Changed lock in Providers.Mapnik to be a single global lock for the entire process instead of per-layer.
+
 2012-02-13: 1.26.0
 - Modified internals of Providers.Mapnik to ensure single-threaded access to mapnik.Map object.
 - Fixed MapnikGrid so its documentation can be made even though no one has mapnik2.

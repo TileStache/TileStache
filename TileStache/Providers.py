@@ -196,7 +196,9 @@ class Proxy:
             img.paste(tile, (0, 0), tile)
         
         return img
-            
+
+global_mapnik_lock = allocate_lock()
+
 class Mapnik:
     """ Built-in Mapnik provider. Renders map images from Mapnik XML files.
     
@@ -229,7 +231,6 @@ class Mapnik:
         
         self.layer = layer
         self.mapnik = None
-        self.lock = allocate_lock()
         
         engine = mapnik.FontEngine.instance()
         
@@ -257,14 +258,14 @@ class Mapnik:
         #
         # Mapnik can behave strangely when run in threads, so place a lock on the instance.
         #
-        if self.lock.acquire():
+        if global_mapnik_lock.acquire():
             self.mapnik.width = width
             self.mapnik.height = height
             self.mapnik.zoom_to_box(mapnik.Envelope(xmin, ymin, xmax, ymax))
             
             img = mapnik.Image(width, height)
             mapnik.render(self.mapnik, img)
-            self.lock.release()
+            global_mapnik_lock.release()
         
         img = Image.fromstring('RGBA', (width, height), img.tostring())
         
