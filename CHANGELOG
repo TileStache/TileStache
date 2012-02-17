@@ -1,3 +1,6 @@
+2012-02-17: 1.26.4
+- Rewrote internals of tilestache-seed to support the no-config use case.
+
 2012-02-16: 1.26.3
 - Tweaked Vector mime-types and mapnik import details.
 
