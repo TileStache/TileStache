@@ -32,7 +32,10 @@ scale: What to divide the tile pixel size by to get the resulting grid size. Usu
 import json
 from TileStache.Geography import getProjectionByName
 
-import mapnik
+try:
+    import mapnik
+except ImportError:
+    pass
 
 class Provider:
 
