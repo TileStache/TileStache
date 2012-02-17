@@ -28,6 +28,14 @@ but TileStache ends up with a pre-filled cache. Bounding box is given as a pair
 of lat/lon coordinates, e.g. "37.788 -122.349 37.833 -122.246". Output is a list
 of tile paths as they are created.
 
+Example:
+
+    tilestache-seed.py -b 52.55 13.28 52.46 13.51 -c tilestache.cfg -l osm 11 12 13
+
+Protip: extract tiles from an MBTiles tileset to a directory like this:
+
+    tilestache-seed.py --from-mbtiles filename.mbtiles --output-directory dirname
+
 Configuration, bbox, and layer options are required; see `%prog --help` for info.""")
 
 defaults = dict(extension='png', padding=0, verbose=True, enable_retries=False, bbox=(37.777, -122.352, 37.839, -122.226))
@@ -35,13 +43,13 @@ defaults = dict(extension='png', padding=0, verbose=True, enable_retries=False, 
 parser.set_defaults(**defaults)
 
 parser.add_option('-c', '--config', dest='config',
-                  help='Path to configuration file.')
+                  help='Path to configuration file, typically required.')
 
 parser.add_option('-l', '--layer', dest='layer',
-                  help='Layer name from configuration.')
+                  help='Layer name from configuration, typically required.')
 
 parser.add_option('-b', '--bbox', dest='bbox',
-                  help='Bounding box in floating point geographic coordinates: south west north east.',
+                  help='Bounding box in floating point geographic coordinates: south west north east. Default value is %.3f, %.3f, %.3f, %.3f.' % defaults['bbox'],
                   type='float', nargs=4)
 
 parser.add_option('-p', '--padding', dest='padding',
@@ -149,37 +157,44 @@ if __name__ == '__main__':
 
     from TileStache import parseConfigfile, getTile
     from TileStache.Core import KnownUnknown
-    from TileStache.Caches import Disk, Multi
+    from TileStache.Caches import Disk, Multi, Test
     from TileStache import MBTiles
+    import TileStache
     
     from ModestMaps.Core import Coordinate
     from ModestMaps.Geo import Location
 
     try:
-        if options.config is None:
-            raise KnownUnknown('Missing required configuration (--config) parameter.')
-
-        if options.layer is None:
-            raise KnownUnknown('Missing required layer (--layer) parameter.')
-
-        config = parseConfigfile(options.config)
-
-        if options.layer not in config.layers:
-            raise KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (options.layer, ', '.join(sorted(config.layers.keys()))))
-
-        layer = config.layers[options.layer]
-        layer.write_cache = True # Override to make seeding guaranteed useful.
-
-        verbose = options.verbose
-        extension = options.extension
-        enable_retries = options.enable_retries
-        progressfile = options.progressfile
-        src_mbtiles = options.mbtiles_input
+        # determine if we have enough information to prep a config and layer
         
-        if src_mbtiles:
-            layer.provider = MBTiles.Provider(layer, src_mbtiles)
-            n, t, v, d, format, b = MBTiles.tileset_info(src_mbtiles)
-            extension = format or extension
+        has_fake_destination = bool(options.outputdirectory or options.mbtiles_output)
+        has_fake_source = bool(options.mbtiles_input)
+        
+        if has_fake_destination and has_fake_source:
+            config = TileStache.Config.Configuration(Test(), '.')
+
+            metatile = TileStache.Core.Metatile()
+            projection = TileStache.Geography.SphericalMercator()
+            layer = TileStache.Core.Layer(config, projection, metatile)
+            
+            config.layers[options.layer or 'tiles-layer'] = layer
+        
+        elif options.config is None:
+            raise KnownUnknown('Missing required configuration (--config) parameter.')
+        
+        elif options.layer is None:
+            raise KnownUnknown('Missing required layer (--layer) parameter.')
+    
+        else:
+            config = parseConfigfile(options.config)
+            
+            if options.layer not in config.layers:
+                raise KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (options.layer, ', '.join(sorted(config.layers.keys()))))
+            
+            layer = config.layers[options.layer]
+            layer.write_cache = True # Override to make seeding guaranteed useful.
+        
+        # override parts of the config and layer if needed
         
         if options.outputdirectory and options.mbtiles_output:
             cache1 = Disk(options.outputdirectory, dirs='portable', gzip=[])
@@ -191,7 +206,16 @@ if __name__ == '__main__':
 
         elif options.mbtiles_output:
             config.cache = MBTiles.Cache(options.mbtiles_output, extension, options.layer)
-
+        
+        extension = options.extension
+        
+        if options.mbtiles_input:
+            layer.provider = MBTiles.Provider(layer, options.mbtiles_input)
+            n, t, v, d, format, b = MBTiles.tileset_info(options.mbtiles_input)
+            extension = format or extension
+        
+        # do the actual work
+        
         lat1, lon1, lat2, lon2 = options.bbox
         south, west = min(lat1, lat2), min(lon1, lon2)
         north, east = max(lat1, lat2), max(lon1, lon2)
@@ -220,10 +244,12 @@ if __name__ == '__main__':
 
     if tile_list:
         coordinates = listCoordinates(tile_list)
-    elif src_mbtiles:
-        coordinates = tilesetCoordinates(src_mbtiles)
+    elif options.mbtiles_input:
+        coordinates = tilesetCoordinates(options.mbtiles_input)
     else:
         coordinates = generateCoordinates(ul, lr, zooms, padding)
+    
+    coordinates = list(coordinates)[:10]
     
     for (offset, count, coord) in coordinates:
         path = '%s/%d/%d/%d.%s' % (layer.name(), coord.zoom, coord.column, coord.row, extension)
@@ -236,7 +262,7 @@ if __name__ == '__main__':
         # Fetch a tile.
         #
         
-        attempts = enable_retries and 3 or 1
+        attempts = options.enable_retries and 3 or 1
         rendered = False
         
         while not rendered:
@@ -274,7 +300,7 @@ if __name__ == '__main__':
                 if options.verbose:
                     print >> stderr, '%(tile)s (%(size)s)' % progress
                 
-        if progressfile:
-            fp = open(progressfile, 'w')
+        if options.progressfile:
+            fp = open(options.progressfile, 'w')
             json_dump(progress, fp)
             fp.close()
