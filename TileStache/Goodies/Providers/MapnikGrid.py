@@ -33,9 +33,8 @@ import json
 from TileStache.Geography import getProjectionByName
 
 try:
-    import mapnik2 as mapnik
+    import mapnik
 except ImportError:
-    # at least we can build documentation.
     pass
 
 class Provider:
@@ -91,7 +90,7 @@ class Provider:
         if extension.lower() != 'json':
             raise KnownUnknown('MapnikGrid only makes .json tiles, not "%s"' % extension)
 
-        return 'text/json', 'JSON'
+        return 'application/json', 'JSON'
 
 class SaveableResponse:
     """ Wrapper class for JSON response that makes it behave like a PIL.Image object.
