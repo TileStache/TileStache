@@ -132,6 +132,7 @@
       <li><a href="#projections">Projections</a></li>
       <li><a href="#metatiles">Metatiles</a></li>
       <li><a href="#preview">Preview</a></li>
+      <li><a href="#index-page">Index Page</a></li>
     </ul>
   </li>
   <li>
@@ -1392,6 +1393,43 @@ Preview parameters:
     Filename extension, e.g. <samp>"png"</samp>.
     </dd>
 </dl> 
+
+<h4><a id="index-page" name="index-page">Index Page</a></h4>
+
+<p>
+TileStache supports configurable index pages for the front page of an instance.
+A custom index can be specified as a filename relative to the configuration
+location. Typically an HTML document would be given here, but other kinds of
+files such as images can be used, with MIME content-type headers determined by
+<a href="http://docs.python.org/library/mimetypes.html#mimetypes.guess_type">mimetypes.guess_type</a>.
+A simple text greeting is displayed if no index is provided.
+</p>
+ 
+<p>
+Example index page configuration:
+</p>
+
+<pre>
+<span class="bg">{
+  "cache": …,
+  "layers": …,</span>
+  "index": "filename.html"
+  <span class="bg">}
+}</span>
+</pre>
+
+<p>
+Example index page configuration using a remote image:
+</p>
+
+<pre>
+<span class="bg">{
+  "cache": …,
+  "layers": …,</span>
+  "index": "http://tilestache.org/mustaches.jpg"
+  <span class="bg">}
+}</span>
+</pre>
 
 <h2><a id="extending-tilestache" name="extending-tilestache">Extending TileStache</a></h2>
 
