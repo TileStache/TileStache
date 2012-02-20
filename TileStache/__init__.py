@@ -234,8 +234,9 @@ def requestHandler(config, path_info, query_string):
         Config parameter can be a file path string for a JSON configuration file
         or a configuration object with 'cache', 'layers', and 'dirpath' properties.
         
-        Query string is optional and not currently used. Calls getTile()
-        to render actual tiles, and getPreview() to render preview.html.
+        Query string is optional, currently used for JSON callbacks.
+        
+        Calls getTile() to render actual tiles, and getPreview() to render preview.html.
     """
     try:
         if path_info is None:
@@ -255,6 +256,9 @@ def requestHandler(config, path_info, query_string):
 
         else:
             mimetype, content = getTile(layer, coord, extension)
+    
+        if callback and 'json' in mimetype:
+            mimetype, content = 'application/javascript', '%s(%s)' % (callback, content)
 
     except Core.KnownUnknown, e:
         out = StringIO()
@@ -265,10 +269,6 @@ def requestHandler(config, path_info, query_string):
         print >> out, '\n'.join(Core._rummy())
         
         mimetype, content = 'text/plain', out.getvalue()
-
-    if callback and 'json' in mimetype:
-        content = "%s(%s)" % (callback, content)
-        mimetype = 'application/javascript'
 
     return mimetype, content
 
