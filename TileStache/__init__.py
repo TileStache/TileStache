@@ -43,7 +43,7 @@ _recent_tiles = {}
 
 # regular expression for PATH_INFO
 _pathinfo_pat = re.compile(r'^/?(?P<l>\w.+)/(?P<z>\d+)/(?P<x>-?\d+)/(?P<y>-?\d+)\.(?P<e>\w+)$')
-_preview_pat = re.compile(r'^/?(?P<l>\w.+)/preview\.html$')
+_preview_pat = re.compile(r'^/?(?P<l>\w.+)/(preview\.html)?$')
 
 def getTile(layer, coord, extension, ignore_cached=False):
     """ Get a type string and tile binary for a given request layer tile.
