@@ -98,11 +98,18 @@ class Configuration:
           dirpath:
             Local filesystem path for this configuration,
             useful for expanding relative paths.
+          
+        Optional attribute:
+        
+          index:
+            Mimetype, content tuple for default index response.
     """
     def __init__(self, cache, dirpath):
         self.cache = cache
         self.dirpath = dirpath
         self.layers = {}
+        
+        self.index = 'text/plain', 'TileStache bellows hello.'
 
 class Bounds:
     """ Coordinate bounding box for tiles.

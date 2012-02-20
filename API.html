@@ -1724,7 +1724,8 @@ for examples of custom caches.
 
 <p>
 A complete configuration object includes <var>cache</var>,
-<var>layers</var>, and <var>dirpath</var> properties:
+<var>layers</var>, and <var>dirpath</var> properties and
+optional <var>index</var> property:
 </p>
  
 <dl>
@@ -1746,6 +1747,11 @@ A complete configuration object includes <var>cache</var>,
     <dd>
     Local filesystem path for this configuration, useful for expanding relative
     paths.
+    </dd>
+
+    <dt>index</dt>
+    <dd>
+    Two-element tuple with mime-type and content for installation index page.
     </dd>
 </dl>
 

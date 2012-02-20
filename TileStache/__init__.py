@@ -232,12 +232,12 @@ def requestLayer(config, path_info):
     
     return config.layers[layername]
 
-def requestHandler(config, path_info, query_string):
+def requestHandler(config_hint, path_info, query_string):
     """ Generate a mime-type and response body for a given request.
     
         Requires a configuration and PATH_INFO (e.g. "/example/0/0/0.png").
         
-        Config parameter can be a file path string for a JSON configuration file
+        Config_hint parameter can be a path string for a JSON configuration file
         or a configuration object with 'cache', 'layers', and 'dirpath' properties.
         
         Query string is optional, currently used for JSON callbacks.
@@ -248,19 +248,19 @@ def requestHandler(config, path_info, query_string):
         # ensure that path_info is at least a single "/"
         path_info = '/' + (path_info or '').lstrip('/')
         
-        #
-        # Special case for index page.
-        #
-        if path_info == '/':
-            return 'text/html', 'TileStache says hello.'
-
-        layer = requestLayer(config, path_info)
+        layer = requestLayer(config_hint, path_info)
         query = parse_qs(query_string or '')
         try:
             callback = query['callback'][0]
         except KeyError:
             callback = None
         
+        #
+        # Special case for index page.
+        #
+        if path_info == '/':
+            return getattr(layer.config, 'index', ('text/plain', 'TileStache says hello.'))
+
         coord, extension = splitPathInfo(path_info)[1:]
         
         if path_info == '/':
