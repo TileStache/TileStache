@@ -175,6 +175,9 @@ def splitPathInfo(pathinfo):
         
         Example: "/layer/0/0/0.png", leading "/" optional.
     """
+    if pathinfo == '/':
+        return None, None, None
+    
     if _pathinfo_pat.match(pathinfo or ''):
         path = _pathinfo_pat.match(pathinfo)
         layer, row, column, zoom, extension = [path.group(p) for p in 'lyxze']
@@ -369,7 +372,7 @@ class WSGITileServer:
         except Core.KnownUnknown, e:
             return self._response(start_response, '400 Bad Request', str(e))
 
-        if layer not in self.config.layers:
+        if layer and layer not in self.config.layers:
             return self._response(start_response, '404 Not Found')
 
         mimetype, content = requestHandler(self.config, environ['PATH_INFO'], environ['QUERY_STRING'])
