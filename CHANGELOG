@@ -1,3 +1,7 @@
+2012-02-20: 1.27.0
+- Added new Configuration.index support for configurable index page responses.
+- Cleaned up some unnecessary errors  in preview and callback handling.
+
 2012-02-17: 1.26.4
 - Rewrote internals of tilestache-seed to support the no-config use case.
 
