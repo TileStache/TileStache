@@ -175,12 +175,12 @@ def splitPathInfo(pathinfo):
         
         Example: "/layer/0/0/0.png", leading "/" optional.
     """
-    if _pathinfo_pat.match(pathinfo):
+    if _pathinfo_pat.match(pathinfo or ''):
         path = _pathinfo_pat.match(pathinfo)
         layer, row, column, zoom, extension = [path.group(p) for p in 'lyxze']
         coord = Coordinate(int(row), int(column), int(zoom))
 
-    elif _preview_pat.match(pathinfo):
+    elif _preview_pat.match(pathinfo or ''):
         path = _preview_pat.match(pathinfo)
         layer, extension = path.group('l'), 'html'
         coord = None
@@ -219,6 +219,12 @@ def requestLayer(config, path_info):
         assert hasattr(config, 'layers'), 'Configuration object must have layers.'
         assert hasattr(config, 'dirpath'), 'Configuration object must have a dirpath.'
     
+    # ensure that path_info is at least a single "/"
+    path_info = '/' + (path_info or '').lstrip('/')
+    
+    if path_info == '/':
+        return Core.Layer(config, None, None)
+
     layername = splitPathInfo(path_info)[0]
     
     if layername not in config.layers:
@@ -239,9 +245,15 @@ def requestHandler(config, path_info, query_string):
         Calls getTile() to render actual tiles, and getPreview() to render preview.html.
     """
     try:
-        if path_info is None:
-            raise Core.KnownUnknown('Missing path_info in requestHandler().')
-    
+        # ensure that path_info is at least a single "/"
+        path_info = '/' + (path_info or '').lstrip('/')
+        
+        #
+        # Special case for index page.
+        #
+        if path_info == '/':
+            return 'text/html', 'TileStache says hello.'
+
         layer = requestLayer(config, path_info)
         query = parse_qs(query_string or '')
         try:
@@ -251,7 +263,10 @@ def requestHandler(config, path_info, query_string):
         
         coord, extension = splitPathInfo(path_info)[1:]
         
-        if extension == 'html' and coord is None:
+        if path_info == '/':
+            raise Exception(path_info)
+        
+        elif extension == 'html' and coord is None:
             mimetype, content = getPreview(layer)
 
         else:
