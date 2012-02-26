@@ -1,3 +1,6 @@
+2012-02-26: 1.27.2
+- Fixed Mapnik fonts path bug.
+
 2012-02-20: 1.27.1
 - Fixed WSGITileServer issue in new Configuration.index support.
 

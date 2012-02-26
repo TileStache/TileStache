@@ -209,6 +209,9 @@ class Mapnik:
         - mapfile (required)
             Local file path to Mapnik XML file.
     
+        - fonts (optional)
+            Local directory path to *.ttf font files.
+    
         More information on Mapnik and Mapnik XML:
         - http://mapnik.org
         - http://trac.mapnik.org/wiki/XMLGettingStarted
@@ -235,7 +238,13 @@ class Mapnik:
         engine = mapnik.FontEngine.instance()
         
         if fonts:
-            for font in glob(fonts.rstrip('/') + '/*.ttf'):
+            fontshref = urljoin(layer.config.dirpath, fonts)
+            scheme, h, path, q, p, f = urlparse(fontshref)
+            
+            if scheme not in ('file', ''):
+                raise Exception('Fonts from "%s" can\'t be used by Mapnik' % fontshref)
+        
+            for font in glob(path.rstrip('/') + '/*.ttf'):
                 engine.register_font(str(font))
 
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
