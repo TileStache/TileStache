@@ -249,7 +249,7 @@ if __name__ == '__main__':
     else:
         coordinates = generateCoordinates(ul, lr, zooms, padding)
     
-    coordinates = list(coordinates)[:10]
+    coordinates = list(coordinates)
     
     for (offset, count, coord) in coordinates:
         path = '%s/%d/%d/%d.%s' % (layer.name(), coord.zoom, coord.column, coord.row, extension)
