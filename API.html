@@ -769,7 +769,9 @@ Shared layer parameters:
     An optional dictionary of six tile boundaries to limit the rendered area:
     <var>low</var> (lowest zoom level), <var>high</var> (highest zoom level),
     <var>north</var>, <var>west</var>, <var>south</var>, and <var>east</var>
-    (all in degrees).
+    (all in degrees). When any of these are omitted, default values are
+    <samp>north=89</samp>, <samp>west=-180</samp>, <samp>south=-89</samp>,
+    <samp>east=180</samp>, <samp>low=0</samp>, and <samp>high=31</samp>.
     </dd>
 
     <dt>allowed origin</dt>

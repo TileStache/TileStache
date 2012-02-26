@@ -282,15 +282,15 @@ def _parseConfigfileCache(cache_dict, dirpath):
 def _parseLayerBounds(bounds_dict, projection):
     """
     """
-    north, west = bounds_dict.get('north', None), bounds_dict.get('west', None)
-    south, east = bounds_dict.get('south', None), bounds_dict.get('east', None)
-    high, low = bounds_dict.get('high', None), bounds_dict.get('low', None)
+    north, west = bounds_dict.get('north', 89), bounds_dict.get('west', -180)
+    south, east = bounds_dict.get('south', -89), bounds_dict.get('east', 180)
+    high, low = bounds_dict.get('high', 31), bounds_dict.get('low', 0)
     
     try:
         ul_hi = projection.locationCoordinate(Location(north, west)).zoomTo(high)
         lr_lo = projection.locationCoordinate(Location(south, east)).zoomTo(low)
     except TypeError:
-        raise Core.KnownUnknown('Missing part of bounds for layer, need north, south, east, west, high, and low: ' + dumps(bounds_dict))
+        raise Core.KnownUnknown('Bad bounds for layer, need north, south, east, west, high, and low: ' + dumps(bounds_dict))
     
     return Bounds(ul_hi, lr_lo)
 
