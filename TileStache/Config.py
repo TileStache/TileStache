@@ -164,6 +164,24 @@ class Bounds:
     def __str__(self):
         return 'Bound %s - %s' % (self.upper_left_high, self.lower_right_low)
 
+class BoundsList:
+    """ Multiple coordinate bounding boxes for tiles.
+    """
+    def __init__(self, bounds):
+        """ Single argument is a list of Bounds objects.
+        """
+        self.bounds = bounds
+    
+    def excludes(self, tile):
+        """ Check a tile Coordinate against the bounds, return false if none match.
+        """
+        for bound in self.bounds:
+            if not bound.excludes(tile):   
+                return False
+        
+        # Nothing worked.
+        return True
+
 def buildConfiguration(config_dict, dirpath='.'):
     """ Build a configuration dictionary into a Configuration object.
     
@@ -333,10 +351,15 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     #
     
     if 'bounds' in layer_dict:
-        if type(layer_dict['bounds']) is not dict:
-            raise Core.KnownUnknown('Layer bounds must be a dictionary, not: ' + dumps(layer_dict['bounds']))
+        if type(layer_dict['bounds']) is dict:
+            layer_kwargs['bounds'] = _parseLayerBounds(layer_dict['bounds'], projection)
     
-        layer_kwargs['bounds'] = _parseLayerBounds(layer_dict['bounds'], projection)
+        elif type(layer_dict['bounds']) is list:
+            bounds = [_parseLayerBounds(b, projection) for b in layer_dict['bounds']]
+            layer_kwargs['bounds'] = BoundsList(bounds)
+    
+        else:
+            raise Core.KnownUnknown('Layer bounds must be a dictionary, not: ' + dumps(layer_dict['bounds']))
     
     #
     # Do the metatile
