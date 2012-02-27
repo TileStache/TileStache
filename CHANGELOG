@@ -1,3 +1,6 @@
+2012-02-26: 1.28.0
+- Added new ways to define layer boundaries, including lists and partial limits.
+
 2012-02-26: 1.27.3
 - Fixed a forehead slapper in tilestache-seed.
 
