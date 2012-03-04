@@ -79,6 +79,7 @@ import urllib
 from tempfile import mkstemp
 from string import Template
 from urllib import urlopen
+import urllib2
 from glob import glob
 
 try:
@@ -290,17 +291,21 @@ class UrlTemplate:
         - template (required)
             String with substitutions suitable for use in string.Template.
 
+        - referer (optional)
+            String to use in the "Referer" header when making HTTP requests.
+
         More on string substitutions:
         - http://docs.python.org/library/string.html#template-strings
     """
 
-    def __init__(self, layer, template):
+    def __init__(self, layer, template, referer=None):
         """ Initialize a UrlTemplate provider with layer and template string.
         
             http://docs.python.org/library/string.html#template-strings
         """
         self.layer = layer
         self.template = Template(template)
+        self.referer = referer
 
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """ Return an image for an area.
@@ -311,7 +316,12 @@ class UrlTemplate:
         mapping.update({'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax})
         
         href = self.template.safe_substitute(mapping)
-        body = urlopen(href).read()
+        req = urllib2.Request(href)
+        
+        if self.referer:
+            req.add_header('Referer', self.referer)
+        
+        body = urllib2.urlopen(req).read()
         tile = Image.open(StringIO(body)).convert('RGBA')
 
         return tile
