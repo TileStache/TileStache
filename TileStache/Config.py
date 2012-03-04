@@ -409,6 +409,8 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         
         elif _class is Providers.UrlTemplate:
             provider_kwargs['template'] = provider_dict['template']
+            if 'referer' in provider_dict:
+                provider_kwargs['referer'] = provider_dict['referer']
         
         elif _class is Providers.Vector.Provider:
             provider_kwargs['driver'] = provider_dict['driver']
