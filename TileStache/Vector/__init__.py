@@ -170,9 +170,10 @@ class VectorResponse:
         - content: Vector data to be serialized, typically a dictionary.
         - verbose: Boolean flag to expand response for better legibility.
     """
-    def __init__(self, content, verbose):
+    def __init__(self, content, verbose, precision=6):
         self.content = content
         self.verbose = verbose
+        self.precision = precision
 
     def save(self, out, format):
         """
@@ -213,7 +214,7 @@ class VectorResponse:
     
             for atom in encoded:
                 if float_pat.match(atom):
-                    out.write('%.6f' % float(atom))
+                    out.write(('%%.%if' % self.precision) % float(atom))
                 else:
                     out.write(atom)
         
@@ -490,15 +491,16 @@ class Provider:
         See module documentation for explanation of constructor arguments.
     """
     
-    def __init__(self, layer, driver, parameters, clipped, verbose, projected, spacing, properties):
-        self.layer = layer
-        self.driver = driver
-        self.clipped = clipped
-        self.verbose = verbose
-        self.projected = projected
-        self.spacing = spacing
+    def __init__(self, layer, driver, parameters, clipped, verbose, projected, spacing, properties, precision):
+        self.layer      = layer
+        self.driver     = driver
+        self.clipped    = clipped
+        self.verbose    = verbose
+        self.projected  = projected
+        self.spacing    = spacing
         self.parameters = parameters
         self.properties = properties
+        self.precision  = precision
 
     def renderTile(self, width, height, srs, coord):
         """ Render a single tile, return a VectorResponse instance.
@@ -517,7 +519,7 @@ class Provider:
         else:
             response['crs'] = {'srid': 4326, 'wkid': 4326}
 
-        return VectorResponse(response, self.verbose)
+        return VectorResponse(response, self.verbose, self.precision)
         
     def getTypeByExtension(self, extension):
         """ Get mime-type and format by file extension.
