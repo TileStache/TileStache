@@ -42,11 +42,24 @@ can be found in the TileStache.Core module documentation. Another sample:
       }
     }
 
+Configuration also supports these additional settings:
+
+- "logging": one of "debug", "info", "warning", "error" or "critical", as
+  described in Python's logging module: http://docs.python.org/howto/logging.html
+
+- "index": configurable index pages for the front page of an instance.
+  A custom index can be specified as a filename relative to the configuration
+  location. Typically an HTML document would be given here, but other kinds of
+  files such as images can be used, with MIME content-type headers determined
+  by mimetypes.guess_type. A simple text greeting is displayed if no index
+  is provided.
+
 In-depth explanations of the layer components can be found in the module
 documentation for TileStache.Providers, TileStache.Core, and TileStache.Geography.
 """
 
 import sys
+import logging
 from sys import stderr, modules
 from os.path import realpath, join as pathjoin
 from urlparse import urljoin, urlparse
@@ -209,6 +222,12 @@ def buildConfiguration(config_dict, dirpath='.'):
         index_type = guess_type(index_href)
         
         config.index = index_type[0], index_body
+    
+    if 'logging' in config_dict:
+        level = config_dict['logging'].upper()
+    
+        if hasattr(logging, level):
+            logging.basicConfig(level=getattr(logging, level))
     
     return config
 

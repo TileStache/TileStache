@@ -24,6 +24,7 @@ from urlparse import urljoin, urlparse
 from urllib import urlopen
 from os import getcwd
 from time import time
+import logging
 
 try:
     from json import load as json_load
@@ -57,6 +58,8 @@ def getTile(layer, coord, extension, ignore_cached=False):
         This is the main entry point, after site configuration has been loaded
         and individual tiles need to be rendered.
     """
+    start_time = time()
+    
     mimetype, format = layer.getTypeByExtension(extension)
     cache = layer.config.cache
 
@@ -66,10 +69,12 @@ def getTile(layer, coord, extension, ignore_cached=False):
     if not ignore_cached:
         # Start by checking for a tile in the cache.
         body = cache.read(layer, coord, format)
+        tile_from = 'cache'
 
     elif _tile in _recent_tiles:
         # Then look in the bag of recent tiles.
         body, use_by = _recent_tiles[_tile]
+        tile_from = '_recent_tiles'
         if time() > use_by:
             del _recent_tiles[_tile]
             body = None
@@ -94,6 +99,7 @@ def getTile(layer, coord, extension, ignore_cached=False):
                 # There's a chance that some other process has
                 # written the tile while the lock was being acquired.
                 body = cache.read(layer, coord, format)
+                tile_from = 'cache after all'
     
             if body is None:
                 # No one else wrote the tile, do it here.
@@ -122,6 +128,8 @@ def getTile(layer, coord, extension, ignore_cached=False):
                 if save:
                     cache.save(body, layer, coord, format)
 
+                tile_from = 'layer.render()'
+
         finally:
             if lockCoord:
                 # Always clean up a lock when it's no longer being used.
@@ -129,6 +137,8 @@ def getTile(layer, coord, extension, ignore_cached=False):
     
     if ignore_cached:
         _recent_tiles[_tile] = body, time() + 300
+    
+    logging.debug('TileStache.getTile() %s/%d/%d/%d.%s via %s in %.3f', layer.name(), coord.zoom, coord.column, coord.row, extension, tile_from, time() - start_time)
     
     return mimetype, body
 

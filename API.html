@@ -133,6 +133,7 @@
       <li><a href="#metatiles">Metatiles</a></li>
       <li><a href="#preview">Preview</a></li>
       <li><a href="#index-page">Index Page</a></li>
+      <li><a href="#logging">Logging</a></li>
     </ul>
   </li>
   <li>
@@ -1431,6 +1432,30 @@ Example index page configuration using a remote image:
   "cache": …,
   "layers": …,</span>
   "index": "http://tilestache.org/mustaches.jpg"
+  <span class="bg">}
+}</span>
+</pre>
+
+<h4><a id="logging" name="logging">Logging</a></h4>
+
+<p>
+TileStache includes basic support for Python’s built-in
+<a href="http://docs.python.org/library/logging.html">logging system</a>, with
+a logging level settable in the main configuration file. Possible logging levels
+include <samp>"debug"</samp>, <samp>"info"</samp>, <samp>"warning"</samp>,
+<samp>"error"</samp> and <samp>"critical"</samp>, described in the
+<a href="http://docs.python.org/howto/logging.html">basic logging tutorial</a>.
+</p>
+ 
+<p>
+Example logging configuration:
+</p>
+
+<pre>
+<span class="bg">{
+  "cache": …,
+  "layers": …,</span>
+  "logging": "debug"
   <span class="bg">}
 }</span>
 </pre>
