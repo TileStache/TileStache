@@ -76,6 +76,10 @@ Common parameters:
     mercator projection. Stylistically a poor fit for GeoJSON, but useful
     when returning Arc GeoServices responses.
   
+  precision:
+    Default is 6.
+    Optional number of decimal places to use for floating point values.
+  
   spacing:
     Optional number of tile pixels for spacing geometries in responses. Used
     to cut down on the number of returned features by ensuring that only those
