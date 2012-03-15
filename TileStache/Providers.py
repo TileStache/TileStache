@@ -70,6 +70,7 @@ For an example of a non-image provider, see TileStache.Vector.Provider.
 """
 
 import os
+import logging
 
 from StringIO import StringIO
 from posixpath import exists
@@ -81,6 +82,7 @@ from string import Template
 from urllib import urlopen
 import urllib2
 from glob import glob
+from time import time
 
 try:
     import mapnik2 as mapnik
@@ -251,6 +253,8 @@ class Mapnik:
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """
         """
+        start_time = time()
+        
         if self.mapnik is None:
             self.mapnik = mapnik.Map(0, 0)
             
@@ -264,6 +268,8 @@ class Mapnik:
     
                 mapnik.load_map(self.mapnik, filename)
                 os.unlink(filename)
+
+            logging.debug('TileStache.Providers.Mapnik.renderArea() %.3f to load %s', time() - start_time, self.mapfile)
         
         #
         # Mapnik can behave strangely when run in threads, so place a lock on the instance.
@@ -278,7 +284,9 @@ class Mapnik:
             global_mapnik_lock.release()
         
         img = Image.fromstring('RGBA', (width, height), img.tostring())
-        
+    
+        logging.debug('TileStache.Providers.Mapnik.renderArea() %dx%d in %.3f from %s', width, height, time() - start_time, self.mapfile)
+    
         return img
 
 class UrlTemplate:
