@@ -1112,6 +1112,12 @@ UrlTemplate provider parameters:
     Example:
     <samp>"http://example.com/?bbox=$xmin,$ymin,$xmax,$ymax&bboxSR=102113&size=$width,$height&imageSR=102113&format=jpg&f=image"</samp>.
     </dd>
+    <dt>referer</dt>
+    <dd>
+    Optional string with HTTP Referer URL to send to WMS server.
+    Some WMS servers use the Referer request header to authenticate requests;
+    this parameter provides one.
+    </dd>
 </dl>
 
 <p>
