@@ -33,14 +33,14 @@ except ImportError:
 
 from ModestMaps.Core import Coordinate
 
-import Core
-import Config
-
 # dictionary of configuration objects for requestLayer().
 _previous_configs = {}
 
 # dictionary of tiles seen recently in this process, when ignore_cached is on.
 _recent_tiles = {}
+
+import Core
+import Config
 
 # regular expression for PATH_INFO
 _pathinfo_pat = re.compile(r'^/?(?P<l>\w.+)/(?P<z>\d+)/(?P<x>-?\d+)/(?P<y>-?\d+)\.(?P<e>\w+)$')
@@ -64,7 +64,7 @@ def getTile(layer, coord, extension, ignore_cached=False):
     cache = layer.config.cache
 
     # key in _recent_tiles
-    _tile = (layer, coord, extension)
+    _tile = (layer, coord, format)
     
     if not ignore_cached:
         # Start by checking for a tile in the cache.
@@ -137,6 +137,7 @@ def getTile(layer, coord, extension, ignore_cached=False):
     
     if ignore_cached:
         _recent_tiles[_tile] = body, time() + 300
+        logging.debug('TileStache.getTile() added to _recent_tiles: %s, %s, %d', _tile, len(body), time() + 300)
     
     logging.debug('TileStache.getTile() %s/%d/%d/%d.%s via %s in %.3f', layer.name(), coord.zoom, coord.column, coord.row, extension, tile_from, time() - start_time)
     

@@ -122,8 +122,10 @@ The preview can be accessed through a URL like /<layer name>/preview.html:
 - "ext" is the filename extension, e.g. "png".
 """
 
+import logging
 from StringIO import StringIO
 from urlparse import urljoin
+from time import time
 
 from Pixels import load_palette, apply_palette
 
@@ -133,6 +135,7 @@ except ImportError:
     import Image
 
 from ModestMaps.Core import Coordinate
+from .TileStache import _recent_tiles
 
 class Metatile:
     """ Some basic characteristics of a metatile.
@@ -332,13 +335,17 @@ class Layer:
                 subtile = surtile.crop(bbox)
                 subtile.save(buff, format)
                 body = buff.getvalue()
-                
+
                 if self.write_cache:
                     self.config.cache.save(body, self, other, format)
                 
                 if other == coord:
                     # the one that actually gets returned
                     tile = subtile
+                
+                _tile = (self, other, format)
+                _recent_tiles[_tile] = body, time() + 300
+                logging.debug('TileStache.Core.Layer.render() added to _recent_tiles: %s, %s, %d', _tile, len(body), time() + 300)
         
         return tile
     
