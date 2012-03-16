@@ -139,7 +139,7 @@ def getTile(layer, coord, extension, ignore_cached=False):
         _recent_tiles[_tile] = body, time() + 300
         logging.debug('TileStache.getTile() added to _recent_tiles: %s, %s, %d', _tile, len(body), time() + 300)
     
-    logging.debug('TileStache.getTile() %s/%d/%d/%d.%s via %s in %.3f', layer.name(), coord.zoom, coord.column, coord.row, extension, tile_from, time() - start_time)
+    logging.info('TileStache.getTile() %s/%d/%d/%d.%s via %s in %.3f', layer.name(), coord.zoom, coord.column, coord.row, extension, tile_from, time() - start_time)
     
     return mimetype, body
 
