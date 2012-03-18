@@ -36,9 +36,6 @@ from ModestMaps.Core import Coordinate
 # dictionary of configuration objects for requestLayer().
 _previous_configs = {}
 
-# dictionary of tiles seen recently in this process, when ignore_cached is on.
-_recent_tiles = {}
-
 import Core
 import Config
 
@@ -63,25 +60,15 @@ def getTile(layer, coord, extension, ignore_cached=False):
     mimetype, format = layer.getTypeByExtension(extension)
     cache = layer.config.cache
 
-    # key in _recent_tiles
-    _tile = (layer, coord, format)
-    
     if not ignore_cached:
         # Start by checking for a tile in the cache.
         body = cache.read(layer, coord, format)
         tile_from = 'cache'
 
-    elif _tile in _recent_tiles:
-        # Then look in the bag of recent tiles.
-        body, use_by = _recent_tiles[_tile]
-        tile_from = '_recent_tiles'
-        if time() > use_by:
-            del _recent_tiles[_tile]
-            body = None
-
     else:
-        # Bypass the cache
-        body = None
+        # Then look in the bag of recent tiles.
+        body = Core._getRecentTile(layer, coord, format)
+        tile_from = 'recent tiles'
     
     # If no tile was found, dig deeper
     if body is None:
@@ -135,10 +122,7 @@ def getTile(layer, coord, extension, ignore_cached=False):
                 # Always clean up a lock when it's no longer being used.
                 cache.unlock(layer, lockCoord, format)
     
-    if ignore_cached:
-        _recent_tiles[_tile] = body, time() + 300
-        logging.debug('TileStache.getTile() added to _recent_tiles: %s, %s, %d', _tile, len(body), time() + 300)
-    
+    Core._addRecentTile(layer, coord, format, body)
     logging.info('TileStache.getTile() %s/%d/%d/%d.%s via %s in %.3f', layer.name(), coord.zoom, coord.column, coord.row, extension, tile_from, time() - start_time)
     
     return mimetype, body

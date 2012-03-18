@@ -135,7 +135,60 @@ except ImportError:
     import Image
 
 from ModestMaps.Core import Coordinate
-from .TileStache import _recent_tiles
+
+_recent_tiles = dict(hash={}, list=[])
+
+def _addRecentTile(layer, coord, format, body, age=300):
+    """ Add the body of a tile to _recent_tiles with a timeout.
+    """
+    key = (layer, coord, format)
+    due = time() + age
+    
+    _recent_tiles['hash'][key] = body, due
+    _recent_tiles['list'].append((key, due))
+    
+    logging.debug('TileStache.Core._addRecentTile() added tile to recent tiles: %s', key)
+    
+    # now look at the oldest keys and remove them if needed
+    for (key, due_by) in _recent_tiles['list']:
+        # new enough?
+        if time() < due_by:
+            break
+        
+        logging.debug('TileStache.Core._addRecentTile() removed tile from recent tiles: %s', key)
+        
+        try:
+            _recent_tiles['list'].remove((key, due_by))
+        except ValueError:
+            pass
+        
+        try:
+            del _recent_tiles['hash'][key]
+        except KeyError:
+            pass
+
+def _getRecentTile(layer, coord, format):
+    """ Return the body of a recent tile, or None if it's not there.
+    """
+    key = (layer, coord, format)
+    body, use_by = _recent_tiles['hash'].get(key, (None, 0))
+    
+    # non-existent?
+    if body is None:
+        return None
+    
+    # new enough?
+    if time() < use_by:
+        logging.debug('TileStache.Core._addRecentTile() found tile in recent tiles: %s', key)
+        return body
+    
+    # too old
+    try:
+        del _recent_tiles['hash'][key]
+    except KeyError:
+        pass
+    
+    return None
 
 class Metatile:
     """ Some basic characteristics of a metatile.
@@ -343,9 +396,7 @@ class Layer:
                     # the one that actually gets returned
                     tile = subtile
                 
-                _tile = (self, other, format)
-                _recent_tiles[_tile] = body, time() + 300
-                logging.debug('TileStache.Core.Layer.render() added to _recent_tiles: %s, %s, %d', _tile, len(body), time() + 300)
+                _addRecentTile(self, other, format, body)
         
         return tile
     
