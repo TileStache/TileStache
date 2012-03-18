@@ -1,3 +1,6 @@
+2012-03-18: 1.29.2
+- Ensured that in-process recent tiles features works with metatiles.
+
 2012-03-15: 1.29.1
 - Added debug logging to Mapnik provider.
 
