@@ -33,9 +33,12 @@ import json
 from TileStache.Geography import getProjectionByName
 
 try:
-    import mapnik
+    import mapnik2 as mapnik
 except ImportError:
-    pass
+    try:
+        import mapnik
+    except ImportError:
+        pass
 
 class Provider:
 
