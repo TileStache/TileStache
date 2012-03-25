@@ -3,7 +3,7 @@
     The built-in Mapnik provider (http://tilestache.org/doc/#mapnik-provider)
     is one example.
     
-    There are no tiles here, just a quick a dirty way of getting variously-sized
+    There are no tiles here, just a quick & dirty way of getting variously-sized
     images out of a codebase that's ordinarily oriented toward tile generation.
 
     Example usage, with gunicorn (http://gunicorn.org):
@@ -27,10 +27,13 @@ from TileStache import WSGITileServer
 from TileStache.Core import KnownUnknown
 
 class WSGIServer (WSGITileServer):
-    """ Inherit the constructor from TileStache WSGI, which just loads
+    """ WSGI Application that can handle WMS-style requests for static images.
+        
+        Inherits the constructor from TileStache WSGI, which just loads
         a TileStache configuration file into self.config.
+        
+        WSGITileServer autoreload argument is ignored, though. For now.
     """
-
     def __call__(self, environ, start_response):
         """ Handle a request, using PATH_INFO and QUERY_STRING from environ.
         

@@ -80,6 +80,7 @@ doc:
 	pydoc -w TileStache.Goodies.Providers.MirrorOSM
 	pydoc -w TileStache.Goodies.Providers.Grid
 	pydoc -w TileStache.Goodies.Providers.GDAL
+	pydoc -w TileStache.Goodies.AreaServer
 
 	pydoc -w scripts/tilestache-*.py
 
