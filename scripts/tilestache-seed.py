@@ -74,6 +74,10 @@ parser.add_option('-d', '--output-directory', dest='outputdirectory',
 parser.add_option('--to-mbtiles', dest='mbtiles_output',
                   help='Optional output file for tiles, will be created as an MBTiles 1.1 tileset. See http://mbtiles.org for more information.')
 
+parser.add_option('--to-s3', dest='s3_output',
+                  help='Optional output bucket for tiles, will be populated with tiles in a standard Z/X/Y layout. Three required argument: AWS access-key, secret, and bucket name.',
+                  nargs=3)
+
 parser.add_option('--from-mbtiles', dest='mbtiles_input',
                   help='Optional input file for tiles, will be read as an MBTiles 1.1 tileset. See http://mbtiles.org for more information. Overrides --extension, --bbox and --padding (this may change).')
 
