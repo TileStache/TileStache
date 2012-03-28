@@ -196,6 +196,8 @@ if __name__ == '__main__':
         
         # override parts of the config and layer if needed
         
+        extension = options.extension
+        
         if options.outputdirectory and options.mbtiles_output:
             cache1 = Disk(options.outputdirectory, dirs='portable', gzip=[])
             cache2 = MBTiles.Cache(options.mbtiles_output, extension, options.layer)
@@ -206,8 +208,6 @@ if __name__ == '__main__':
 
         elif options.mbtiles_output:
             config.cache = MBTiles.Cache(options.mbtiles_output, extension, options.layer)
-        
-        extension = options.extension
         
         if options.mbtiles_input:
             layer.provider = MBTiles.Provider(layer, options.mbtiles_input)
