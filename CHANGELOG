@@ -1,3 +1,6 @@
+2012-03-27: 1.29.3
+- Fixed a NameError in tilestache-seed.py.
+
 2012-03-18: 1.29.2
 - Ensured that in-process recent tiles features works with metatiles.
 
