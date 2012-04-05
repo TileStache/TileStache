@@ -21,6 +21,8 @@
 """
 
 from urlparse import parse_qsl
+from datetime import timedelta
+from datetime import datetime
 from StringIO import StringIO
 
 from TileStache import WSGITileServer
@@ -70,7 +72,17 @@ class WSGIServer (WSGITileServer):
             image = provider.renderArea(width, height, None, xmin, ymin, xmax, ymax, None)
             image.save(output, format='PNG')
             
-            start_response('200 OK', [('Content-Type', 'image/png')])
+            headers = [('Content-Type', 'image/png')]
+            
+            if layer.allowed_origin:
+                headers.append(('Access-Control-Allow-Origin', layer.allowed_origin))
+            
+            if layer.max_cache_age is not None:
+                expires = datetime.utcnow() + timedelta(seconds=layer.max_cache_age)
+                headers.append(('Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT')))
+                headers.append(('Cache-Control', 'public, max-age=%d' % layer.max_cache_age))
+
+            start_response('200 OK', headers)
             return output.getvalue()
         
         except KnownUnknown, e:
