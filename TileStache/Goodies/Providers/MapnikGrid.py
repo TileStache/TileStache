@@ -28,6 +28,7 @@ fields: The fields that should be added to the resulting grid json.
 layer_index: The index of the layer you want from your map xml to be rendered
 wrapper: If not included the json will be output raw, if included the json will be wrapped in "wrapper(JSON)" (for use with wax)
 scale: What to divide the tile pixel size by to get the resulting grid size. Usually this is 4.
+buffer: buffer around the queried features, in px, default 0. Use this to prevent problems on tile boundaries.
 """
 import json
 from TileStache.Core import KnownUnknown
