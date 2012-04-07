@@ -300,9 +300,6 @@ def _parseConfigfileCache(cache_dict, dirpath):
     
         elif _class is Caches.S3.Cache:
             add_kwargs('bucket', 'access', 'secret')
-
-        elif _class is Caches.GoogleCloud.Cache:
-            add_kwargs('bucket', 'access', 'secret')
     
         else:
             raise Exception('Unknown cache: %s' % cache_dict['name'])
