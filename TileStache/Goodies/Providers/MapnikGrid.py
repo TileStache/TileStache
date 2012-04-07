@@ -30,6 +30,7 @@ wrapper: If not included the json will be output raw, if included the json will 
 scale: What to divide the tile pixel size by to get the resulting grid size. Usually this is 4.
 """
 import json
+from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
 
 try:
