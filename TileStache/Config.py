@@ -358,6 +358,9 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     if 'maximum cache age' in layer_dict:
         layer_kwargs['max_cache_age'] = int(layer_dict['maximum cache age'])
     
+    if 'redirects' in layer_dict:
+        layer_kwargs['redirects'] = dict(layer_dict['redirects'])
+    
     if 'preview' in layer_dict:
         preview_dict = layer_dict['preview']
         

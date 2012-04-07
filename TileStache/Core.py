@@ -290,7 +290,7 @@ class Layer:
           preview_ext:
             Tile name extension for slippy map layer preview, default "png".
     """
-    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, write_cache=True, allowed_origin=None, max_cache_age=None, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png', bounds=None):
+    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, write_cache=True, allowed_origin=None, max_cache_age=None, redirects=None, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png', bounds=None):
         self.provider = None
         self.config = config
         self.projection = projection
@@ -301,6 +301,7 @@ class Layer:
         self.write_cache = write_cache
         self.allowed_origin = allowed_origin
         self.max_cache_age = max_cache_age
+        self.redirects = redirects or dict()
         
         self.preview_lat = preview_lat
         self.preview_lon = preview_lon
