@@ -72,6 +72,7 @@ doc:
 	pydoc -w TileStache.Goodies
 	pydoc -w TileStache.Goodies.Caches
 	pydoc -w TileStache.Goodies.Caches.LimitedDisk
+	pydoc -w TileStache.Goodies.Caches.GoogleCloud
 	pydoc -w TileStache.Goodies.Providers
 	pydoc -w TileStache.Goodies.Providers.Composite
 	pydoc -w TileStache.Goodies.Providers.PostGeoJSON
