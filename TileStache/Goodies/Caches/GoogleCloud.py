@@ -7,10 +7,12 @@ Requires boto (2.0+):
 Example configuration:
 
   "cache": {
-    "name": "S3",
-    "bucket": "<bucket name>",
-    "access": "<access key>",
-    "secret": "<secret key>"
+    "name": "TileStache.Goodies.Caches.GoogleCloud:Cache",
+    "kwargs": {
+      "bucket": "<bucket name>",
+      "access": "<access key>",
+      "secret": "<secret key>"
+    }
   }
 
 cache parameters:
