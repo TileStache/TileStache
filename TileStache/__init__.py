@@ -400,7 +400,18 @@ class WSGITileServer:
         if layer and layer not in self.config.layers:
             return self._response(start_response, '404 Not Found')
 
-        mimetype, content = requestHandler(self.config, environ['PATH_INFO'], environ['QUERY_STRING'])
+        try:
+            mimetype, content = requestHandler(self.config, environ['PATH_INFO'], environ['QUERY_STRING'])
+        
+        except Core.TheTileIsInAnotherCastle, e:
+            other_uri = environ['SCRIPT_NAME'] + e.path_info
+            
+            if environ['QUERY_STRING']:
+                other_uri += '?' + environ['QUERY_STRING']
+    
+            start_response('302 Found', [('Location', other_uri), ('Content-Type', 'text/plain')])
+            return ['You are being redirected to %s\n' % other_uri]
+        
         request_layer = requestLayer(self.config, environ['PATH_INFO'])
         allowed_origin = request_layer.allowed_origin
         max_cache_age = request_layer.max_cache_age
