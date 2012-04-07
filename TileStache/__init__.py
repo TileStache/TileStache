@@ -316,7 +316,21 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     path_info = environ.get('PATH_INFO', None)
     query_string = environ.get('QUERY_STRING', None)
     
-    mimetype, content = requestHandler(config, path_info, query_string)
+    try:
+        mimetype, content = requestHandler(config, path_info, query_string)
+    
+    except Core.TheTileIsInAnotherCastle, e:
+        other_uri = environ['SCRIPT_NAME'] + e.path_info
+        
+        if query_string:
+            other_uri += '?' + query_string
+
+        print >> stdout, 'Status: 302 Found'
+        print >> stdout, 'Location:', other_uri
+        print >> stdout, 'Content-Type: text/plain\n'
+        print >> stdout, 'You are being redirected to', other_uri
+        return
+    
     layer = requestLayer(config, path_info)
     
     if layer.allowed_origin:
