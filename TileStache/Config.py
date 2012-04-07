@@ -300,6 +300,9 @@ def _parseConfigfileCache(cache_dict, dirpath):
     
         elif _class is Caches.S3.Cache:
             add_kwargs('bucket', 'access', 'secret')
+
+        elif _class is Caches.GoogleCloud.Cache:
+            add_kwargs('bucket', 'access', 'secret')
     
         else:
             raise Exception('Unknown cache: %s' % cache_dict['name'])
@@ -437,7 +440,7 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
             provider_kwargs['properties'] = provider_dict.get('properties', None)
             provider_kwargs['projected'] = bool(provider_dict.get('projected', False))
             provider_kwargs['verbose'] = bool(provider_dict.get('verbose', False))
-            provider_kwargs['precision'] = bool(provider_dict.get('precision', 6))
+            provider_kwargs['precision'] = int(provider_dict.get('precision', 6))
             
             if 'spacing' in provider_dict:
                 provider_kwargs['spacing'] = float(provider_dict.get('spacing', 0.0))

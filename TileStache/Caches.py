@@ -58,6 +58,7 @@ from os.path import isdir, exists, dirname, basename, join as pathjoin
 from .Core import KnownUnknown
 from . import Memcache
 from . import S3
+from . import GoogleCloud 
 
 def getCacheByName(name):
     """ Retrieve a cache object by name.
@@ -78,6 +79,9 @@ def getCacheByName(name):
 
     elif name.lower() == 's3':
         return S3.Cache
+
+    elif name.lower() == 'googlecloud':
+        return GoogleCloud.Cache
 
     raise Exception('Unknown cache name: "%s"' % name)
 
