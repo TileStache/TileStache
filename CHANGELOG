@@ -1,3 +1,7 @@
+- Added new TileStache.Goodies.Provider.UtfGridComposite provider.
+- Added new TileStache.Goodies.Cache.GoogleCloud cache.
+- Added support for buffers around features in TileStache.Goodies.Provider.MapnikGrid.
+
 2012-04-05: 1.30.0
 - Added Goodies.AreaServer for serving static, non-tile images.
 - Added TileStache.Goodies.Providers.Monkeycache for serving tiles out of caches.
