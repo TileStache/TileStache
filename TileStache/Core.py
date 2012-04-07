@@ -58,6 +58,12 @@ configuration file as a dictionary:
   of downstream caches. Causes TileStache responses to include Cache-Control
   and Expires HTTP response headers. Useful when TileStache is itself hosted
   behind an HTTP cache such as Squid, Cloudfront, or Akamai.
+- "redirects" is an optional dictionary of per-extension HTTP redirects,
+  treated as lowercase. Useful in cases where your tile provider can support
+  many formats but you want to enforce limits to save on cache usage.
+  If a request is made for a tile with an extension in the dictionary keys,
+  a response can be generated that redirects the client to the same tile
+  with another extension.
 - "jpeg options" is an optional dictionary of JPEG creation options, passed
   through to PIL: http://www.pythonware.com/library/pil/handbook/format-jpeg.htm.
 - "png options" is an optional dictionary of PNG creation options, passed

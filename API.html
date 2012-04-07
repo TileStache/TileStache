@@ -702,6 +702,7 @@ Example layer configuration:
       "bounds": { … },
       "allowed origin": …,
       "maximum cache age": …,
+      "redirects": …,
       "jpeg options": …,
       "png options": …
     }
@@ -803,6 +804,17 @@ Shared layer parameters:
     and <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.21">Expires</a>
     HTTP response headers. Useful when TileStache is itself hosted behind an HTTP
     cache such as Squid, Cloudfront, or Akamai.
+    </dd>
+
+    <dt>redirects</dt>
+    <dd>
+    An optional dictionary of per-extension HTTP redirects, treated as
+    lowercase. Useful in cases where your tile provider can support many
+    formats but you want to enforce limits to save on cache usage. If a request
+    is made for a tile with an extension in the dictionary keys, a response can
+    be generated that redirects the client to the same tile with another
+    extension. For example, use the setting <samp>{"jpg": "png"}</samp>
+    to force all requests for JPEG tiles to be redirected to PNG tiles.
     </dd>
 
     <dt>jpeg options</dt>
