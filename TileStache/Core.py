@@ -546,19 +546,31 @@ def _preview(layer):
 <head>
     <title>TileStache Preview: %(layername)s</title>
     <script src="http://code.modestmaps.com/tilestache/modestmaps.min.js" type="text/javascript"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0;" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0;">
+    <style type="text/css">
+        html, body, #map {
+            position: absolute;
+            width: 100%%;
+            height: 100%%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
 </head>
-<body style="position: absolute; width: 100%%; height: 100%%;">
-    <script type="text/javascript">
+<body>
+    <div id="map"></div>
+    <script type="text/javascript" defer>
     <!--
-    
         var template = '{Z}/{X}/{Y}.%(ext)s';
         var provider = new com.modestmaps.TemplatedMapProvider(template);
-        var map = new MM.Map(document.body, provider);
+        var map = new MM.Map('map', provider, null, [
+            new MM.TouchHandler(),
+            new MM.DragHandler(),
+            new MM.DoubleClickHandler()
+        ]);
         map.setCenterZoom(new com.modestmaps.Location(%(lat).6f, %(lon).6f), %(zoom)d);
         // hashify it
         new MM.Hash(map);
-    
     //-->
     </script>
 </body>
