@@ -188,6 +188,17 @@ def splitPathInfo(pathinfo):
 
     return layer, coord, extension
 
+def mergePathInfo(layer, coord, extension):
+    """ Converts layer name, coordinate and extension back to a PATH_INFO string.
+    
+        See also splitPathInfo().
+    """
+    z = coord.zoom
+    x = coord.column
+    y = coord.row
+    
+    return '/%(layer)s/%(z)d/%(x)d/%(y)d.%(extension)s' % locals()
+
 def requestLayer(config, path_info):
     """ Return a Layer.
     
@@ -267,6 +278,11 @@ def requestHandler(config_hint, path_info, query_string):
         elif extension == 'html' and coord is None:
             mimetype, content = getPreview(layer)
 
+        elif extension.lower() in layer.redirects:
+            other_extension = layer.redirects[extension.lower()]
+            other_path_info = mergePathInfo(layer.name(), coord, other_extension)
+            raise Core.TheTileIsInAnotherCastle(other_path_info)
+        
         else:
             mimetype, content = getTile(layer, coord, extension)
     

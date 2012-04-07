@@ -278,6 +278,9 @@ class Layer:
           max_cache_age:
             Number of seconds that tiles from this layer may be cached by downstream clients.
 
+          redirects:
+            Dictionary of per-extension HTTP redirects, treated as lowercase.
+
           preview_lat:
             Starting latitude for slippy map layer preview, default 37.80.
 
@@ -533,6 +536,16 @@ class NoTileLeftBehind(Exception):
     def __init__(self, tile):
         self.tile = tile
         Exception.__init__(self, tile)
+
+class TheTileIsInAnotherCastle(Exception):
+    """ Ask a client to look someplace else for a tile.
+    
+        This exception can be thrown in a provider to signal
+        to HTTP clients that a tile should be asked-for elsewhere.
+    """
+    def __init__(self, path_info):
+        self.path_info = path_info
+        Exception.__init__(self, path_info)
 
 def _preview(layer):
     """ Get an HTML response for a given named layer.
