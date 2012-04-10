@@ -188,7 +188,7 @@ def put_tile(filename, coord, content):
     
     tile_row = (2**coord.zoom - 1) - coord.row # Hello, Paul Ramsey.
     q = 'REPLACE INTO tiles (zoom_level, tile_column, tile_row, tile_data) VALUES (?, ?, ?, ?)'
-    db.execute(q, (coord.zoom, coord.column, tile_row, content))
+    db.execute(q, (coord.zoom, coord.column, tile_row, buffer(content)))
 
     db.commit()
     db.close()
