@@ -75,7 +75,7 @@ parser.add_option('--to-mbtiles', dest='mbtiles_output',
                   help='Optional output file for tiles, will be created as an MBTiles 1.1 tileset. See http://mbtiles.org for more information.')
 
 parser.add_option('--to-s3', dest='s3_output',
-                  help='Optional output bucket for tiles, will be populated with tiles in a standard Z/X/Y layout. Three required argument: AWS access-key, secret, and bucket name.',
+                  help='Optional output bucket for tiles, will be populated with tiles in a standard Z/X/Y layout. Three required arguments: AWS access-key, secret, and bucket name.',
                   nargs=3)
 
 parser.add_option('--from-mbtiles', dest='mbtiles_input',
@@ -161,7 +161,7 @@ if __name__ == '__main__':
 
     from TileStache import parseConfigfile, getTile
     from TileStache.Core import KnownUnknown
-    from TileStache.Caches import Disk, Multi, Test
+    from TileStache.Caches import Disk, Multi, Test, S3
     from TileStache import MBTiles
     import TileStache
     
@@ -203,11 +203,15 @@ if __name__ == '__main__':
         extension = options.extension
         caches = []
         
+        if options.mbtiles_output:
+            caches.append(MBTiles.Cache(options.mbtiles_output, extension, options.layer))
+        
         if options.outputdirectory:
             caches.append(Disk(options.outputdirectory, dirs='portable', gzip=[]))
 
-        if options.mbtiles_output:
-            caches.append(MBTiles.Cache(options.mbtiles_output, extension, options.layer))
+        if options.s3_output:
+            access, secret, bucket = options.s3_output
+            caches.append(S3.Cache(bucket, access, secret))
         
         config.cache = Multi(caches)
         
