@@ -19,14 +19,24 @@ class Layer:
         """
         return _rgba2img(self.rgba)
     
-    def add(self, other):
+    def add(self, other, mask=None):
         """ Return a new Layer, 
         """
         bottom_rgba = self.rgba
         top_rgb = other.rgba[0:3]
-        mask_chan = other.rgba[3]
+        alpha_chan = other.rgba[3]
         
-        output_rgba = blend_images(bottom_rgba, top_rgb, mask_chan, 1, None)
+        if mask is not None:
+            #
+            # Use the RGB information from the supplied mask,
+            # but convert it to a single channel as in YUV:
+            # http://en.wikipedia.org/wiki/YUV#Conversion_to.2Ffrom_RGB
+            #
+            mask_r, mask_g, mask_b = mask.rgba[0:3]
+            mask_lum = 0.299 * mask_r + 0.587 * mask_g + 0.114 * mask_b
+            alpha_chan *= mask_lum
+        
+        output_rgba = blend_images(bottom_rgba, top_rgb, alpha_chan, 1, None)
         
         return Layer(output_rgba)
 
@@ -170,6 +180,24 @@ if __name__ == '__main__':
             assert img.getpixel((2, 1)) == (0x99, 0x99, 0x99, 0xFF), 'center right pixel'
             assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom left pixel'
             assert img.getpixel((1, 2)) == (0x99, 0x99, 0x99, 0xFF), 'bottom center pixel'
+            assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF), 'bottom right pixel'
+        
+        def test1(self):
+    
+            out = self.base
+            out = out.add(self.outlines, self.halos)
+            out = out.add(self.streets)
+            
+            img = out.image()
+    
+            assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF), 'top left pixel'
+            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel' + repr(img.getpixel((1, 0)))
+            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF), 'top right pixel'
+            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF), 'center left pixel'
+            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF), 'middle pixel'
+            assert img.getpixel((2, 1)) == (0xCC, 0xCC, 0xCC, 0xFF), 'center right pixel'
+            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom left pixel'
+            assert img.getpixel((1, 2)) == (0xCC, 0xCC, 0xCC, 0xFF), 'bottom center pixel'
             assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF), 'bottom right pixel'
     
     unittest.main()
