@@ -8,23 +8,61 @@ class Layer:
         """
         """
         if input.__class__ is Image.Image:
-            self.rgba = _img2rgba(input)
+            self._rgba = _img2rgba(input)
         elif type(input) is list and len(input) == 4:
-            self.rgba = input
+            self._rgba = input
         else:
             raise TypeError("Layer wants an Image or four channel arrays, not %s" % repr(input.__class__))
 
+    def size(self):
+        return self._rgba[0].shape
+    
+    def rgba(self, width, height):
+        """
+        """
+        w, h = self.size()
+        
+        if w == width and h == height:
+            return self._rgba
+
+        #
+        # In theory, this should bring back a right-sized image.
+        #
+        r, g, b, a = [numpy.zeros((width, height), dtype=float) for i in '1234']
+
+        w = min(w, width)
+        h = min(h, height)
+        
+        r[:w,:h] = self._rgba[0]
+        g[:w,:h] = self._rgba[1]
+        b[:w,:h] = self._rgba[2]
+        a[:w,:h] = self._rgba[3]
+        
+        return r, g, b, a
+    
     def image(self):
         """
         """
-        return _rgba2img(self.rgba)
+        return _rgba2img(self._rgba)
     
     def add(self, other, mask=None):
         """ Return a new Layer, 
         """
-        bottom_rgba = self.rgba
-        top_rgb = other.rgba[0:3]
-        alpha_chan = other.rgba[3]
+        #
+        # Choose an output size based on the first input that has one.
+        #
+        if self.size():
+            dim = self.size()
+        elif other.size():
+            dim = other.size()
+        elif mask and mask.size():
+            dim = mask.size()
+        else:
+            dim = 1, 1
+        
+        bottom_rgba = self.rgba(*dim)
+        alpha_chan = other.rgba(*dim)[3]
+        top_rgb = other.rgba(*dim)[0:3]
         
         if mask is not None:
             #
@@ -32,13 +70,32 @@ class Layer:
             # but convert it to a single channel as in YUV:
             # http://en.wikipedia.org/wiki/YUV#Conversion_to.2Ffrom_RGB
             #
-            mask_r, mask_g, mask_b = mask.rgba[0:3]
+            mask_r, mask_g, mask_b = mask.rgba(*dim)[0:3]
             mask_lum = 0.299 * mask_r + 0.587 * mask_g + 0.114 * mask_b
             alpha_chan *= mask_lum
         
         output_rgba = blend_images(bottom_rgba, top_rgb, alpha_chan, 1, None)
         
         return Layer(output_rgba)
+
+class Color (Layer):
+    """
+    """
+    def __init__(self, red, green, blue):
+        self._rgb = red / 255., green / 255., blue / 255.
+    
+    def size(self):
+        return None
+    
+    def rgba(self, width, height):
+        """
+        """
+        r = numpy.ones((width, height)) * self._rgb[0]
+        g = numpy.ones((width, height)) * self._rgb[1]
+        b = numpy.ones((width, height)) * self._rgb[2]
+        a = numpy.ones((width, height))
+        
+        return r, g, b, a
 
 def blend_images(bottom_rgba, top_rgb, mask_chan, opacity, blendmode):
     """ Blend images using a given mask, opacity, and blend mode.
@@ -192,6 +249,42 @@ if __name__ == '__main__':
     
             assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF), 'top left pixel'
             assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel' + repr(img.getpixel((1, 0)))
+            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF), 'top right pixel'
+            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF), 'center left pixel'
+            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF), 'middle pixel'
+            assert img.getpixel((2, 1)) == (0xCC, 0xCC, 0xCC, 0xFF), 'center right pixel'
+            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom left pixel'
+            assert img.getpixel((1, 2)) == (0xCC, 0xCC, 0xCC, 0xFF), 'bottom center pixel'
+            assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF), 'bottom right pixel'
+        
+        def test2(self):
+        
+            out = Color(0xcc, 0xcc, 0xcc)
+            out = out.add(self.outlines, self.halos)
+            out = out.add(self.streets)
+            
+            img = out.image()
+            
+            assert img.getpixel((0, 0)) == (0xCC, 0xCC, 0xCC, 0xFF), 'top left pixel'
+            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
+            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF), 'top right pixel'
+            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF), 'center left pixel'
+            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF), 'middle pixel'
+            assert img.getpixel((2, 1)) == (0xCC, 0xCC, 0xCC, 0xFF), 'center right pixel'
+            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom left pixel'
+            assert img.getpixel((1, 2)) == (0xCC, 0xCC, 0xCC, 0xFF), 'bottom center pixel'
+            assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF), 'bottom right pixel'
+        
+        def test3(self):
+            
+            out = Color(0xcc, 0xcc, 0xcc)
+            out = out.add(Color(0x99, 0x99, 0x99), self.halos)
+            out = out.add(self.streets)
+            
+            img = out.image()
+            
+            assert img.getpixel((0, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top left pixel'
+            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
             assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF), 'top right pixel'
             assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF), 'center left pixel'
             assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF), 'middle pixel'
