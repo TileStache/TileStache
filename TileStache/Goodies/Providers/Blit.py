@@ -81,8 +81,8 @@ class Layer:
 class Color (Layer):
     """
     """
-    def __init__(self, red, green, blue):
-        self._rgb = red / 255., green / 255., blue / 255.
+    def __init__(self, red, green, blue, alpha=0xFF):
+        self._components = red / 255., green / 255., blue / 255., alpha / 255.
     
     def size(self):
         return None
@@ -90,10 +90,10 @@ class Color (Layer):
     def rgba(self, width, height):
         """
         """
-        r = numpy.ones((width, height)) * self._rgb[0]
-        g = numpy.ones((width, height)) * self._rgb[1]
-        b = numpy.ones((width, height)) * self._rgb[2]
-        a = numpy.ones((width, height))
+        r = numpy.ones((width, height)) * self._components[0]
+        g = numpy.ones((width, height)) * self._components[1]
+        b = numpy.ones((width, height)) * self._components[2]
+        a = numpy.ones((width, height)) * self._components[3]
         
         return r, g, b, a
 
@@ -292,5 +292,23 @@ if __name__ == '__main__':
             assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom left pixel'
             assert img.getpixel((1, 2)) == (0xCC, 0xCC, 0xCC, 0xFF), 'bottom center pixel'
             assert img.getpixel((2, 2)) == (0xCC, 0xCC, 0xCC, 0xFF), 'bottom right pixel'
+        
+        def test4(self):
+    
+            out = Color(0x00, 0x00, 0x00, 0x00)
+            out = out.add(Color(0x99, 0x99, 0x99), self.halos)
+            out = out.add(self.streets)
+            
+            img = out.image()
+            
+            assert img.getpixel((0, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top left pixel'
+            assert img.getpixel((1, 0)) == (0x99, 0x99, 0x99, 0xFF), 'top center pixel'
+            assert img.getpixel((2, 0)) == (0xFF, 0xFF, 0xFF, 0xFF), 'top right pixel'
+            assert img.getpixel((0, 1)) == (0x99, 0x99, 0x99, 0xFF), 'center left pixel'
+            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0xFF), 'middle pixel'
+            assert img.getpixel((2, 1)) == (0x00, 0x00, 0x00, 0x00), 'center right pixel'
+            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom left pixel'
+            assert img.getpixel((1, 2)) == (0x00, 0x00, 0x00, 0x00), 'bottom center pixel'
+            assert img.getpixel((2, 2)) == (0x00, 0x00, 0x00, 0x00), 'bottom right pixel'
     
     unittest.main()
