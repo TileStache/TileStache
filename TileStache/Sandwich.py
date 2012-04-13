@@ -1,3 +1,5 @@
+from re import search
+
 from . import Core
 
 import Blit
@@ -33,6 +35,9 @@ class Provider:
         tiles = dict()
         
         for layer in self.stack:
+            if 'zoom' in layer and not in_zoom(coord, layer['zoom']):
+                continue
+
             #
             # Prepare pixels from elsewhere.
             #
@@ -93,6 +98,27 @@ class Provider:
             return rendered.image()
         else:
             return rendered.image().resize((width, height))
+
+def in_zoom(coord, range):
+    """ Return True if the coordinate zoom is within the textual range.
+    """
+    zooms = search("^(\d+)-(\d+)$|^(\d+)$", range)
+    
+    if not zooms:
+        raise Core.KnownUnknown("Bad zoom range in a Sandwich Layer: %s" % repr(range))
+    
+    min_zoom, max_zoom, at_zoom = zooms.groups()
+    
+    if min_zoom is not None and max_zoom is not None:
+        min_zoom, max_zoom = int(min_zoom), int(max_zoom)
+
+    elif at_zoom is not None:
+        min_zoom, max_zoom = int(at_zoom), int(at_zoom)
+
+    else:
+        min_zoom, max_zoom = 0, float('inf')
+    
+    return min_zoom <= coord.zoom and coord.zoom <= max_zoom
 
 def make_color(color):
     """ Convert colors expressed as HTML-style RGB(A) strings to Blit.Color.
