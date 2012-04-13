@@ -1,6 +1,15 @@
 from . import Core
 
-from Blit import Color, Bitmap
+from Blit import Color, Bitmap, blends
+
+blend_modes = {
+    'screen': blends.screen,
+    'add': blends.add,
+    'multiply': blends.multiply,
+    'subtract': blends.subtract,
+    'linear light': blends.linear_light,
+    'hard light': blends.hard_light
+    }
 
 class Provider:
     """
@@ -60,6 +69,7 @@ class Provider:
             #
             
             kwargs = dict(opacity=float(layer.get('opacity', 1.0)))
+            kwargs['blendfunc'] = blend_modes.get(layer.get('mode', None), None)
             
             if mask_name:
                 rendered = rendered.blend(foreground, tiles[mask_name], **kwargs)
