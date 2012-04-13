@@ -1,7 +1,10 @@
 from re import search
+from StringIO import StringIO
 
 from . import Core
+from . import getTile
 
+import Image
 import Blit
 
 blend_modes = {
@@ -28,76 +31,83 @@ class Provider:
     
     def renderTile(self, width, height, srs, coord):
         
-        # start with an empty base
-        rendered = Blit.Color(0, 0, 0, 0x10)
-        
-        # a place to put rendered tiles
-        tiles = dict()
-        
-        for layer in self.stack:
-            if 'zoom' in layer and not in_zoom(coord, layer['zoom']):
-                continue
-
-            #
-            # Prepare pixels from elsewhere.
-            #
-            
-            source_name, mask_name, color_name = [layer.get(k, None) for k in ('src', 'mask', 'color')]
-        
-            if source_name and color_name and mask_name:
-                raise Core.KnownUnknown("You can't specify src, color and mask together in a Sandwich Layer: %s, %s, %s" % (repr(source_name), repr(color_name), repr(mask_name)))
-            
-            if source_name and source_name not in tiles:
-                provider = self.config.layers[source_name].provider
-                tiles[source_name] = Blit.Bitmap(provider.renderTile(width, height, srs, coord))
-            
-            if mask_name and mask_name not in tiles:
-                provider = self.config.layers[mask_name].provider
-                tiles[mask_name] = Blit.Bitmap(provider.renderTile(width, height, srs, coord))
-            
-            #
-            # Build up the foreground layer.
-            #
-            
-            if source_name and color_name:
-                # color first, then layer
-                foreground = make_color(color_name).blend(tiles[source_name])
-            
-            elif source_name:
-                foreground = tiles[source_name]
-            
-            elif color_name:
-                foreground = make_color(color_name)
-    
-            elif mask_name:
-                raise Core.KnownUnknown("You have to provide more than just a mask to Sandwich Layer: %s" % repr(mask_name))
-    
-            else:
-                raise Core.KnownUnknown("You have to provide at least some combination of src, color and mask to Sandwich Layer")
-            
-            #
-            # Do the final composition with adjustments and blend modes.
-            #
-            
-            for (name, args) in layer.get('adjustments', []):
-                adjustfunc = adjustment_names.get(name)(*args)
-                foreground = foreground.adjust(adjustfunc)
-            
-            opacity = float(layer.get('opacity', 1.0))
-            blendfunc = blend_modes.get(layer.get('mode', None), None)
-            
-            if mask_name:
-                rendered = rendered.blend(foreground, tiles[mask_name], opacity, blendfunc)
-            
-            else:
-                rendered = rendered.blend(foreground, None, opacity, blendfunc)
-    
-        #
+        rendered = draw_stack(self.stack, coord, self.config, dict())
         
         if rendered.size() == (width, height):
             return rendered.image()
         else:
             return rendered.image().resize((width, height))
+
+def draw_stack(stack, coord, config, tiles):
+    """
+    """
+    # start with an empty base
+    rendered = Blit.Color(0, 0, 0, 0x10)
+    
+    for layer in stack:
+        if 'zoom' in layer and not in_zoom(coord, layer['zoom']):
+            continue
+
+        #
+        # Prepare pixels from elsewhere.
+        #
+        
+        source_name, mask_name, color_name = [layer.get(k, None) for k in ('src', 'mask', 'color')]
+    
+        if source_name and color_name and mask_name:
+            raise Core.KnownUnknown("You can't specify src, color and mask together in a Sandwich Layer: %s, %s, %s" % (repr(source_name), repr(color_name), repr(mask_name)))
+        
+        if source_name and source_name not in tiles:
+            tiles[source_name] = layer_bitmap(config.layers[source_name], coord)
+        
+        if mask_name and mask_name not in tiles:
+            tiles[mask_name] = layer_bitmap(config.layers[mask_name], coord)
+        
+        #
+        # Build up the foreground layer.
+        #
+        
+        if source_name and color_name:
+            # color first, then layer
+            foreground = make_color(color_name).blend(tiles[source_name])
+        
+        elif source_name:
+            foreground = tiles[source_name]
+        
+        elif color_name:
+            foreground = make_color(color_name)
+
+        elif mask_name:
+            raise Core.KnownUnknown("You have to provide more than just a mask to Sandwich Layer: %s" % repr(mask_name))
+
+        else:
+            raise Core.KnownUnknown("You have to provide at least some combination of src, color and mask to Sandwich Layer")
+        
+        #
+        # Do the final composition with adjustments and blend modes.
+        #
+        
+        for (name, args) in layer.get('adjustments', []):
+            adjustfunc = adjustment_names.get(name)(*args)
+            foreground = foreground.adjust(adjustfunc)
+        
+        opacity = float(layer.get('opacity', 1.0))
+        blendfunc = blend_modes.get(layer.get('mode', None), None)
+        
+        if mask_name:
+            rendered = rendered.blend(foreground, tiles[mask_name], opacity, blendfunc)
+        else:
+            rendered = rendered.blend(foreground, None, opacity, blendfunc)
+    
+    return rendered
+
+def layer_bitmap(layer, coord):
+    """
+    """
+    mime, body = getTile(layer, coord, 'png')
+    image = Image.open(StringIO(body)).convert('RGBA')
+
+    return Blit.Bitmap(image)
 
 def in_zoom(coord, range):
     """ Return True if the coordinate zoom is within the textual range.
