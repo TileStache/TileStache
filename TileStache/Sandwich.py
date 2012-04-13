@@ -1,14 +1,14 @@
 from . import Core
 
-from Blit import Color, Bitmap, blends
+import Blit
 
 blend_modes = {
-    'screen': blends.screen,
-    'add': blends.add,
-    'multiply': blends.multiply,
-    'subtract': blends.subtract,
-    'linear light': blends.linear_light,
-    'hard light': blends.hard_light
+    'screen': Blit.blends.screen,
+    'add': Blit.blends.add,
+    'multiply': Blit.blends.multiply,
+    'subtract': Blit.blends.subtract,
+    'linear light': Blit.blends.linear_light,
+    'hard light': Blit.blends.hard_light
     }
 
 class Provider:
@@ -21,7 +21,7 @@ class Provider:
     def renderTile(self, width, height, srs, coord):
         
         # start with an empty base
-        rendered = Color(0, 0, 0, 0x10)
+        rendered = Blit.Color(0, 0, 0, 0x10)
         
         # a place to put rendered tiles
         tiles = dict()
@@ -38,11 +38,11 @@ class Provider:
             
             if source_name and source_name not in tiles:
                 provider = self.config.layers[source_name].provider
-                tiles[source_name] = Bitmap(provider.renderTile(width, height, srs, coord))
+                tiles[source_name] = Blit.Bitmap(provider.renderTile(width, height, srs, coord))
             
             if mask_name and mask_name not in tiles:
                 provider = self.config.layers[mask_name].provider
-                tiles[mask_name] = Bitmap(provider.renderTile(width, height, srs, coord))
+                tiles[mask_name] = Blit.Bitmap(provider.renderTile(width, height, srs, coord))
             
             #
             # Build up the foreground layer.
@@ -118,4 +118,4 @@ def make_color(color):
     except ValueError:
         raise Core.KnownUnknown('Color must be made up of valid hex chars: "%s"' % color)
 
-    return Color(r, g, b, a)
+    return Blit.Color(r, g, b, a)
