@@ -11,6 +11,12 @@ blend_modes = {
     'hard light': Blit.blends.hard_light
     }
 
+adjustment_names = {
+    'threshold': Blit.adjustments.threshold,
+    'curves': Blit.adjustments.curves,
+    'curves2': Blit.adjustments.curves2
+    }
+
 class Provider:
     """
     """
@@ -65,17 +71,21 @@ class Provider:
                 raise Core.KnownUnknown("You have to provide at least some combination of src, color and mask to Sandwich Layer")
             
             #
-            # Do the final composition.
+            # Do the final composition with adjustments and blend modes.
             #
             
-            kwargs = dict(opacity=float(layer.get('opacity', 1.0)))
-            kwargs['blendfunc'] = blend_modes.get(layer.get('mode', None), None)
+            for (name, args) in layer.get('adjustments', []):
+                adjustfunc = adjustment_names.get(name)(*args)
+                foreground = foreground.adjust(adjustfunc)
+            
+            opacity = float(layer.get('opacity', 1.0))
+            blendfunc = blend_modes.get(layer.get('mode', None), None)
             
             if mask_name:
-                rendered = rendered.blend(foreground, tiles[mask_name], **kwargs)
+                rendered = rendered.blend(foreground, tiles[mask_name], opacity, blendfunc)
             
             else:
-                rendered = rendered.blend(foreground, **kwargs)
+                rendered = rendered.blend(foreground, None, opacity, blendfunc)
     
         #
         
