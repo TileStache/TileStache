@@ -8,10 +8,14 @@ Sample configuration:
     "provider":
     {
       "class": "TileStache.Goodies.Providers.GDAL:Provider",
-      "kwargs": { "filename": "landcover-1km.tif", "resample": "linear" }
+      "kwargs": { "filename": "landcover-1km.tif", "resample": "linear", "maskband": 2 }
     }
 
 Valid values for resample are "cubic", "cubicspline", "linear", and "nearest".
+
+The maskband argument is optional. If present and greater than 0, it specifies
+the GDAL dataset band whose mask should be used as an alpha channel. If maskband
+is 0 (the default), do not create an alpha channel.
 
 With a bit more work, this provider will be ready for fully-supported inclusion
 in TileStache proper. Until then, it will remain here in the Goodies package.
@@ -34,7 +38,7 @@ resamplings = {'cubic': gdal.GRA_Cubic, 'cubicspline': gdal.GRA_CubicSpline, 'li
 
 class Provider:
 
-    def __init__(self, layer, filename, resample='cubic'):
+    def __init__(self, layer, filename, resample='cubic', maskband=0):
         """
         """
         self.layer = layer
@@ -50,6 +54,7 @@ class Provider:
         
         self.filename = file_path
         self.resample = resamplings[resample]
+        self.maskband = maskband
     
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """
@@ -70,9 +75,25 @@ class Provider:
             if area_ds is None:
                 raise Exception('uh oh.')
             
+            # If we are using a mask band, create a data set which possesses a 'NoData' value enabling us to create a
+            # mask for validity.
+            mask_ds = None
+            if self.maskband > 0:
+                # We have to create a mask dataset with the same number of bands as the input since there isn't an
+                # efficient way to extract a single band from a dataset which doesn't risk attempting to copy the entire
+                # dataset.
+                mask_ds = driver.Create('/vsimem/alpha', width, height, src_ds.RasterCount, gdal.GDT_Float32)
+            
+                if mask_ds is None:
+                    raise Exception('Failed to create dataset mask.')
+
+                [mask_ds.GetRasterBand(i).SetNoDataValue(float('nan')) for i in xrange(1, src_ds.RasterCount+1)]
+            
             merc = osr.SpatialReference()
             merc.ImportFromProj4(srs)
             area_ds.SetProjection(merc.ExportToWkt())
+            if mask_ds is not None:
+                mask_ds.SetProjection(merc.ExportToWkt())
             
             # note that 900913 points north and east
             x, y = xmin, ymax
@@ -80,17 +101,31 @@ class Provider:
             
             gtx = [x, w/width, 0, y, 0, h/height]
             area_ds.SetGeoTransform(gtx)
+            if mask_ds is not None:
+                mask_ds.SetGeoTransform(gtx)
             
             # Create rendered area ---------------------------------------------
             
             gdal.ReprojectImage(src_ds, area_ds, src_ds.GetProjection(), area_ds.GetProjection(), self.resample)
+            if mask_ds is not None:
+                # Interpolating validity makes no sense and so we can use nearest neighbour resampling here no matter
+                # what is requested.
+                gdal.ReprojectImage(src_ds, mask_ds, src_ds.GetProjection(), mask_ds.GetProjection(), gdal.GRA_NearestNeighbour)
             
             channel = grayscale_src and (1, 1, 1) or (1, 2, 3)
             r, g, b = [area_ds.GetRasterBand(i).ReadRaster(0, 0, width, height) for i in channel]
-            data = ''.join([''.join(pixel) for pixel in zip(r, g, b)])
-            area = Image.fromstring('RGB', (width, height), data)
+
+            if mask_ds is None:
+                data = ''.join([''.join(pixel) for pixel in zip(r, g, b)])
+                area = Image.fromstring('RGB', (width, height), data)
+            else:
+                a = mask_ds.GetRasterBand(self.maskband).GetMaskBand().ReadRaster(0, 0, width, height)
+                data = ''.join([''.join(pixel) for pixel in zip(r, g, b, a)])
+                area = Image.fromstring('RGBA', (width, height), data)
 
         finally:
             driver.Delete('/vsimem/output')
+            if self.maskband > 0:
+                driver.Delete('/vsimem/alpha')
         
         return area
