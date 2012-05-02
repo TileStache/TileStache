@@ -50,7 +50,7 @@ global_mapnik_lock = allocate_lock()
 
 class Provider:
 
-    def __init__(self, layer, mapfile, fields, layer_index=0, scale=4):
+    def __init__(self, layer, mapfile, fields=None, layer_index=0, scale=4):
         """
         """
         self.mapnik = None
@@ -58,8 +58,7 @@ class Provider:
         self.mapfile = mapfile
         self.layer_index = layer_index
         self.scale = scale
-        #De-Unicode the strings or mapnik gets upset
-        self.fields = list(str(x) for x in fields)
+        self.fields = fields
 
         self.mercator = getProjectionByName('spherical mercator')
 
@@ -84,6 +83,9 @@ class Provider:
 
             logging.debug('TileStache.Grid.renderArea() %.3f to load %s', time() - start_time, self.mapfile)
         
+        datasource = self.mapnik.layers[self.layer_index].datasource
+        fields = self.fields and map(str, self.fields) or datasource.fields()
+        
         #
         # Mapnik can behave strangely when run in threads, so place a lock on the instance.
         #
@@ -92,7 +94,7 @@ class Provider:
             self.mapnik.height = height
             self.mapnik.zoom_to_box(mapnik.Envelope(xmin, ymin, xmax, ymax))
             
-            data = mapnik.render_grid(self.mapnik, 0, resolution=self.scale, fields=self.fields)
+            data = mapnik.render_grid(self.mapnik, 0, resolution=self.scale, fields=fields)
             global_mapnik_lock.release()
         
         return SaveableResponse(json.dumps(data))
