@@ -28,7 +28,13 @@ layer_index: The index of the layer you want from your map xml to be rendered
 scale: What to divide the tile pixel size by to get the resulting grid size. Usually this is 4.
 buffer: buffer around the queried features, in px, default 0. Use this to prevent problems on tile boundaries.
 """
+from time import time
+from os.path import exists
+from thread import allocate_lock
+
+import logging
 import json
+
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
 
@@ -40,9 +46,11 @@ except ImportError:
     except ImportError:
         pass
 
+global_mapnik_lock = allocate_lock()
+
 class Provider:
 
-    def __init__(self, layer, mapfile, fields, layer_index=0, scale=4, buffer=0):
+    def __init__(self, layer, mapfile, fields, layer_index=0, scale=4):
         """
         """
         self.mapnik = None
@@ -50,11 +58,48 @@ class Provider:
         self.mapfile = mapfile
         self.layer_index = layer_index
         self.scale = scale
-        self.buffer = buffer
         #De-Unicode the strings or mapnik gets upset
         self.fields = list(str(x) for x in fields)
 
         self.mercator = getProjectionByName('spherical mercator')
+
+    def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
+        """
+        """
+        start_time = time()
+        
+        if self.mapnik is None:
+            self.mapnik = mapnik.Map(0, 0)
+            
+            if exists(self.mapfile):
+                mapnik.load_map(self.mapnik, str(self.mapfile))
+            
+            else:
+                handle, filename = mkstemp()
+                os.write(handle, urlopen(self.mapfile).read())
+                os.close(handle)
+    
+                mapnik.load_map(self.mapnik, filename)
+                os.unlink(filename)
+
+            logging.debug('TileStache.Grid.renderArea() %.3f to load %s', time() - start_time, self.mapfile)
+        
+        #
+        # Mapnik can behave strangely when run in threads, so place a lock on the instance.
+        #
+        if global_mapnik_lock.acquire():
+            self.mapnik.width = width
+            self.mapnik.height = height
+            self.mapnik.zoom_to_box(mapnik.Envelope(xmin, ymin, xmax, ymax))
+            
+            data = mapnik.render_grid(self.mapnik, 0, resolution=self.scale, fields=self.fields)
+            global_mapnik_lock.release()
+        
+        return SaveableResponse(json.dumps(data))
+    
+        logging.debug('TileStache.Grid.renderArea() %dx%d at %d in %.3f from %s', width, height, self.scale, time() - start_time, self.mapfile)
+    
+        return img
 
     def renderTile(self, width, height, srs, coord):
         """
@@ -64,7 +109,7 @@ class Provider:
             mapnik.load_map(self.mapnik, str(self.mapfile))
 
         # buffer as fraction of tile size
-        buffer = float(self.buffer) / 256
+        buffer = 0.0
 
         nw = self.layer.projection.coordinateLocation(coord.left(buffer).up(buffer))
         se = self.layer.projection.coordinateLocation(coord.right(1 + buffer).down(1 + buffer))
@@ -109,3 +154,10 @@ class SaveableResponse:
             raise KnownUnknown('MapnikGrid only saves .json tiles, not "%s"' % format)
 
         out.write(self.content)
+    
+    def crop(self, bbox):
+        """ Fake-crop that doesn't actually crop.
+        
+            TODO: crop.
+        """
+        return self
