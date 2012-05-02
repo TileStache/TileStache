@@ -96,42 +96,10 @@ class Provider:
             
             data = mapnik.render_grid(self.mapnik, 0, resolution=self.scale, fields=fields)
             global_mapnik_lock.release()
-        
-        return SaveableResponse(json.dumps(data))
     
         logging.debug('TileStache.Grid.renderArea() %dx%d at %d in %.3f from %s', width, height, self.scale, time() - start_time, self.mapfile)
-    
-        return img
-
-    def renderTile(self, width, height, srs, coord):
-        """
-        """
-        if self.mapnik is None:
-            self.mapnik = mapnik.Map(0, 0)
-            mapnik.load_map(self.mapnik, str(self.mapfile))
-
-        # buffer as fraction of tile size
-        buffer = 0.0
-
-        nw = self.layer.projection.coordinateLocation(coord.left(buffer).up(buffer))
-        se = self.layer.projection.coordinateLocation(coord.right(1 + buffer).down(1 + buffer))
-        ul = self.mercator.locationProj(nw)
-        lr = self.mercator.locationProj(se)
-
-        self.mapnik.width = width + 2 * self.buffer
-        self.mapnik.height = height + 2 * self.buffer
-        self.mapnik.zoom_to_box(mapnik.Box2d(ul.x, ul.y, lr.x, lr.y))
-
-        # create grid as same size as map/image
-        grid = mapnik.Grid(width + 2 * self.buffer, height + 2 * self.buffer)
-        # render a layer to that grid array
-        mapnik.render_layer(self.mapnik, grid, layer=self.layer_index, fields=self.fields)
-        # extract a gridview excluding the buffer
-        grid_view = grid.view(self.buffer, self.buffer, width, height)
-        # then encode the grid array as utf, resample to 1/scale the size, and dump features
-        grid_utf = grid_view.encode('utf', resolution=self.scale, add_features=True)
-
-        return SaveableResponse(json.dumps(grid_utf))
+        
+        return SaveableResponse(data, self.scale)
 
     def getTypeByExtension(self, extension):
         """ Get mime-type and format by file extension.
@@ -148,18 +116,23 @@ class SaveableResponse:
 
         TileStache.getTile() expects to be able to save one of these to a buffer.
     """
-    def __init__(self, content):
+    def __init__(self, content, scale):
         self.content = content
+        self.scale = scale
 
     def save(self, out, format):
         if format != 'JSON':
             raise KnownUnknown('MapnikGrid only saves .json tiles, not "%s"' % format)
 
-        out.write(self.content)
+        json.dump(self.content, out)
     
     def crop(self, bbox):
-        """ Fake-crop that doesn't actually crop.
-        
-            TODO: crop.
+        """ Return a cropped grid response.
         """
-        return self
+        minchar, minrow, maxchar, maxrow = [v/self.scale for v in bbox]
+
+        keys, data = self.content['keys'], self.content.get('data', None)
+        grid = [row[minchar:maxchar] for row in self.content['grid'][minrow:maxrow]]
+        
+        cropped = dict(keys=keys, data=data, grid=grid)
+        return SaveableResponse(cropped, self.scale)
