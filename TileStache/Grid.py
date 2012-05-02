@@ -18,7 +18,6 @@ Sample configuration:
         "mapfile": "mymap.xml", 
         "fields":["name", "address"],
         "layer_index": 0,
-        "wrapper": "grid",
         "scale": 4
       }
     }
@@ -26,7 +25,6 @@ Sample configuration:
 mapfile: the mapnik xml file to load the map from
 fields: The fields that should be added to the resulting grid json.
 layer_index: The index of the layer you want from your map xml to be rendered
-wrapper: If not included the json will be output raw, if included the json will be wrapped in "wrapper(JSON)" (for use with wax)
 scale: What to divide the tile pixel size by to get the resulting grid size. Usually this is 4.
 buffer: buffer around the queried features, in px, default 0. Use this to prevent problems on tile boundaries.
 """
@@ -44,14 +42,13 @@ except ImportError:
 
 class Provider:
 
-    def __init__(self, layer, mapfile, fields, layer_index=0, wrapper=None, scale=4, buffer=0):
+    def __init__(self, layer, mapfile, fields, layer_index=0, scale=4, buffer=0):
         """
         """
         self.mapnik = None
         self.layer = layer
         self.mapfile = mapfile
         self.layer_index = layer_index
-        self.wrapper = wrapper
         self.scale = scale
         self.buffer = buffer
         #De-Unicode the strings or mapnik gets upset
@@ -87,10 +84,7 @@ class Provider:
         # then encode the grid array as utf, resample to 1/scale the size, and dump features
         grid_utf = grid_view.encode('utf', resolution=self.scale, add_features=True)
 
-        if self.wrapper is None:
-            return SaveableResponse(json.dumps(grid_utf))
-        else:
-            return SaveableResponse(self.wrapper + '(' + json.dumps(grid_utf) + ')')
+        return SaveableResponse(json.dumps(grid_utf))
 
     def getTypeByExtension(self, extension):
         """ Get mime-type and format by file extension.
