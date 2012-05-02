@@ -87,9 +87,9 @@ class Provider:
 		keyRemap = {}
 		for k in keys:
 			if k in self.gridKeys:
-				for ext in xrange('a', 'z'+1):
-					if not k+ext in self.gridKeys:
-						keyRemap[k] = (k+ext)
+				for ext in xrange(ord('a'), ord('z')+1):
+					if not k+chr(ext) in self.gridKeys:
+						keyRemap[k] = (k+chr(ext))
 						break
 				if not k in keyRemap:
 					raise Error("Couldn't remap")
@@ -168,7 +168,7 @@ class Provider:
 		
 		for i in xrange(gridSize):
 			line = finalGrid[i]
-			result += "\"" + line + "\""
+			result += json.dumps(line)
 			if i < gridSize - 1:
 				result += ","
 		
@@ -183,6 +183,8 @@ class Provider:
 			id = id + 1
 		if id >= 92:
 			id = id + 1
+		if id > 127:
+			return unichr(id)
 		return chr(id)
 
 	def decodeId( self, id ):
