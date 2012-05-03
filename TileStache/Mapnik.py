@@ -112,20 +112,8 @@ class ImageProvider:
         start_time = time()
         
         if self.mapnik is None:
-            self.mapnik = mapnik.Map(0, 0)
-            
-            if exists(self.mapfile):
-                mapnik.load_map(self.mapnik, str(self.mapfile))
-            
-            else:
-                handle, filename = mkstemp()
-                os.write(handle, urlopen(self.mapfile).read())
-                os.close(handle)
-    
-                mapnik.load_map(self.mapnik, filename)
-                os.unlink(filename)
-
-            logging.debug('TileStache.Providers.Mapnik.renderArea() %.3f to load %s', time() - start_time, self.mapfile)
+            self.mapnik = get_mapnikMap(self.mapfile)
+            logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %.3f to load %s', time() - start_time, self.mapfile)
         
         #
         # Mapnik can behave strangely when run in threads, so place a lock on the instance.
@@ -141,7 +129,7 @@ class ImageProvider:
         
         img = Image.fromstring('RGBA', (width, height), img.tostring())
     
-        logging.debug('TileStache.Providers.Mapnik.renderArea() %dx%d in %.3f from %s', width, height, time() - start_time, self.mapfile)
+        logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %dx%d in %.3f from %s', width, height, time() - start_time, self.mapfile)
     
         return img
 
@@ -165,20 +153,8 @@ class GridProvider:
         start_time = time()
         
         if self.mapnik is None:
-            self.mapnik = mapnik.Map(0, 0)
-            
-            if exists(self.mapfile):
-                mapnik.load_map(self.mapnik, str(self.mapfile))
-            
-            else:
-                handle, filename = mkstemp()
-                os.write(handle, urlopen(self.mapfile).read())
-                os.close(handle)
-    
-                mapnik.load_map(self.mapnik, filename)
-                os.unlink(filename)
-
-            logging.debug('TileStache.Grid.renderArea() %.3f to load %s', time() - start_time, self.mapfile)
+            self.mapnik = get_mapnikMap(self.mapfile)
+            logging.debug('TileStache.Mapnik.GridProvider.renderArea() %.3f to load %s', time() - start_time, self.mapfile)
         
         datasource = self.mapnik.layers[self.layer_index].datasource
         fields = self.fields and map(str, self.fields) or datasource.fields()
@@ -194,7 +170,7 @@ class GridProvider:
             data = mapnik.render_grid(self.mapnik, 0, resolution=self.scale, fields=fields)
             global_mapnik_lock.release()
     
-        logging.debug('TileStache.Grid.renderArea() %dx%d at %d in %.3f from %s', width, height, self.scale, time() - start_time, self.mapfile)
+        logging.debug('TileStache.Mapnik.GridProvider.renderArea() %dx%d at %d in %.3f from %s', width, height, self.scale, time() - start_time, self.mapfile)
         
         return SaveableResponse(data, self.scale)
 
@@ -233,3 +209,21 @@ class SaveableResponse:
         
         cropped = dict(keys=keys, data=data, grid=grid)
         return SaveableResponse(cropped, self.scale)
+
+def get_mapnikMap(mapfile):
+    """ Get a new mapnik.Map instance for a mapfile
+    """
+    mmap = mapnik.Map(0, 0)
+    
+    if exists(mapfile):
+        mapnik.load_map(mmap, str(mapfile))
+    
+    else:
+        handle, filename = mkstemp()
+        os.write(handle, urlopen(mapfile).read())
+        os.close(handle)
+
+        mapnik.load_map(mmap, filename)
+        os.unlink(filename)
+    
+    return mmap
