@@ -419,7 +419,7 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         _class = Providers.getProviderByName(provider_dict['name'])
         provider_kwargs = {}
         
-        if _class is Providers.Mapnik:
+        if _class is Providers.MapnikImage:
             provider_kwargs['mapfile'] = provider_dict['mapfile']
             provider_kwargs['fonts'] = provider_dict.get('fonts', None)
         
