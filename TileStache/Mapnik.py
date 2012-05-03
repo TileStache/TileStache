@@ -9,6 +9,7 @@ from os.path import exists
 from thread import allocate_lock
 from urlparse import urlparse, urljoin
 from itertools import count
+from glob import glob
 
 import logging
 import json

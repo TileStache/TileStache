@@ -74,12 +74,7 @@ import os
 import logging
 
 from StringIO import StringIO
-from posixpath import exists
-from thread import allocate_lock
-from tempfile import mkstemp
 from string import Template
-from glob import glob
-from time import time
 import urllib2
 import urllib
 
@@ -200,8 +195,6 @@ class Proxy:
             img.paste(tile, (0, 0), tile)
         
         return img
-
-global_mapnik_lock = allocate_lock()
 
 class UrlTemplate:
     """ Built-in URL Template provider. Proxies map images from WMS servers.
