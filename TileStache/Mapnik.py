@@ -116,13 +116,24 @@ class GridProvider:
         Tilestache config, and uses Mapnik 2.0 (and above) to generate
         JSON UTF grid responses.
         
-        Sample configuration:
+        Sample configurations:
 
           "provider":
           {
             "name": "mapnik grid",
             "mapfile": "world_merc.xml", 
             "fields": ["NAME", "POP2005"]
+          }
+    
+          "provider":
+          {
+            "name": "mapnik grid",
+            "mapfile": "world_merc.xml",
+            "layers":
+            [
+              [1, ["NAME"]]
+              [0, ["NAME", "POP2005"]]
+            ]
           }
     
         Arguments:
@@ -136,6 +147,10 @@ class GridProvider:
         - layer index (optional)
           Which layer from the mapfile to render, defaults to 0 (first layer).
         
+        - layers (optional)
+          Ordered list of (layer index, fields) to combine; if provided
+          layers overrides both layer index and fields arguments.
+        
         - scale (optional)
           Scale factor of output raster, defaults to 4 (64x64).
         
@@ -143,7 +158,7 @@ class GridProvider:
         - https://github.com/mapbox/utfgrid-spec/blob/master/1.2/utfgrid.md
         - http://mapbox.github.com/wax/interaction-leaf.html
     """
-    def __init__(self, layer, mapfile, fields=None, layer_index=0, scale=4):
+    def __init__(self, layer, mapfile, fields=None, layers=None, layer_index=0, scale=4):
         """ Initialize Mapnik grid provider with layer and mapfile.
             
             XML mapfile keyword arg comes from TileStache config,
@@ -152,11 +167,12 @@ class GridProvider:
         self.mapnik = None
         self.layer = layer
         self.mapfile = mapfile
-        self.layer_index = layer_index
         self.scale = scale
-        self.fields = fields
-
-        self.mercator = getProjectionByName('spherical mercator')
+        
+        if layers:
+            self.layers = layers
+        else:
+            self.layers = [layer_index or 0, fields]
 
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """
@@ -167,9 +183,6 @@ class GridProvider:
             self.mapnik = get_mapnikMap(self.mapfile)
             logging.debug('TileStache.Mapnik.GridProvider.renderArea() %.3f to load %s', time() - start_time, self.mapfile)
         
-        datasource = self.mapnik.layers[self.layer_index].datasource
-        fields = self.fields and map(str, self.fields) or datasource.fields()
-        
         #
         # Mapnik can behave strangely when run in threads, so place a lock on the instance.
         #
@@ -178,12 +191,20 @@ class GridProvider:
             self.mapnik.height = height
             self.mapnik.zoom_to_box(mapnik.Envelope(xmin, ymin, xmax, ymax))
             
-            data = mapnik.render_grid(self.mapnik, 0, resolution=self.scale, fields=fields)
+            grids = []
+            
+            for (index, fields) in self.layers:
+                datasource = self.mapnik.layers[index].datasource
+                fields = fields and map(str, fields) or datasource.fields()
+                
+                data = mapnik.render_grid(self.mapnik, index, resolution=self.scale, fields=fields)
+                grids.append(data)
+
             global_mapnik_lock.release()
     
         logging.debug('TileStache.Mapnik.GridProvider.renderArea() %dx%d at %d in %.3f from %s', width, height, self.scale, time() - start_time, self.mapfile)
         
-        return SaveableResponse(data, self.scale)
+        return SaveableResponse(grids[0], self.scale)
 
     def getTypeByExtension(self, extension):
         """ Get mime-type and format by file extension.

@@ -457,6 +457,8 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         
         elif _class is Providers.MapnikGrid:
             provider_kwargs['mapfile'] = provider_dict['mapfile']
+            if 'layers' in provider_dict:
+                provider_kwargs['layers'] = provider_dict['layers']
             if 'fields' in provider_dict:
                 provider_kwargs['fields'] = provider_dict['fields']
             if 'layer index' in provider_dict:
