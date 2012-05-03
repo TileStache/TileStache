@@ -173,7 +173,7 @@ class GridProvider:
         if layers:
             self.layers = layers
         else:
-            self.layers = [layer_index or 0, fields]
+            self.layers = [[layer_index or 0, fields]]
 
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """
