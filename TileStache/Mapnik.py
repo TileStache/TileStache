@@ -197,7 +197,7 @@ class GridProvider:
             
             for (index, fields) in self.layers:
                 datasource = self.mapnik.layers[index].datasource
-                fields = fields and map(str, fields) or datasource.fields()
+                fields = (type(fields) is list) and map(str, fields) or datasource.fields()
                 
                 grid = mapnik.render_grid(self.mapnik, index, resolution=self.scale, fields=fields)
                 grids.append(grid)
