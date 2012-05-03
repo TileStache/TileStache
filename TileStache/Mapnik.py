@@ -1,32 +1,8 @@
-""" Mapnik UTFGrid Provider.
+""" Mapnik Providers.
 
-Takes the first layer from the given mapnik xml file and renders it as UTFGrid
-https://github.com/mapbox/utfgrid-spec/blob/master/1.2/utfgrid.md
-It can then be used for this:
-http://mapbox.github.com/wax/interaction-leaf.html
-Only works with mapnik2 (Where the Grid functionality was introduced)
-
-Use Sperical Mercator projection and the extension "json"
-
-Sample configuration:
-
-    "provider":
-    {
-      "class": "TileStache.Goodies.Providers.MapnikGrid:Provider",
-      "kwargs":
-      {
-        "mapfile": "mymap.xml", 
-        "fields":["name", "address"],
-        "layer_index": 0,
-        "scale": 4
-      }
-    }
-
-mapfile: the mapnik xml file to load the map from
-fields: The fields that should be added to the resulting grid json.
-layer_index: The index of the layer you want from your map xml to be rendered
-scale: What to divide the tile pixel size by to get the resulting grid size. Usually this is 4.
-buffer: buffer around the queried features, in px, default 0. Use this to prevent problems on tile boundaries.
+ImageProvider is known as "mapnik" in TileStache config, GridProvider is
+known as "mapnik grid". Both require Mapnik to be installed; Grid requires
+Mapnik 2.0.0 and above.
 """
 from time import time
 from os.path import exists
@@ -63,7 +39,7 @@ class ImageProvider:
     
         This provider is identified by the name "mapnik" in the TileStache config.
         
-        Additional arguments:
+        Arguments:
         
         - mapfile (required)
             Local file path to Mapnik XML file.
@@ -134,9 +110,44 @@ class ImageProvider:
         return img
 
 class GridProvider:
+    """ Built-in UTF Grid provider. Renders JSON raster objects from Mapnik.
+    
+        This provider is identified by the name "mapnik grid" in the
+        Tilestache config, and uses Mapnik 2.0 (and above) to generate
+        JSON UTF grid responses.
+        
+        Sample configuration:
 
+          "provider":
+          {
+            "name": "mapnik grid",
+            "mapfile": "world_merc.xml", 
+            "fields": ["NAME", "POP2005"]
+          }
+    
+        Arguments:
+        
+        - mapfile (required)
+          Local file path to Mapnik XML file.
+        
+        - fields (optional)
+          Array of field names to return in the response, defaults to all.
+        
+        - layer index (optional)
+          Which layer from the mapfile to render, defaults to 0 (first layer).
+        
+        - scale (optional)
+          Scale factor of output raster, defaults to 4 (64x64).
+        
+        Information and examples for UTF Grid:
+        - https://github.com/mapbox/utfgrid-spec/blob/master/1.2/utfgrid.md
+        - http://mapbox.github.com/wax/interaction-leaf.html
+    """
     def __init__(self, layer, mapfile, fields=None, layer_index=0, scale=4):
-        """
+        """ Initialize Mapnik grid provider with layer and mapfile.
+            
+            XML mapfile keyword arg comes from TileStache config,
+            and is an absolute path by the time it gets here.
         """
         self.mapnik = None
         self.layer = layer
