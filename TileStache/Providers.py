@@ -5,11 +5,12 @@ providers are found here, but it's possible to define your own and pull them int
 TileStache dynamically by class name.
 
 Built-in providers:
-- mapnik (Mapnik)
+- mapnik (Mapnik.ImageProvider)
 - proxy (Proxy)
 - vector (TileStache.Vector.Provider)
 - url template (UrlTemplate)
 - mbtiles (TileStache.MBTiles.Provider)
+- mapnik grid (Mapnik.GridProvider)
 
 Example built-in provider, for JSON configuration file:
 
@@ -100,8 +101,8 @@ import MBTiles
 import Geography
 from .Mapnik import ImageProvider as MapnikImage, GridProvider as MapnikGrid
 
-# Provided for temporary backward-compatibility with old location
-# of Mapnik provider. TODO: remove in next major version.
+# Already deprecated; provided for temporary backward-compatibility with
+# old location of Mapnik provider. TODO: remove in next major version.
 Mapnik = MapnikImage
 
 def getProviderByName(name):
@@ -123,6 +124,9 @@ def getProviderByName(name):
 
     elif name.lower() == 'mbtiles':
         return MBTiles.Provider
+
+    elif name.lower() == 'mapnik grid':
+        return MapnikGrid
 
     raise Exception('Unknown provider name: "%s"' % name)
 

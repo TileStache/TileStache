@@ -454,6 +454,15 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         
         elif _class is Providers.MBTiles.Provider:
             provider_kwargs['tileset'] = provider_dict['tileset']
+        
+        elif _class is Providers.MapnikGrid:
+            provider_kwargs['mapfile'] = provider_dict['mapfile']
+            if 'fields' in provider_dict:
+                provider_kwargs['fields'] = provider_dict['fields']
+            if 'layer index' in provider_dict:
+                provider_kwargs['layer_index'] = provider_dict['layer index']
+            if 'scale' in provider_dict:
+                provider_kwargs['scale'] = provider_dict['scale']
             
     elif 'class' in provider_dict:
         _class = loadClassPath(provider_dict['class'])
