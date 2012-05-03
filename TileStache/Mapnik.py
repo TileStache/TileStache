@@ -8,6 +8,7 @@ from time import time
 from os.path import exists
 from thread import allocate_lock
 from urlparse import urlparse, urljoin
+from itertools import count
 
 import logging
 import json
@@ -197,14 +198,16 @@ class GridProvider:
                 datasource = self.mapnik.layers[index].datasource
                 fields = fields and map(str, fields) or datasource.fields()
                 
-                data = mapnik.render_grid(self.mapnik, index, resolution=self.scale, fields=fields)
-                grids.append(data)
+                grid = mapnik.render_grid(self.mapnik, index, resolution=self.scale, fields=fields)
+                grids.append(grid)
 
             global_mapnik_lock.release()
+        
+        outgrid = reduce(merge_grids, grids)
     
         logging.debug('TileStache.Mapnik.GridProvider.renderArea() %dx%d at %d in %.3f from %s', width, height, self.scale, time() - start_time, self.mapfile)
         
-        return SaveableResponse(grids[0], self.scale)
+        return SaveableResponse(outgrid, self.scale)
 
     def getTypeByExtension(self, extension):
         """ Get mime-type and format by file extension.
@@ -241,6 +244,70 @@ class SaveableResponse:
         
         cropped = dict(keys=keys, data=data, grid=grid)
         return SaveableResponse(cropped, self.scale)
+
+def merge_grids(grid1, grid2):
+    """ Merge two UTF Grid objects.
+    """
+    #
+    # Concatenate keys and data, assigning new indexes along the way.
+    #
+
+    keygen, outkeys, outdata = count(1), [], dict()
+    
+    for ingrid in [grid1, grid2]:
+        for (index, key) in enumerate(ingrid['keys']):
+            if key not in ingrid['data']:
+                outkeys.append('')
+                continue
+        
+            outkey = '%d' % keygen.next()
+            outkeys.append(outkey)
+    
+            datum = ingrid['data'][key]
+            outdata[outkey] = datum
+    
+    #
+    # Merge the two grids, one on top of the other.
+    #
+    
+    offset, outgrid = len(grid1['keys']), []
+    
+    def newchar(char1, char2):
+        """ Return a new encoded character based on two inputs.
+        """
+        id1, id2 = decode_char(char1), decode_char(char2)
+        
+        if grid2['keys'][id2] == '':
+            # transparent pixel, use the bottom character
+            return encode_id(id1)
+        
+        else:
+            # opaque pixel, use the top character
+            return encode_id(id2 + offset)
+    
+    for (row1, row2) in zip(grid1['grid'], grid2['grid']):
+        outrow = [newchar(c1, c2) for (c1, c2) in zip(row1, row2)]
+        outgrid.append(''.join(outrow))
+    
+    return dict(keys=outkeys, data=outdata, grid=outgrid)
+
+def encode_id(id):
+    id += 32
+    if id >= 34:
+        id = id + 1
+    if id >= 92:
+        id = id + 1
+    if id > 127:
+        return unichr(id)
+    return chr(id)
+
+def decode_char(char):
+    id = ord(char)
+    if id >= 93:
+        id = id - 1
+    if id >= 35:
+        id = id - 1
+    return id - 32
 
 def get_mapnikMap(mapfile):
     """ Get a new mapnik.Map instance for a mapfile
