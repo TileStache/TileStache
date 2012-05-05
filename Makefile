@@ -67,6 +67,7 @@ doc:
 	pydoc -w TileStache.Vector.Arc
 	pydoc -w TileStache.Geography
 	pydoc -w TileStache.Providers
+	pydoc -w TileStache.Mapnik
 	pydoc -w TileStache.MBTiles
 	pydoc -w TileStache.Pixels
 	pydoc -w TileStache.Goodies

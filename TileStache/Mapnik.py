@@ -118,7 +118,7 @@ class GridProvider:
         Tilestache config, and uses Mapnik 2.0 (and above) to generate
         JSON UTF grid responses.
         
-        Sample configurations:
+        Sample configuration for a single grid layer:
 
           "provider":
           {
@@ -127,6 +127,8 @@ class GridProvider:
             "fields": ["NAME", "POP2005"]
           }
     
+        Sample configuration for multiple overlaid grid layers:
+
           "provider":
           {
             "name": "mapnik grid",

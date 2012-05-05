@@ -126,6 +126,7 @@
           <li><a href="#proxy-provider">Proxy</a></li>
           <li><a href="#url-template-provider">URL Template</a></li>
           <li><a href="#mbtiles-provider">MBTiles</a></li>
+          <li><a href="#mapnik-grid-provider">Mapnik Grid</a></li>
         </ul>
  -->
       </li>
@@ -883,7 +884,7 @@ Mapnik provider parameters:
 
 <p>
 See
-<a href="http://tilestache.org/doc/TileStache.Providers.html#Mapnik">TileStache.Providers.Mapnik</a>
+<a href="http://tilestache.org/doc/TileStache.Mapnik.html#ImageProvider">TileStache.Mapnik.ImageProvider</a>
 for more information.
 </p>
 
@@ -1186,6 +1187,83 @@ MBTiles provider parameters:
 <p>
 See
 <a href="http://tilestache.org/doc/TileStache.MBTiles.html#Provider">TileStache.MBTiles.Provider</a>
+for more information.
+</p>
+
+<h4><a id="mapnik-grid-provider" name="mapnik-grid-provider">Mapnik Grid</a></h4>
+
+<p>
+Built-in Mapnik <a href="https://github.com/mapbox/utfgrid-spec/blob/master/1.2/utfgrid.md">UTF Grid</a> provider,
+renders JSON raster objects from Mapnik 2.0+.
+</p>
+ 
+<p>
+Example Mapnik Grid provider configurations:
+</p>
+
+<pre>
+<span class="bg">{
+  "cache": { … }.
+  "layers":
+  {
+    "one-grid":
+    {</span>
+      "provider":
+      {
+        "name": "mapnik grid", 
+        "mapfile": "style.xml",
+        "layer index": 1
+      },
+    <span class="bg">}
+    "two-grids":
+    {</span>
+      "provider":
+      {
+        "name": "mapnik grid", 
+        "mapfile": "style.xml",
+        "layers":
+        [
+          [2, ["population"]],
+          [0, ["name", "population"]]
+        ]
+      }
+    <span class="bg">}
+  }
+}</span>
+</pre>
+ 
+<p>
+Mapnik Grid provider parameters:
+</p>
+
+<dl>
+    <dt>mapfile</dt>
+    <dd>
+    Required local file path to Mapnik XML file.
+    </dd>
+    <dt>fields</dt>
+    <dd>
+    Optional array of field names to return in the response, defaults to all.
+    </dd>
+    <dt>layer index</dt>
+    <dd>
+    Optional layer from the mapfile to render, defaults to <samp>0</samp> (first layer).
+    </dd>
+    <dt>layers</dt>
+    <dd>
+    Optional ordered list of (layer index, fields) to combine; if provided
+    <var>layers</var> overrides both <var>layer index</var> and <var>fields</var>
+    arguments.
+    </dd>
+    <dt>scale</dt>
+    <dd>
+    Optional scale factor of output raster, defaults to <samp>4</samp> (64×64).
+    </dd>
+</dl>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.Mapnik.html#GridProvider">TileStache.Mapnik.GridProvider</a>
 for more information.
 </p>
 
