@@ -347,6 +347,12 @@ def _feature_properties(feature, layer_definition, whitelist=None):
     
     return properties
 
+def _append_with_delim(s, delim, data, key):
+    if key in data:
+        return s + delim + str(data[key])
+    else:
+        return s
+	
 def _open_layer(driver_name, parameters, dirpath):
     """ Open a layer, return it and its datasource.
     
@@ -357,7 +363,7 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     okay_drivers = {'postgis': 'PostgreSQL', 'esri shapefile': 'ESRI Shapefile',
                     'postgresql': 'PostgreSQL', 'shapefile': 'ESRI Shapefile',
-                    'geojson': 'GeoJSON'}
+                    'geojson': 'GeoJSON', 'spatialite': 'SQLite', 'oracle': 'OCI', 'mysql': 'MySQL'}
     
     if driver_name.lower() not in okay_drivers:
         raise KnownUnknown('Got a driver type Vector doesn\'t understand: "%s". Need one of %s.' % (driver_name, ', '.join(okay_drivers.keys())))
@@ -379,8 +385,37 @@ def _open_layer(driver_name, parameters, dirpath):
                 conn_parts.append("%s='%s'" % (part, parameters[part]))
         
         source_name = 'PG:' + ' '.join(conn_parts)
+
+    elif driver_name == 'MySQL':
+        if 'dbname' not in parameters:
+            raise KnownUnknown('Need a "dbname" parameter for MySQL')
+        if 'table' not in parameters:
+            raise KnownUnknown('Need a "table" parameter for MySQL')
+
+        conn_parts = []
         
-    elif driver_name in ('ESRI Shapefile', 'GeoJSON'):
+        for part in ('host', 'port', 'user', 'password'):
+            if part in parameters:
+                conn_parts.append("%s=%s" % (part, parameters[part]))
+        
+        source_name = 'MySql:' + parameters["dbname"] + "," + ','.join(conn_parts) + ",tables=" + parameters['table']
+
+    elif driver_name == 'OCI':
+        if 'host' not in parameters:
+            raise KnownUnknown('Need a "host" parameter for oracle')
+        if 'table' not in parameters:
+            raise KnownUnknown('Need a "table" parameter for oracle')
+        source_name = 'OCI:'
+        source_name = _append_with_delim(source_name, '', parameters, 'user')
+        source_name = _append_with_delim(source_name, '/', parameters, 'password')
+        if 'user' in parameters:
+	        source_name = source_name + '@'
+        source_name = source_name + parameters['host']
+        source_name = _append_with_delim(source_name, ':', parameters, 'port')
+        source_name = _append_with_delim(source_name, '/', parameters, 'dbname')
+        source_name = source_name + ":" + parameters['table']
+        
+    elif driver_name in ('ESRI Shapefile', 'GeoJSON', 'SQLite'):
         if 'file' not in parameters:
             raise KnownUnknown('Need at least a "file" parameter for a shapefile')
     
@@ -400,18 +435,19 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     # Set up the layer
     #
-    if driver_name == 'PostgreSQL':
+    if driver_name == 'PostgreSQL' or driver_name == 'OCI' or driver_name == 'MySQL':
         if 'query' in parameters:
             layer = datasource.ExecuteSQL(str(parameters['query']))
         elif 'table' in parameters:
             layer = datasource.GetLayerByName(str(parameters['table']))
         else:
-            raise KnownUnknown('Need at least a "query" or "table" parameter for postgis')
-
+            raise KnownUnknown('Need at least a "query" or "table" parameter for postgis or oracle')
+    elif driver_name == 'SQLite':
+        layer = datasource.GetLayerByName(str(parameters['layer']))
     else:
         layer = datasource.GetLayer(0)
 
-    if layer.GetSpatialRef() is None: 
+    if layer.GetSpatialRef() is None and driver_name != 'SQLite': 
         raise KnownUnknown('Couldn\'t get a layer from data source %s' % source_name)
 
     #
@@ -443,6 +479,8 @@ def _get_features(coord, properties, projection, layer, clipped, projected, spac
     #
     definition = layer.GetLayerDefn()
     layer_sref = layer.GetSpatialRef()
+    if layer_sref == None:
+        layer_sref = _sref_4326()
     
     #
     # Spatially filter the layer

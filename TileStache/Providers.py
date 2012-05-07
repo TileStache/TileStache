@@ -209,7 +209,7 @@ class Mapnik:
         
         Additional arguments:
         
-        - mapfile (required)
+        - mapfile (required)	
             Local file path to Mapnik XML file.
     
         - fonts (optional)
@@ -224,8 +224,7 @@ class Mapnik:
     def __init__(self, layer, mapfile, fonts=None):
         """ Initialize Mapnik provider with layer and mapfile.
             
-            XML mapfile keyword arg comes from TileStache config,
-            and is an absolute path by the time it gets here.
+            XML mapfile keyword arg comes from TileStache config
         """
         maphref = urljoin(layer.config.dirpath, mapfile)
         scheme, h, path, q, p, f = urlparse(maphref)
