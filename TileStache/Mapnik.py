@@ -147,6 +147,8 @@ class GridProvider:
         
         - fields (optional)
           Array of field names to return in the response, defaults to all.
+          An empty list will return no field names, while a value of null is
+          equivalent to all.
         
         - layer index (optional)
           Which layer from the mapfile to render, defaults to 0 (first layer).
@@ -199,7 +201,11 @@ class GridProvider:
             
             for (index, fields) in self.layers:
                 datasource = self.mapnik.layers[index].datasource
-                fields = (type(fields) is list) and map(str, fields) or datasource.fields()
+                
+                if type(fields) is list:
+                    fields = map(str, fields)
+                else:
+                    fields = datasource.fields()
                 
                 grid = mapnik.render_grid(self.mapnik, index, resolution=self.scale, fields=fields)
                 grids.append(grid)
