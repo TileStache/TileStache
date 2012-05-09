@@ -170,7 +170,6 @@ except ImportError:
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
 from Arc import reserialize_to_arc, pyamf_classes
-import sys
 
 class VectorResponse:
     """ Wrapper class for Vector response that makes it behave like a PIL.Image object.
@@ -503,7 +502,6 @@ def _get_features(coord, properties, projection, layer, clipped, projected, spac
         buffer = spacing * _tile_perimeter_width(coord, projection) / 256.
 
     for feature in layer:
-        sys.stderr.write("Considering feature " + _feature_properties(feature, definition, properties)['continent']); sys.stderr.flush();
         geometry = feature.geometry().Clone()
         
         if not geometry.Intersect(bbox):
@@ -518,7 +516,6 @@ def _get_features(coord, properties, projection, layer, clipped, projected, spac
         if geometry is None:
             # may indicate a TopologyException
             continue
-        sys.stderr.write("Feature in bounds " + _feature_properties(feature, definition, properties)['continent']); sys.stderr.flush();
 
         
         # mask out subsequent features if spacing is defined
