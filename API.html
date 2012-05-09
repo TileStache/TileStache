@@ -999,6 +999,22 @@ Example Vector provider configurations:
       "provider": {"name": "vector", "driver": "GeoJSON",
                    "parameters": {"file": "stclines.json"},
                    "properties": ["STREETNAME"]}
+    <span class="bg">},
+    {</span>
+      "provider": {"name": "vector", "driver": "MySQL",
+                   "parameters": {"dbname": "geodata", "port": "3306", 
+                                   "user": "geotest", "table": "test"},
+                   "properties": ["name"], "id_property": "oid"}
+    <span class="bg">},
+    {</span>
+      "provider": {"name": "vector", "driver": "Oracle",
+                   "parameters": {"dbname": "ORCL", "port": "3306", 
+                                  "user": "scott", "password": "tiger", 
+                                  "table": "test"}}
+    <span class="bg">},
+    {</span>
+      "provider": {"name": "vector", "driver": "Spatialite",
+                   "parameters": {"file": "test.sqlite", "layer": "test"}}
     <span class="bg">}
   }
 }</span>
@@ -1022,7 +1038,7 @@ Vector provider parameters:
     Dictionary of parameters for each driver.
     <br>
     <dl>
-        <dt>PostgreSQL</dt>
+        <dt>PostgreSQL, MySQL and Oracle</dt>
         <dd>
         <samp>"dbname"</samp> parameter is required, with name of database.
         <samp>"host"</samp>, <samp>"user"</samp>, and <samp>"password"</samp>
@@ -1034,6 +1050,13 @@ Vector provider parameters:
         <dd>
         <samp>"file"</samp> parameter is required, with filesystem path to
         data file.
+        </dd>
+        <dt>Spatialite</dt>
+        <dd>
+        <samp>"file"</samp> parameter is required, with filesystem path to
+        data file.
+        <samp>"layer"</samp> parameter is required, and is the name of
+        the SQLite table.
         </dd>
     </dl>
     </dd>
