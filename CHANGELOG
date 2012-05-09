@@ -1,3 +1,6 @@
+2012-05-08: 1.32.3
+- Fixed a dumb import error in TileStache.Providers.
+
 2012-05-07: 1.32.2
 - Disambiguated null vs. empty list behavior of Mapnik Grid fields. 
 

@@ -82,6 +82,8 @@ doc:
 	pydoc -w TileStache.Goodies.Providers.MirrorOSM
 	pydoc -w TileStache.Goodies.Providers.Monkeycache
 	pydoc -w TileStache.Goodies.Providers.UtfGridComposite
+	pydoc -w TileStache.Goodies.Providers.UtfGridCompositeOverlap
+	pydoc -w TileStache.Goodies.Providers.TileDataOSM
 	pydoc -w TileStache.Goodies.Providers.Grid
 	pydoc -w TileStache.Goodies.Providers.GDAL
 	pydoc -w TileStache.Goodies.AreaServer
