@@ -1,3 +1,6 @@
+2012-05-09: 1.33.1
+- Fixed mapnik.Envelope/Box2d back-compatibility.
+
 2012-05-09: 1.33.0
 - Added Vector provider support for Spatialite, MySQL and Oracle from Andrew Semprebon.
 
