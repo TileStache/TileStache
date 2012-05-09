@@ -1,3 +1,6 @@
+2012-05-09: 1.33.0
+- Added Vector provider support for Spatialite, MySQL and Oracle from Andrew Semprebon.
+
 2012-05-08: 1.32.3
 - Fixed a dumb import error in TileStache.Providers.
 
