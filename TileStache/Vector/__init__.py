@@ -458,7 +458,7 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     return layer, datasource
 
-def _get_features(coord, properties, projection, layer, clipped, projected, spacing):
+def _get_features(coord, properties, projection, layer, clipped, projected, spacing, id_property):
     """ Return a list of features in an OGR layer with properties in GeoJSON form.
     
         Optionally clip features to coordinate bounding box, and optionally
@@ -522,8 +522,11 @@ def _get_features(coord, properties, projection, layer, clipped, projected, spac
 
         geom = json_loads(geometry.ExportToJson())
         prop = _feature_properties(feature, definition, properties)
-        
-        features.append({'type': 'Feature', 'properties': prop, 'geometry': geom})
+
+        geojson_feature = {'type': 'Feature', 'properties': prop, 'geometry': geom}
+        if id_property != None and id_property in prop:
+           geojson_feature['id'] = prop[id_property]
+        features.append(geojson_feature)
     
     return features
 
@@ -533,7 +536,7 @@ class Provider:
         See module documentation for explanation of constructor arguments.
     """
     
-    def __init__(self, layer, driver, parameters, clipped, verbose, projected, spacing, properties, precision):
+    def __init__(self, layer, driver, parameters, clipped, verbose, projected, spacing, properties, precision, id_property):
         self.layer      = layer
         self.driver     = driver
         self.clipped    = clipped
@@ -543,12 +546,13 @@ class Provider:
         self.parameters = parameters
         self.properties = properties
         self.precision  = precision
+        self.id_property = id_property
 
     def renderTile(self, width, height, srs, coord):
         """ Render a single tile, return a VectorResponse instance.
         """
         layer, ds = _open_layer(self.driver, self.parameters, self.layer.config.dirpath)
-        features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipped, self.projected, self.spacing)
+        features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipped, self.projected, self.spacing, self.id_property)
         response = {'type': 'FeatureCollection', 'features': features}
         
         if self.projected:
