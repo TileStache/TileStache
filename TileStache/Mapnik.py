@@ -10,7 +10,10 @@ from thread import allocate_lock
 from urlparse import urlparse, urljoin
 from itertools import count
 from glob import glob
+from tempfile import mkstemp
+from urllib import urlopen
 
+import os
 import logging
 import json
 
@@ -99,7 +102,7 @@ class ImageProvider:
         if global_mapnik_lock.acquire():
             self.mapnik.width = width
             self.mapnik.height = height
-            self.mapnik.zoom_to_box(mapnik.Envelope(xmin, ymin, xmax, ymax))
+            self.mapnik.zoom_to_box(mapnik.Box2d(xmin, ymin, xmax, ymax))
             
             img = mapnik.Image(width, height)
             mapnik.render(self.mapnik, img)
@@ -195,7 +198,7 @@ class GridProvider:
         if global_mapnik_lock.acquire():
             self.mapnik.width = width
             self.mapnik.height = height
-            self.mapnik.zoom_to_box(mapnik.Envelope(xmin, ymin, xmax, ymax))
+            self.mapnik.zoom_to_box(mapnik.Box2d(xmin, ymin, xmax, ymax))
             
             grids = []
             
