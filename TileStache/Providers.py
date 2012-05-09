@@ -88,6 +88,12 @@ except ImportError:
         # if you don't plan to use the mapnik provider.
         pass
 
+try:
+    from PIL import Image
+except ImportError:
+    # On some systems, PIL.Image is known as Image.
+    import Image
+
 import ModestMaps
 from ModestMaps.Core import Point, Coordinate
 
