@@ -34,9 +34,10 @@ via Github to suggest other formats: http://github.com/migurski/TileStache.
 Common parameters:
 
   driver:
-    String used to identify an OGR driver. Currently, only "ESRI Shapefile",
-    "PostgreSQL", and "GeoJSON" are supported as data source drivers, with
-    "postgis" and "shapefile" accepted as synonyms. Not case-sensitive.
+    String used to identify an OGR driver. Currently, "ESRI Shapefile",
+    "PostgreSQL", "MySQL", Oracle, Spatialite and "GeoJSON" are supported as 
+     data source drivers, with "postgis" and "shapefile" accepted as synonyms. 
+     Not case-sensitive.
     
     OGR's complete list of potential formats can be found here:
     http://www.gdal.org/ogr/ogr_formats.html. Feel free to get in touch via
@@ -90,6 +91,11 @@ Common parameters:
     Default is false.
     Boolean flag for optionally expanding output with additional whitespace
     for readability. Results in larger but more readable GeoJSON responses.
+
+  id_property:
+    Default is None.
+    Sets the id of the geojson feature to the specified field of the data source.
+    This can be used, for example, to identify a unique key field for the feature.
 
 Example TileStache provider configuration:
 
@@ -164,6 +170,7 @@ except ImportError:
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
 from Arc import reserialize_to_arc, pyamf_classes
+import sys
 
 class VectorResponse:
     """ Wrapper class for Vector response that makes it behave like a PIL.Image object.
@@ -496,6 +503,7 @@ def _get_features(coord, properties, projection, layer, clipped, projected, spac
         buffer = spacing * _tile_perimeter_width(coord, projection) / 256.
 
     for feature in layer:
+        sys.stderr.write("Considering feature " + _feature_properties(feature, definition, properties)['continent']); sys.stderr.flush();
         geometry = feature.geometry().Clone()
         
         if not geometry.Intersect(bbox):
@@ -510,6 +518,8 @@ def _get_features(coord, properties, projection, layer, clipped, projected, spac
         if geometry is None:
             # may indicate a TopologyException
             continue
+        sys.stderr.write("Feature in bounds " + _feature_properties(feature, definition, properties)['continent']); sys.stderr.flush();
+
         
         # mask out subsequent features if spacing is defined
         if mask and buffer:
