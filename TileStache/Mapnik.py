@@ -37,6 +37,14 @@ except ImportError:
         # if you don't plan to use the mapnik provider.
         pass
 
+if 'mapnik' in locals():
+    _version = hasattr(mapnik, 'mapnik_version') and mapnik.mapnik_version() or 701
+    
+    if _version >= 20000:
+        Box2d = mapnik.Box2d
+    else:
+        Box2d = mapnik.Envelope
+
 global_mapnik_lock = allocate_lock()
 
 class ImageProvider:
@@ -102,7 +110,7 @@ class ImageProvider:
         if global_mapnik_lock.acquire():
             self.mapnik.width = width
             self.mapnik.height = height
-            self.mapnik.zoom_to_box(mapnik.Box2d(xmin, ymin, xmax, ymax))
+            self.mapnik.zoom_to_box(Box2d(xmin, ymin, xmax, ymax))
             
             img = mapnik.Image(width, height)
             mapnik.render(self.mapnik, img)
@@ -198,7 +206,7 @@ class GridProvider:
         if global_mapnik_lock.acquire():
             self.mapnik.width = width
             self.mapnik.height = height
-            self.mapnik.zoom_to_box(mapnik.Box2d(xmin, ymin, xmax, ymax))
+            self.mapnik.zoom_to_box(Box2d(xmin, ymin, xmax, ymax))
             
             grids = []
             
