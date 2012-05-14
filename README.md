@@ -1,4 +1,5 @@
-#TileStache:
+#TileStache
+
 _a stylish alternative for caching your map tiles_
 
 **TileStache** is a Python-based server application that can serve up map tiles
