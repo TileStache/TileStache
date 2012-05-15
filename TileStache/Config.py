@@ -419,7 +419,7 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         _class = Providers.getProviderByName(provider_dict['name'])
         provider_kwargs = {}
         
-        if _class is Providers.Mapnik:
+        if _class is Providers.MapnikImage:
             provider_kwargs['mapfile'] = provider_dict['mapfile']
             provider_kwargs['fonts'] = provider_dict.get('fonts', None)
         
@@ -437,6 +437,7 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         elif _class is Providers.Vector.Provider:
             provider_kwargs['driver'] = provider_dict['driver']
             provider_kwargs['parameters'] = provider_dict['parameters']
+            provider_kwargs['id_property'] = provider_dict.get('id_property', None)
             provider_kwargs['properties'] = provider_dict.get('properties', None)
             provider_kwargs['projected'] = bool(provider_dict.get('projected', False))
             provider_kwargs['verbose'] = bool(provider_dict.get('verbose', False))
@@ -454,6 +455,17 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         
         elif _class is Providers.MBTiles.Provider:
             provider_kwargs['tileset'] = provider_dict['tileset']
+        
+        elif _class is Providers.MapnikGrid:
+            provider_kwargs['mapfile'] = provider_dict['mapfile']
+            if 'layers' in provider_dict:
+                provider_kwargs['layers'] = provider_dict['layers']
+            if 'fields' in provider_dict:
+                provider_kwargs['fields'] = provider_dict['fields']
+            if 'layer index' in provider_dict:
+                provider_kwargs['layer_index'] = provider_dict['layer index']
+            if 'scale' in provider_dict:
+                provider_kwargs['scale'] = provider_dict['scale']
             
     elif 'class' in provider_dict:
         _class = loadClassPath(provider_dict['class'])

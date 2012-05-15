@@ -5,11 +5,12 @@ providers are found here, but it's possible to define your own and pull them int
 TileStache dynamically by class name.
 
 Built-in providers:
-- mapnik (Mapnik)
+- mapnik (Mapnik.ImageProvider)
 - proxy (Proxy)
 - vector (TileStache.Vector.Provider)
 - url template (UrlTemplate)
 - mbtiles (TileStache.MBTiles.Provider)
+- mapnik grid (Mapnik.GridProvider)
 
 Example built-in provider, for JSON configuration file:
 
@@ -73,26 +74,9 @@ import os
 import logging
 
 from StringIO import StringIO
-from posixpath import exists
-from thread import allocate_lock
-from urlparse import urlparse, urljoin
-import urllib
-from tempfile import mkstemp
 from string import Template
-from urllib import urlopen
 import urllib2
-from glob import glob
-from time import time
-
-try:
-    import mapnik2 as mapnik
-except ImportError:
-    try:
-        import mapnik
-    except ImportError:
-        # It's possible to get by without mapnik,
-        # if you don't plan to use the mapnik provider.
-        pass
+import urllib
 
 try:
     from PIL import Image
@@ -106,6 +90,11 @@ from ModestMaps.Core import Point, Coordinate
 import Vector
 import MBTiles
 import Geography
+from .Mapnik import ImageProvider as MapnikImage, GridProvider as MapnikGrid
+
+# Already deprecated; provided for temporary backward-compatibility with
+# old location of Mapnik provider. TODO: remove in next major version.
+Mapnik = MapnikImage
 
 def getProviderByName(name):
     """ Retrieve a provider object by name.
@@ -113,7 +102,7 @@ def getProviderByName(name):
         Raise an exception if the name doesn't work out.
     """
     if name.lower() == 'mapnik':
-        return Mapnik
+        return MapnikImage
 
     elif name.lower() == 'proxy':
         return Proxy
@@ -126,6 +115,9 @@ def getProviderByName(name):
 
     elif name.lower() == 'mbtiles':
         return MBTiles.Provider
+
+    elif name.lower() == 'mapnik grid':
+        return MapnikGrid
 
     raise Exception('Unknown provider name: "%s"' % name)
 
@@ -198,95 +190,6 @@ class Proxy:
             
             img.paste(tile, (0, 0), tile)
         
-        return img
-
-global_mapnik_lock = allocate_lock()
-
-class Mapnik:
-    """ Built-in Mapnik provider. Renders map images from Mapnik XML files.
-    
-        This provider is identified by the name "mapnik" in the TileStache config.
-        
-        Additional arguments:
-        
-        - mapfile (required)
-            Local file path to Mapnik XML file.
-    
-        - fonts (optional)
-            Local directory path to *.ttf font files.
-    
-        More information on Mapnik and Mapnik XML:
-        - http://mapnik.org
-        - http://trac.mapnik.org/wiki/XMLGettingStarted
-        - http://trac.mapnik.org/wiki/XMLConfigReference
-    """
-    
-    def __init__(self, layer, mapfile, fonts=None):
-        """ Initialize Mapnik provider with layer and mapfile.
-            
-            XML mapfile keyword arg comes from TileStache config,
-            and is an absolute path by the time it gets here.
-        """
-        maphref = urljoin(layer.config.dirpath, mapfile)
-        scheme, h, path, q, p, f = urlparse(maphref)
-        
-        if scheme in ('file', ''):
-            self.mapfile = path
-        else:
-            self.mapfile = maphref
-        
-        self.layer = layer
-        self.mapnik = None
-        
-        engine = mapnik.FontEngine.instance()
-        
-        if fonts:
-            fontshref = urljoin(layer.config.dirpath, fonts)
-            scheme, h, path, q, p, f = urlparse(fontshref)
-            
-            if scheme not in ('file', ''):
-                raise Exception('Fonts from "%s" can\'t be used by Mapnik' % fontshref)
-        
-            for font in glob(path.rstrip('/') + '/*.ttf'):
-                engine.register_font(str(font))
-
-    def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
-        """
-        """
-        start_time = time()
-        
-        if self.mapnik is None:
-            self.mapnik = mapnik.Map(0, 0)
-            
-            if exists(self.mapfile):
-                mapnik.load_map(self.mapnik, str(self.mapfile))
-            
-            else:
-                handle, filename = mkstemp()
-                os.write(handle, urlopen(self.mapfile).read())
-                os.close(handle)
-    
-                mapnik.load_map(self.mapnik, filename)
-                os.unlink(filename)
-
-            logging.debug('TileStache.Providers.Mapnik.renderArea() %.3f to load %s', time() - start_time, self.mapfile)
-        
-        #
-        # Mapnik can behave strangely when run in threads, so place a lock on the instance.
-        #
-        if global_mapnik_lock.acquire():
-            self.mapnik.width = width
-            self.mapnik.height = height
-            self.mapnik.zoom_to_box(mapnik.Envelope(xmin, ymin, xmax, ymax))
-            
-            img = mapnik.Image(width, height)
-            mapnik.render(self.mapnik, img)
-            global_mapnik_lock.release()
-        
-        img = Image.fromstring('RGBA', (width, height), img.tostring())
-    
-        logging.debug('TileStache.Providers.Mapnik.renderArea() %dx%d in %.3f from %s', width, height, time() - start_time, self.mapfile)
-    
         return img
 
 class UrlTemplate:

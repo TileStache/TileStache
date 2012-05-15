@@ -1,3 +1,21 @@
+2012-05-09: 1.33.1
+- Fixed mapnik.Envelope/Box2d back-compatibility.
+
+2012-05-09: 1.33.0
+- Added Vector provider support for Spatialite, MySQL and Oracle from Andrew Semprebon.
+
+2012-05-08: 1.32.3
+- Fixed a dumb import error in TileStache.Providers.
+
+2012-05-07: 1.32.2
+- Disambiguated null vs. empty list behavior of Mapnik Grid fields. 
+
+2012-05-06: 1.32.1
+- Fixed output of Mapnik Grid to be pure UTF-8 instead of ASCII-encoded for size.
+
+2012-05-06: 1.32.0
+- Added core Mapnik Grid provider based on providers under TileStache.Goodies with contributions from Alexander Clausen, Tom Nightingale, Dave Leaver and Paul Smith.
+
 2012-04-09: 1.31.1
 - Fixed broken MBTiles support.
 
