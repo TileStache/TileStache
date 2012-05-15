@@ -466,6 +466,8 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
                 provider_kwargs['layer_index'] = provider_dict['layer index']
             if 'scale' in provider_dict:
                 provider_kwargs['scale'] = provider_dict['scale']
+            if 'layer_id_key' in provider_dict:
+                provider_kwargs['layer_id_key'] = provider_dict['layer_id_key']
             
     elif 'class' in provider_dict:
         _class = loadClassPath(provider_dict['class'])
