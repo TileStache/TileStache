@@ -41,11 +41,13 @@ import TileStache
 
 _keep = 20
 
-def update_status(msg):
+def update_status(msg, **redis_kwargs):
     """ Updated Redis with a message, prefix it with the current timestamp.
+    
+        Keyword args are passed directly to redis.StrictRedis().
     """
     pid = getpid()
-    red = StrictRedis()
+    red = StrictRedis(**redis_kwargs)
     key = 'pid-%d-statuses' % pid
     msg = '%.3f %s' % (time(), msg)
     
@@ -53,15 +55,17 @@ def update_status(msg):
     red.expire(key, 60 * 60)
     red.ltrim(key, 0, _keep)
 
-def get_recent():
+def get_recent(**redis_kwargs):
     """ Retrieve recent messages from Redis, in reverse chronological order.
-    
+        
         Each message is a tuple with floating point seconds elapsed, integer
         process ID that created it, and an associated text message such as
         "Got cache lock in 0.001 seconds" or "Started /osm/12/656/1582.png".
+    
+        Keyword args are passed directly to redis.StrictRedis().
     """
     pid = getpid()
-    red = StrictRedis()
+    red = StrictRedis(**redis_kwargs)
     
     messages = []
 
@@ -126,13 +130,15 @@ class WSGIServer (TileStache.WSGITileServer):
         constructor from TileStache WSGI, which just loads a TileStache
         configuration file into self.config.
     """
-    def __init__(self, config, autoreload=False):
+    def __init__(self, config, redis_host='localhost', redis_port=6379):
         """
         """
-        TileStache.WSGITileServer.__init__(self, config, autoreload)
-        self.config.cache = CacheWrap(self.config.cache)
+        TileStache.WSGITileServer.__init__(self, config)
 
-        update_status('Created')
+        self.redis_kwargs = dict(host=redis_host, port=redis_port)
+        self.config.cache = CacheWrap(self.config.cache, self.redis_kwargs)
+
+        update_status('Created', **self.redis_kwargs)
         
     def __call__(self, environ, start_response):
         """
@@ -147,31 +153,32 @@ class WSGIServer (TileStache.WSGITileServer):
             start_response('404 Not Found', [('Content-Type', 'text/plain')])
             return ''
 
-        update_status('Started %s' % environ['PATH_INFO'])
+        update_status('Started %s' % environ['PATH_INFO'], **self.redis_kwargs)
         response = TileStache.WSGITileServer.__call__(self, environ, start_response)
 
-        update_status('Finished %s in %.3f seconds' % (environ['PATH_INFO'], time() - start))
+        update_status('Finished %s in %.3f seconds' % (environ['PATH_INFO'], time() - start), **self.redis_kwargs)
         return response
         
     def __del__(self):
         """
         """
-        update_status('Destroyed')
+        update_status('Destroyed', **self.redis_kwargs)
 
 class CacheWrap:
     """ Wraps up a TileStache cache object and reports events to Redis.
     
         Implements a cache provider: http://tilestache.org/doc/#custom-caches.
     """
-    def __init__(self, cache):
+    def __init__(self, cache, redis_kwargs):
         self.cache = cache
+        self.redis_kwargs = redis_kwargs
     
     def lock(self, layer, coord, format):
         start = time()
-        update_status('Attempted cache lock')
+        update_status('Attempted cache lock', **self.redis_kwargs)
 
         self.cache.lock(layer, coord, format)
-        update_status('Got cache lock in %.3f seconds' % (time() - start))
+        update_status('Got cache lock in %.3f seconds' % (time() - start), **self.redis_kwargs)
     
     def unlock(self, layer, coord, format):
         return self.cache.unlock(layer, coord, format)
