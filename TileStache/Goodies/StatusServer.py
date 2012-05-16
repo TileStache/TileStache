@@ -83,6 +83,9 @@ def update_status(msg, **redis_kwargs):
 def get_recent(**redis_kwargs):
     """ Retrieve recent messages from Redis, in reverse chronological order.
         
+        Two lists are returned: one a single most-recent status message from
+        each process, the other a list of numerous messages from each process.
+        
         Each message is a tuple with floating point seconds elapsed, integer
         process ID that created it, and an associated text message such as
         "Got cache lock in 0.001 seconds" or "Started /osm/12/656/1582.png".
@@ -92,6 +95,7 @@ def get_recent(**redis_kwargs):
     pid = getpid()
     red = StrictRedis(**redis_kwargs)
     
+    processes = []
     messages = []
 
     for key in red.keys('pid-*-statuses'):
@@ -104,9 +108,12 @@ def get_recent(**redis_kwargs):
             continue
         else:
             messages += msgs
+            processes += msgs[:1]
     
     messages.sort() # youngest-first
-    return messages[:250]
+    processes.sort() # youngest-first
+
+    return processes, messages
 
 def nice_time(time):
     """ Format a time in seconds to a string like "5 minutes".
@@ -137,9 +144,22 @@ def pid_indent(pid):
 def status_response(**redis_kwargs):
     """ Retrieve recent messages from Redis and 
     """
+    processes, messages = get_recent(**redis_kwargs)
+    
     lines = ['%d' % time(), '----------']
     
-    for (elapsed, pid, message) in get_recent(**redis_kwargs):
+    for (elapsed, pid, message) in processes:
+        if elapsed > 10 * 60:
+            # don't show the process if it hasn't been heard from in ten+ minutes
+            continue
+    
+        line = [str(pid), message + ',']
+        line += [nice_time(elapsed), 'ago']
+        lines.append(' '.join(line))
+    
+    lines.append('----------')
+    
+    for (elapsed, pid, message) in messages[:250]:
         line = [' ' * pid_indent(pid)]
         line += [str(pid), message + ',']
         line += [nice_time(elapsed), 'ago']
