@@ -156,7 +156,9 @@ class GridProvider:
         - layers (optional)
           Ordered list of (layer index, fields) to combine; if provided
           layers overrides both layer index and fields arguments.
-        
+          An empty fields list will return no field names, while a value of null 
+          is equivalent to all fields.
+ 
         - scale (optional)
           Scale factor of output raster, defaults to 4 (64x64).
         
