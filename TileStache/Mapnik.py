@@ -135,8 +135,10 @@ class GridProvider:
             "mapfile": "world_merc.xml",
             "layers":
             [
-              [1, ["NAME"]]
-              [0, ["NAME", "POP2005"]]
+              [1, ["NAME"]],
+              [0, ["NAME", "POP2005"]],
+              [0, null],
+              [0, []]
             ]
           }
     
