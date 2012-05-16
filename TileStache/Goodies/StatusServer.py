@@ -35,7 +35,32 @@ from os import getpid
 from time import time
 from hashlib import md5
 
-from redis import StrictRedis
+try:
+    from redis import StrictRedis
+
+except ImportError:
+    #
+    # Changes to the Redis API have led to incompatibilities between clients
+    # and servers. Older versions of redis-py might be needed to communicate
+    # with older server versions, such as the 1.2.0 that ships on Ubuntu Lucid.
+    #
+    # Ensure your Redis client and server match, potentially using pip
+    # to specify a version number of the Python package to use, e.g.:
+    #
+    #   pip install -I "redis<=1.2.0"
+    #
+    from redis import Redis
+    
+    class StrictRedis (Redis):
+        """ Compatibility class for older versions of Redis.
+        """
+        def lpush(self, name, value):
+            # old Redis uses a boolean argument to name the list head.
+            self.push(name, value, True)
+
+        def expire(self, name, seconds):
+            # old Redis expire can't be repeatedly updated.
+            pass
 
 import TileStache
 
@@ -49,7 +74,7 @@ def update_status(msg, **redis_kwargs):
     pid = getpid()
     red = StrictRedis(**redis_kwargs)
     key = 'pid-%d-statuses' % pid
-    msg = '%.3f %s' % (time(), msg)
+    msg = '%.6f %s' % (time(), msg)
     
     red.lpush(key, msg)
     red.expire(key, 60 * 60)
@@ -81,7 +106,7 @@ def get_recent(**redis_kwargs):
             messages += msgs
     
     messages.sort() # youngest-first
-    return messages[:100]
+    return messages[:250]
 
 def nice_time(time):
     """ Format a time in seconds to a string like "5 minutes".
@@ -109,18 +134,18 @@ def pid_indent(pid):
     indent = number % 32
     return indent
 
-def status_response():
+def status_response(**redis_kwargs):
     """ Retrieve recent messages from Redis and 
     """
     lines = ['%d' % time(), '----------']
     
-    for (elapsed, pid, message) in get_recent():
+    for (elapsed, pid, message) in get_recent(**redis_kwargs):
         line = [' ' * pid_indent(pid)]
         line += [str(pid), message + ',']
         line += [nice_time(elapsed), 'ago']
         lines.append(' '.join(line))
     
-    return '\n'.join(lines)
+    return str('\n'.join(lines))
 
 class WSGIServer (TileStache.WSGITileServer):
     """ Create a WSGI application that can handle requests from any server that talks WSGI.
@@ -147,7 +172,7 @@ class WSGIServer (TileStache.WSGITileServer):
 
         if environ['PATH_INFO'] == '/status':
             start_response('200 OK', [('Content-Type', 'text/plain')])
-            return status_response()
+            return status_response(**self.redis_kwargs)
 
         if environ['PATH_INFO'] == '/favicon.ico':
             start_response('404 Not Found', [('Content-Type', 'text/plain')])
