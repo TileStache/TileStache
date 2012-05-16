@@ -171,6 +171,11 @@ class GridProvider:
         - scale (optional)
           Scale factor of output raster, defaults to 4 (64x64).
         
+        - layer_id_key (optional)
+          If set, each item in the 'data' property will have it's source mapnik
+          layer name added, keyed by this value. Useful for distingushing
+          between data items.
+        
         Information and examples for UTF Grid:
         - https://github.com/mapbox/utfgrid-spec/blob/master/1.2/utfgrid.md
         - http://mapbox.github.com/wax/interaction-leaf.html
