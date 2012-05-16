@@ -1,3 +1,36 @@
+""" StatusServer is a replacement for WSGITileServer that saves per-process
+    events to Redis and displays them in a chronological stream at /status.
+    
+    The internal behaviors of a running WSGI server can be hard to inspect,
+    and StatusServer is designed to output data relevant to tile serving out
+    to Redis where it can be gathered and inspected.
+    
+    Example usage, with gunicorn (http://gunicorn.org):
+    
+      gunicorn --bind localhost:8888 "TileStache.Goodies.StatusServer:WSGIServer('tilestache.cfg')"
+
+    Example output, showing vertical alignment based on process ID:
+
+      13235 Attempted cache lock, 2 minutes ago
+      13235 Got cache lock in 0.001 seconds, 2 minutes ago
+      13235 Started /osm/15/5255/12664.png, 2 minutes ago
+      13235 Finished /osm/15/5255/12663.png in 0.724 seconds, 2 minutes ago
+                         13233 Got cache lock in 0.001 seconds, 2 minutes ago
+                         13233 Attempted cache lock, 2 minutes ago
+                         13233 Started /osm/15/5249/12664.png, 2 minutes ago
+                         13233 Finished /osm/15/5255/12661.png in 0.776 seconds, 2 minutes ago
+                                     13234 Got cache lock in 0.001 seconds, 2 minutes ago
+                                     13234 Attempted cache lock, 2 minutes ago
+                                     13234 Started /osm/15/5254/12664.png, 2 minutes ago
+                                     13234 Finished /osm/15/5249/12663.png in 0.466 seconds, 2 minutes ago
+      13235 Attempted cache lock, 2 minutes ago
+      13235 Got cache lock in 0.001 seconds, 2 minutes ago
+      13235 Started /osm/15/5255/12663.png, 2 minutes ago
+      13235 Finished /osm/15/5250/12664.png in 0.502 seconds, 2 minutes ago
+                         13233 Got cache lock in 0.001 seconds, 2 minutes ago
+                         13233 Attempted cache lock, 2 minutes ago
+                         13233 Started /osm/15/5255/12661.png, 2 minutes ago
+"""
 from os import getpid
 from time import time
 from hashlib import md5
@@ -9,7 +42,7 @@ import TileStache
 _keep = 20
 
 def update_status(msg):
-    """
+    """ Updated Redis with a message, prefix it with the current timestamp.
     """
     pid = getpid()
     red = StrictRedis()
@@ -21,7 +54,11 @@ def update_status(msg):
     red.ltrim(key, 0, _keep)
 
 def get_recent():
-    """
+    """ Retrieve recent messages from Redis, in reverse chronological order.
+    
+        Each message is a tuple with floating point seconds elapsed, integer
+        process ID that created it, and an associated text message such as
+        "Got cache lock in 0.001 seconds" or "Started /osm/12/656/1582.png".
     """
     pid = getpid()
     red = StrictRedis()
@@ -43,6 +80,8 @@ def get_recent():
     return messages[:100]
 
 def nice_time(time):
+    """ Format a time in seconds to a string like "5 minutes".
+    """
     if time < 15:
         return 'moments'
     if time < 90:
@@ -59,13 +98,15 @@ def nice_time(time):
     return '%d months' % (time / 2592000.)
 
 def pid_indent(pid):
+    """ Get an MD5-based indentation for a process ID.
+    """
     hash = md5(str(pid))
     number = int(hash.hexdigest(), 16)
-    indent = number % 64
+    indent = number % 32
     return indent
 
 def status_response():
-    """
+    """ Retrieve recent messages from Redis and 
     """
     lines = ['%d' % time(), '----------']
     
@@ -78,10 +119,12 @@ def status_response():
     return '\n'.join(lines)
 
 class WSGIServer (TileStache.WSGITileServer):
-    """ 
-        
-        Inherits the constructor from TileStache WSGI, which just loads
-        a TileStache configuration file into self.config.
+    """ Create a WSGI application that can handle requests from any server that talks WSGI.
+    
+        Notable moments in the tile-making process such as time elapsed
+        or cache lock events are sent as messages to Redis. Inherits the
+        constructor from TileStache WSGI, which just loads a TileStache
+        configuration file into self.config.
     """
     def __init__(self, config, autoreload=False):
         """
@@ -116,7 +159,10 @@ class WSGIServer (TileStache.WSGITileServer):
         update_status('Destroyed')
 
 class CacheWrap:
-
+    """ Wraps up a TileStache cache object and reports events to Redis.
+    
+        Implements a cache provider: http://tilestache.org/doc/#custom-caches.
+    """
     def __init__(self, cache):
         self.cache = cache
     
