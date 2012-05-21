@@ -80,6 +80,13 @@ def update_status(msg, **redis_kwargs):
     red.expire(key, 60 * 60)
     red.ltrim(key, 0, _keep)
 
+def delete_statuses(pid, **redis_kwargs):
+    """
+    """
+    red = StrictRedis(**redis_kwargs)
+    key = 'pid-%d-statuses' % pid
+    red.delete(key)
+
 def get_recent(**redis_kwargs):
     """ Retrieve recent messages from Redis, in reverse chronological order.
         
@@ -148,14 +155,18 @@ def status_response(**redis_kwargs):
     
     lines = ['%d' % time(), '----------']
     
-    for (elapsed, pid, message) in processes:
+    for (index, (elapsed, pid, message)) in enumerate(processes):
+        if elapsed > 6 * 60 * 60:
+            # destroy the process if it hasn't been heard from in 6+ hours
+            delete_statuses(pid, **redis_kwargs)
+            continue
+    
         if elapsed > 10 * 60:
             # don't show the process if it hasn't been heard from in ten+ minutes
             continue
     
-        line = [str(pid), message + ',']
-        line += [nice_time(elapsed), 'ago']
-        lines.append(' '.join(line))
+        line = '%03s. %05s %s, %s ago' % (str(index + 1), pid, message, nice_time(elapsed))
+        lines.append(line)
     
     lines.append('----------')
     
@@ -198,11 +209,16 @@ class WSGIServer (TileStache.WSGITileServer):
             start_response('404 Not Found', [('Content-Type', 'text/plain')])
             return ''
 
-        update_status('Started %s' % environ['PATH_INFO'], **self.redis_kwargs)
-        response = TileStache.WSGITileServer.__call__(self, environ, start_response)
-
-        update_status('Finished %s in %.3f seconds' % (environ['PATH_INFO'], time() - start), **self.redis_kwargs)
-        return response
+        try:
+            update_status('Started %s' % environ['PATH_INFO'], **self.redis_kwargs)
+            response = TileStache.WSGITileServer.__call__(self, environ, start_response)
+    
+            update_status('Finished %s in %.3f seconds' % (environ['PATH_INFO'], time() - start), **self.redis_kwargs)
+            return response
+        
+        except Exception, e:
+            update_status('Error: %s after %.3f seconds' % (str(e), time() - start), **self.redis_kwargs)
+            raise
         
     def __del__(self):
         """
