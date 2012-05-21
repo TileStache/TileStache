@@ -14,7 +14,7 @@ live: $(TARBALL) doc
 $(TARBALL): doc
 	mkdir $(PACKAGE)
 	ln setup.py $(PACKAGE)/
-	ln README $(PACKAGE)/
+	ln README.md $(PACKAGE)/
 	ln VERSION $(PACKAGE)/
 	ln tilestache.cfg $(PACKAGE)/
 	ln tilestache.cgi $(PACKAGE)/
@@ -87,6 +87,7 @@ doc:
 	pydoc -w TileStache.Goodies.Providers.Grid
 	pydoc -w TileStache.Goodies.Providers.GDAL
 	pydoc -w TileStache.Goodies.AreaServer
+	pydoc -w TileStache.Goodies.StatusServer
 
 	pydoc -w scripts/tilestache-*.py
 
