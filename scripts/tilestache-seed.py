@@ -10,12 +10,17 @@ See `tilestache-seed.py --help` for more information.
 """
 
 from sys import stderr, path
+from os.path import realpath, dirname
 from optparse import OptionParser
+from urlparse import urlparse
+from urllib import urlopen
 
 try:
     from json import dump as json_dump
+    from json import load as json_load
 except ImportError:
     from simplejson import dump as json_dump
+    from simplejson import load as json_load
 
 #
 # Most imports can be found below, after the --include-path option is known.
@@ -152,6 +157,23 @@ def tilesetCoordinates(filename):
     for (offset, coord) in enumerate(coords):
         yield (offset, count, coord)
 
+def parseConfigfile(configpath):
+    """ Parse a configuration file and return a raw dictionary and dirpath.
+    
+        Return value can be passed to TileStache.Config.buildConfiguration().
+    """
+    config_dict = json_load(urlopen(configpath))
+    
+    scheme, host, path, p, q, f = urlparse(configpath)
+    
+    if scheme == '':
+        scheme = 'file'
+        path = realpath(path)
+    
+    dirpath = '%s://%s%s' % (scheme, host, dirname(path).rstrip('/') + '/')
+    
+    return config_dict, dirpath
+
 if __name__ == '__main__':
     options, zooms = parser.parse_args()
 
@@ -159,9 +181,9 @@ if __name__ == '__main__':
         for p in options.include_paths.split(':'):
             path.insert(0, p)
 
-    from TileStache import parseConfigfile, getTile
+    from TileStache import getTile, Config
     from TileStache.Core import KnownUnknown
-    from TileStache.Caches import Disk, Multi, Test, S3
+    from TileStache.Config import buildConfiguration
     from TileStache import MBTiles
     import TileStache
     
@@ -175,13 +197,11 @@ if __name__ == '__main__':
         has_fake_source = bool(options.mbtiles_input)
         
         if has_fake_destination and has_fake_source:
-            config = TileStache.Config.Configuration(Test(), '.')
-
-            metatile = TileStache.Core.Metatile()
-            projection = TileStache.Geography.SphericalMercator()
-            layer = TileStache.Core.Layer(config, projection, metatile)
+            config_dict, config_dirpath = parseConfigfile(options.config)
+            layer_dict = dict()
             
-            config.layers[options.layer or 'tiles-layer'] = layer
+            config_dict['cache'] = dict(name='test')
+            config_dict['layers'][options.layer or 'tiles-layer'] = layer_dict
         
         elif options.config is None:
             raise KnownUnknown('Missing required configuration (--config) parameter.')
@@ -190,35 +210,51 @@ if __name__ == '__main__':
             raise KnownUnknown('Missing required layer (--layer) parameter.')
     
         else:
-            config = parseConfigfile(options.config)
+            config_dict, config_dirpath = parseConfigfile(options.config)
             
-            if options.layer not in config.layers:
-                raise KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (options.layer, ', '.join(sorted(config.layers.keys()))))
+            if options.layer not in config_dict['layers']:
+                raise KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (options.layer, ', '.join(sorted(config_dict['layers'].keys()))))
             
-            layer = config.layers[options.layer]
-            layer.write_cache = True # Override to make seeding guaranteed useful.
+            layer_dict = config_dict['layers'][options.layer]
+            layer_dict['write_cache'] = True # Override to make seeding guaranteed useful.
         
         # override parts of the config and layer if needed
         
         extension = options.extension
-        caches = []
+        tiers = []
         
         if options.mbtiles_output:
-            caches.append(MBTiles.Cache(options.mbtiles_output, extension, options.layer))
+            tiers.append({'class': 'TileStache.MBTiles:Cache',
+                          'kwargs': dict(filename=options.mbtiles_output,
+                                         format=extension,
+                                         name=options.layer)})
         
         if options.outputdirectory:
-            caches.append(Disk(options.outputdirectory, dirs='portable', gzip=[]))
+            tiers.append(dict(name='disk', path=options.outputdirectory,
+                              dirs='portable', gzip=[]))
 
         if options.s3_output:
             access, secret, bucket = options.s3_output
-            caches.append(S3.Cache(bucket, access, secret))
+            tiers.append(dict(name='S3', bucket=bucket,
+                              access=access, secret=secret))
         
-        config.cache = Multi(caches)
+        if len(tiers) > 1:
+            config_dict['cache'] = dict(name='multi', tiers=tiers)
+        elif len(tiers) == 1:
+            config_dict['cache'] = tiers[0]
+        else:
+            # Leave config_dict['cache'] as-is
+            pass
         
         if options.mbtiles_input:
-            layer.provider = MBTiles.Provider(layer, options.mbtiles_input)
+            layer_dict['provider'] = dict(name='mbtiles', tileset=options.mbtiles_input)
             n, t, v, d, format, b = MBTiles.tileset_info(options.mbtiles_input)
             extension = format or extension
+        
+        # create a real config object
+        
+        config = buildConfiguration(config_dict, config_dirpath)
+        layer = config.layers[options.layer]
         
         # do the actual work
         

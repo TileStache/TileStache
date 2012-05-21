@@ -33,6 +33,7 @@ buffer: buffer around the queried features, in px, default 0. Use this to preven
 import json
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
+from urlparse import urlparse, urljoin
 
 try:
     import mapnik2 as mapnik
@@ -49,7 +50,15 @@ class Provider:
         """
         self.mapnik = None
         self.layer = layer
-        self.mapfile = mapfile
+
+        maphref = urljoin(layer.config.dirpath, mapfile)
+        scheme, h, path, q, p, f = urlparse(maphref)
+        
+        if scheme in ('file', ''):
+            self.mapfile = path
+        else:
+            self.mapfile = maphref
+        
         self.layer_index = layer_index
         self.wrapper = wrapper
         self.scale = scale
