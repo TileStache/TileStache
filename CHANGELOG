@@ -1,3 +1,6 @@
+2012-05-22: 1.36.0
+- Added --jsonp-callback option to tilestache-seed.py.
+
 2012-05-22: 1.35.1
 - Updated tilestache-seed.py manpage to reflect new options.
 
