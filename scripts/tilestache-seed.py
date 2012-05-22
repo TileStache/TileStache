@@ -43,7 +43,7 @@ Protip: extract tiles from an MBTiles tileset to a directory like this:
 
 Configuration, bbox, and layer options are required; see `%prog --help` for info.""")
 
-defaults = dict(extension='png', padding=0, verbose=True, enable_retries=False, bbox=(37.777, -122.352, 37.839, -122.226))
+defaults = dict(padding=0, verbose=True, enable_retries=False, bbox=(37.777, -122.352, 37.839, -122.226))
 
 parser.set_defaults(**defaults)
 
@@ -62,7 +62,7 @@ parser.add_option('-p', '--padding', dest='padding',
                   type='int')
 
 parser.add_option('-e', '--extension', dest='extension',
-                  help='Optional file type for rendered tiles. Default value is %s.' % repr(defaults['extension']))
+                  help='Optional file type for rendered tiles. Default value is "png" for most image layers and some variety of JSON for Vector or Mapnik Grid providers.')
 
 parser.add_option('-f', '--progress-file', dest='progressfile',
                   help="Optional JSON progress file that gets written on each iteration, so you don't have to pay close attention.")
@@ -221,6 +221,26 @@ if __name__ == '__main__':
         # override parts of the config and layer if needed
         
         extension = options.extension
+
+        if options.mbtiles_input:
+            layer_dict['provider'] = dict(name='mbtiles', tileset=options.mbtiles_input)
+            n, t, v, d, format, b = MBTiles.tileset_info(options.mbtiles_input)
+            extension = format or extension
+        
+        # determine or guess an appropriate tile extension
+        
+        if extension is None:
+            provider_name = layer_dict['provider'].get('name', '').lower()
+            
+            if provider_name == 'mapnik grid':
+                extension = 'json'
+            elif provider_name == 'vector':
+                extension = 'geojson'
+            else:
+                extension = 'png'
+        
+        # override parts of the config and layer if needed
+        
         tiers = []
         
         if options.mbtiles_output:
@@ -245,11 +265,6 @@ if __name__ == '__main__':
         else:
             # Leave config_dict['cache'] as-is
             pass
-        
-        if options.mbtiles_input:
-            layer_dict['provider'] = dict(name='mbtiles', tileset=options.mbtiles_input)
-            n, t, v, d, format, b = MBTiles.tileset_info(options.mbtiles_input)
-            extension = format or extension
         
         # create a real config object
         
