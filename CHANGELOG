@@ -1,3 +1,7 @@
+2012-05-22: 1.35.0
+- Added direct-to-S3 cache option to tilestache-seed.py script. 
+- Changed tilestache-seed.py default extension behavior to cover JSON.
+
 2012-05-21: 1.34.0
 - Added TileStache.Goodies.StatusServer alternate WSGI server for redis-backed internal status checks.
 - Added maskband parameter to TileStache.Goodies.Providers.GDAL provider.
