@@ -70,6 +70,9 @@ If true this will cause tilestache-seed to retry failed tile renderings up to (3
 .TP
 .B \-x, \-\-ignore-cached
 Re-render every tile, whether it is in the cache already or not.
+.TP
+.B \-\-jsonp-callback
+Add a JSONP callback for tiles with a json mime-type, causing "*.js" tiles to be written to the cache wrapped in the callback function. Ignored for non-JSON tiles.
 .SH SEE ALSO
 .BR tilestache-render (1)
 .SH AUTHOR

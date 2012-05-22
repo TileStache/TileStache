@@ -99,6 +99,9 @@ parser.add_option('--enable-retries', dest='enable_retries',
 parser.add_option('-x', '--ignore-cached', action='store_true', dest='ignore_cached',
                   help='Re-render every tile, whether it is in the cache already or not.')
 
+parser.add_option('--jsonp-callback', dest='callback',
+                  help='Add a JSONP callback for tiles with a json mime-type, causing "*.js" tiles to be written to the cache wrapped in the callback function. Ignored for non-JSON tiles.')
+
 def generateCoordinates(ul, lr, zooms, padding):
     """ Generate a stream of (offset, count, coordinate) tuples for seeding.
     
@@ -328,6 +331,17 @@ if __name__ == '__main__':
     
             try:
                 mimetype, content = getTile(layer, coord, extension, options.ignore_cached)
+                
+                if 'json' in mimetype and options.callback:
+                    js_path = '%s/%d/%d/%d.js' % (layer.name(), coord.zoom, coord.column, coord.row)
+                    js_body = '%s(%s);' % (options.callback, content)
+                    js_size = len(js_body) / 1024
+                    
+                    layer.config.cache.save(js_body, layer, coord, 'JS')
+                    print >> stderr, '%s (%dKB)' % (js_path, js_size),
+            
+                elif options.callback:
+                    print >> stderr, '(callback ignored)',
             
             except:
                 #
