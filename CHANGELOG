@@ -1,3 +1,6 @@
+2012-05-22: 1.35.1
+- Updated tilestache-seed.py manpage to reflect new options.
+
 2012-05-22: 1.35.0
 - Added direct-to-S3 cache option to tilestache-seed.py script. 
 - Changed tilestache-seed.py default extension behavior to cover JSON.
