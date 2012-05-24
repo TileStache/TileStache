@@ -299,10 +299,12 @@ class Layer:
           preview_ext:
             Tile name extension for slippy map layer preview, default "png".
 
-          tile_size:
-            Size of tile in pixels, as a single integer because tiles are square.
+          tile_height:
+            Height of tile in pixels, as a single integer. Tiles are generally
+            assumed to be square, and Layer.render() will respond with an error
+            if the rendered image is not this height.
     """
-    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, write_cache=True, allowed_origin=None, max_cache_age=None, redirects=None, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png', bounds=None, tile_size=256):
+    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, write_cache=True, allowed_origin=None, max_cache_age=None, redirects=None, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png', bounds=None, tile_height=256):
         self.provider = None
         self.config = config
         self.projection = projection
@@ -321,7 +323,7 @@ class Layer:
         self.preview_ext = preview_ext
         
         self.bounds = bounds
-        self.dim = tile_size
+        self.dim = tile_height
         
         self.bitmap_palette = None
         self.jpeg_options = {}
@@ -382,8 +384,8 @@ class Layer:
         if not hasattr(tile, 'save'):
             raise KnownUnknown('Return value of provider.renderArea() must act like an image; e.g. have a "save" method.')
 
-        if hasattr(tile, 'size') and tile.size != (width, height):
-            raise KnownUnknown('Your provider returned the wrong image size: %s.' % repr(tile.size))
+        if hasattr(tile, 'size') and tile.size[1] != height:
+            raise KnownUnknown('Your provider returned the wrong image size: %s instead of %d pixels tall.' % (repr(tile.size), self.dim))
         
         if self.bitmap_palette:
             # this is where we apply the palette if there is one
