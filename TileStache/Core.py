@@ -298,8 +298,11 @@ class Layer:
 
           preview_ext:
             Tile name extension for slippy map layer preview, default "png".
+
+          tile_size:
+            Size of tile in pixels, as a single integer because tiles are square.
     """
-    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, write_cache=True, allowed_origin=None, max_cache_age=None, redirects=None, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png', bounds=None):
+    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, write_cache=True, allowed_origin=None, max_cache_age=None, redirects=None, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png', bounds=None, tile_size=256):
         self.provider = None
         self.config = config
         self.projection = projection
@@ -318,6 +321,7 @@ class Layer:
         self.preview_ext = preview_ext
         
         self.bounds = bounds
+        self.dim = tile_size
         
         self.bitmap_palette = None
         self.jpeg_options = {}
@@ -347,11 +351,11 @@ class Layer:
             full set of rendered tiles to cache as we go.
         """
         if self.bounds and self.bounds.excludes(coord):
-            raise NoTileLeftBehind(Image.new('RGB', (256, 256), (0x99, 0x99, 0x99)))
+            raise NoTileLeftBehind(Image.new('RGB', (self.dim, self.dim), (0x99, 0x99, 0x99)))
         
         srs = self.projection.srs
         xmin, ymin, xmax, ymax = self.envelope(coord)
-        width, height = 256, 256
+        width, height = self.dim, self.dim
         
         provider = self.provider
         metatile = self.metatile
@@ -369,7 +373,7 @@ class Layer:
         
         elif hasattr(provider, 'renderTile'):
             # draw a single tile
-            width, height = 256, 256
+            width, height = self.dim, self.dim
             tile = provider.renderTile(width, height, srs, coord)
 
         else:
@@ -394,7 +398,7 @@ class Layer:
             
             for (other, x, y) in subtiles:
                 buff = StringIO()
-                bbox = (x, y, x + 256, y + 256)
+                bbox = (x, y, x + self.dim, y + self.dim)
                 subtile = surtile.crop(bbox)
                 subtile.save(buff, format)
                 body = buff.getvalue()
@@ -422,7 +426,7 @@ class Layer:
         """ Projected rendering envelope (xmin, ymin, xmax, ymax) for a metatile.
         """
         # size of buffer expressed as fraction of tile size
-        buffer = float(self.metatile.buffer) / 256
+        buffer = float(self.metatile.buffer) / self.dim
         
         # full set of metatile coordinates
         coords = self.metatile.allCoords(coord)
@@ -442,11 +446,11 @@ class Layer:
         """ Pixel width and height of full rendered image for a metatile.
         """
         # size of buffer expressed as fraction of tile size
-        buffer = float(self.metatile.buffer) / 256
+        buffer = float(self.metatile.buffer) / self.dim
         
         # new master image render size
-        width = int(256 * (buffer * 2 + self.metatile.columns))
-        height = int(256 * (buffer * 2 + self.metatile.rows))
+        width = int(self.dim * (buffer * 2 + self.metatile.columns))
+        height = int(self.dim * (buffer * 2 + self.metatile.rows))
         
         return width, height
 
@@ -461,8 +465,8 @@ class Layer:
             r = other.row - coords[0].row
             c = other.column - coords[0].column
             
-            x = c * 256 + self.metatile.buffer
-            y = r * 256 + self.metatile.buffer
+            x = c * self.dim + self.metatile.buffer
+            y = r * self.dim + self.metatile.buffer
             
             subtiles.append((other, x, y))
 
