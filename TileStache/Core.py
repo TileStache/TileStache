@@ -23,6 +23,8 @@ configuration file as a dictionary:
           "bounds": { ... },
           "allowed origin": ...,
           "maximum cache age": ...,
+          "redirects": ...,
+          "tile height": ...,
           "jpeg options": ...,
           "png options": ...
         }
@@ -64,6 +66,9 @@ configuration file as a dictionary:
   If a request is made for a tile with an extension in the dictionary keys,
   a response can be generated that redirects the client to the same tile
   with another extension.
+- "tile height" gives the height of the image tile in pixels. You almost always
+  want to leave this at the default value of 256, but you can use a value of 512
+  to create double-size, double-resolution tiles for high-density phone screens.
 - "jpeg options" is an optional dictionary of JPEG creation options, passed
   through to PIL: http://www.pythonware.com/library/pil/handbook/format-jpeg.htm.
 - "png options" is an optional dictionary of PNG creation options, passed

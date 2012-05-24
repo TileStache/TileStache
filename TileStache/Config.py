@@ -361,6 +361,9 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     if 'redirects' in layer_dict:
         layer_kwargs['redirects'] = dict(layer_dict['redirects'])
     
+    if 'tile height' in layer_dict:
+        layer_kwargs['tile_height'] = int(layer_dict['tile height'])
+    
     if 'preview' in layer_dict:
         preview_dict = layer_dict['preview']
         

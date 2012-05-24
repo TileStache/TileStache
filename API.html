@@ -714,6 +714,7 @@ Example layer configuration:
       "allowed origin": …,
       "maximum cache age": …,
       "redirects": …,
+      "tile height": …,
       "jpeg options": …,
       "png options": …
     }
@@ -826,6 +827,14 @@ Shared layer parameters:
     be generated that redirects the client to the same tile with another
     extension. For example, use the setting <samp>{"jpg": "png"}</samp>
     to force all requests for JPEG tiles to be redirected to PNG tiles.
+    </dd>
+
+    <dt>tile height</dt>
+    <dd>
+    An optional integer gives the height of the image tile in pixels. You
+    almost always want to leave this at the default value of <samp>256</samp>,
+    but you can use a value of <samp>512</samp> to create double-size,
+    double-resolution tiles for high-density phone screens.
     </dd>
 
     <dt>jpeg options</dt>
