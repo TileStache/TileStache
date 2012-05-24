@@ -168,7 +168,7 @@ class Disk:
           for stored files. Defaults to 0022.
         - dirs: optional string saying whether to create cache directories that
           are safe or portable. For an example tile 12/656/1582.png, "portable"
-          creates matching directory trees while "portable" guarantees directories
+          creates matching directory trees while "safe" guarantees directories
           with fewer files, e.g. 12/000/656/001/582.png. Defaults to safe.
         - gzip: optional list of file formats that should be stored in a
           compressed form. Defaults to "txt", "text", "json", and "xml".
