@@ -314,10 +314,12 @@ $ gunicorn "TileStache:WSGITileServer('/path/to/tilestache.cfg')"
 </pre>
 
 <p>The same configuration can be served with <a
- href="http://projects.unbit.it/uwsgi/">uWSGI</a> like so:
+ href="http://projects.unbit.it/uwsgi/">uWSGI</a> like so. Note the
+usage of the <tt>--eval</tt> option over <tt>--module</tt> as this latter
+option does not support argument passing:
 
 <pre>
-$ uwsgi --http :9999 --eval 'import TileStache; \
+$ uwsgi --http :8080 --eval 'import TileStache; \
 application = TileStache.WSGITileServer("/path/to/tilestache.cfg")'
 </pre>
 
