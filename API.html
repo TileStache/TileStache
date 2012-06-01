@@ -313,6 +313,16 @@ to change these defaults.
 $ gunicorn "TileStache:WSGITileServer('/path/to/tilestache.cfg')"
 </pre>
 
+<p>The same configuration can be served with <a
+ href="http://projects.unbit.it/uwsgi/">uWSGI</a> like so. Note the
+usage of the <tt>--eval</tt> option over <tt>--module</tt> as this latter
+option does not support argument passing:
+
+<pre>
+$ uwsgi --http :8080 --eval 'import TileStache; \
+application = TileStache.WSGITileServer("/path/to/tilestache.cfg")'
+</pre>
+
 <p>
 See
 <a href="http://tilestache.org/doc/TileStache.html#WSGITileServer"><code>TileStache.WSGITileServer</code></a>
