@@ -287,7 +287,7 @@ def requestHandler(config_hint, path_info, query_string):
             mimetype, content = getTile(layer, coord, extension)
     
         if callback and 'json' in mimetype:
-            mimetype, content = 'application/javascript', '%s(%s)' % (callback, content)
+            mimetype, content = 'application/javascript; charset=utf-8', '%s(%s)' % (callback, content)
 
     except Core.KnownUnknown, e:
         out = StringIO()
