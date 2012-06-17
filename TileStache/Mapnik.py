@@ -241,7 +241,7 @@ class GridProvider:
         if extension.lower() != 'json':
             raise KnownUnknown('MapnikGrid only makes .json tiles, not "%s"' % extension)
 
-        return 'application/json', 'JSON'
+        return 'application/json; charset=utf-8', 'JSON'
 
 class SaveableResponse:
     """ Wrapper class for JSON response that makes it behave like a PIL.Image object.
