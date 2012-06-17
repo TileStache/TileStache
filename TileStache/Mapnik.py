@@ -187,9 +187,17 @@ class GridProvider:
         """
         self.mapnik = None
         self.layer = layer
-        self.mapfile = mapfile
+
+        maphref = urljoin(layer.config.dirpath, mapfile)
+        scheme, h, path, q, p, f = urlparse(maphref)
+
+        if scheme in ('file', ''):
+            self.mapfile = path
+        else:
+            self.mapfile = maphref
+
         self.scale = scale
-        
+
         if layers:
             self.layers = layers
         else:
@@ -211,9 +219,9 @@ class GridProvider:
             self.mapnik.width = width
             self.mapnik.height = height
             self.mapnik.zoom_to_box(Box2d(xmin, ymin, xmax, ymax))
-            
-            grids = []
-            
+
+            grid = mapnik.Grid(width, height)
+
             for (index, fields) in self.layers:
                 datasource = self.mapnik.layers[index].datasource
                 
@@ -221,16 +229,15 @@ class GridProvider:
                     fields = map(str, fields)
                 else:
                     fields = datasource.fields()
-                
-                grid = mapnik.render_grid(self.mapnik, index, resolution=self.scale, fields=fields)
-                grids.append(grid)
+
+                mapnik.render_layer(self.mapnik, grid, layer=index, fields=fields)
 
             global_mapnik_lock.release()
-        
-        outgrid = reduce(merge_grids, grids)
-    
+
+        outgrid = grid.encode('utf', resolution=self.scale, features=True)
+
         logging.debug('TileStache.Mapnik.GridProvider.renderArea() %dx%d at %d in %.3f from %s', width, height, self.scale, time() - start_time, self.mapfile)
-        
+
         return SaveableResponse(outgrid, self.scale)
 
     def getTypeByExtension(self, extension):
