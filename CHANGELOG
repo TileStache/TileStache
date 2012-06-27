@@ -1,3 +1,6 @@
+2012-06-27: 1.36.1
+- Added more Memcache disconnect_all() calls.
+
 2012-05-22: 1.36.0
 - Added --jsonp-callback option to tilestache-seed.py.
 

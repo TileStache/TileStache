@@ -81,6 +81,7 @@ class Cache:
         key = tile_key(layer, coord, format, self.revision)
         
         mem.delete(key)
+        mem.disconnect_all()
         
     def read(self, layer, coord, format):
         """ Read a cached tile.
@@ -100,3 +101,4 @@ class Cache:
         key = tile_key(layer, coord, format, self.revision)
         
         mem.set(key, body, layer.cache_lifespan or 0)
+        mem.disconnect_all()
