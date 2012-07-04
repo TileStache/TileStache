@@ -160,7 +160,7 @@ class Proxy:
         else:
             raise Exception('Missing required url or provider parameter to Proxy provider')
 			
-		self.tile_size = layer.tile_size
+        self.tile_size = layer.tile_size
 
     def renderTile(self, width, height, srs, coord):
         """
