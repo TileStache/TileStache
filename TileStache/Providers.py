@@ -159,6 +159,8 @@ class Proxy:
 
         else:
             raise Exception('Missing required url or provider parameter to Proxy provider')
+			
+        self.tile_size = layer.tile_size
 
     def renderTile(self, width, height, srs, coord):
         """
@@ -166,7 +168,7 @@ class Proxy:
         if srs != Geography.SphericalMercator.srs:
             raise Exception('Projection doesn\'t match EPSG:900913: "%(srs)s"' % locals())
     
-        if (width, height) != (256, 256):
+        if (width, height) != (self.tile_size, self.tile_size):
             raise Exception("Image dimensions don't match expected tile size: %(width)dx%(height)d" % locals())
 
         img = None

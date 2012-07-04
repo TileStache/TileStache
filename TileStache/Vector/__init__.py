@@ -499,7 +499,7 @@ def _get_features(coord, properties, projection, layer, clipped, projected, spac
     mask = None
     
     if spacing is not None:
-        buffer = spacing * _tile_perimeter_width(coord, projection) / 256.
+        buffer = spacing * _tile_perimeter_width(coord, projection) / float(layer.tile_size)
 
     for feature in layer:
         geometry = feature.geometry().Clone()

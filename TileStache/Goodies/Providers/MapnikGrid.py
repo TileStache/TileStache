@@ -76,7 +76,7 @@ class Provider:
             mapnik.load_map(self.mapnik, str(self.mapfile))
 
         # buffer as fraction of tile size
-        buffer = float(self.buffer) / 256
+        buffer = float(self.buffer) / self.layer.tile_size
 
         nw = self.layer.projection.coordinateLocation(coord.left(buffer).up(buffer))
         se = self.layer.projection.coordinateLocation(coord.right(1 + buffer).down(1 + buffer))
