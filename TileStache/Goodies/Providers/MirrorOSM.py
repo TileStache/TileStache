@@ -270,6 +270,10 @@ class Provider:
     def __init__(self, layer, database, username, password=None, hostname=None, table_prefix='mirrorosm', api_base='http://open.mapquestapi.com/xapi/', osm2pgsql='osm2pgsql --utf8-sanitize'):
         """
         """
+		
+		if layer.tile_size != 256:
+			raise KnownUnknown('MirrorOSM must use 256 as layer\'s tile size (was %d).' % layer.tile_size)
+		
         self.layer = layer
         self.dbkwargs = {'database': database}
         
