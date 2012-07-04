@@ -34,9 +34,10 @@ via Github to suggest other formats: http://github.com/migurski/TileStache.
 Common parameters:
 
   driver:
-    String used to identify an OGR driver. Currently, only "ESRI Shapefile",
-    "PostgreSQL", and "GeoJSON" are supported as data source drivers, with
-    "postgis" and "shapefile" accepted as synonyms. Not case-sensitive.
+    String used to identify an OGR driver. Currently, "ESRI Shapefile",
+    "PostgreSQL", "MySQL", Oracle, Spatialite and "GeoJSON" are supported as 
+     data source drivers, with "postgis" and "shapefile" accepted as synonyms. 
+     Not case-sensitive.
     
     OGR's complete list of potential formats can be found here:
     http://www.gdal.org/ogr/ogr_formats.html. Feel free to get in touch via
@@ -90,6 +91,11 @@ Common parameters:
     Default is false.
     Boolean flag for optionally expanding output with additional whitespace
     for readability. Results in larger but more readable GeoJSON responses.
+
+  id_property:
+    Default is None.
+    Sets the id of the geojson feature to the specified field of the data source.
+    This can be used, for example, to identify a unique key field for the feature.
 
 Example TileStache provider configuration:
 
@@ -347,6 +353,12 @@ def _feature_properties(feature, layer_definition, whitelist=None):
     
     return properties
 
+def _append_with_delim(s, delim, data, key):
+    if key in data:
+        return s + delim + str(data[key])
+    else:
+        return s
+	
 def _open_layer(driver_name, parameters, dirpath):
     """ Open a layer, return it and its datasource.
     
@@ -357,7 +369,7 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     okay_drivers = {'postgis': 'PostgreSQL', 'esri shapefile': 'ESRI Shapefile',
                     'postgresql': 'PostgreSQL', 'shapefile': 'ESRI Shapefile',
-                    'geojson': 'GeoJSON'}
+                    'geojson': 'GeoJSON', 'spatialite': 'SQLite', 'oracle': 'OCI', 'mysql': 'MySQL'}
     
     if driver_name.lower() not in okay_drivers:
         raise KnownUnknown('Got a driver type Vector doesn\'t understand: "%s". Need one of %s.' % (driver_name, ', '.join(okay_drivers.keys())))
@@ -379,8 +391,37 @@ def _open_layer(driver_name, parameters, dirpath):
                 conn_parts.append("%s='%s'" % (part, parameters[part]))
         
         source_name = 'PG:' + ' '.join(conn_parts)
+
+    elif driver_name == 'MySQL':
+        if 'dbname' not in parameters:
+            raise KnownUnknown('Need a "dbname" parameter for MySQL')
+        if 'table' not in parameters:
+            raise KnownUnknown('Need a "table" parameter for MySQL')
+
+        conn_parts = []
         
-    elif driver_name in ('ESRI Shapefile', 'GeoJSON'):
+        for part in ('host', 'port', 'user', 'password'):
+            if part in parameters:
+                conn_parts.append("%s=%s" % (part, parameters[part]))
+        
+        source_name = 'MySql:' + parameters["dbname"] + "," + ','.join(conn_parts) + ",tables=" + parameters['table']
+
+    elif driver_name == 'OCI':
+        if 'host' not in parameters:
+            raise KnownUnknown('Need a "host" parameter for oracle')
+        if 'table' not in parameters:
+            raise KnownUnknown('Need a "table" parameter for oracle')
+        source_name = 'OCI:'
+        source_name = _append_with_delim(source_name, '', parameters, 'user')
+        source_name = _append_with_delim(source_name, '/', parameters, 'password')
+        if 'user' in parameters:
+	        source_name = source_name + '@'
+        source_name = source_name + parameters['host']
+        source_name = _append_with_delim(source_name, ':', parameters, 'port')
+        source_name = _append_with_delim(source_name, '/', parameters, 'dbname')
+        source_name = source_name + ":" + parameters['table']
+        
+    elif driver_name in ('ESRI Shapefile', 'GeoJSON', 'SQLite'):
         if 'file' not in parameters:
             raise KnownUnknown('Need at least a "file" parameter for a shapefile')
     
@@ -400,18 +441,19 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     # Set up the layer
     #
-    if driver_name == 'PostgreSQL':
+    if driver_name == 'PostgreSQL' or driver_name == 'OCI' or driver_name == 'MySQL':
         if 'query' in parameters:
             layer = datasource.ExecuteSQL(str(parameters['query']))
         elif 'table' in parameters:
             layer = datasource.GetLayerByName(str(parameters['table']))
         else:
-            raise KnownUnknown('Need at least a "query" or "table" parameter for postgis')
-
+            raise KnownUnknown('Need at least a "query" or "table" parameter for postgis or oracle')
+    elif driver_name == 'SQLite':
+        layer = datasource.GetLayerByName(str(parameters['layer']))
     else:
         layer = datasource.GetLayer(0)
 
-    if layer.GetSpatialRef() is None: 
+    if layer.GetSpatialRef() is None and driver_name != 'SQLite': 
         raise KnownUnknown('Couldn\'t get a layer from data source %s' % source_name)
 
     #
@@ -422,7 +464,7 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     return layer, datasource
 
-def _get_features(coord, properties, projection, layer, clipped, projected, spacing):
+def _get_features(coord, properties, projection, layer, clipped, projected, spacing, id_property):
     """ Return a list of features in an OGR layer with properties in GeoJSON form.
     
         Optionally clip features to coordinate bounding box, and optionally
@@ -443,6 +485,8 @@ def _get_features(coord, properties, projection, layer, clipped, projected, spac
     #
     definition = layer.GetLayerDefn()
     layer_sref = layer.GetSpatialRef()
+    if layer_sref == None:
+        layer_sref = _sref_4326()
     
     #
     # Spatially filter the layer
@@ -472,6 +516,7 @@ def _get_features(coord, properties, projection, layer, clipped, projected, spac
         if geometry is None:
             # may indicate a TopologyException
             continue
+
         
         # mask out subsequent features if spacing is defined
         if mask and buffer:
@@ -484,8 +529,11 @@ def _get_features(coord, properties, projection, layer, clipped, projected, spac
 
         geom = json_loads(geometry.ExportToJson())
         prop = _feature_properties(feature, definition, properties)
-        
-        features.append({'type': 'Feature', 'properties': prop, 'geometry': geom})
+
+        geojson_feature = {'type': 'Feature', 'properties': prop, 'geometry': geom}
+        if id_property != None and id_property in prop:
+           geojson_feature['id'] = prop[id_property]
+        features.append(geojson_feature)
     
     return features
 
@@ -495,7 +543,7 @@ class Provider:
         See module documentation for explanation of constructor arguments.
     """
     
-    def __init__(self, layer, driver, parameters, clipped, verbose, projected, spacing, properties, precision):
+    def __init__(self, layer, driver, parameters, clipped, verbose, projected, spacing, properties, precision, id_property):
         self.layer      = layer
         self.driver     = driver
         self.clipped    = clipped
@@ -505,12 +553,13 @@ class Provider:
         self.parameters = parameters
         self.properties = properties
         self.precision  = precision
+        self.id_property = id_property
 
     def renderTile(self, width, height, srs, coord):
         """ Render a single tile, return a VectorResponse instance.
         """
         layer, ds = _open_layer(self.driver, self.parameters, self.layer.config.dirpath)
-        features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipped, self.projected, self.spacing)
+        features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipped, self.projected, self.spacing, self.id_property)
         response = {'type': 'FeatureCollection', 'features': features}
         
         if self.projected:

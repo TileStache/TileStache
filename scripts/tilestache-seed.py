@@ -43,7 +43,7 @@ Protip: extract tiles from an MBTiles tileset to a directory like this:
 
 Configuration, bbox, and layer options are required; see `%prog --help` for info.""")
 
-defaults = dict(extension='png', padding=0, verbose=True, enable_retries=False, bbox=(37.777, -122.352, 37.839, -122.226))
+defaults = dict(padding=0, verbose=True, enable_retries=False, bbox=(37.777, -122.352, 37.839, -122.226))
 
 parser.set_defaults(**defaults)
 
@@ -62,7 +62,7 @@ parser.add_option('-p', '--padding', dest='padding',
                   type='int')
 
 parser.add_option('-e', '--extension', dest='extension',
-                  help='Optional file type for rendered tiles. Default value is %s.' % repr(defaults['extension']))
+                  help='Optional file type for rendered tiles. Default value is "png" for most image layers and some variety of JSON for Vector or Mapnik Grid providers.')
 
 parser.add_option('-f', '--progress-file', dest='progressfile',
                   help="Optional JSON progress file that gets written on each iteration, so you don't have to pay close attention.")
@@ -79,6 +79,10 @@ parser.add_option('-d', '--output-directory', dest='outputdirectory',
 parser.add_option('--to-mbtiles', dest='mbtiles_output',
                   help='Optional output file for tiles, will be created as an MBTiles 1.1 tileset. See http://mbtiles.org for more information.')
 
+parser.add_option('--to-s3', dest='s3_output',
+                  help='Optional output bucket for tiles, will be populated with tiles in a standard Z/X/Y layout. Three required arguments: AWS access-key, secret, and bucket name.',
+                  nargs=3)
+
 parser.add_option('--from-mbtiles', dest='mbtiles_input',
                   help='Optional input file for tiles, will be read as an MBTiles 1.1 tileset. See http://mbtiles.org for more information. Overrides --extension, --bbox and --padding (this may change).')
 
@@ -94,6 +98,9 @@ parser.add_option('--enable-retries', dest='enable_retries',
 
 parser.add_option('-x', '--ignore-cached', action='store_true', dest='ignore_cached',
                   help='Re-render every tile, whether it is in the cache already or not.')
+
+parser.add_option('--jsonp-callback', dest='callback',
+                  help='Add a JSONP callback for tiles with a json mime-type, causing "*.js" tiles to be written to the cache wrapped in the callback function. Ignored for non-JSON tiles.')
 
 def generateCoordinates(ul, lr, zooms, padding):
     """ Generate a stream of (offset, count, coordinate) tuples for seeding.
@@ -217,22 +224,50 @@ if __name__ == '__main__':
         # override parts of the config and layer if needed
         
         extension = options.extension
-        
-        if options.outputdirectory and options.mbtiles_output:
-            cache1_dict = dict(name='disk', path=options.outputdirectory, dirs='portable', gzip=[])
-            cache2_dict = {'class': 'TileStache.MBTiles:Cache', 'kwargs': dict(filename=options.mbtiles_output, format=extension, name=options.layer)}
-            config_dict['cache'] = dict(name='multi', tiers=[cache1_dict, cache2_dict])
 
-        elif options.outputdirectory:
-            config_dict['cache'] = dict(name='disk', path=options.outputdirectory, dirs='portable', gzip=[])
-
-        elif options.mbtiles_output:
-            config_dict['cache'] = {'class': 'TileStache.MBTiles:Cache', 'kwargs': dict(filename=options.mbtiles_output, format=extension, name=options.layer)}
-        
         if options.mbtiles_input:
             layer_dict['provider'] = dict(name='mbtiles', tileset=options.mbtiles_input)
             n, t, v, d, format, b = MBTiles.tileset_info(options.mbtiles_input)
             extension = format or extension
+        
+        # determine or guess an appropriate tile extension
+        
+        if extension is None:
+            provider_name = layer_dict['provider'].get('name', '').lower()
+            
+            if provider_name == 'mapnik grid':
+                extension = 'json'
+            elif provider_name == 'vector':
+                extension = 'geojson'
+            else:
+                extension = 'png'
+        
+        # override parts of the config and layer if needed
+        
+        tiers = []
+        
+        if options.mbtiles_output:
+            tiers.append({'class': 'TileStache.MBTiles:Cache',
+                          'kwargs': dict(filename=options.mbtiles_output,
+                                         format=extension,
+                                         name=options.layer)})
+        
+        if options.outputdirectory:
+            tiers.append(dict(name='disk', path=options.outputdirectory,
+                              dirs='portable', gzip=[]))
+
+        if options.s3_output:
+            access, secret, bucket = options.s3_output
+            tiers.append(dict(name='S3', bucket=bucket,
+                              access=access, secret=secret))
+        
+        if len(tiers) > 1:
+            config_dict['cache'] = dict(name='multi', tiers=tiers)
+        elif len(tiers) == 1:
+            config_dict['cache'] = tiers[0]
+        else:
+            # Leave config_dict['cache'] as-is
+            pass
         
         # create a real config object
         
@@ -296,6 +331,17 @@ if __name__ == '__main__':
     
             try:
                 mimetype, content = getTile(layer, coord, extension, options.ignore_cached)
+                
+                if 'json' in mimetype and options.callback:
+                    js_path = '%s/%d/%d/%d.js' % (layer.name(), coord.zoom, coord.column, coord.row)
+                    js_body = '%s(%s);' % (options.callback, content)
+                    js_size = len(js_body) / 1024
+                    
+                    layer.config.cache.save(js_body, layer, coord, 'JS')
+                    print >> stderr, '%s (%dKB)' % (js_path, js_size),
+            
+                elif options.callback:
+                    print >> stderr, '(callback ignored)',
             
             except:
                 #

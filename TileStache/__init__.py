@@ -371,8 +371,9 @@ class WSGITileServer:
     
             try:
                 self.config = parseConfigfile(config)
-            except Exception, e:
-                raise Core.KnownUnknown("Error loading Tilestache config file:\n%s" % str(e))
+            except:
+                print "Error loading Tilestache config:"
+                raise
 
         else:
             assert hasattr(config, 'cache'), 'Configuration object must have a cache.'

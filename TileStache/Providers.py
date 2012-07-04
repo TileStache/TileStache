@@ -79,16 +79,6 @@ import urllib2
 import urllib
 
 try:
-    import mapnik2 as mapnik
-except ImportError:
-    try:
-        import mapnik
-    except ImportError:
-        # It's possible to get by without mapnik,
-        # if you don't plan to use the mapnik provider.
-        pass
-
-try:
     from PIL import Image
 except ImportError:
     # On some systems, PIL.Image is known as Image.
