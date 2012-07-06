@@ -175,8 +175,8 @@ class GridProvider:
         - scale (optional)
           Scale factor of output raster, defaults to 4 (64x64).
         
-        - layer_id_key (optional)
-          If set, each item in the 'data' property will have it's source mapnik
+        - layer id key (optional)
+          If set, each item in the 'data' property will have its source mapnik
           layer name added, keyed by this value. Useful for distingushing
           between data items.
         
