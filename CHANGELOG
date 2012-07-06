@@ -1,3 +1,7 @@
+2012-07-05: 1.37.0
+- Added TileStache.Goodies.Proj4Projection for arbitrary PROJ.4 support.
+- Added per-layer "tile height" option, for non-256x256 tiles.
+
 2012-06-27: 1.36.1
 - Added more Memcache disconnect_all() calls.
 

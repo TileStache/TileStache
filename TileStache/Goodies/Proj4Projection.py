@@ -1,26 +1,36 @@
-"""
-    Projection that supports any projection that can be expressed in Proj.4 format.
+""" Projection that supports any projection that can be expressed in Proj.4 format.
 
-    The projection is configured by a projection definition in the Proj.4 format,
-    the resolution of the zoom levels that the projection should support,
-    the tile size, and a transformation that defines how to tile coordinates are
-    calculated.
+    The projection is configured by a projection definition in the Proj.4
+    format, the resolution of the zoom levels that the projection should
+    support, the tile size, and a transformation that defines how to tile
+    coordinates are calculated.
     
     An example, instantiating a projection for EPSG:2400 (RT90 2.5 gon W):
     
-        Proj4Projection('+proj=tmerc +lat_0=0 +lon_0=15.80827777777778 +k=1 ' +\
-                        '+x_0=1500000 +y_0=0 +ellps=bessel +units=m +no_defs',
-                        [8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1],
-                        transformation=Transformation(1, 0, 0, 0, -1, 0))
+      Proj4Projection('+proj=tmerc +lat_0=0 +lon_0=15.80827777777778 +k=1'
+                      +' +x_0=1500000 +y_0=0 +ellps=bessel +units=m +no_defs',
+                      [8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1],
+                      transformation=Transformation(1, 0, 0, 0, -1, 0))
                         
-    This example defines 14 zoom levels, where each level doubles the resolution,
-    where the most zoomed out level uses 8192 projected units (meters, in this case) per
-    pixel. The tiles are adressed using XYZ scheme, with the origin at (0, 0): the
-    x component of the transformation is 1, the y component is -1 (tile rows increase from
-    north to south). Tile size defaults to 256x256 pixels.
+    This example defines 14 zoom levels, where each level doubles the
+    resolution, where the most zoomed out level uses 8192 projected units
+    (meters, in this case) per pixel. The tiles are adressed using XYZ scheme,
+    with the origin at (0, 0): the x component of the transformation is 1, the
+    y component is -1 (tile rows increase from north to south). Tile size
+    defaults to 256x256 pixels.
     
-    For more details about tiling, projections, zoom levels and transformations, see
-    http://blog.kartena.se/local-projections-in-a-world-of-spherical-mercator/
+    The same projection, included in a TileStache configuration file:
+    
+      "example":
+      {
+        "provider": {"name": "mapnik", "mapfile": "examples/style.xml"},
+        "projection": "TileStache.Goodies.Proj4Projection:Proj4Projection('+proj=tmerc +lat_0=0 +lon_0=15.80827777777778 +k=1 +x_0=1500000 +y_0=0 +ellps=bessel +units=m +no_defs', [8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1], transformation=Transformation(1, 0, 0, 0, -1, 0))"
+      }
+    
+    "Module:Class()" syntax described in http://tilestache.org/doc/#projections.
+    
+    For more details about tiling, projections, zoom levels and transformations,
+    see http://blog.kartena.se/local-projections-in-a-world-of-spherical-mercator/
 """
 
 import TileStache
