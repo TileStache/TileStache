@@ -150,6 +150,6 @@ class SaveableResponse:
     self.content = content
   def save(self, out, format):
     if format != 'JSON':
-      raise KnownUnknown('MapnikGrid only saves .json tiles, not "%s"' % format)
+      raise KnownUnknown('UtfGridCompositeOverlap only saves .json tiles, not "%s"' % format)
     out.write(self.content)
 

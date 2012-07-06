@@ -175,11 +175,16 @@ class GridProvider:
         - scale (optional)
           Scale factor of output raster, defaults to 4 (64x64).
         
+        - layer_id_key (optional)
+          If set, each item in the 'data' property will have it's source mapnik
+          layer name added, keyed by this value. Useful for distingushing
+          between data items.
+        
         Information and examples for UTF Grid:
         - https://github.com/mapbox/utfgrid-spec/blob/master/1.2/utfgrid.md
         - http://mapbox.github.com/wax/interaction-leaf.html
     """
-    def __init__(self, layer, mapfile, fields=None, layers=None, layer_index=0, scale=4):
+    def __init__(self, layer, mapfile, fields=None, layers=None, layer_index=0, scale=4, layer_id_key=None):
         """ Initialize Mapnik grid provider with layer and mapfile.
             
             XML mapfile keyword arg comes from TileStache config,
@@ -189,6 +194,7 @@ class GridProvider:
         self.layer = layer
         self.mapfile = mapfile
         self.scale = scale
+        self.layer_id_key = layer_id_key
         
         if layers:
             self.layers = layers
@@ -223,6 +229,11 @@ class GridProvider:
                     fields = datasource.fields()
                 
                 grid = mapnik.render_grid(self.mapnik, index, resolution=self.scale, fields=fields)
+
+                if self.layer_id_key is not None:
+                    for key in grid['data']:
+                        grid['data'][key][self.layer_id_key] = self.mapnik.layers[index].name
+
                 grids.append(grid)
 
             global_mapnik_lock.release()
