@@ -1,3 +1,7 @@
+2012-07-18: 1.39.0
+- Fixed missing merge_grids() function in Mapnik Grid provider.
+- Added TileStache.Goodies.ExternalConfigServer from Ryan Breen.
+
 2012-07-05: 1.38.0
 - Added Mapnik Grid provider "layer id key" parameter.
 - Grid internals: response encodings to explicit UTF-8 for Chromium and using mapnik.render_layer().

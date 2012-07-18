@@ -89,6 +89,7 @@ doc:
 	pydoc -w TileStache.Goodies.AreaServer
 	pydoc -w TileStache.Goodies.StatusServer
 	pydoc -w TileStache.Goodies.Proj4Projection
+	pydoc -w TileStache.Goodies.ExternalConfigServer
 
 	pydoc -w scripts/tilestache-*.py
 
