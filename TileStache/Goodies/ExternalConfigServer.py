@@ -7,7 +7,6 @@
 """
 
 from urllib import urlopen
-from sets import Set
 import logging
 
 try:
@@ -25,7 +24,7 @@ class DynamicLayers:
 		self.dirpath = dirpath
 		self.cache_responses = cache_responses;
 		self.seen_layers = {}
-		self.lookup_failures = Set()
+		self.lookup_failures = set()
 	
 	def keys(self):
 		return self.seen_layers.keys()
