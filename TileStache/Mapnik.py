@@ -296,6 +296,52 @@ class SaveableResponse:
         cropped = dict(keys=keys, data=data, grid=grid)
         return SaveableResponse(cropped, self.scale)
 
+def merge_grids(grid1, grid2):
+    """ Merge two UTF Grid objects.
+    """
+    #
+    # Concatenate keys and data, assigning new indexes along the way.
+    #
+
+    keygen, outkeys, outdata = count(1), [], dict()
+    
+    for ingrid in [grid1, grid2]:
+        for (index, key) in enumerate(ingrid['keys']):
+            if key not in ingrid['data']:
+                outkeys.append('')
+                continue
+        
+            outkey = '%d' % keygen.next()
+            outkeys.append(outkey)
+    
+            datum = ingrid['data'][key]
+            outdata[outkey] = datum
+    
+    #
+    # Merge the two grids, one on top of the other.
+    #
+    
+    offset, outgrid = len(grid1['keys']), []
+    
+    def newchar(char1, char2):
+        """ Return a new encoded character based on two inputs.
+        """
+        id1, id2 = decode_char(char1), decode_char(char2)
+        
+        if grid2['keys'][id2] == '':
+            # transparent pixel, use the bottom character
+            return encode_id(id1)
+        
+        else:
+            # opaque pixel, use the top character
+            return encode_id(id2 + offset)
+    
+    for (row1, row2) in zip(grid1['grid'], grid2['grid']):
+        outrow = [newchar(c1, c2) for (c1, c2) in zip(row1, row2)]
+        outgrid.append(''.join(outrow))
+    
+    return dict(keys=outkeys, data=outdata, grid=outgrid)
+
 def encode_id(id):
     id += 32
     if id >= 34:
