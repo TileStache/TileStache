@@ -1,3 +1,112 @@
+""" Layered, composite rendering for TileStache.
+
+The Sandwich Provider supplies a Photoshop-like rendering pipeline, making it
+possible to use the output of other configured tile layers as layers or masks
+to create a combined output. Sandwich is modeled on Lars Ahlzen's TopOSM.
+
+The external "Blit" library is required by Sandwich, and can be installed
+via Pip, easy_install, or directly from Github:
+
+    https://github.com/migurski/Blit
+
+The "stack" configuration parameter describes a layer or stack of layers that
+can be combined to create output. A simple stack that merely outputs a single
+color orange tile looks like this:
+
+    {"color" "#ff9900"}
+
+Other layers in the current TileStache configuration can be reference by name,
+as in this example stack that simply echoes another layer:
+
+    {"src": "layer-name"}
+
+Layers can be limited to appear at certain zoom levels, given either as a range
+or as a single number:
+
+    {"src": "layer-name", "zoom": "12"}
+    {"src": "layer-name", "zoom": "12-18"}
+
+Layers can also be used as masks, as in this example that uses one layer
+to mask another layer:
+
+    {"mask": "layer-name", "src": "other-layer"}
+
+Many combinations of "src", "mask", and "color" can be used together, but it's
+an error to provide all three.
+
+Layers can be combined through the use of opacity and blend modes. Opacity is
+specified as a value from 0.0-1.0, and blend mode is specified as a string.
+This example layer is blended using the "hard light" mode at 50% opacity:
+
+    {"src": "hillshading", "mode": "hard light", "opacity": 0.5}
+
+Currently-supported blend modes include "screen", "add", "multiply", "subtract",
+"linear light", and "hard light".
+
+Layers can also be affected by adjustments. Adjustments are specified as an
+array of names and parameters. This example layer has been slightly darkened
+using the "curves" adjustment, moving the input value of 181 (light gray)
+to 50% gray while leaving black and white alone:
+
+    {"src": "hillshading", "adjustments": [ ["curves", [0, 181, 255]] ]}
+
+Available adjustments:
+  "threshold" - Blit.adjustments.threshold()
+  "curves" - Blit.adjustments.curves()
+  "curves2" - Blit.adjustments.curves2()
+
+Finally, the stacking feature allows layers to combined in more complex ways.
+This example stack combines a background color and foreground layer:
+
+    [
+      {"color": "#ff9900"},
+      {"src": "layer-name"}
+    ]
+
+A complete example configuration might look like this:
+
+    {
+      "cache":
+      {
+        "name": "Test"
+      },
+      "layers": 
+      {
+        "base":
+        {
+          "provider": {"name": "mapnik", "mapfile": "mapnik-base.xml"}
+        },
+        "halos":
+        {
+          "provider": {"name": "mapnik", "mapfile": "mapnik-halos.xml"},
+          "metatile": {"buffer": 128}
+        },
+        "outlines":
+        {
+          "provider": {"name": "mapnik", "mapfile": "mapnik-outlines.xml"},
+          "metatile": {"buffer": 16}
+        },
+        "streets":
+        {
+          "provider": {"name": "mapnik", "mapfile": "mapnik-streets.xml"},
+          "metatile": {"buffer": 128}
+        },
+        "sandwiches":
+        {
+          "provider":
+          {
+            "name": "Sandwich",
+            "stack":
+            [
+              {"src": "base"},
+              {"src": "outlines", "mask": "halos"},
+              {"src": "streets"}
+            ]
+          }
+        }
+      }
+    }
+"""
 from re import search
 from StringIO import StringIO
 
@@ -22,7 +131,9 @@ adjustment_names = {
     }
 
 class Provider:
-    """
+    """ Sandwich Provider.
+    
+        Stack argument is a list of layer dictionaries described in module docs.
     """
     def __init__(self, layer, stack):
         self.config = layer.config
@@ -38,7 +149,15 @@ class Provider:
             return rendered.image().resize((width, height))
 
 def draw_stack(stack, coord, config, tiles):
-    """
+    """ Render this image stack.
+
+        Given a stack of sandwich layers, a coordinate, and configuration
+        object, return an output image with the results of all the layers
+        in this stack pasted on in turn.
+        
+        Final argument is a dictionary used to temporarily cache results
+        of layers retrieved from layer_bitmap(), to speed things up in case
+        of repeatedly-used identical images.
     """
     # start with an empty base
     rendered = Blit.Color(0, 0, 0, 0x10)
@@ -101,7 +220,9 @@ def draw_stack(stack, coord, config, tiles):
     return rendered
 
 def layer_bitmap(layer, coord):
-    """
+    """ Return Blit.Bitmap representation of tile from a given layer.
+    
+        Uses TileStache.getTile(), so caches are read and written as normal.
     """
     from . import getTile
 
@@ -112,6 +233,8 @@ def layer_bitmap(layer, coord):
 
 def in_zoom(coord, range):
     """ Return True if the coordinate zoom is within the textual range.
+    
+        Range might look like "1-10" or just "5".
     """
     zooms = search("^(\d+)-(\d+)$|^(\d+)$", range)
     
