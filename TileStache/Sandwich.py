@@ -2,7 +2,6 @@ from re import search
 from StringIO import StringIO
 
 from . import Core
-from . import getTile
 
 import Image
 import Blit
@@ -104,6 +103,8 @@ def draw_stack(stack, coord, config, tiles):
 def layer_bitmap(layer, coord):
     """
     """
+    from . import getTile
+
     mime, body = getTile(layer, coord, 'png')
     image = Image.open(StringIO(body)).convert('RGBA')
 
@@ -147,7 +148,7 @@ def make_color(color):
         raise Core.KnownUnknown('Color must start with hash: "%s"' % color)
 
     if len(color) not in (4, 5, 7, 9):
-        raise Core.KnownUnknown('Color must have three, four, six or seven hex chars: "%s"' % color)
+        raise Core.KnownUnknown('Color must have three, four, six or eight hex chars: "%s"' % color)
 
     if len(color) == 4:
         color = ''.join([color[i] for i in (0, 1, 1, 2, 2, 3, 3)])
