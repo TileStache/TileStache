@@ -472,9 +472,9 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
             if 'layer id key' in provider_dict:
                 provider_kwargs['layer_id_key'] = provider_dict['layer id key']
             
-        elif _class is Providers.Sandwich.Provider:
+        elif str(_class) == 'TileStache.Sandwich.Provider':
             provider_kwargs['stack'] = provider_dict['stack']
-            
+        
     elif 'class' in provider_dict:
         _class = loadClassPath(provider_dict['class'])
         provider_kwargs = provider_dict.get('kwargs', {})

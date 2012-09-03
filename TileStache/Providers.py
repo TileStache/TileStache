@@ -90,7 +90,6 @@ from ModestMaps.Core import Point, Coordinate
 import Vector
 import MBTiles
 import Geography
-import Sandwich
 from .Mapnik import ImageProvider as MapnikImage, GridProvider as MapnikGrid
 
 # Already deprecated; provided for temporary backward-compatibility with
@@ -121,6 +120,7 @@ def getProviderByName(name):
         return MapnikGrid
 
     elif name.lower() == 'sandwich':
+        import Sandwich
         return Sandwich.Provider
 
     raise Exception('Unknown provider name: "%s"' % name)
