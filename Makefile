@@ -69,6 +69,7 @@ doc:
 	pydoc -w TileStache.Providers
 	pydoc -w TileStache.Mapnik
 	pydoc -w TileStache.MBTiles
+	pydoc -w TileStache.Sandwich
 	pydoc -w TileStache.Pixels
 	pydoc -w TileStache.Goodies
 	pydoc -w TileStache.Goodies.Caches

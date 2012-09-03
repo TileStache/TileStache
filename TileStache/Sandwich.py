@@ -55,6 +55,10 @@ Available adjustments:
   "curves" - Blit.adjustments.curves()
   "curves2" - Blit.adjustments.curves2()
 
+See detailed information about adjustments in Blit documentation:
+
+    https://github.com/migurski/Blit#readme
+
 Finally, the stacking feature allows layers to combined in more complex ways.
 This example stack combines a background color and foreground layer:
 
