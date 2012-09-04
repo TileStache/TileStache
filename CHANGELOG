@@ -1,3 +1,7 @@
+2012-09-04: 1.40.0
+- Added TileStache.Sandwich provider based on previous Composite provider under Goodies.
+- Modified import method for provider to reduce burden of required packages and improve error output.
+
 2012-07-18: 1.39.0
 - Fixed missing merge_grids() function in Mapnik Grid provider.
 - Added TileStache.Goodies.ExternalConfigServer from Ryan Breen.
