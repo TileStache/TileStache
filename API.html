@@ -127,6 +127,7 @@
           <li><a href="#url-template-provider">URL Template</a></li>
           <li><a href="#mbtiles-provider">MBTiles</a></li>
           <li><a href="#mapnik-grid-provider">Mapnik Grid</a></li>
+          <li><a href="#sandwich-provider">Pixel Sandwich</a></li>
         </ul>
  -->
       </li>
@@ -1318,6 +1319,81 @@ Mapnik Grid provider parameters:
 <p>
 See
 <a href="http://tilestache.org/doc/TileStache.Mapnik.html#GridProvider">TileStache.Mapnik.GridProvider</a>
+for more information.
+</p>
+
+<h4><a id="sandwich-provider" name="sandwich-provider">Pixel Sandwich</a></h4>
+
+<p>
+The Sandwich Provider supplies a Photoshop-like rendering pipeline, making it
+possible to use the output of other configured tile layers as layers or masks
+to create a combined output. Sandwich is modeled on Lars Ahlzen’s
+<a href="http://www.toposm.com/">TopOSM</a>.
+</p>
+ 
+<p>
+Sandwich require the external <a href="http://github.com/migurski/Blit">Blit library</a> to function.
+</p>
+ 
+<p>
+Example Sandwich provider configurations:
+</p>
+
+<pre>
+<span class="bg">{
+  "cache": { … }.
+  "layers": 
+  {
+    </span>"sandwiches":
+    {
+      "provider":
+      {
+        "name": "Sandwich",
+        "stack":
+        [
+          {"src": "base"},
+          {"src": "outlines", "mask": "halos"},
+          {"src": "streets"}
+        ]
+      }
+    }<span class="bg">,
+    </span>"base"<span class="bg">:
+    {
+      "provider": {"name": "mapnik", "mapfile": "mapnik-base.xml"}
+    },
+    </span>"halos"<span class="bg">:
+    {
+      "provider": {"name": "mapnik", "mapfile": "mapnik-halos.xml"},
+      "metatile": {"buffer": 128}
+    },
+    </span>"outlines"<span class="bg">:
+    {
+      "provider": {"name": "mapnik", "mapfile": "mapnik-outlines.xml"},
+      "metatile": {"buffer": 16}
+    },
+    </span>"streets"<span class="bg">:
+    {
+      "provider": {"name": "mapnik", "mapfile": "mapnik-streets.xml"},
+      "metatile": {"buffer": 128}
+    }
+  }
+}</span>
+</pre>
+ 
+<p>
+Sandwich provider parameters:
+</p>
+
+<dl>
+    <dt>stack</dt>
+    <dd>
+    Required layer or stack of layers that can be combined to create output.
+    </dd>
+</dl>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.Sandwich.html">TileStache.Sandwich</a>
 for more information.
 </p>
 
