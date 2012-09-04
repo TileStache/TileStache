@@ -176,8 +176,8 @@ class Proxy:
 
     @staticmethod
     def prepareKeywordArgs(config_dict):
-        '''
-        '''
+        """ Convert configured parameters to keyword args for __init__().
+        """
         kwargs = dict()
 
         if 'url' in config_dict:
@@ -248,8 +248,8 @@ class UrlTemplate:
 
     @staticmethod
     def prepareKeywordArgs(config_dict):
-        '''
-        '''
+        """ Convert configured parameters to keyword args for __init__().
+        """
         kwargs = {'template': config_dict['template']}
 
         if 'referer' in config_dict:

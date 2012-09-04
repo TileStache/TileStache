@@ -92,8 +92,8 @@ class ImageProvider:
 
     @staticmethod
     def prepareKeywordArgs(config_dict):
-        '''
-        '''
+        """ Convert configured parameters to keyword args for __init__().
+        """
         kwargs = {'mapfile': config_dict['mapfile']}
 
         if 'fonts' in config_dict:
@@ -217,8 +217,8 @@ class GridProvider:
 
     @staticmethod
     def prepareKeywordArgs(config_dict):
-        '''
-        '''
+        """ Convert configured parameters to keyword args for __init__().
+        """
         kwargs = {'mapfile': config_dict['mapfile']}
 
         for key in ('fields', 'layers', 'layer_index', 'scale', 'layer_id_key'):

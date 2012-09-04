@@ -207,8 +207,8 @@ class Provider:
     
     @staticmethod
     def prepareKeywordArgs(config_dict):
-        '''
-        '''
+        """ Convert configured parameters to keyword args for __init__().
+        """
         return {'tileset': config_dict['tileset']}
     
     def renderTile(self, width, height, srs, coord):

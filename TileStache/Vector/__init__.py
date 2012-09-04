@@ -553,8 +553,8 @@ class Provider:
 
     @staticmethod
     def prepareKeywordArgs(config_dict):
-        '''
-        '''
+        """ Convert configured parameters to keyword args for __init__().
+        """
         kwargs = dict()
         
         kwargs['driver'] = config_dict['driver']

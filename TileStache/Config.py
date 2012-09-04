@@ -420,10 +420,7 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
 
     if 'name' in provider_dict:
         _class = Providers.getProviderByName(provider_dict['name'])
-        provider_kwargs = {}
-        
-        if hasattr(_class, 'prepareKeywordArgs'):
-            provider_kwargs.update(_class.prepareKeywordArgs(provider_dict))
+        provider_kwargs = _class.prepareKeywordArgs(provider_dict)
         
     elif 'class' in provider_dict:
         _class = loadClassPath(provider_dict['class'])
