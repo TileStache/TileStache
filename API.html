@@ -50,6 +50,13 @@
 
     samp, pre, var { padding: 0 2px; margin: 0 -2px; border-radius: 2px; }
     pre { margin: -4px 10px; padding: 4px; border: 1px solid #ddd; border-radius: 3px; }
+    
+    a.permalink
+    {
+        font-weight: normal;
+        text-decoration: none;
+        opacity: 0.35;
+    }
 
     -->
     </style>
@@ -157,9 +164,9 @@
   </li>
 </ul>
 
-<h2><a id="requesting-tiles" name="requesting-tiles">Requesting Tiles</a></h2>
+<h2><a id="requesting-tiles" name="requesting-tiles">Requesting Tiles</a> <a href="#requesting-tiles" class="permalink">¶</a> </h2>
 
-<h3><a id="over-http" name="over-http">Over HTTP</a></h3>
+<h3><a id="over-http" name="over-http">Over HTTP</a> <a href="#over-http" class="permalink">¶</a> </h3>
 
 <p>
 TileStache URLs are based on a simplified TMS scheme:
@@ -194,9 +201,9 @@ Interactive, slippy-map previews of tiles are also available:
 /{layer name}/preview.html
 </pre>
 
-<h3><a id="in-code" name="in-code">In Code</a></h3>
+<h3><a id="in-code" name="in-code">In Code</a> <a href="#in-code" class="permalink">¶</a> </h3>
 
-<h4><a id="tilestache-gettile" name="tilestache-gettile"><code>TileStache.getTile</code></a></h4>
+<h4><a id="tilestache-gettile" name="tilestache-gettile"><code>TileStache.getTile</code></a> <a href="#tilestache-gettile" class="permalink">¶</a> </h4>
 
 <p>
 Get a type string and tile binary for a given request layer tile.
@@ -242,7 +249,7 @@ See
 documentation for more information.
 </p>
 
-<h4><a id="tilestache-requesthandler" name="tilestache-requesthandler"><code>TileStache.requestHandler</code></a></h4>
+<h4><a id="tilestache-requesthandler" name="tilestache-requesthandler"><code>TileStache.requestHandler</code></a> <a href="#tilestache-requesthandler" class="permalink">¶</a> </h4>
 
 <p>
 Generate a mime-type and response body for a given request. This is the function
@@ -286,14 +293,14 @@ See
 documentation for more information.
 </p>
 
-<h2><a id="serving-tiles" name="serving-tiles">Serving Tiles</a></h2>
+<h2><a id="serving-tiles" name="serving-tiles">Serving Tiles</a> <a href="#serving-tiles" class="permalink">¶</a> </h2>
 
 <p>
 We currently provide three scripts for serving tiles: one for a WSGI-based
 webserver, one for a CGI-based webserver, and one for Apache <code>mod_python</code>.
 </p>
 
-<h4><a id="wsgi" name="wsgi">WSGI</a></h4>
+<h4><a id="wsgi" name="wsgi">WSGI</a> <a href="#wsgi" class="permalink">¶</a> </h4>
 
 <p>
 TileStache comes with a WSGI application and a 
@@ -330,7 +337,7 @@ See
 documentation for more information.
 </p>
 
-<h4><a id="cgi" name="cgi">CGI</a></h4>
+<h4><a id="cgi" name="cgi">CGI</a> <a href="#cgi" class="permalink">¶</a> </h4>
 
 <p>
 Using TileStache through CGI supports basic tile serving, and is useful for
@@ -351,7 +358,7 @@ See
 documentation for more information.
 </p>
 
-<h4><a id="mod-python" name="mod-python">mod_python</a></h4>
+<h4><a id="mod-python" name="mod-python">mod_python</a> <a href="#mod-python" class="permalink">¶</a> </h4>
 
 <p>
 Using TileStache through <code>mod_python</code> improves performance by
@@ -374,7 +381,7 @@ See
 documentation for more information.
 </p>
 
-<h2><a id="configuring-tilestache" name="configuring-tilestache">Configuring TileStache</a></h2>
+<h2><a id="configuring-tilestache" name="configuring-tilestache">Configuring TileStache</a> <a href="#configuring-tilestache" class="permalink">¶</a> </h2>
 
 <p>
 TileStache configuration is stored in JSON files, and is composed of two main
@@ -394,7 +401,7 @@ examples of both in this minimal sample configuration:
 }
 </pre>
 
-<h3><a id="caches" name="caches">Caches</a></h3>
+<h3><a id="caches" name="caches">Caches</a> <a href="#caches" class="permalink">¶</a> </h3>
 
 <p>
 A Cache is the part of TileStache that stores static files to speed up future
@@ -403,7 +410,7 @@ defined in
 <a href="http://tilestache.org/doc/TileStache.Goodies.Caches.html"><code>TileStache.Goodies.Caches</code></a>
 </p>
 
-<h4><a id="test-cache" name="test-cache">Test</a></h4>
+<h4><a id="test-cache" name="test-cache">Test</a> <a href="#test-cache" class="permalink">¶</a> </h4>
 
 <p>
 Simple cache that doesn’t actually cache anything.
@@ -445,7 +452,7 @@ See
 documentation for more information.
 </p>
 
-<h4><a id="disk-cache" name="disk-cache">Disk</a></h4>
+<h4><a id="disk-cache" name="disk-cache">Disk</a> <a href="#disk-cache" class="permalink">¶</a> </h4>
 
 <p>
 Caches files to disk.
@@ -513,7 +520,7 @@ See
 documentation for more information.
 </p>
 
-<h4><a id="multi-cache" name="multi-cache">Multi</a></h4>
+<h4><a id="multi-cache" name="multi-cache">Multi</a> <a href="#multi-cache" class="permalink">¶</a> </h4>
 
 <p>
 Caches tiles to multiple, ordered caches.
@@ -569,7 +576,7 @@ See
 documentation for more information.
 </p>
 
-<h4><a id="memcache-cache" name="memcache-cache">Memcache</a></h4>
+<h4><a id="memcache-cache" name="memcache-cache">Memcache</a> <a href="#memcache-cache" class="permalink">¶</a> </h4>
 
 <p>
 Caches tiles to <a href="http://memcached.org/">Memcache</a>,
@@ -615,7 +622,7 @@ See
 documentation for more information.
 </p>
 
-<h4><a id="s3-cache" name="s3-cache">S3</a></h4>
+<h4><a id="s3-cache" name="s3-cache">S3</a> <a href="#s3-cache" class="permalink">¶</a> </h4>
 
 <p>
 Caches tiles to <a href="https://s3.amazonaws.com/">Amazon S3</a>,
@@ -667,7 +674,7 @@ See
 documentation for more information.
 </p>
 
-<h4><a id="additional-caches" name="additional-caches">Additional Caches</a></h4>
+<h4><a id="additional-caches" name="additional-caches">Additional Caches</a> <a href="#additional-caches" class="permalink">¶</a> </h4>
 
 <p>
 New caches with functionality that’s not strictly core to TileStache first appear in
@@ -685,7 +692,7 @@ a set limit. See
 for more information.
 </p>
 
-<h3><a id="layers" name="layers">Layers</a></h3>
+<h3><a id="layers" name="layers">Layers</a> <a href="#layers" class="permalink">¶</a> </h3>
 
 <p>
 A Layer represents a set of tiles in TileStache. It keeps references to
@@ -855,7 +862,7 @@ Shared layer parameters:
     </dd>
 </dl>
 
-<h3><a id="providers" name="providers">Providers</a></h3>
+<h3><a id="providers" name="providers">Providers</a> <a href="#providers" class="permalink">¶</a> </h3>
 
 <p>
 A Provider is the part of TileStache that stores static files to speed up
@@ -864,7 +871,7 @@ provider classes defined in
 <a href="http://tilestache.org/doc/TileStache.Goodies.Providers.html"><code>TileStache.Goodies.Providers</code></a>
 </p>
 
-<h4><a id="mapnik-provider" name="mapnik-provider">Mapnik</a></h4>
+<h4><a id="mapnik-provider" name="mapnik-provider">Mapnik</a> <a href="#mapnik-provider" class="permalink">¶</a> </h4>
 
 <p>
 Built-in Mapnik provider, renders map images from Mapnik XML files.
@@ -912,7 +919,7 @@ See
 for more information.
 </p>
 
-<h4><a id="proxy-provider" name="proxy-provider">Proxy</a></h4>
+<h4><a id="proxy-provider" name="proxy-provider">Proxy</a> <a href="#proxy-provider" class="permalink">¶</a> </h4>
 
 <p>
 Proxy provider, to pass through and cache tiles from other places.
@@ -963,7 +970,7 @@ See
 for more information.
 </p>
 
-<h4><a id="vector-provider" name="vector-provider">Vector</a></h4>
+<h4><a id="vector-provider" name="vector-provider">Vector</a> <a href="#vector-provider" class="permalink">¶</a> </h4>
 
 <p>
 Provider that returns vector representation of features in a data source.
@@ -1135,7 +1142,7 @@ See
 for more information.
 </p>
 
-<h4><a id="url-template-provider" name="url-template-provider">URL Template</a></h4>
+<h4><a id="url-template-provider" name="url-template-provider">URL Template</a> <a href="#url-template-provider" class="permalink">¶</a> </h4>
 
 <p>
 Templated URL provider, to pass through and cache tiles from WMS servers.
@@ -1193,7 +1200,7 @@ See
 for more information.
 </p>
 
-<h4><a id="mbtiles-provider" name="mbtiles-provider">MBTiles</a></h4>
+<h4><a id="mbtiles-provider" name="mbtiles-provider">MBTiles</a> <a href="#mbtiles-provider" class="permalink">¶</a> </h4>
 
 <p>
 Provider that reads stored images from <a href="http://mbtiles.org/">MBTiles tilesets</a>.
@@ -1237,7 +1244,7 @@ See
 for more information.
 </p>
 
-<h4><a id="mapnik-grid-provider" name="mapnik-grid-provider">Mapnik Grid</a></h4>
+<h4><a id="mapnik-grid-provider" name="mapnik-grid-provider">Mapnik Grid</a> <a href="#mapnik-grid-provider" class="permalink">¶</a> </h4>
 
 <p>
 Built-in Mapnik <a href="https://github.com/mapbox/utfgrid-spec/blob/master/1.2/utfgrid.md">UTF Grid</a> provider,
@@ -1322,7 +1329,7 @@ See
 for more information.
 </p>
 
-<h4><a id="sandwich-provider" name="sandwich-provider">Pixel Sandwich</a></h4>
+<h4><a id="sandwich-provider" name="sandwich-provider">Pixel Sandwich</a> <a href="#sandwich-provider" class="permalink">¶</a> </h4>
 
 <p>
 The Sandwich Provider supplies a Photoshop-like rendering pipeline, making it
@@ -1388,6 +1395,9 @@ Sandwich provider parameters:
     <dt>stack</dt>
     <dd>
     Required layer or stack of layers that can be combined to create output.
+    The stack is a list, with solid color or raster layers from elsewhere
+    in the configuration, and is described in detail in the dedicated
+    <a href="http://tilestache.org/doc/TileStache.Sandwich.html">Sandwich documentation</a>.
     </dd>
 </dl>
 
@@ -1397,7 +1407,7 @@ See
 for more information.
 </p>
 
-<h4><a id="additional-providers" name="additional-providers">Additional Providers</a></h4>
+<h4><a id="additional-providers" name="additional-providers">Additional Providers</a> <a href="#additional-providers" class="permalink">¶</a> </h4>
 
 <p>
 New providers with functionality that’s not strictly core to TileStache first appear in
@@ -1456,7 +1466,7 @@ some other out-of-band process. See
 for more information.
 </p>
 
-<h3><a id="projections" name="projections">Projections</a></h3>
+<h3><a id="projections" name="projections">Projections</a> <a href="#projections" class="permalink">¶</a> </h3>
 
 <p>
 A Projection defines the relationship between the rendered tiles and the
@@ -1514,7 +1524,7 @@ See
 for more information.
 </p>
 
-<h4><a id="metatiles" name="metatiles">Metatiles</a></h4>
+<h4><a id="metatiles" name="metatiles">Metatiles</a> <a href="#metatiles" class="permalink">¶</a> </h4>
 
 <p>
 Metatiles are larger areas to be rendered at one time, often used because it’s
@@ -1573,7 +1583,7 @@ Metatile parameters:
     </dd>
 </dl> 
 
-<h4><a id="preview" name="preview">Preview</a></h4>
+<h4><a id="preview" name="preview">Preview</a> <a href="#preview" class="permalink">¶</a> </h4>
 
 <p>
 TileStache includes a built-in slippy map preview, that can be viewed in a
@@ -1638,7 +1648,7 @@ Preview parameters:
     </dd>
 </dl> 
 
-<h4><a id="index-page" name="index-page">Index Page</a></h4>
+<h4><a id="index-page" name="index-page">Index Page</a> <a href="#index-page" class="permalink">¶</a> </h4>
 
 <p>
 TileStache supports configurable index pages for the front page of an instance.
@@ -1675,7 +1685,7 @@ Example index page configuration using a remote image:
 }</span>
 </pre>
 
-<h4><a id="logging" name="logging">Logging</a></h4>
+<h4><a id="logging" name="logging">Logging</a> <a href="#logging" class="permalink">¶</a> </h4>
 
 <p>
 TileStache includes basic support for Python’s built-in
@@ -1699,7 +1709,7 @@ Example logging configuration:
 }</span>
 </pre>
 
-<h2><a id="extending-tilestache" name="extending-tilestache">Extending TileStache</a></h2>
+<h2><a id="extending-tilestache" name="extending-tilestache">Extending TileStache</a> <a href="#extending-tilestache" class="permalink">¶</a> </h2>
 
 <p>
 TileStache relies on <a href="http://en.wikipedia.org/wiki/Duck_typing">duck typing</a>
@@ -1708,7 +1718,7 @@ below explain what methods and properties must be defined on objects for them
 to be valid as providers, caches, and configurations.
 </p>
 
-<h3><a id="custom-providers" name="custom-providers">Providers</a></h3>
+<h3><a id="custom-providers" name="custom-providers">Providers</a> <a href="#custom-providers" class="permalink">¶</a> </h3>
 
 <p>
 Example external provider configuration:
@@ -1791,7 +1801,7 @@ for more information on custom providers and
 for examples of custom providers.
 </p>
 
-<h4><a id="provider-rendertile" name="provider-rendertile"><code>provider.renderTile</code></a></h4>
+<h4><a id="provider-rendertile" name="provider-rendertile"><code>provider.renderTile</code></a> <a href="#provider-rendertile" class="permalink">¶</a> </h4>
 
 <p>
 Draws a single tile at a time.
@@ -1836,7 +1846,7 @@ or other saveable object, used like this:
 provider.renderTile(…).save(file, "XML")
 </pre>
  
-<h4><a id="provider-renderarea" name="provider-renderarea"><code>provider.renderArea</code></a></h4>
+<h4><a id="provider-renderarea" name="provider-renderarea"><code>provider.renderArea</code></a> <a href="#provider-renderarea" class="permalink">¶</a> </h4>
 
 <p>
 Draws a variably-sized area, and is used when drawing metatiles.
@@ -1908,7 +1918,7 @@ or other saveable object, used like this:
 provider.renderArea(…).save(file, "PNG")
 </pre>
 
-<h4><a id="provider-gettypebyextension" name="provider-gettypebyextension"><code>provider.getTypeByExtension</code></a></h4>
+<h4><a id="provider-gettypebyextension" name="provider-gettypebyextension"><code>provider.getTypeByExtension</code></a> <a href="#provider-gettypebyextension" class="permalink">¶</a> </h4>
 
 <p>
 A provider may offer a method for custom response types,
@@ -1927,7 +1937,7 @@ Arguments to <code>getTypeByExtension</code>:
     </dd>
 </dl>
 
-<h3><a id="custom-caches" name="custom-caches">Caches</a></h3>
+<h3><a id="custom-caches" name="custom-caches">Caches</a> <a href="#custom-caches" class="permalink">¶</a> </h3>
 
 <p>
 Example external provider configuration:
@@ -2026,7 +2036,7 @@ for more information on custom caches and
 for examples of custom caches.
 </p>
 
-<h3><a id="custom-configuration" name="custom-configuration">Configuration</a></h3>
+<h3><a id="custom-configuration" name="custom-configuration">Configuration</a> <a href="#custom-configuration" class="permalink">¶</a> </h3>
 
 <p>
 A complete configuration object includes <var>cache</var>,
