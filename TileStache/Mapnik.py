@@ -29,13 +29,8 @@ except ImportError:
 try:
     import mapnik
 except ImportError:
-    try:
-        # mapnik 2.0.0 is known as mapnik2
-        import mapnik2 as mapnik
-    except ImportError:
-        # It's possible to get by without mapnik,
-        # if you don't plan to use the mapnik provider.
-        pass
+    # mapnik 2.0.0 is known as mapnik2
+    import mapnik2 as mapnik
 
 if 'mapnik' in locals():
     _version = hasattr(mapnik, 'mapnik_version') and mapnik.mapnik_version() or 701
@@ -95,6 +90,17 @@ class ImageProvider:
             for font in glob(path.rstrip('/') + '/*.ttf'):
                 engine.register_font(str(font))
 
+    @staticmethod
+    def prepareKeywordArgs(config_dict):
+        '''
+        '''
+        kwargs = {'mapfile': config_dict['mapfile']}
+
+        if 'fonts' in config_dict:
+            kwargs['fonts'] = config_dict['fonts']
+        
+        return kwargs
+    
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """
         """
@@ -209,6 +215,18 @@ class GridProvider:
         else:
             self.layers = [[layer_index or 0, fields]]
 
+    @staticmethod
+    def prepareKeywordArgs(config_dict):
+        '''
+        '''
+        kwargs = {'mapfile': config_dict['mapfile']}
+
+        for key in ('fields', 'layers', 'layer_index', 'scale', 'layer_id_key'):
+            if key in config_dict:
+                kwargs[key] = config_dict[key]
+        
+        return kwargs
+    
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """
         """

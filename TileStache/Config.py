@@ -422,11 +422,7 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         _class = Providers.getProviderByName(provider_dict['name'])
         provider_kwargs = {}
         
-        if _class is Providers.MapnikImage:
-            provider_kwargs['mapfile'] = provider_dict['mapfile']
-            provider_kwargs['fonts'] = provider_dict.get('fonts', None)
-        
-        elif _class is Providers.Vector.Provider:
+        if _class is Providers.Vector.Provider:
             provider_kwargs['driver'] = provider_dict['driver']
             provider_kwargs['parameters'] = provider_dict['parameters']
             provider_kwargs['id_property'] = provider_dict.get('id_property', None)
@@ -448,19 +444,6 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         elif _class is Providers.MBTiles.Provider:
             provider_kwargs['tileset'] = provider_dict['tileset']
         
-        elif _class is Providers.MapnikGrid:
-            provider_kwargs['mapfile'] = provider_dict['mapfile']
-            if 'layers' in provider_dict:
-                provider_kwargs['layers'] = provider_dict['layers']
-            if 'fields' in provider_dict:
-                provider_kwargs['fields'] = provider_dict['fields']
-            if 'layer index' in provider_dict:
-                provider_kwargs['layer_index'] = provider_dict['layer index']
-            if 'scale' in provider_dict:
-                provider_kwargs['scale'] = provider_dict['scale']
-            if 'layer id key' in provider_dict:
-                provider_kwargs['layer_id_key'] = provider_dict['layer id key']
-            
         elif hasattr(_class, 'prepareKeywordArgs'):
             provider_kwargs.update(_class.prepareKeywordArgs(provider_dict))
         
