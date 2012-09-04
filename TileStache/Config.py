@@ -426,17 +426,6 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
             provider_kwargs['mapfile'] = provider_dict['mapfile']
             provider_kwargs['fonts'] = provider_dict.get('fonts', None)
         
-        elif _class is Providers.Proxy:
-            if 'url' in provider_dict:
-                provider_kwargs['url'] = provider_dict['url']
-            if 'provider' in provider_dict:
-                provider_kwargs['provider_name'] = provider_dict['provider']
-        
-        elif _class is Providers.UrlTemplate:
-            provider_kwargs['template'] = provider_dict['template']
-            if 'referer' in provider_dict:
-                provider_kwargs['referer'] = provider_dict['referer']
-        
         elif _class is Providers.Vector.Provider:
             provider_kwargs['driver'] = provider_dict['driver']
             provider_kwargs['parameters'] = provider_dict['parameters']
@@ -472,8 +461,8 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
             if 'layer id key' in provider_dict:
                 provider_kwargs['layer_id_key'] = provider_dict['layer id key']
             
-        elif str(_class) == 'TileStache.Sandwich.Provider':
-            provider_kwargs['stack'] = provider_dict['stack']
+        elif hasattr(_class, 'prepareKeywordArgs'):
+            provider_kwargs.update(_class.prepareKeywordArgs(provider_dict))
         
     elif 'class' in provider_dict:
         _class = loadClassPath(provider_dict['class'])

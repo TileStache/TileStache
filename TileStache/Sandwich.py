@@ -143,6 +143,12 @@ class Provider:
         self.config = layer.config
         self.stack = stack
     
+    @staticmethod
+    def prepareKeywordArgs(config_dict):
+        '''
+        '''
+        return {'stack': config_dict['stack']}
+    
     def renderTile(self, width, height, srs, coord):
         
         rendered = draw_stack(self.stack, coord, self.config, dict())

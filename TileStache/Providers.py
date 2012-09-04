@@ -90,11 +90,13 @@ from ModestMaps.Core import Point, Coordinate
 import Vector
 import MBTiles
 import Geography
-from .Mapnik import ImageProvider as MapnikImage, GridProvider as MapnikGrid
 
 # Already deprecated; provided for temporary backward-compatibility with
 # old location of Mapnik provider. TODO: remove in next major version.
-Mapnik = MapnikImage
+try:
+    from .Mapnik import ImageProvider as Mapnik
+except ImportError:
+    pass
 
 def getProviderByName(name):
     """ Retrieve a provider object by name.
@@ -102,7 +104,8 @@ def getProviderByName(name):
         Raise an exception if the name doesn't work out.
     """
     if name.lower() == 'mapnik':
-        return MapnikImage
+        from .Mapnik import ImageProvider
+        return ImageProvider
 
     elif name.lower() == 'proxy':
         return Proxy
@@ -117,7 +120,8 @@ def getProviderByName(name):
         return MBTiles.Provider
 
     elif name.lower() == 'mapnik grid':
-        return MapnikGrid
+        from .Mapnik import GridProvider
+        return GridProvider
 
     elif name.lower() == 'sandwich':
         import Sandwich
@@ -164,6 +168,20 @@ class Proxy:
         else:
             raise Exception('Missing required url or provider parameter to Proxy provider')
 
+    @staticmethod
+    def prepareKeywordArgs(config_dict):
+        '''
+        '''
+        kwargs = dict()
+
+        if 'url' in config_dict:
+            kwargs['url'] = config_dict['url']
+
+        if 'provider' in config_dict:
+            kwargs['provider_name'] = config_dict['provider']
+        
+        return kwargs
+    
     def renderTile(self, width, height, srs, coord):
         """
         """
@@ -222,6 +240,17 @@ class UrlTemplate:
         self.template = Template(template)
         self.referer = referer
 
+    @staticmethod
+    def prepareKeywordArgs(config_dict):
+        '''
+        '''
+        kwargs = {'template': config_dict['template']}
+
+        if 'referer' in config_dict:
+            kwargs['referer'] = config_dict['referer']
+        
+        return kwargs
+    
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """ Return an image for an area.
         
