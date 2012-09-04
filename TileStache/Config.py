@@ -422,29 +422,7 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         _class = Providers.getProviderByName(provider_dict['name'])
         provider_kwargs = {}
         
-        if _class is Providers.Vector.Provider:
-            provider_kwargs['driver'] = provider_dict['driver']
-            provider_kwargs['parameters'] = provider_dict['parameters']
-            provider_kwargs['id_property'] = provider_dict.get('id_property', None)
-            provider_kwargs['properties'] = provider_dict.get('properties', None)
-            provider_kwargs['projected'] = bool(provider_dict.get('projected', False))
-            provider_kwargs['verbose'] = bool(provider_dict.get('verbose', False))
-            provider_kwargs['precision'] = int(provider_dict.get('precision', 6))
-            
-            if 'spacing' in provider_dict:
-                provider_kwargs['spacing'] = float(provider_dict.get('spacing', 0.0))
-            else:
-                provider_kwargs['spacing'] = None
-            
-            if provider_dict.get('clipped', None) == 'padded':
-                provider_kwargs['clipped'] = 'padded'
-            else:
-                provider_kwargs['clipped'] = bool(provider_dict.get('clipped', True))
-        
-        elif _class is Providers.MBTiles.Provider:
-            provider_kwargs['tileset'] = provider_dict['tileset']
-        
-        elif hasattr(_class, 'prepareKeywordArgs'):
+        if hasattr(_class, 'prepareKeywordArgs'):
             provider_kwargs.update(_class.prepareKeywordArgs(provider_dict))
         
     elif 'class' in provider_dict:

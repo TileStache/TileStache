@@ -161,11 +161,7 @@ try:
 except ImportError:
     from simplejson import JSONEncoder, loads as json_loads
 
-try:
-    from osgeo import ogr, osr
-except ImportError:
-    # At least we'll be able to build the documentation.
-    pass
+from osgeo import ogr, osr
 
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
@@ -555,6 +551,32 @@ class Provider:
         self.precision  = precision
         self.id_property = id_property
 
+    @staticmethod
+    def prepareKeywordArgs(config_dict):
+        '''
+        '''
+        kwargs = dict()
+        
+        kwargs['driver'] = config_dict['driver']
+        kwargs['parameters'] = config_dict['parameters']
+        kwargs['id_property'] = config_dict.get('id_property', None)
+        kwargs['properties'] = config_dict.get('properties', None)
+        kwargs['projected'] = bool(config_dict.get('projected', False))
+        kwargs['verbose'] = bool(config_dict.get('verbose', False))
+        kwargs['precision'] = int(config_dict.get('precision', 6))
+        
+        if 'spacing' in config_dict:
+            kwargs['spacing'] = float(config_dict.get('spacing', 0.0))
+        else:
+            kwargs['spacing'] = None
+        
+        if config_dict.get('clipped', None) == 'padded':
+            kwargs['clipped'] = 'padded'
+        else:
+            kwargs['clipped'] = bool(config_dict.get('clipped', True))
+        
+        return kwargs
+    
     def renderTile(self, width, height, srs, coord):
         """ Render a single tile, return a VectorResponse instance.
         """

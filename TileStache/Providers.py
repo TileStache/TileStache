@@ -87,9 +87,14 @@ except ImportError:
 import ModestMaps
 from ModestMaps.Core import Point, Coordinate
 
-import Vector
-import MBTiles
 import Geography
+
+# This import should happen inside getProviderByName,
+# but then features are not output. Wierd-ass C libraries...
+try:
+    from . import Vector
+except ImportError:
+    pass
 
 # Already deprecated; provided for temporary backward-compatibility with
 # old location of Mapnik provider. TODO: remove in next major version.
@@ -104,8 +109,8 @@ def getProviderByName(name):
         Raise an exception if the name doesn't work out.
     """
     if name.lower() == 'mapnik':
-        from .Mapnik import ImageProvider
-        return ImageProvider
+        from . import Mapnik
+        return Mapnik.ImageProvider
 
     elif name.lower() == 'proxy':
         return Proxy
@@ -117,14 +122,15 @@ def getProviderByName(name):
         return Vector.Provider
 
     elif name.lower() == 'mbtiles':
+        from . import MBTiles
         return MBTiles.Provider
 
     elif name.lower() == 'mapnik grid':
-        from .Mapnik import GridProvider
-        return GridProvider
+        from . import Mapnik
+        return Mapnik.GridProvider
 
     elif name.lower() == 'sandwich':
-        import Sandwich
+        from . import Sandwich
         return Sandwich.Provider
 
     raise Exception('Unknown provider name: "%s"' % name)

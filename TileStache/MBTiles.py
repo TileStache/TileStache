@@ -38,13 +38,8 @@ MBTiles provider parameters:
 from urlparse import urlparse, urljoin
 from os.path import exists
 
-try:
-    from sqlite3 import connect as _connect
-except ImportError:
-    # Heroku appears to be missing standard python's
-    # sqlite3 package, so throw an ImportError later
-    def _connect(filename):
-        raise ImportError('No module named sqlite3')
+# Heroku is missing standard python's sqlite3 package, so this will ImportError.
+from sqlite3 import connect as _connect
 
 from ModestMaps.Core import Coordinate
 
@@ -209,6 +204,12 @@ class Provider:
         
         self.tileset = path
         self.layer = layer
+    
+    @staticmethod
+    def prepareKeywordArgs(config_dict):
+        '''
+        '''
+        return {'tileset': config_dict['tileset']}
     
     def renderTile(self, width, height, srs, coord):
         """ Retrieve a single tile, return a TileResponse instance.
