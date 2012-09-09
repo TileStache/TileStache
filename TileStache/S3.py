@@ -72,6 +72,7 @@ class Cache:
         self.bucket = S3Bucket(S3Connection(access, secret), bucket)
         self.use_locks = bool(use_locks)
         self.path = path
+        self.reduced_redundancy = reduced_redundancy
 
     def lock(self, layer, coord, format):
         """ Acquire a cache lock for this tile.
@@ -92,7 +93,7 @@ class Cache:
             _sleep(.2)
         
         key = self.bucket.new_key(key_name+'-lock')
-        key.set_contents_from_string('locked.', {'Content-Type': 'text/plain'}, reduced_redundancy=reduced_redundancy)
+        key.set_contents_from_string('locked.', {'Content-Type': 'text/plain'}, reduced_redundancy=self.reduced_redundancy)
         
     def unlock(self, layer, coord, format):
         """ Release a cache lock for this tile.
@@ -132,4 +133,4 @@ class Cache:
         content_type, encoding = guess_type('example.'+format)
         headers = content_type and {'Content-Type': content_type} or {}
         
-        key.set_contents_from_string(body, headers, policy='public-read', reduced_redundancy=reduced_redundancy)
+        key.set_contents_from_string(body, headers, policy='public-read', reduced_redundancy=self.reduced_redundancy)
