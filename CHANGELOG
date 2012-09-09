@@ -1,3 +1,6 @@
+2012-09-09: 1.40.1
+- Re-attempting Vector import to trigger a more-useful error than NameError in getProviderByName().
+
 2012-09-04: 1.40.0
 - Added TileStache.Sandwich provider based on previous Composite provider under Goodies.
 - Modified import method for provider to reduce burden of required packages and improve error output.
