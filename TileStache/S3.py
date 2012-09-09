@@ -23,6 +23,10 @@ S3 cache parameters:
   secret
     Required secret access key for your S3 account.
 
+  reduced_redundancy
+    If set to true, use S3's Reduced Redundancy Storage feature. Storage is
+    cheaper but has lower redundancy on Amazon's servers. Defaults to false.
+
 Access and secret keys are under "Security Credentials" at your AWS account page:
   http://aws.amazon.com/account/
 """
@@ -50,7 +54,7 @@ def tile_key(layer, coord, format):
 class Cache:
     """
     """
-    def __init__(self, bucket, access, secret):
+    def __init__(self, bucket, access, secret, reduced_redundancy=False):
         self.bucket = S3Bucket(S3Connection(access, secret), bucket)
 
     def lock(self, layer, coord, format):
@@ -68,7 +72,7 @@ class Cache:
             _sleep(.2)
         
         key = self.bucket.new_key(key_name+'-lock')
-        key.set_contents_from_string('locked.', {'Content-Type': 'text/plain'})
+        key.set_contents_from_string('locked.', {'Content-Type': 'text/plain'}, reduced_redundancy=reduced_redundancy)
         
     def unlock(self, layer, coord, format):
         """ Release a cache lock for this tile.
@@ -108,4 +112,4 @@ class Cache:
         content_type, encoding = guess_type('example.'+format)
         headers = content_type and {'Content-Type': content_type} or {}
         
-        key.set_contents_from_string(body, headers, policy='public-read')
+        key.set_contents_from_string(body, headers, policy='public-read', reduced_redundancy=reduced_redundancy)

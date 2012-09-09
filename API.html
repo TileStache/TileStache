@@ -646,6 +646,7 @@ Example configuration:
     "bucket": "&lt;bucket name&gt;",
     "access": "&lt;access key&gt;",
     "secret": "&lt;secret key&gt;"
+    "reduced_redundancy": False
   }<span class="bg">,
   "layers": { … }
 }</span>
@@ -671,6 +672,13 @@ S3 cache parameters:
     <dd>
     Required secret access key for your S3 account. You can find this under “Security
     Credentials” at your <a href="http://aws.amazon.com/account/">AWS account page</a>.
+    </dd>
+
+    <dt>reduced_redundancy</dt>
+    <dd>
+    Optional boolean specifying whether to use Reduced Redundancy Storage mode in S3.
+    Files stored with RRS incur less cost but have reduced redundancy in Amazon's storage
+    system.
     </dd>
 </dl>
 
