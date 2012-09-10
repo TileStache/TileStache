@@ -163,3 +163,4 @@ if __name__ == '__main__':
         
     finally:
         logging.info('Cleaning up %s/*' % tempdir)
+        rmtree(tempdir)
