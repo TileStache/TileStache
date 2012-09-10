@@ -1,8 +1,29 @@
+''' TileStache.Vector Tests
+
+TileStache's Vector provider relies on the external OGR library to work. This
+module is a small collection of tests designed to ensure that it does and output
+useful errors if it doesn't. Tests assume that Python OGR bindings are installed
+(available as python-gdal on Ubuntu) and that PostGIS is available.
+
+Run it on the command line like this:
+
+    python -m TileStache.Vector.Test
+
+See details on every option with the `--help` flag:
+
+    python -m TileStache.Vector.Test --help
+
+A zip file containing test data from will be downloaded, used and discarded from:
+
+    http://tilestache.org/oakland-osm-points.zip
+'''
 import logging
 
+from os import chmod
 from os.path import join
 from zipfile import ZipFile
 from optparse import OptionParser
+from subprocess import Popen, PIPE
 from tempfile import mkdtemp
 from urllib import urlopen
 from shutil import rmtree
@@ -12,15 +33,29 @@ from TileStache import getTile
 from TileStache.Config import buildConfiguration
 from ModestMaps.Core import Coordinate
 
-parser = OptionParser()
+parser = OptionParser(usage='python -m TileStache.Vector.Test [options]')
 
-parser.set_defaults(verbose=None)
+defaults = dict(verbose=None, hostname='localhost', username='postgres', password='', database='postgres')
+
+parser.set_defaults(**defaults)
 
 parser.add_option('-v', '--verbose', dest='verbose', action='store_true',
                   help='Set logging level to everything, including debug.')
 
 parser.add_option('-q', '--quiet', dest='verbose', action='store_false',
                   help='Set logging level to warnings, errors, and critical.')
+
+parser.add_option('--hostname', dest='hostname', action='store',
+                  help='Postgres hostname, default "%(hostname)s".' % defaults)
+
+parser.add_option('--username', dest='username', action='store',
+                  help='Postgres username, default "%(username)s".' % defaults)
+
+parser.add_option('--password', dest='password', action='store',
+                  help='Postgres password, default "%(password)s".' % defaults)
+
+parser.add_option('--database', dest='database', action='store',
+                  help='Postgres database, default "%(database)s".' % defaults)
 
 if __name__ == '__main__':
 
@@ -38,6 +73,8 @@ if __name__ == '__main__':
     logging.basicConfig(level=loglevel, format='%(levelname)08s - %(message)s')
 
     try:
+        logging.debug('Preparing test data')
+
         tempdir = mkdtemp(prefix='tilestache-vector-test-')
         filename = join(tempdir, 'oakland-osm-points.zip')
         
@@ -50,12 +87,30 @@ if __name__ == '__main__':
         archive = ZipFile(filename, 'r')
         archive.extractall(tempdir)
         
+        logging.debug('Loading Postgres')
+
+        pgpass = open(join(tempdir, '.pgpass'), 'w')
+        chmod(pgpass.name, 0600)
+
+        pgpass.write(':'.join((opts.hostname, '*', opts.database, opts.username, opts.password)))
+        pgpass.close()
+        
+        cmd = 'psql -h xxx -U xxx -d xxx -f oakland-osm-points-merc.pgsql'.split()
+        cmd[2], cmd[4], cmd[6] = opts.hostname, opts.username, opts.database
+        
+        pipes = (not opts.verbose) and dict(stderr=PIPE, stdout=PIPE) or dict()
+        Popen(cmd, cwd=tempdir, env=dict(PGPASSFILE='.pgpass'), **pipes).wait()
+        
         logging.info('Building TileStache configuration')
     
         config_dict = {
           'cache': { 'name': 'Test' },
           'layers': 
           {
+            'postgresql':
+            {
+                'provider': {'name': 'vector', 'driver': 'PostgreSQL', 'parameters': {'host': opts.hostname, 'user': opts.username, 'password': opts.password, 'dbname': opts.database, 'table': 'oakland_osm_points'}}
+            },
             'geojson':
             {
                 'provider': {'name': 'vector', 'driver': 'GeoJSON', 'parameters': {'file': join(tempdir, 'oakland-osm-points.json')}}
@@ -74,11 +129,16 @@ if __name__ == '__main__':
         config = buildConfiguration(config_dict, tempdir)
         coord = Coordinate(12662, 5254, 15)
         
-        for layer_name in ('geojson', 'shapefile', 'sqlite'):
-            layer_driver = config_dict['layers'][layer_name]['provider']['driver']
-            layer_file = config_dict['layers'][layer_name]['provider']['parameters']['file']
+        for layer_name in ('postgresql', 'geojson', 'shapefile', 'sqlite'):
+            driver = config_dict['layers'][layer_name]['provider']['driver']
+            params = config_dict['layers'][layer_name]['provider']['parameters']
+            
+            if layer_name == 'postgresql':
+                desc = '%(user)s@%(host)s/%(dbname)s' % params
+            else:
+                desc = params['file']
         
-            logging.info('Checking %(layer_driver)s layer from %(layer_file)s' % locals())
+            logging.info('Checking %(driver)s layer from %(desc)s' % locals())
             
             layer = config.layers[layer_name]
         
