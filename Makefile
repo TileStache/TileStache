@@ -65,6 +65,7 @@ doc:
 	pydoc -w TileStache.Config
 	pydoc -w TileStache.Vector
 	pydoc -w TileStache.Vector.Arc
+	pydoc -w TileStache.Vector.Test
 	pydoc -w TileStache.Geography
 	pydoc -w TileStache.Providers
 	pydoc -w TileStache.Mapnik
