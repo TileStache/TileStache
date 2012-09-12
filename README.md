@@ -75,6 +75,15 @@ To install globally do:
   * Note: you may need to prefix that command with 'sudo' to have permissions
 to fully install TileStache.
 
+###Installation on Heroku
+
+Heroku currently complicates matters by lacking sqlite support. Until the situation improves, you can get tilestache working on Heroku with a [custom buildpack](https://devcenter.heroku.com/articles/buildpacks).
+
+Because there's no sqlite on Heroku, you must provide a statically-linked build for pysqlite to compile against. Hopefully this change will make its way into the mainline python buildpack, but for now you can use an alternative. Tell your Heroku app to use an alternate buildpack with the following command:
+
+    heroku config:add BUILDPACK_URL="git://github.com/idan/heroku-buildpack-python.git#features/pysqlite"
+
+In addition, you'll have to add `pysqlite` to your requirements.txt.
 
 ##Quickstart
 

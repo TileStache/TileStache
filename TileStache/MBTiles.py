@@ -38,8 +38,13 @@ MBTiles provider parameters:
 from urlparse import urlparse, urljoin
 from os.path import exists
 
-# Heroku is missing standard python's sqlite3 package, so this will ImportError.
-from sqlite3 import connect as _connect
+# Heroku is missing standard python's sqlite3 package
+# You'll need to employ some fancy footwork to get pysqlite to build on Heroku:
+# 
+try:
+    from sqlite3 import connect as _connect
+except ImportError:
+    from pysqlite2.dbapi2 import connect as _connect
 
 from ModestMaps.Core import Coordinate
 
