@@ -4,7 +4,7 @@ Simple wrapper for TileStache Mapnik provider that parses Cascadenik MML files
 directly, skipping the typical compilation to XML step.
 
 More information on Cascadenik:
-- https://github.com/mapnik/Cascadenik
+- https://github.com/mapnik/Cascadenik/wiki/Cascadenik
 
 Requires Cascadenik 2.x+.
 '''

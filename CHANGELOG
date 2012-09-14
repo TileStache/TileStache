@@ -1,3 +1,5 @@
+- Added TileStache.Goodies.Providers.Cascadenik to skip Mapnik XML where possible.
+
 2012-09-09: 1.40.1
 - Re-attempting Vector import to trigger a more-useful error than NameError in getProviderByName().
 

@@ -77,6 +77,7 @@ doc:
 	pydoc -w TileStache.Goodies.Caches.GoogleCloud
 	pydoc -w TileStache.Goodies.Providers
 	pydoc -w TileStache.Goodies.Providers.Composite
+	pydoc -w TileStache.Goodies.Providers.Cascadenik
 	pydoc -w TileStache.Goodies.Providers.PostGeoJSON
 	pydoc -w TileStache.Goodies.Providers.SolrGeoJSON
 	pydoc -w TileStache.Goodies.Providers.MapnikGrid
