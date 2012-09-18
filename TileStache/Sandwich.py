@@ -113,6 +113,8 @@ A complete example configuration might look like this:
 """
 from re import search
 from StringIO import StringIO
+from urlparse import urljoin
+from urllib import urlopen
 
 from . import Core
 
@@ -186,7 +188,10 @@ def draw_stack(stack, coord, config, tiles):
             raise Core.KnownUnknown("You can't specify src, color and mask together in a Sandwich Layer: %s, %s, %s" % (repr(source_name), repr(color_name), repr(mask_name)))
         
         if source_name and source_name not in tiles:
-            tiles[source_name] = layer_bitmap(config.layers[source_name], coord)
+            if source_name in config.layers:
+                tiles[source_name] = layer_bitmap(config.layers[source_name], coord)
+            else:
+                tiles[source_name] = local_bitmap(source_name, config, coord)
         
         if mask_name and mask_name not in tiles:
             tiles[mask_name] = layer_bitmap(config.layers[mask_name], coord)
@@ -228,6 +233,15 @@ def draw_stack(stack, coord, config, tiles):
             rendered = rendered.blend(foreground, None, opacity, blendfunc)
     
     return rendered
+
+def local_bitmap(source, config, coord):
+    """ Return Blit.Bitmap representation of a raw image.
+    """
+    address = urljoin(config.dirpath, source)
+    bytes = urlopen(address).read()
+    image = Image.open(StringIO(bytes)).convert('RGBA')
+
+    return Blit.Bitmap(image)
 
 def layer_bitmap(layer, coord):
     """ Return Blit.Bitmap representation of tile from a given layer.
