@@ -250,35 +250,24 @@ class GridProvider:
                 self.mapnik.width = width
                 self.mapnik.height = height
                 self.mapnik.zoom_to_box(Box2d(xmin, ymin, xmax, ymax))
-            
-                if self.layer_id_key is not None:
-                    grids = []
-    
-                    for (index, fields) in self.layers:
-                        datasource = self.mapnik.layers[index].datasource
-                        fields = (type(fields) is list) and map(str, fields) or datasource.fields()
-                    
-                        grid = mapnik.render_grid(self.mapnik, index, resolution=self.scale, fields=fields)
-    
+
+                grids = []
+
+                for (index, fields) in self.layers:
+                    datasource = self.mapnik.layers[index].datasource
+                    fields = (type(fields) is list) and map(str, fields) or datasource.fields()
+
+                    grid = mapnik.Grid(width, height)
+                    mapnik.render_layer(self.mapnik, grid, layer=index, fields=fields)
+                    grid = grid.encode('utf', resolution=self.scale, features=True)
+
+                    if self.layer_id_key is not None:
                         for key in grid['data']:
                             grid['data'][key][self.layer_id_key] = self.mapnik.layers[index].name
-    
-                        grids.append(grid)
-        
-                    # global_mapnik_lock.release()
-                    outgrid = reduce(merge_grids, grids)
-           
-                else:
-                    grid = mapnik.Grid(width, height)
-    
-                    for (index, fields) in self.layers:
-                        datasource = self.mapnik.layers[index].datasource
-                        fields = (type(fields) is list) and map(str, fields) or datasource.fields()
-    
-                        mapnik.render_layer(self.mapnik, grid, layer=index, fields=fields)
-    
-                    # global_mapnik_lock.release()
-                    outgrid = grid.encode('utf', resolution=self.scale, features=True)
+
+                    grids.append(grid)
+
+                outgrid = reduce(merge_grids, grids)
             except:
                 self.mapnik = None
                 raise
