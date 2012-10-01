@@ -1,3 +1,6 @@
+2012-10-01: 1.42.1
+- Papered over a strange appearance bug in GDAL provider with using cubicspline interpolation.
+
 2012-09-18: 1.42.0
 - Added support for tiled bitmap files in Sandwich provider layer src attribute.
 
