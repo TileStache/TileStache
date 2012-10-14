@@ -12,6 +12,7 @@ Example configuration:
     }
   }
 """
+import logging
 
 try:
     import redis
@@ -46,21 +47,26 @@ class Cache:
         #     _sleep(.2)
 
         # self.mem.setex(key + '-lock', layer.stale_lock_timeout, 'locked.')
+        logging.debug('lock: ' + key)
         return
 
     def unlock(self, layer, coord, format):
         key = tile_key(layer, coord, format)
+        logging.debug('unlock: ' + key)
         self.mem.delete(key + '-lock')
 
     def remove(self, layer, coord, format):
         key = tile_key(layer, coord, format)
+        logging.debug('remove: ' + key)
         self.mem.delete(key)
 
     def read(self, layer, coord, format):
         key = tile_key(layer, coord, format)
         value = self.mem.get(key)
+        logging.debug('read: ' + key + 'value: ' + value)
         return value
 
     def save(self, body, layer, coord, format):
         key = tile_key(layer, coord, format)
+        logging.debug('save: ' + key)
         self.mem.setex(key, layer.cache_lifespan or 0, body)
