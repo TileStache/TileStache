@@ -19,7 +19,7 @@ except ImportError:
     # at least we can build the documentation
     pass
 
-def tile_key(layer, coord, format, rev):
+def tile_key(layer, coord, format, rev=0):
     name = layer.name()
     tile = '%(zoom)d/%(column)d/%(row)d' % coord.__dict__
     return str('%(rev)s/%(name)s/%(tile)s.%(format)s' % locals())
@@ -35,7 +35,7 @@ class Cache:
         return self.r
 
     def lock(self, layer, coord, format):
-        key = tile_key(layer, coord, format, self.revision)
+        key = tile_key(layer, coord, format)
         due = _time() + layer.stale_lock_timeout
 
         while _time() < due:
@@ -47,18 +47,18 @@ class Cache:
         return
 
     def unlock(self, layer, coord, format):
-        key = tile_key(layer, coord, format, self.revision)
+        key = tile_key(layer, coord, format)
         self.mem.del(key + '-lock')
 
     def remove(self, layer, coord, format):
-        key = tile_key(layer, coord, format, self.revision)
+        key = tile_key(layer, coord, format)
         self.mem.del(key)
 
     def read(self, layer, coord, format):
-        key = tile_key(layer, coord, format, self.revision)
+        key = tile_key(layer, coord, format)
         value = self.mem.get(key)
         return value
 
     def save(self, body, layer, coord, format):
-        key = tile_key(layer, coord, format, self.revision)
+        key = tile_key(layer, coord, format)
         self.mem.setex(key, layer.cache_lifespan or 0, body)
