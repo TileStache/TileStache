@@ -6,7 +6,7 @@ Requires redis-py:
 Example configuration:
 
   "cache": {
-    "name": "TileStache.Goodies.Caches.Redis:Cache",
+    "name": "redis",
     "kwargs": {
       "url": "redis://localhost"
     }
@@ -39,10 +39,8 @@ class Cache:
         due = _time() + layer.stale_lock_timeout
 
         while _time() < due:
-            if self.mem.add(key + '-lock', 'locked.',
-                    layer.stale_lock_timeout):
+            if self.mem.get(key + '-lock', layer.stale_lock_timeout):
                 return
-
             _sleep(.2)
 
         self.mem.setex(key + '-lock', layer.stale_lock_timeout, 'locked.')
