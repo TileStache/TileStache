@@ -35,15 +35,17 @@ class Cache:
         return self.r
 
     def lock(self, layer, coord, format):
-        key = tile_key(layer, coord, format)
-        due = _time() + layer.stale_lock_timeout
+        # IMPLEMENT LOCKING!!!
 
-        while _time() < due:
-            if self.mem.get(key + '-lock', layer.stale_lock_timeout):
-                return
-            _sleep(.2)
+        # key = tile_key(layer, coord, format)
+        # due = _time() + layer.stale_lock_timeout
 
-        self.mem.setex(key + '-lock', layer.stale_lock_timeout, 'locked.')
+        # while _time() < due:
+        #     if self.mem.setnx(key + '-lock', layer.stale_lock_timeout):
+        #         return
+        #     _sleep(.2)
+
+        # self.mem.setex(key + '-lock', layer.stale_lock_timeout, 'locked.')
         return
 
     def unlock(self, layer, coord, format):
