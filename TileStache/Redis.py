@@ -48,11 +48,11 @@ class Cache:
 
     def unlock(self, layer, coord, format):
         key = tile_key(layer, coord, format)
-        self.mem.del(key + '-lock')
+        self.mem.delete(key + '-lock')
 
     def remove(self, layer, coord, format):
         key = tile_key(layer, coord, format)
-        self.mem.del(key)
+        self.mem.delete(key)
 
     def read(self, layer, coord, format):
         key = tile_key(layer, coord, format)
