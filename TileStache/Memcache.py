@@ -57,14 +57,19 @@ class Cache:
     def mem(self):
         if getattr(self, 'client', None) is None:
             if getattr(self, 'username', None) is not None:
-                self.client = Client(self.servers, self.username, self.password)
+                self.client = Client(
+                    servers=self.servers,
+                    username=self.username,
+                    password=self.password,
+                    binary=True
+                )
             else:
                 self.client = Client(self.servers)
         return self.client
 
     def lock(self, layer, coord, format):
         """ Acquire a cache lock for this tile.
-        
+
             Returns nothing, but blocks until the lock has been acquired.
         """
         key = tile_key(layer, coord, format, self.revision)
