@@ -56,7 +56,7 @@ class Cache:
     @property
     def mem(self):
         if getattr(self, 'client', None) is None:
-            if getattr(self, 'username', None) is not None:
+            if self.username and self.password:
                 self.client = Client(
                     servers=self.servers,
                     username=self.username,
