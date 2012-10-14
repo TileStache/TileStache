@@ -56,8 +56,9 @@ class Cache:
 
     def read(self, layer, coord, format):
         key = tile_key(layer, coord, format)
+        logging.debug('read: ' + key)
         value = self.r.get(key)
-        logging.debug('read: ' + key + 'value: ' + value)
+        logging.debug('value: ' + value)
         return value
 
     def save(self, body, layer, coord, format):
