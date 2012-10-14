@@ -19,15 +19,15 @@ Memcache cache parameters:
     Optional array of servers, list of "{host}:{port}" pairs.
     Defaults to ["127.0.0.1:11211"] if omitted.
 
+  revision
+    Optional revision number for mass-expiry of cached tiles
+    regardless of lifespan. Defaults to 0.
+
   username
     Optional username string used for SASL authentication
 
   password
     Optional password string used for SASL authentication
-
-  revision
-    Optional revision number for mass-expiry of cached tiles
-    regardless of lifespan. Defaults to 0.
 """
 from time import time as _time, sleep as _sleep
 
@@ -47,14 +47,19 @@ def tile_key(layer, coord, format, rev):
 class Cache:
     """
     """
-    def __init__(self, servers=['127.0.0.1:11211'], revision=0):
+    def __init__(self, servers=['127.0.0.1:11211'], revision=0, username=None, password=None):
         self.servers = servers
         self.revision = revision
+        self.username = username
+        self.password = password
 
     @property
     def mem(self):
         if getattr(self, 'client', None) is None:
-            self.client = Client(self.servers)
+            if getattr(self, 'username', None) is not None:
+                self.client = Client(self.servers, self.username, self.password)
+            else:
+                self.client = Client(self.servers)
         return self.client
 
     def lock(self, layer, coord, format):
