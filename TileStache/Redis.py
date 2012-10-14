@@ -27,13 +27,7 @@ def tile_key(layer, coord, format, rev=0):
 
 class Cache:
     def __init__(self, url='redis://localhost'):
-        self.url = url
-
-    @property
-    def mem(self):
-        if getattr(self, 'r', None) is None:
-            self.r = redis.from_url(self.url)
-        return self.r
+        self.r = redis.from_url(url)
 
     def lock(self, layer, coord, format):
         # IMPLEMENT LOCKING!!!
@@ -47,26 +41,26 @@ class Cache:
         #     _sleep(.2)
 
         # self.mem.setex(key + '-lock', layer.stale_lock_timeout, 'locked.')
-        logging.debug('lock: ' + key)
+        logging.debug('lock: ')
         return
 
     def unlock(self, layer, coord, format):
         key = tile_key(layer, coord, format)
         logging.debug('unlock: ' + key)
-        self.mem.delete(key + '-lock')
+        self.r.delete(key + '-lock')
 
     def remove(self, layer, coord, format):
         key = tile_key(layer, coord, format)
         logging.debug('remove: ' + key)
-        self.mem.delete(key)
+        self.r.delete(key)
 
     def read(self, layer, coord, format):
         key = tile_key(layer, coord, format)
-        value = self.mem.get(key)
+        value = self.r.get(key)
         logging.debug('read: ' + key + 'value: ' + value)
         return value
 
     def save(self, body, layer, coord, format):
         key = tile_key(layer, coord, format)
         logging.debug('save: ' + key)
-        self.mem.setex(key, layer.cache_lifespan or 0, body)
+        self.r.setex(key, layer.cache_lifespan or 0, body)
