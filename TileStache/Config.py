@@ -298,6 +298,9 @@ def _parseConfigfileCache(cache_dict, dirpath):
         elif _class is Caches.Memcache.Cache:
             add_kwargs('servers', 'lifespan', 'revision')
     
+        elif _class is Caches.Redis.Cache:
+            add_kwargs('url')
+
         elif _class is Caches.S3.Cache:
             add_kwargs('bucket', 'access', 'secret')
     
