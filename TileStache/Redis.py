@@ -14,6 +14,8 @@ Example configuration:
 """
 import logging
 
+from time import time, sleep
+
 try:
     import redis
 except ImportError:
@@ -36,22 +38,29 @@ class Cache:
         return self.r
 
     def lock(self, layer, coord, format):
-        # IMPLEMENT LOCKING!!!
+        key = tile_key(layer, coord, format) + '-lock'
+        expires = time() + layer.stale_lock_timeout + 1
+        timeout = time() + (layer.stale_lock_timeout * 2)
 
-        # key = tile_key(layer, coord, format)
-        # due = _time() + layer.stale_lock_timeout
+        while time() < timeout:
+            if self.mem.setnx(key, expires):
+                # lock acquired
+                return
 
-        # while _time() < due:
-        #     if self.mem.setnx(key + '-lock', layer.stale_lock_timeout):
-        #         return
-        #     _sleep(.2)
+            current_value = self.mem.get(key)
 
-        # self.mem.setex(key + '-lock', layer.stale_lock_timeout, 'locked.')
-        return
+            if current_value and float(current_value) < time() and \
+                self.mem.getset(key, expires) == current_value:
+                    # We found an expired lock and nobody raced us to replacing it
+                    return
+
+            time.sleep(.2)
+
+        raise Exception('Unable to acquire lock!')
 
     def unlock(self, layer, coord, format):
-        key = tile_key(layer, coord, format)
-        self.mem.delete(key + '-lock')
+        key = tile_key(layer, coord, format) + 'lock'
+        self.mem.delete(key)
 
     def remove(self, layer, coord, format):
         key = tile_key(layer, coord, format)
