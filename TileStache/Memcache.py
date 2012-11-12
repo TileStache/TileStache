@@ -20,6 +20,11 @@ Memcache cache parameters:
   revision
     Optional revision number for mass-expiry of cached tiles
     regardless of lifespan. Defaults to 0.
+
+  lifespan
+    Optional cache lifespan (in seconds).
+    Overrides layer's cache_lifespan if setted.
+    Defaults to None.
 """
 from time import time as _time, sleep as _sleep
 
@@ -39,9 +44,10 @@ def tile_key(layer, coord, format, rev):
 class Cache:
     """
     """
-    def __init__(self, servers=['127.0.0.1:11211'], revision=0):
+    def __init__(self, servers=['127.0.0.1:11211'], revision=0, lifespan=None):
         self.servers = servers
         self.revision = revision
+        self.lifespan = lifespan
 
     def lock(self, layer, coord, format):
         """ Acquire a cache lock for this tile.
@@ -99,6 +105,6 @@ class Cache:
         """
         mem = Client(self.servers)
         key = tile_key(layer, coord, format, self.revision)
-        
-        mem.set(key, body, layer.cache_lifespan or 0)
+
+        mem.set(key, body, self.lifespan or layer.cache_lifespan or 0)
         mem.disconnect_all()
