@@ -23,6 +23,11 @@ S3 cache parameters:
   secret
     Required secret access key for your S3 account.
 
+  use_locks
+    Optional boolean flag for whether to use the locking feature on S3.
+    True by default. A good reason to set this to false would be the
+    additional price and time required for each lock set in S3.
+
 Access and secret keys are under "Security Credentials" at your AWS account page:
   http://aws.amazon.com/account/
 """
@@ -50,14 +55,19 @@ def tile_key(layer, coord, format):
 class Cache:
     """
     """
-    def __init__(self, bucket, access, secret):
+    def __init__(self, bucket, access, secret, use_locks=True):
         self.bucket = S3Bucket(S3Connection(access, secret), bucket)
+        self.use_locks = bool(use_locks)
 
     def lock(self, layer, coord, format):
         """ Acquire a cache lock for this tile.
         
             Returns nothing, but blocks until the lock has been acquired.
+            Does nothing and returns immediately is `use_locks` is false.
         """
+        if not self.use_locks:
+            return
+        
         key_name = tile_key(layer, coord, format)
         due = _time() + layer.stale_lock_timeout
         

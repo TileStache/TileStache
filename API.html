@@ -672,6 +672,14 @@ S3 cache parameters:
     Required secret access key for your S3 account. You can find this under “Security
     Credentials” at your <a href="http://aws.amazon.com/account/">AWS account page</a>.
     </dd>
+
+    <dt>use_locks</dt>
+    <dd>
+    Optional boolean flag for whether to use the locking feature on S3.
+    <samp>True</samp> by default. A good reason to set this to
+    <samp>false</samp> would be the additional price and time required for each
+    lock set in S3.
+    </dd>
 </dl>
 
 <p>
