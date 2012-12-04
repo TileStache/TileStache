@@ -108,3 +108,8 @@ def apply_palette(image, palette, t_index):
     output.putpalette(palette)
     
     return output
+
+def apply_palette256(image):
+    """ Get PIL to generate and apply an optimum 256 color palette to the given image and return it
+    """
+    return image.convert('RGB').convert('P', palette=Image.ADAPTIVE, colors=256, dither=Image.NONE)
