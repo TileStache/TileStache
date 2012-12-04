@@ -20,6 +20,12 @@ as in this example stack that simply echoes another layer:
 
     {"src": "layer-name"}
 
+Bitmap images can also be referenced by local filename or URL, and will be
+tiled seamlessly, assuming 256x256 parent tiles:
+
+    {"src": "image.png"}
+    {"src": "http://example.com/image.png"}
+
 Layers can be limited to appear at certain zoom levels, given either as a range
 or as a single number:
 
@@ -113,6 +119,9 @@ A complete example configuration might look like this:
 """
 from re import search
 from StringIO import StringIO
+from itertools import product
+from urlparse import urljoin
+from urllib import urlopen
 
 from . import Core
 
@@ -186,7 +195,10 @@ def draw_stack(stack, coord, config, tiles):
             raise Core.KnownUnknown("You can't specify src, color and mask together in a Sandwich Layer: %s, %s, %s" % (repr(source_name), repr(color_name), repr(mask_name)))
         
         if source_name and source_name not in tiles:
-            tiles[source_name] = layer_bitmap(config.layers[source_name], coord)
+            if source_name in config.layers:
+                tiles[source_name] = layer_bitmap(config.layers[source_name], coord)
+            else:
+                tiles[source_name] = local_bitmap(source_name, config, coord)
         
         if mask_name and mask_name not in tiles:
             tiles[mask_name] = layer_bitmap(config.layers[mask_name], coord)
@@ -228,6 +240,34 @@ def draw_stack(stack, coord, config, tiles):
             rendered = rendered.blend(foreground, None, opacity, blendfunc)
     
     return rendered
+
+def local_bitmap(source, config, coord):
+    """ Return Blit.Bitmap representation of a raw image.
+    """
+    address = urljoin(config.dirpath, source)
+    bytes = urlopen(address).read()
+    image = Image.open(StringIO(bytes)).convert('RGBA')
+    
+    coord = coord.zoomBy(8)
+    w, h, col, row = image.size[0], image.size[1], int(coord.column), int(coord.row)
+    
+    x = w * (col / w) - col
+    y = h * (row / h) - row
+    
+    output = Image.new('RGBA', (256, 256))
+    
+    for (x, y) in product(range(x, 256, w), range(y, 256, h)):
+        # crop the top-left if needed
+        xmin = 0 if x > 0 else -x
+        ymin = 0 if y > 0 else -y
+        
+        # don't paste up and to the left
+        x = x if x >= 0 else 0
+        y = y if y >= 0 else 0
+        
+        output.paste(image.crop((xmin, ymin, w, h)), (x, y))
+    
+    return Blit.Bitmap(output)
 
 def layer_bitmap(layer, coord):
     """ Return Blit.Bitmap representation of tile from a given layer.

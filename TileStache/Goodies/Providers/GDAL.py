@@ -104,9 +104,30 @@ class Provider:
             if mask_ds is not None:
                 mask_ds.SetGeoTransform(gtx)
             
+            # Adjust resampling method -----------------------------------------
+            
+            resample = self.resample
+            
+            if resample == gdal.GRA_CubicSpline:
+                #
+                # I've found through testing that when ReprojectImage is used
+                # on two same-scaled datasources, GDAL will visibly darken the
+                # output and the results look terrible. Switching resampling
+                # from cubic spline to bicubic in these cases fixes the output.
+                #
+                xscale = area_ds.GetGeoTransform()[1] / src_ds.GetGeoTransform()[1]
+                yscale = area_ds.GetGeoTransform()[5] / src_ds.GetGeoTransform()[5]
+                diff = max(abs(xscale - 1), abs(yscale - 1))
+                
+                if diff < .001:
+                    resample = gdal.GRA_Cubic
+            
             # Create rendered area ---------------------------------------------
             
-            gdal.ReprojectImage(src_ds, area_ds, src_ds.GetProjection(), area_ds.GetProjection(), self.resample)
+            src_sref = osr.SpatialReference()
+            src_sref.ImportFromWkt(src_ds.GetProjection())
+            
+            gdal.ReprojectImage(src_ds, area_ds, src_ds.GetProjection(), area_ds.GetProjection(), resample)
             if mask_ds is not None:
                 # Interpolating validity makes no sense and so we can use nearest neighbour resampling here no matter
                 # what is requested.

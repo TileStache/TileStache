@@ -89,8 +89,8 @@ from ModestMaps.Core import Point, Coordinate
 
 import Geography
 
-# This import should happen inside getProviderByName,
-# but then features are not output. Wierd-ass C libraries...
+# This import should happen inside getProviderByName(), but when testing
+# on Mac OS X features are missing from output. Wierd-ass C libraries...
 try:
     from . import Vector
 except ImportError:
@@ -119,6 +119,7 @@ def getProviderByName(name):
         return UrlTemplate
 
     elif name.lower() == 'vector':
+        from . import Vector
         return Vector.Provider
 
     elif name.lower() == 'mbtiles':
