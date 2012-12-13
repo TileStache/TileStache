@@ -16,6 +16,7 @@ from urllib import urlopen
 import os
 import logging
 import json
+import mapnik
 
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
@@ -25,12 +26,6 @@ try:
 except ImportError:
     # On some systems, PIL.Image is known as Image.
     import Image
-
-try:
-    import mapnik
-except ImportError:
-    # mapnik 2.0.0 is known as mapnik2
-    import mapnik2 as mapnik
 
 if 'mapnik' in locals():
     _version = hasattr(mapnik, 'mapnik_version') and mapnik.mapnik_version() or 701
