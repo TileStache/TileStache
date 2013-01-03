@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from sys import stderr, path
 from tempfile import mkstemp
 from thread import allocate_lock

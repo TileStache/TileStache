@@ -63,7 +63,7 @@ class Cache:
         """ Acquire a cache lock for this tile.
         
             Returns nothing, but blocks until the lock has been acquired.
-            Does nothing and returns immediately is `use_locks` is false.
+            Does nothing and returns immediately if `use_locks` is false.
         """
         if not self.use_locks:
             return
