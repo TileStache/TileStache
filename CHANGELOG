@@ -1,3 +1,7 @@
+2013-01-03: 1.43.0
+- Added new tilestache-list.py script to feed tilestache-seed.py --tile-list.
+- Added new "use_locks" option to S3 cache provider to optionally reduce write costs.
+
 2012-10-01: 1.42.1
 - Papered over a strange appearance bug in GDAL provider with using cubicspline interpolation.
 
