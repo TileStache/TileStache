@@ -136,6 +136,18 @@ def getProviderByName(name):
 
     raise Exception('Unknown provider name: "%s"' % name)
 
+class SaveFaker:
+    """
+    Wrapper that adds a PIL-like Save method that just copies
+    the buffer. Expects to be initialized with a string_io.
+    """
+    def __init__(self, string_io_object):
+        self.data = string_io_object
+
+    def save(self, fp, format=None, **params):
+        fp.write(self.data.getvalue())
+
+
 class Proxy:
     """ Proxy provider, to pass through and cache tiles from other places.
     
@@ -186,21 +198,21 @@ class Proxy:
 
         if 'provider' in config_dict:
             kwargs['provider_name'] = config_dict['provider']
-        
+
         return kwargs
-    
+
     def renderTile(self, width, height, srs, coord):
         """
         """
         if srs != Geography.SphericalMercator.srs:
             raise Exception('Projection doesn\'t match EPSG:900913: "%(srs)s"' % locals())
-    
+
         if (width, height) != (256, 256):
             raise Exception("Image dimensions don't match expected tile size: %(width)dx%(height)d" % locals())
 
         img = None
         urls = self.provider.getTileUrls(coord)
-        
+
         for url in urls:
             body = urllib.urlopen(url).read()
             tile = Image.open(StringIO(body)).convert('RGBA')
@@ -216,9 +228,9 @@ class Proxy:
                 # for many URLs, paste them to a new image.
                 #
                 img = Image.new('RGBA', (width, height))
-            
+
             img.paste(tile, (0, 0), tile)
-        
+
         return img
 
 class UrlTemplate:
@@ -234,11 +246,17 @@ class UrlTemplate:
         - referer (optional)
             String to use in the "Referer" header when making HTTP requests.
 
+        - pass through (optional)
+            Boolean that indicates that the provider should just pass the
+            result body back and not manipulate it in any way. Useful when
+            the server is creating a custom format or a highly optimized
+            image that be harmed by touching it with PIL. Defaults to False
+
         More on string substitutions:
         - http://docs.python.org/library/string.html#template-strings
     """
 
-    def __init__(self, layer, template, referer=None):
+    def __init__(self, layer, template, referer=None, pass_through=False):
         """ Initialize a UrlTemplate provider with layer and template string.
         
             http://docs.python.org/library/string.html#template-strings
@@ -246,6 +264,7 @@ class UrlTemplate:
         self.layer = layer
         self.template = Template(template)
         self.referer = referer
+        self.pass_through = pass_through
 
     @staticmethod
     def prepareKeywordArgs(config_dict):
@@ -255,9 +274,12 @@ class UrlTemplate:
 
         if 'referer' in config_dict:
             kwargs['referer'] = config_dict['referer']
-        
+
+        if 'pass through' in config_dict:
+            kwargs['pass_through'] = config_dict['pass through']
+
         return kwargs
-    
+
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """ Return an image for an area.
         
@@ -265,14 +287,18 @@ class UrlTemplate:
         """
         mapping = {'width': width, 'height': height, 'srs': srs, 'zoom': zoom}
         mapping.update({'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax})
-        
+
         href = self.template.safe_substitute(mapping)
         req = urllib2.Request(href)
-        
+
         if self.referer:
             req.add_header('Referer', self.referer)
-        
+
         body = urllib2.urlopen(req).read()
-        tile = Image.open(StringIO(body)).convert('RGBA')
+
+        if self.pass_through:
+            tile = SaveFaker(StringIO(body))
+        else:
+            tile = Image.open(StringIO(body)).convert('RGBA')
 
         return tile
