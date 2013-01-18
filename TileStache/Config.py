@@ -296,7 +296,7 @@ def _parseConfigfileCache(cache_dict, dirpath):
                                for tier_dict in cache_dict['tiers']]
     
         elif _class is Caches.Memcache.Cache:
-            add_kwargs('servers', 'lifespan', 'revision')
+            add_kwargs('servers', 'lifespan', 'revision', 'key_prefix')
     
         elif _class is Caches.S3.Cache:
             add_kwargs('bucket', 'access', 'secret', 'use_locks')
