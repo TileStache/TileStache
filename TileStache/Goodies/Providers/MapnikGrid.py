@@ -4,7 +4,7 @@ Takes the first layer from the given mapnik xml file and renders it as UTFGrid
 https://github.com/mapbox/utfgrid-spec/blob/master/1.2/utfgrid.md
 It can then be used for this:
 http://mapbox.github.com/wax/interaction-leaf.html
-Only works with mapnik2 (Where the Grid functionality was introduced)
+Only works with mapnik>=2.0 (Where the Grid functionality was introduced)
 
 Use Sperical Mercator projection and the extension "json"
 
@@ -36,12 +36,9 @@ from TileStache.Geography import getProjectionByName
 from urlparse import urlparse, urljoin
 
 try:
-    import mapnik2 as mapnik
+    import mapnik
 except ImportError:
-    try:
-        import mapnik
-    except ImportError:
-        pass
+    pass
 
 class Provider:
 
