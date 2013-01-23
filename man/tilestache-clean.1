@@ -1,0 +1,65 @@
+.TH TILESTACHE-CLEAN 1 "Sep 23, 2012"
+.SH NAME
+tilestache\-clean \- clean tiles from a TileStache cache
+.SH SYNOPSIS
+.B tilestache\-clean
+.RI [ options ] " zoom" ...
+.SH DESCRIPTION
+This manual page documents briefly the \fBtilestache\-clean\fR command.
+.PP
+\fBtilestache\-clean\fP is used to clean tiles from a TileStache cache.
+.PP
+Cleans a single layer in your TileStache configuration - no images are returned,
+and TileStache ends up with an empty in selected areas cache. Bounding box is
+given as a pair of lat/lon coordinates, e.g. "37.788 \-122.349 37.833 \-122.246".
+Output is a list of tile paths as they are created.
+.PP
+The \fIzoom\fR option is a space separated list of zoom levels which will be
+cleaned. e.g. 12 13 14 15 will clean zooms 12 through 15. Many shells allow you
+to use {a..b} which will expand to a list of numbers a though to b.
+\fBRequired.\fR
+.SH REQUIRED OPTIONS
+.TP
+\fB-c\fR, \fB\-\-config\fR \fIfile\fR
+Path to configuration file. \fBRequired.\fR
+.TP
+\fB-l\fR, \fB\-\-layer\fR \fIlayer\fR
+Layer name from configuration. "ALL" is a special value that will clean all
+layers in turn. If you have an actual layer named "ALL", use "ALL LAYERS"
+instead. \fBRequired.\fR
+.TP
+\fB-b\fR, \fB\-\-bbox\fR \fIsouth west north east\fR
+Bounding box in floating point geographic coordinates. \fBRequired.\fR
+.SH OPTIONS
+.B \-h, \-\-help
+Show summary of options.
+.TP
+\fB-p\fR, \fB\-\-padding\fR \fIpadding\fR
+Extra margin of tiles to add around bounded area.
+Default value is 0 (no extra tiles).
+.TP
+\fB-e\fR, \fB\-\-extension\fR \fIextension\fR
+Optional file type for rendered tiles. Default value is 'png'.
+.TP
+\fB-f\fR, \fB\-\-progress\-file\fR \fIfile\fR
+Optional JSON progress file that gets written on each iteration, so you don't
+have to pay close attention.
+.TP
+\fB-q\fR
+Suppress chatty output, \-\-progress\-file works well with this.
+.TP
+\fB-i\fR, \fB\-\-include\-path\fR \fIpath\fR
+Add the following colon-separated list of paths to Python's include path (aka
+sys.path)
+.TP
+\fB\-\-tile\-list\fR \fIfile\fR
+Optional file of tile coordinates, a simple text list of Z/X/Y coordinates.
+Overrides \-\-bbox and \-\-padding.
+.SH SEE ALSO
+.BR tilestache-seed (1)
+.SH AUTHOR
+\fBTileStache\fR was written by Michal Migurski <mike@stamen.com>.
+.PP
+This manual page was written by Andrew Harvey <andrew.harvey4@gmail.com>,
+for the Debian project (and may be used by others).
+
