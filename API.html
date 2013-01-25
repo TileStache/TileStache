@@ -598,7 +598,8 @@ Example configuration:
   "cache": {
     "name": "Memcache",
     "servers": ["127.0.0.1:11211"],
-    "revision": 0
+    "revision": 0,
+    "key prefix": "unique-id"
   }<span class="bg">,
   "layers": { … }
 }</span>
@@ -619,6 +620,15 @@ Memcache cache parameters:
     <dd>
     Optional revision number for mass-expiry of cached tiles regardless of lifespan.
     Defaults to <samp>0</samp>.
+    </dd>
+
+    <dt>key prefix</dt>
+    <dd>
+    Optional string to prepend to Memcache generated key.
+    Useful when running multiple instances of TileStache
+    that share the same Memcache instance to avoid key
+    collisions. The key prefix will be prepended to the
+    key name. Defaults to <samp>""</samp>.
     </dd>
 </dl>
 

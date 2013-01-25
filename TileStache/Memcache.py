@@ -9,7 +9,7 @@ Example configuration:
     "name": "Memcache",
     "servers": ["127.0.0.1:11211"],
     "revision": 0,
-    "key_prefix": 'unique_id'
+    "key prefix": "unique-id"
   }
 
 Memcache cache parameters:
@@ -22,12 +22,12 @@ Memcache cache parameters:
     Optional revision number for mass-expiry of cached tiles
     regardless of lifespan. Defaults to 0.
 
-  key_prefix
+  key prefix
     Optional string to prepend to Memcache generated key.
     Useful when running multiple instances of TileStache
     that share the same Memcache instance to avoid key
-    collisions. They key_prefix will be appended to the
-    key name. Defaults to ''
+    collisions. The key prefix will be prepended to the
+    key name. Defaults to "".
     
 
 """
