@@ -356,6 +356,9 @@ class Layer:
         
             Perform metatile slicing here as well, if required, writing the
             full set of rendered tiles to cache as we go.
+
+            Note that metatiling and pass-through mode of a Provider
+            are mutually exclusive options
         """
         if self.bounds and self.bounds.excludes(coord):
             raise NoTileLeftBehind(Image.new('RGB', (self.dim, self.dim), (0x99, 0x99, 0x99)))
@@ -366,8 +369,14 @@ class Layer:
         
         provider = self.provider
         metatile = self.metatile
+        pass_through = provider.pass_through if hasattr(provider, 'pass_through') else False
+
         
         if self.doMetatile():
+
+            if pass_through:
+                raise KnownUnknown('Your provider is configured for metatiling and pass_through mode. That does not work')
+
             # adjust render size and coverage for metatile
             xmin, ymin, xmax, ymax = self.metaEnvelope(coord)
             width, height = self.metaSize(coord)
@@ -394,6 +403,9 @@ class Layer:
         
         if self.bitmap_palette:
             # this is where we apply the palette if there is one
+
+            if pass_through:
+                raise KnownUnknown('Cannot apply palette in pass_through mode')
 
             if format.lower() == 'png':
                 t_index = self.png_options.get('transparency', None)
