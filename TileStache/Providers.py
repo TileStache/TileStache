@@ -136,17 +136,27 @@ def getProviderByName(name):
 
     raise Exception('Unknown provider name: "%s"' % name)
 
-class SaveFaker:
-    """
-    Wrapper that adds a PIL-like Save method that just copies
-    the buffer. Expects to be initialized with a string_io.
-    """
-    def __init__(self, string_io_object):
-        self.data = string_io_object
+class Verbatim:
+    ''' Wrapper for PIL.Image that saves raw input bytes if modes and formats match.
+    '''
+    def __init__(self, bytes):
+        self.buffer = StringIO(bytes)
+        self.image = Image.open(self.buffer)
+    
+    def convert(self, mode):
+        if mode == self.image.mode:
+            return self
+        else:
+            return self.image.convert(mode)
 
-    def save(self, fp, format=None, **params):
-        fp.write(self.data.getvalue())
-
+    def crop(self, bbox):
+        return self.image.crop(bbox)
+    
+    def save(self, output, format):
+        if format == self.image.format:
+            output.write(self.buffer.getvalue())
+        else:
+            self.image.save(output, format)
 
 class Proxy:
     """ Proxy provider, to pass through and cache tiles from other places.
@@ -215,7 +225,7 @@ class Proxy:
 
         for url in urls:
             body = urllib.urlopen(url).read()
-            tile = Image.open(StringIO(body)).convert('RGBA')
+            tile = Verbatim(body)
 
             if len(urls) == 1:
                 #
@@ -246,17 +256,11 @@ class UrlTemplate:
         - referer (optional)
             String to use in the "Referer" header when making HTTP requests.
 
-        - pass through (optional)
-            Boolean that indicates that the provider should just pass the
-            result body back and not manipulate it in any way. Useful when
-            the server is creating a custom format or a highly optimized
-            image that be harmed by touching it with PIL. Defaults to False
-
         More on string substitutions:
         - http://docs.python.org/library/string.html#template-strings
     """
 
-    def __init__(self, layer, template, referer=None, pass_through=False):
+    def __init__(self, layer, template, referer=None):
         """ Initialize a UrlTemplate provider with layer and template string.
         
             http://docs.python.org/library/string.html#template-strings
@@ -264,7 +268,6 @@ class UrlTemplate:
         self.layer = layer
         self.template = Template(template)
         self.referer = referer
-        self.pass_through = pass_through
 
     @staticmethod
     def prepareKeywordArgs(config_dict):
@@ -274,9 +277,6 @@ class UrlTemplate:
 
         if 'referer' in config_dict:
             kwargs['referer'] = config_dict['referer']
-
-        if 'pass through' in config_dict:
-            kwargs['pass_through'] = config_dict['pass through']
 
         return kwargs
 
@@ -295,10 +295,6 @@ class UrlTemplate:
             req.add_header('Referer', self.referer)
 
         body = urllib2.urlopen(req).read()
-
-        if self.pass_through:
-            tile = SaveFaker(StringIO(body))
-        else:
-            tile = Image.open(StringIO(body)).convert('RGBA')
+        tile = Verbatim(body)
 
         return tile
