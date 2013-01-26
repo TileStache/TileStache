@@ -141,22 +141,50 @@ class Verbatim:
     '''
     def __init__(self, bytes):
         self.buffer = StringIO(bytes)
-        self.image = Image.open(self.buffer)
+        self.format = None
+        self._image = None
+        
+        #
+        # Guess image format based on magic number, if possible.
+        # http://www.astro.keele.ac.uk/oldusers/rno/Computing/File_magic.html
+        #
+        magic = {
+            '\x89\x50\x4e\x47': 'PNG',
+            '\xff\xd8\xff\xe0': 'JPEG',
+            '\x47\x49\x46\x38': 'GIF',
+            '\x47\x49\x46\x38': 'GIF',
+            '\x4d\x4d\x00\x2a': 'TIFF',
+            '\x49\x49\x2a\x00': 'TIFF'
+            }
+        
+        if bytes[:4] in magic:
+            self.format = magic[bytes[:4]]
+
+        else:
+            self.format = self.image().format
+    
+    def image(self):
+        ''' Return a guaranteed instance of PIL.Image.
+        '''
+        if self._image is None:
+            self._image = Image.open(self.buffer)
+        
+        return self._image
     
     def convert(self, mode):
-        if mode == self.image.mode:
+        if mode == self.image().mode:
             return self
         else:
-            return self.image.convert(mode)
+            return self.image().convert(mode)
 
     def crop(self, bbox):
-        return self.image.crop(bbox)
+        return self.image().crop(bbox)
     
     def save(self, output, format):
-        if format == self.image.format:
+        if format == self.format:
             output.write(self.buffer.getvalue())
         else:
-            self.image.save(output, format)
+            self.image().save(output, format)
 
 class Proxy:
     """ Proxy provider, to pass through and cache tiles from other places.
