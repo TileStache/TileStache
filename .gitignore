@@ -10,4 +10,5 @@ TileStache-*.*.tar.gz
 *.sbx
 *.shp
 *.shx
-
+.coverage
+.idea/
