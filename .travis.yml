@@ -1,0 +1,41 @@
+# This is the config file for building TileStache and running the test suite
+# with Travis-ci.org
+
+language: python
+
+python:
+  - "2.5"
+  - "2.6"
+  - "2.7"
+
+before_install:
+  - sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq postgis gdal libpq-dev libpng12-dev libjpeg-dev libgif-dev liblzma-dev libgeos-dev libcurl4-gnutls-dev libproj-dev libxml2-dev libexpat-dev libxerces-c-dev libnetcdf-dev netcdf-bin libpoppler-dev libspatialite-dev gpsbabel swig libhdf4-alt-dev libhdf5-serial-dev libmysqlclient-dev libpodofo-dev poppler-utils libfreexl-dev unixodbc-dev libwebp-dev openjdk-7-jdk libepsilon-dev libgta-dev liblcms2-2
+  - psql -c "drop database if exists autotest" -U postgres
+  - psql -c "create database autotest" -U postgres
+  - psql -c "create extension postgis" -d autotest -U postgres
+  - wget http://s3.amazonaws.com/etc-data.koordinates.com/gdal-travisci/FileGDB_API_1_2-32.tar.gz
+  - wget http://even.rouault.free.fr/install-openjpeg-2.0.0-ubuntu12.04-32bit.tar.gz
+  - tar xzf FileGDB_API_1_2-32.tar.gz
+  - sudo cp -r FileGDB_API/include/* /usr/local/include
+  - sudo cp -r FileGDB_API/lib/* /usr/local/lib
+  - sudo ldconfig
+
+# installing PostGIS 2 from Ubuntu PPA draws libgdal1.9 dependency. We must install ourselves
+# in /usr too to avoid gdal version conflict. Might be fragile however
+install:
+  - pip install -r requirements.txt --use-mirrors
+
+# When run in the same process after ogr_pgeo.py (with the MDB driver), FileGDB tests fail.
+# Run it in isolation
+script:
+# Perl unit tests
+  - nosetests -v --with-coverage --cover-package TileStache
+
+notifications:
+  email:
+    recipients:
+      - ragi@burhum.com
+
+
