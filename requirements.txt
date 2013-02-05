@@ -1,8 +1,2 @@
 ModestMaps
 simplejson
-PIL
-nose
-coverage
-GDAL
-python-memcached
-werkzeug
