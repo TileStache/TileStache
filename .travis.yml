@@ -9,14 +9,14 @@ python:
 before_install:
   - sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
   - sudo apt-get update -qq
-  - sudo apt-get install -qq postgis gdal-bin libgdal-dev libgdal1 libgdal1-dev libpq-dev
+  - sudo apt-get install -qq postgis gdal-bin libgdal-dev libgdal1 libgdal1-dev libpq-dev memcached
   - ogrinfo --version
   - ogrinfo --formats
-  - psql -c "drop database if exists test" -U postgres
-  - psql -c "create database test" -U postgres
-  - psql -c "create extension postgis" -d test -U postgres
+  - psql -c "drop database if exists test_tilestache" -U postgres
+  - psql -c "create database test_tilestache" -U postgres
+  - psql -c "create extension postgis" -d test_tilestache -U postgres
   - sudo ln -s /usr/include/gdal/* /usr/include/
-  - ogr2ogr -nlt MULTIPOLYGON -f "PostgreSQL" PG:"user=postgres dbname=test" ./examples/sample_data/world_merc.shp
+  - ogr2ogr -nlt MULTIPOLYGON -f "PostgreSQL" PG:"user=postgres dbname=test_tilestache" ./examples/sample_data/world_merc.shp
 
 install:
   - pip install -r requirements.txt --use-mirrors
