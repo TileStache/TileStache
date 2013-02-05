@@ -16,7 +16,7 @@ before_install:
   - psql -c "create database test" -U postgres
   - psql -c "create extension postgis" -d test -U postgres
   - sudo ln -s /usr/include/gdal/* /usr/include/
-  - ogr2ogr -f "PostgreSQL" PG:"user=postgres dbname=test" ./examples/sample_data/world_merc.shp
+  - ogr2ogr -nlt MULTIPOLYGON -f "PostgreSQL" PG:"user=postgres dbname=test" ./examples/sample_data/world_merc.shp
 
 install:
   - pip install -r requirements.txt --use-mirrors
