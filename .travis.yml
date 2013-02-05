@@ -12,11 +12,11 @@ before_install:
   - sudo apt-get install -qq postgis gdal-bin libgdal-dev libgdal1 libgdal1-dev libpq-dev memcached
   - ogrinfo --version
   - ogrinfo --formats
-  - psql -c "drop database if exists test_tilestache" -U postgres
-  - psql -c "create database test_tilestache" -U postgres
-  - psql -c "create extension postgis" -d test_tilestache -U postgres
+  - sudo -u postgres psql -c "drop database if exists test_tilestache"
+  - sudo -u postgres psql -c "create database test_tilestache"
+  - sudo -u postgres psql -c "create extension postgis" -d test_tilestache
   - sudo ln -s /usr/include/gdal/* /usr/include/
-  - ogr2ogr -nlt MULTIPOLYGON -f "PostgreSQL" PG:"user=postgres dbname=test_tilestache" ./examples/sample_data/world_merc.shp
+  - sudo -u postgres ogr2ogr -nlt MULTIPOLYGON -f "PostgreSQL" PG:"user=postgres dbname=test_tilestache" ./examples/sample_data/world_merc.shp
 
 install:
   - pip install -r requirements.txt --use-mirrors
