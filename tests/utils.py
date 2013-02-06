@@ -78,6 +78,11 @@ def create_dummy_server(file_with_content, mimetype):
 
     # read line and enter busy loop until the server says it is ok
     while True:
+        retcode = p.poll()
+        if retcode is not None:
+            # process has terminated abruptly
+            raise Exception('The test dummy server failed to run. code:[%s] cmd:[%s]'%(str(retcode),cmd))
+
         try:
             line = q.get_nowait()
         except Empty:
