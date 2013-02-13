@@ -115,15 +115,15 @@ class ImageProvider:
                 self.mapnik.zoom_to_box(Box2d(xmin, ymin, xmax, ymax))
             
                 img = mapnik.Image(width, height)
-                mapnik.render(self.mapnik, img)
-        
-                img = Image.fromstring('RGBA', (width, height), img.tostring())
+                mapnik.render(self.mapnik, img) 
             except:
                 raise
             finally:
                 # always release the lock
                 global_mapnik_lock.release()
 
+        img = Image.fromstring('RGBA', (width, height), img.tostring())
+        
         logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %dx%d in %.3f from %s', width, height, time() - start_time, self.mapfile)
     
         return img
