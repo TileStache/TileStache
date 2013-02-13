@@ -109,16 +109,21 @@ class ImageProvider:
         # Mapnik can behave strangely when run in threads, so place a lock on the instance.
         #
         if global_mapnik_lock.acquire():
-            self.mapnik.width = width
-            self.mapnik.height = height
-            self.mapnik.zoom_to_box(Box2d(xmin, ymin, xmax, ymax))
+            try:
+                self.mapnik.width = width
+                self.mapnik.height = height
+                self.mapnik.zoom_to_box(Box2d(xmin, ymin, xmax, ymax))
             
-            img = mapnik.Image(width, height)
-            mapnik.render(self.mapnik, img)
-            global_mapnik_lock.release()
+                img = mapnik.Image(width, height)
+                mapnik.render(self.mapnik, img)
         
-        img = Image.fromstring('RGBA', (width, height), img.tostring())
-    
+                img = Image.fromstring('RGBA', (width, height), img.tostring())
+            except:
+                raise
+            finally:
+                # always release the lock
+                global_mapnik_lock.release()
+
         logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %dx%d in %.3f from %s', width, height, time() - start_time, self.mapfile)
     
         return img
