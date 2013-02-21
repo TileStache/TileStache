@@ -101,24 +101,30 @@ class ImageProvider:
         """
         start_time = time()
         
-        if self.mapnik is None:
-            self.mapnik = get_mapnikMap(self.mapfile)
-            logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %.3f to load %s', time() - start_time, self.mapfile)
-        
         #
         # Mapnik can behave strangely when run in threads, so place a lock on the instance.
         #
         if global_mapnik_lock.acquire():
-            self.mapnik.width = width
-            self.mapnik.height = height
-            self.mapnik.zoom_to_box(Box2d(xmin, ymin, xmax, ymax))
+            try:
+                if self.mapnik is None:
+                    self.mapnik = get_mapnikMap(self.mapfile)
+                    logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %.3f to load %s', time() - start_time, self.mapfile)
+
+                self.mapnik.width = width
+                self.mapnik.height = height
+                self.mapnik.zoom_to_box(Box2d(xmin, ymin, xmax, ymax))
             
-            img = mapnik.Image(width, height)
-            mapnik.render(self.mapnik, img)
-            global_mapnik_lock.release()
-        
+                img = mapnik.Image(width, height)
+                mapnik.render(self.mapnik, img) 
+            except:
+                self.mapnik = None
+                raise
+            finally:
+                # always release the lock
+                global_mapnik_lock.release()
+
         img = Image.fromstring('RGBA', (width, height), img.tostring())
-    
+        
         logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %dx%d in %.3f from %s', width, height, time() - start_time, self.mapfile)
     
         return img
@@ -227,46 +233,52 @@ class GridProvider:
         """
         start_time = time()
         
-        if self.mapnik is None:
-            self.mapnik = get_mapnikMap(self.mapfile)
-            logging.debug('TileStache.Mapnik.GridProvider.renderArea() %.3f to load %s', time() - start_time, self.mapfile)
-        
         #
         # Mapnik can behave strangely when run in threads, so place a lock on the instance.
         #
         if global_mapnik_lock.acquire():
-            self.mapnik.width = width
-            self.mapnik.height = height
-            self.mapnik.zoom_to_box(Box2d(xmin, ymin, xmax, ymax))
+            try:
+                if self.mapnik is None:
+                    self.mapnik = get_mapnikMap(self.mapfile)
+                    logging.debug('TileStache.Mapnik.GridProvider.renderArea() %.3f to load %s', time() - start_time, self.mapfile)
+
+                self.mapnik.width = width
+                self.mapnik.height = height
+                self.mapnik.zoom_to_box(Box2d(xmin, ymin, xmax, ymax))
             
-            if self.layer_id_key is not None:
-                grids = []
+                if self.layer_id_key is not None:
+                    grids = []
     
-                for (index, fields) in self.layers:
-                    datasource = self.mapnik.layers[index].datasource
-                    fields = (type(fields) is list) and map(str, fields) or datasource.fields()
+                    for (index, fields) in self.layers:
+                        datasource = self.mapnik.layers[index].datasource
+                        fields = (type(fields) is list) and map(str, fields) or datasource.fields()
                     
-                    grid = mapnik.render_grid(self.mapnik, index, resolution=self.scale, fields=fields)
+                        grid = mapnik.render_grid(self.mapnik, index, resolution=self.scale, fields=fields)
     
-                    for key in grid['data']:
-                        grid['data'][key][self.layer_id_key] = self.mapnik.layers[index].name
+                        for key in grid['data']:
+                            grid['data'][key][self.layer_id_key] = self.mapnik.layers[index].name
     
-                    grids.append(grid)
+                        grids.append(grid)
         
-                global_mapnik_lock.release()
-                outgrid = reduce(merge_grids, grids)
+                    # global_mapnik_lock.release()
+                    outgrid = reduce(merge_grids, grids)
            
-            else:
-                grid = mapnik.Grid(width, height)
+                else:
+                    grid = mapnik.Grid(width, height)
     
-                for (index, fields) in self.layers:
-                    datasource = self.mapnik.layers[index].datasource
-                    fields = (type(fields) is list) and map(str, fields) or datasource.fields()
+                    for (index, fields) in self.layers:
+                        datasource = self.mapnik.layers[index].datasource
+                        fields = (type(fields) is list) and map(str, fields) or datasource.fields()
     
-                    mapnik.render_layer(self.mapnik, grid, layer=index, fields=fields)
+                        mapnik.render_layer(self.mapnik, grid, layer=index, fields=fields)
     
+                    # global_mapnik_lock.release()
+                    outgrid = grid.encode('utf', resolution=self.scale, features=True)
+            except:
+                self.mapnik = None
+                raise
+            finally:
                 global_mapnik_lock.release()
-                outgrid = grid.encode('utf', resolution=self.scale, features=True)
 
         logging.debug('TileStache.Mapnik.GridProvider.renderArea() %dx%d at %d in %.3f from %s', width, height, self.scale, time() - start_time, self.mapfile)
 
