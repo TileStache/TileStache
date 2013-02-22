@@ -9,8 +9,13 @@ More information on Cascadenik:
 Requires Cascadenik 2.x+.
 '''
 from tempfile import gettempdir
-from cascadenik import load_map
-from ...Mapnik import ImageProvider, mapnik
+
+try:
+    from ...Mapnik import ImageProvider, mapnik
+    from cascadenik import load_map
+except ImportError:
+    # can still build documentation
+    pass
 
 class Provider (ImageProvider):
     """ Renders map images from Cascadenik MML files.

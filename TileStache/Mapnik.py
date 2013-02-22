@@ -16,7 +16,12 @@ from urllib import urlopen
 import os
 import logging
 import json
-import mapnik
+
+try:
+    import mapnik
+except ImportError:
+    # can still build documentation
+    pass
 
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
