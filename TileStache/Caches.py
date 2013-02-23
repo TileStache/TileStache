@@ -210,6 +210,20 @@ class Disk:
 
             filepath = os.sep.join( (l, z, x, y + '.' + e) )
             
+        elif self.dirs == 'quadtile':
+            pad, length = 1 << 31, 1 + coord.zoom
+
+            # two binary strings, one per dimension
+            xs = bin(pad + int(coord.column))[-length:]
+            ys = bin(pad + int(coord.row))[-length:]
+            
+            # interleave binary bits into plain digits, 0-3.
+            # adapted from ModestMaps.Tiles.toMicrosoft()
+            dirpath = ''.join([str(int(y+x, 2)) for (x, y) in zip(xs, ys)])
+            parts = [dirpath[i:i+2] for i in range(0, len(dirpath), 2)]
+            
+            filepath = os.sep.join([l] + parts[:-1] + [parts[-1] + '.' + e])
+        
         else:
             raise KnownUnknown('Please provide a valid "dirs" parameter to the Disk cache, either "safe" or "portable" but not "%s"' % self.dirs)
 
