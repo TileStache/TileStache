@@ -673,13 +673,13 @@ S3 cache parameters:
 
     <dt>access</dt>
     <dd>
-    Required access key ID for your S3 account. You can find this under “Security
+    Optional access key ID for your S3 account. You can find this under “Security
     Credentials” at your <a href="http://aws.amazon.com/account/">AWS account page</a>.
     </dd>
 
     <dt>secret</dt>
     <dd>
-    Required secret access key for your S3 account. You can find this under “Security
+    Optional secret access key for your S3 account. You can find this under “Security
     Credentials” at your <a href="http://aws.amazon.com/account/">AWS account page</a>.
     </dd>
 
@@ -690,7 +690,20 @@ S3 cache parameters:
     <samp>false</samp> would be the additional price and time required for each
     lock set in S3.
     </dd>
+
+    <dt>path</dt>
+    <dd>
+    Optional path under bucket to use as the cache directory. ex. <samp>'path': 'cache'</samp> will 
+	put tiles under <samp>{bucket}/cache/</samp>
+    </dd>
 </dl>
+
+<p>
+When access or secret are not provided, the environment variables
+AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY will be used.
+See <a href="http://docs.pythonboto.org/en/latest/s3_tut.html#creating-a-connection">Boto documentation</a>
+for more information.
+</p>
 
 <p>
 See
