@@ -218,6 +218,23 @@ class Provider:
         formats = {'image/png': 'PNG', 'image/jpeg': 'JPEG', 'text/json': 'JSON', None: None}
         return TileResponse(formats[mime_type], content)
 
+    def getTypeByExtension(self, extension):
+        """ Get mime-type and format by file extension.
+        
+            This only accepts "png" or "jpg" or "json".
+        """
+        if extension.lower() == 'json':
+            return 'text/json', 'JSON'
+        
+        elif extension.lower() == 'png':
+            return 'image/png', 'PNG'
+
+        elif extension.lower() == 'jpg':
+            return 'image/jpg', 'JPEG'
+        
+        else:
+            raise KnownUnknown('MBTiles only makes .png and .jpg and .json tiles, not "%s"' % extension)
+
 class TileResponse:
     """ Wrapper class for tile response that makes it behave like a PIL.Image object.
     

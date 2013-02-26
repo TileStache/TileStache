@@ -105,12 +105,7 @@ class Cache:
     def read(self, layer, coord, format):
         """ Read a cached tile.
         """
-<<<<<<< HEAD
-        key_name = tile_key(layer, coord, format)
-
-=======
         key_name = tile_key(layer, coord, format, self.path)
->>>>>>> 11ae72a44e45383b85fb22ba7a4ddbe370fad5d9
         key = self.bucket.get_key(key_name)
 
         if key is None:
