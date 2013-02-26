@@ -149,6 +149,7 @@ class Provider:
         Stack argument is a list of layer dictionaries described in module docs.
     """
     def __init__(self, layer, stack):
+        self.layer = layer
         self.config = layer.config
         self.stack = stack
     
@@ -160,88 +161,87 @@ class Provider:
     
     def renderTile(self, width, height, srs, coord):
         
-        rendered = draw_stack(self.stack, coord, self.config, dict())
+        rendered = self.draw_stack(coord, dict())
         
         if rendered.size() == (width, height):
             return rendered.image()
         else:
             return rendered.image().resize((width, height))
 
-def draw_stack(stack, coord, config, tiles):
-    """ Render this image stack.
+    def draw_stack(self, coord, tiles):
+        """ Render this image stack.
 
-        Given a stack of sandwich layers, a coordinate, and configuration
-        object, return an output image with the results of all the layers
-        in this stack pasted on in turn.
+            Given a coordinate, return an output image with the results of all the
+            layers in this stack pasted on in turn.
         
-        Final argument is a dictionary used to temporarily cache results
-        of layers retrieved from layer_bitmap(), to speed things up in case
-        of repeatedly-used identical images.
-    """
-    # start with an empty base
-    rendered = Blit.Color(0, 0, 0, 0x10)
+            Final argument is a dictionary used to temporarily cache results
+            of layers retrieved from layer_bitmap(), to speed things up in case
+            of repeatedly-used identical images.
+        """
+        # start with an empty base
+        rendered = Blit.Color(0, 0, 0, 0x10)
     
-    for layer in stack:
-        if 'zoom' in layer and not in_zoom(coord, layer['zoom']):
-            continue
+        for layer in self.stack:
+            if 'zoom' in layer and not in_zoom(coord, layer['zoom']):
+                continue
 
-        #
-        # Prepare pixels from elsewhere.
-        #
+            #
+            # Prepare pixels from elsewhere.
+            #
         
-        source_name, mask_name, color_name = [layer.get(k, None) for k in ('src', 'mask', 'color')]
+            source_name, mask_name, color_name = [layer.get(k, None) for k in ('src', 'mask', 'color')]
     
-        if source_name and color_name and mask_name:
-            raise Core.KnownUnknown("You can't specify src, color and mask together in a Sandwich Layer: %s, %s, %s" % (repr(source_name), repr(color_name), repr(mask_name)))
+            if source_name and color_name and mask_name:
+                raise Core.KnownUnknown("You can't specify src, color and mask together in a Sandwich Layer: %s, %s, %s" % (repr(source_name), repr(color_name), repr(mask_name)))
         
-        if source_name and source_name not in tiles:
-            if source_name in config.layers:
-                tiles[source_name] = layer_bitmap(config.layers[source_name], coord)
+            if source_name and source_name not in tiles:
+                if source_name in self.config.layers:
+                    tiles[source_name] = layer_bitmap(self.config.layers[source_name], coord)
+                else:
+                    tiles[source_name] = local_bitmap(source_name, self.config, coord, self.layer.dim)
+        
+            if mask_name and mask_name not in tiles:
+                tiles[mask_name] = layer_bitmap(self.config.layers[mask_name], coord)
+        
+            #
+            # Build up the foreground layer.
+            #
+        
+            if source_name and color_name:
+                # color first, then layer
+                foreground = make_color(color_name).blend(tiles[source_name])
+        
+            elif source_name:
+                foreground = tiles[source_name]
+        
+            elif color_name:
+                foreground = make_color(color_name)
+
+            elif mask_name:
+                raise Core.KnownUnknown("You have to provide more than just a mask to Sandwich Layer: %s" % repr(mask_name))
+
             else:
-                tiles[source_name] = local_bitmap(source_name, config, coord)
+                raise Core.KnownUnknown("You have to provide at least some combination of src, color and mask to Sandwich Layer")
         
-        if mask_name and mask_name not in tiles:
-            tiles[mask_name] = layer_bitmap(config.layers[mask_name], coord)
+            #
+            # Do the final composition with adjustments and blend modes.
+            #
         
-        #
-        # Build up the foreground layer.
-        #
+            for (name, args) in layer.get('adjustments', []):
+                adjustfunc = adjustment_names.get(name)(*args)
+                foreground = foreground.adjust(adjustfunc)
         
-        if source_name and color_name:
-            # color first, then layer
-            foreground = make_color(color_name).blend(tiles[source_name])
+            opacity = float(layer.get('opacity', 1.0))
+            blendfunc = blend_modes.get(layer.get('mode', None), None)
         
-        elif source_name:
-            foreground = tiles[source_name]
-        
-        elif color_name:
-            foreground = make_color(color_name)
-
-        elif mask_name:
-            raise Core.KnownUnknown("You have to provide more than just a mask to Sandwich Layer: %s" % repr(mask_name))
-
-        else:
-            raise Core.KnownUnknown("You have to provide at least some combination of src, color and mask to Sandwich Layer")
-        
-        #
-        # Do the final composition with adjustments and blend modes.
-        #
-        
-        for (name, args) in layer.get('adjustments', []):
-            adjustfunc = adjustment_names.get(name)(*args)
-            foreground = foreground.adjust(adjustfunc)
-        
-        opacity = float(layer.get('opacity', 1.0))
-        blendfunc = blend_modes.get(layer.get('mode', None), None)
-        
-        if mask_name:
-            rendered = rendered.blend(foreground, tiles[mask_name], opacity, blendfunc)
-        else:
-            rendered = rendered.blend(foreground, None, opacity, blendfunc)
+            if mask_name:
+                rendered = rendered.blend(foreground, tiles[mask_name], opacity, blendfunc)
+            else:
+                rendered = rendered.blend(foreground, None, opacity, blendfunc)
     
-    return rendered
+        return rendered
 
-def local_bitmap(source, config, coord):
+def local_bitmap(source, config, coord, dim):
     """ Return Blit.Bitmap representation of a raw image.
     """
     address = urljoin(config.dirpath, source)
@@ -254,9 +254,9 @@ def local_bitmap(source, config, coord):
     x = w * (col / w) - col
     y = h * (row / h) - row
     
-    output = Image.new('RGBA', (256, 256))
+    output = Image.new('RGBA', (dim, dim))
     
-    for (x, y) in product(range(x, 256, w), range(y, 256, h)):
+    for (x, y) in product(range(x, dim, w), range(y, dim, h)):
         # crop the top-left if needed
         xmin = 0 if x > 0 else -x
         ymin = 0 if y > 0 else -y
