@@ -33,7 +33,7 @@ Show summary of options.
 Extra margin of tiles to add around bounded area. Default value is 0 (no extra tiles).
 .TP
 \fB-e\fR, \fB\-\-extension\fR \fIextension\fR
-Optional file type for rendered tiles. Default value is "png".
+Optional file type for rendered tiles. Default value is "png" for most image layers and some variety of JSON for Vector or Mapnik Grid providers.
 .TP
 \fB-f\fR, \fB\-\-progress-file\fR \fIfile\fR
 Optional JSON progress file that gets written on each iteration, so you don't have to pay close attention.
@@ -53,11 +53,26 @@ More information in http://tilestache.org/doc/#caches.
 .B \-\-to\-mbtiles
 Optional output file for tiles, will be created as an MBTiles 1.1 tileset. See http://mbtiles.org for more information.
 .TP
+.B \-\-from\-mbtiles
+Optional input file for tiles, will be read as an MBTiles 1.1 tileset. See http://mbtiles.org for more information. Overrides --extension, --bbox and --padding (this may change).
+.TP
+.B \-\-to-s3
+Optional output bucket for tiles, will be populated with tiles in a standard Z/X/Y layout. Three required arguments: AWS access-key, secret, and bucket name.
+.TP
 .B \-\-tile\-list
 Optional file of tile coordinates, a simple text list of Z/X/Y coordinates. Overrides --bbox and --padding.
 .TP
+.B \-\-error\-list
+Optional file of failed tile coordinates, a simple text list of Z/X/Y coordinates. If provided, failed tiles will be logged to this file instead of stopping tilestache-seed.
+.TP
+.B \-\-enable\-retries
+If true this will cause tilestache-seed to retry failed tile renderings up to (3) times. Default value is False.
+.TP
 .B \-x, \-\-ignore-cached
 Re-render every tile, whether it is in the cache already or not.
+.TP
+.B \-\-jsonp-callback
+Add a JSONP callback for tiles with a json mime-type, causing "*.js" tiles to be written to the cache wrapped in the callback function. Ignored for non-JSON tiles.
 .SH SEE ALSO
 .BR tilestache-render (1)
 .SH AUTHOR

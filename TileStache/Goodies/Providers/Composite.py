@@ -19,6 +19,12 @@ as in this example stack that simply echoes another layer:
 
     {"src": "layer-name"}
 
+Layers can be limited to appear at certain zoom levels, given either as a range
+or as a single number:
+
+    {"src": "layer-name", "zoom": "12"}
+    {"src": "layer-name", "zoom": "12-18"}
+
 Layers can also be used as masks, as in this example that uses one layer
 to mask another layer:
 
@@ -142,6 +148,7 @@ This complete example can be found in the included examples directory.
 """
 
 import sys
+import re
 
 from urllib import urlopen
 from urlparse import urljoin
@@ -216,32 +223,33 @@ class Provider:
         
     def renderTile(self, width, height, srs, coord):
     
-        image = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+        rgba = [numpy.zeros((width, height), float) for chan in range(4)]
         
-        image = self.stack.render(self.layer.config, image, coord)
+        rgba = self.stack.render(self.layer.config, rgba, coord)
         
-        return image
+        return _rgba2img(rgba)
 
 class Composite(Provider):
     """ An old name for the Provider class, deprecated for the next version.
     """
     pass
 
-def build_stack(object):
+def build_stack(obj):
     """ Build up a data structure of Stack and Layer objects from lists of dictionaries.
     
         Normally, this is applied to the "stack" parameter to Composite.Provider.
     """
-    if type(object) is list:
-        layers = map(build_stack, object)
+    if type(obj) is list:
+        layers = map(build_stack, obj)
         return Stack(layers)
     
-    elif type(object) is dict:
-        keys = ('src', 'layername'), ('color', 'colorname'), \
-               ('mask', 'maskname'), ('opacity', 'opacity'), \
-               ('mode', 'blendmode'), ('adjustments', 'adjustments')
+    elif type(obj) is dict:
+        keys = (('src', 'layername'), ('color', 'colorname'),
+                ('mask', 'maskname'), ('opacity', 'opacity'),
+                ('mode', 'blendmode'), ('adjustments', 'adjustments'),
+                ('zoom', 'zoom'))
 
-        args = [(arg, object[key]) for (key, arg) in keys if key in object]
+        args = [(arg, obj[key]) for (key, arg) in keys if key in obj]
         
         return Layer(**dict(args))
 
@@ -254,9 +262,10 @@ class Layer:
         Can include a reference to another layer for the source image, a second
         reference to another layer for the mask, and a color name for the fill.
     """
-    def __init__(self, layername=None, colorname=None, maskname=None, opacity=1.0, blendmode=None, adjustments=None):
+    def __init__(self, layername=None, colorname=None, maskname=None, opacity=1.0,
+                       blendmode=None, adjustments=None, zoom=""):
         """ A new image layer.
-        
+
             Arguments:
             
               layername:
@@ -274,8 +283,26 @@ class Layer:
         self.opacity = opacity
         self.blendmode = blendmode
         self.adjustments = adjustments
+        
+        zooms = re.search("^(\d+)-(\d+)$|^(\d+)$", zoom) if zoom else None
+        
+        if zooms:
+            min_zoom, max_zoom, at_zoom = zooms.groups()
+            
+            if min_zoom is not None and max_zoom is not None:
+                self.min_zoom, self.max_zoom = int(min_zoom), int(max_zoom)
+            elif at_zoom is not None:
+                self.min_zoom, self.max_zoom = int(at_zoom), int(at_zoom)
+        
+        else:
+            self.min_zoom, self.max_zoom = 0, float('inf')
 
-    def render(self, config, input_img, coord):
+    def in_zoom(self, zoom):
+        """ Return true if the requested zoom level is valid for this layer.
+        """
+        return self.min_zoom <= zoom and zoom <= self.max_zoom
+    
+    def render(self, config, input_rgba, coord):
         """ Render this image layer.
 
             Given a configuration object, starting image, and coordinate,
@@ -283,7 +310,7 @@ class Layer:
         """
         has_layer, has_color, has_mask = False, False, False
         
-        output_rgba = _img2rgba(input_img)
+        output_rgba = [chan.copy() for chan in input_rgba]
     
         if self.layername:
             layer = config.layers[self.layername]
@@ -338,9 +365,10 @@ class Layer:
         else:
             raise KnownUnknown("You have to provide at least some combination of src, color and mask to Composite Layer")
 
-        output_img = _rgba2img(output_rgba)
-        
-        return output_img
+        return output_rgba
+
+    def __str__(self):
+        return self.layername
 
 class Stack:
     """ A stack of image layers.
@@ -355,28 +383,32 @@ class Stack:
         """
         self.layers = layers
 
-    def render(self, config, input_img, coord):
+    def in_zoom(self, level):
+        """
+        """
+        return True
+    
+    def render(self, config, input_rgba, coord):
         """ Render this image stack.
 
             Given a configuration object, starting image, and coordinate,
             return an output image with the results of all the layers in
             this stack pasted on in turn.
         """
-        stack_img = Image.new('RGBA', input_img.size, (0, 0, 0, 0))
+        stack_rgba = [numpy.zeros(chan.shape, chan.dtype) for chan in input_rgba]
         
         for layer in self.layers:
             try:
-                stack_img = layer.render(config, stack_img, coord)
+                if layer.in_zoom(coord.zoom):
+                    stack_rgba = layer.render(config, stack_rgba, coord)
+
             except IOError:
                 # Be permissive of I/O errors getting sub-layers, for example if a
                 # proxy layer referenced here doesn't have an image for a zoom level.
                 # TODO: regret this later.
                 pass
 
-        output_img = input_img.copy()
-        output_img.paste(stack_img, (0, 0), stack_img)
-        
-        return output_img
+        return blend_images(input_rgba, stack_rgba[:3], stack_rgba[3], 1, None)
 
 def make_color(color):
     """ Convert colors expressed as HTML-style RGB(A) strings to tuples.
@@ -626,7 +658,7 @@ def blend_images(bottom_rgba, top_rgb, mask_chan, opacity, blendmode):
         if blendmode in blend_functions:
             for c in (0, 1, 2):
                 blend_function = blend_functions[blendmode]
-                blend_function(output_rgba[c], bottom_rgba[c], top_rgb[c])
+                output_rgba[c] = blend_function(bottom_rgba[c], top_rgb[c])
         
         else:
             raise KnownUnknown('Unrecognized blend mode: "%s"' % blendmode)
@@ -641,45 +673,61 @@ def blend_images(bottom_rgba, top_rgb, mask_chan, opacity, blendmode):
     if gr.any():
         # we have some shades of gray to take care of
         for c in (0, 1, 2):
-            output_rgba[c][gr] = (1 - mask_chan[gr]) * bottom_rgba[c][gr] \
-                                     + mask_chan[gr] * output_rgba[c][gr]
+            #
+            # Math borrowed from Wikipedia; C0 is the variable alpha_denom:
+            # http://en.wikipedia.org/wiki/Alpha_compositing#Analytical_derivation_of_the_over_operator
+            #
+            
+            alpha_denom = 1 - (1 - mask_chan) * (1 - bottom_rgba[3])
+            nz = alpha_denom > 0 # non-zero alpha denominator
+            
+            alpha_ratio = mask_chan[nz] / alpha_denom[nz]
+            
+            output_rgba[c][nz] = output_rgba[c][nz] * alpha_ratio \
+                               + bottom_rgba[c][nz] * (1 - alpha_ratio)
+            
+            # let the zeros perish
+            output_rgba[c][~nz] = 0
     
     # output mask is the screen of the existing and overlaid alphas
-    blend_channels_screen(output_rgba[3], bottom_rgba[3], mask_chan)
-    
+    output_rgba[3] = blend_channels_screen(bottom_rgba[3], mask_chan)
+
     return output_rgba
 
-def blend_channels_screen(output_chan, bottom_chan, top_chan):
-    """ Modify output channel in-place with the combination of bottom and top channels.
+def blend_channels_screen(bottom_chan, top_chan):
+    """ Return combination of bottom and top channels.
     
         Math from http://illusions.hu/effectwiki/doku.php?id=screen_blending
     """
-    output_chan[:,:] = 1 - (1 - bottom_chan[:,:]) * (1 - top_chan[:,:])
+    return 1 - (1 - bottom_chan[:,:]) * (1 - top_chan[:,:])
 
-def blend_channels_multiply(output_chan, bottom_chan, top_chan):
-    """ Modify output channel in-place with the combination of bottom and top channels.
+def blend_channels_multiply(bottom_chan, top_chan):
+    """ Return combination of bottom and top channels.
     
         Math from http://illusions.hu/effectwiki/doku.php?id=multiply_blending
     """
-    output_chan[:,:] = bottom_chan[:,:] * top_chan[:,:]
+    return bottom_chan[:,:] * top_chan[:,:]
 
-def blend_channels_linear_light(output_chan, bottom_chan, top_chan):
-    """ Modify output channel in-place with the combination of bottom and top channels.
+def blend_channels_linear_light(bottom_chan, top_chan):
+    """ Return combination of bottom and top channels.
     
         Math from http://illusions.hu/effectwiki/doku.php?id=linear_light_blending
     """
-    output_chan[:,:] = numpy.clip(bottom_chan[:,:] + 2 * top_chan[:,:] - 1, 0, 1)
+    return numpy.clip(bottom_chan[:,:] + 2 * top_chan[:,:] - 1, 0, 1)
 
-def blend_channels_hard_light(output_chan, bottom_chan, top_chan):
-    """ Modify output channel in-place with the combination of bottom and top channels.
+def blend_channels_hard_light(bottom_chan, top_chan):
+    """ Return combination of bottom and top channels.
     
         Math from http://illusions.hu/effectwiki/doku.php?id=hard_light_blending
     """
     # different pixel subsets for dark and light parts of overlay
     dk, lt = top_chan < .5, top_chan >= .5
     
+    output_chan = numpy.empty(bottom_chan.shape, bottom_chan.dtype)
     output_chan[dk] = 2 * bottom_chan[dk] * top_chan[dk]
     output_chan[lt] = 1 - 2 * (1 - bottom_chan[lt]) * (1 - top_chan[lt])
+    
+    return output_chan
 
 def makeColor(color):
     """ An old name for the make_color function, deprecated for the next version.
@@ -738,6 +786,15 @@ if __name__ == '__main__':
     import TileStache.Config
     import ModestMaps.Core
     
+    class SizelessImage:
+        """ Wrap an image without wrapping the size() method, for Layer.render().
+        """
+        def __init__(self, img):
+            self.img = img
+        
+        def save(self, out, format):
+            self.img.save(out, format)
+    
     class TinyBitmap:
         """ A minimal provider that only returns 3x3 bitmaps from strings.
         """
@@ -745,7 +802,7 @@ if __name__ == '__main__':
             self.img = Image.fromstring('RGBA', (3, 3), string)
 
         def renderTile(self, *args, **kwargs):
-            return self.img
+            return SizelessImage(self.img)
 
     def tinybitmap_layer(config, string):
         """ Gin up a fake layer with a TinyBitmap provider.
@@ -1001,6 +1058,9 @@ if __name__ == '__main__':
                 # 50% gray all over
                 'gray':       tinybitmap_layer(self.config, _808f * 9),
                 
+                # nothing anywhere
+                'nothing':    tinybitmap_layer(self.config, _0000 * 9),
+                
                 # opaque horizontal gradient, black to white
                 'h gradient': tinybitmap_layer(self.config, (_000f + _808f + _ffff) * 3),
                 
@@ -1104,5 +1164,28 @@ if __name__ == '__main__':
             assert img.getpixel((0, 2)) == (0x80, 0x80, 0x80, 0xFF), 'bottom left pixel'
             assert img.getpixel((1, 2)) == (0x40, 0x40, 0x40, 0xFF), 'bottom center pixel'
             assert img.getpixel((2, 2)) == (0x00, 0x00, 0x00, 0xFF), 'bottom right pixel'
+        
+        def test4(self):
+            
+            stack = \
+                [
+                    [
+                        {"src": "nothing"},
+                        {"src": "white wipe"}
+                    ]
+                ]
+            
+            layer = minimal_stack_layer(self.config, stack)
+            img = layer.provider.renderTile(3, 3, None, ModestMaps.Core.Coordinate(0, 0, 0))
+            
+            assert img.getpixel((0, 0)) == (0x00, 0x00, 0x00, 0x00), 'top left pixel'
+            assert img.getpixel((1, 0)) == (0x00, 0x00, 0x00, 0x00), 'top center pixel'
+            assert img.getpixel((2, 0)) == (0x00, 0x00, 0x00, 0x00), 'top right pixel'
+            assert img.getpixel((0, 1)) == (0xFF, 0xFF, 0xFF, 0x80), 'center left pixel'
+            assert img.getpixel((1, 1)) == (0xFF, 0xFF, 0xFF, 0x80), 'middle pixel'
+            assert img.getpixel((2, 1)) == (0xFF, 0xFF, 0xFF, 0x80), 'center right pixel'
+            assert img.getpixel((0, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom left pixel'
+            assert img.getpixel((1, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom center pixel'
+            assert img.getpixel((2, 2)) == (0xFF, 0xFF, 0xFF, 0xFF), 'bottom right pixel'
     
     unittest.main()

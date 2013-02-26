@@ -5,11 +5,12 @@ providers are found here, but it's possible to define your own and pull them int
 TileStache dynamically by class name.
 
 Built-in providers:
-- mapnik (Mapnik)
+- mapnik (Mapnik.ImageProvider)
 - proxy (Proxy)
 - vector (TileStache.Vector.Provider)
 - url template (UrlTemplate)
 - mbtiles (TileStache.MBTiles.Provider)
+- mapnik grid (Mapnik.GridProvider)
 
 Example built-in provider, for JSON configuration file:
 
@@ -70,25 +71,12 @@ For an example of a non-image provider, see TileStache.Vector.Provider.
 """
 
 import os
+import logging
 
 from StringIO import StringIO
-from posixpath import exists
-from urlparse import urlparse, urljoin
-from httplib import HTTPConnection
-from tempfile import mkstemp
 from string import Template
-from urllib import urlopen
-from glob import glob
-
-try:
-    import mapnik2 as mapnik
-except ImportError:
-    try:
-        import mapnik
-    except ImportError:
-        # It's possible to get by without mapnik,
-        # if you don't plan to use the mapnik provider.
-        pass
+import urllib2
+import urllib
 
 try:
     from PIL import Image
@@ -99,9 +87,21 @@ except ImportError:
 import ModestMaps
 from ModestMaps.Core import Point, Coordinate
 
-import MBTiles
 import Geography
-import Vector
+
+# This import should happen inside getProviderByName(), but when testing
+# on Mac OS X features are missing from output. Wierd-ass C libraries...
+try:
+    from . import Vector
+except ImportError:
+    pass
+
+# Already deprecated; provided for temporary backward-compatibility with
+# old location of Mapnik provider. TODO: remove in next major version.
+try:
+    from .Mapnik import ImageProvider as Mapnik
+except ImportError:
+    pass
 
 def getProviderByName(name):
     """ Retrieve a provider object by name.
@@ -109,7 +109,8 @@ def getProviderByName(name):
         Raise an exception if the name doesn't work out.
     """
     if name.lower() == 'mapnik':
-        return Mapnik
+        from . import Mapnik
+        return Mapnik.ImageProvider
 
     elif name.lower() == 'proxy':
         return Proxy
@@ -118,12 +119,72 @@ def getProviderByName(name):
         return UrlTemplate
 
     elif name.lower() == 'vector':
+        from . import Vector
         return Vector.Provider
 
     elif name.lower() == 'mbtiles':
+        from . import MBTiles
         return MBTiles.Provider
 
+    elif name.lower() == 'mapnik grid':
+        from . import Mapnik
+        return Mapnik.GridProvider
+
+    elif name.lower() == 'sandwich':
+        from . import Sandwich
+        return Sandwich.Provider
+
     raise Exception('Unknown provider name: "%s"' % name)
+
+class Verbatim:
+    ''' Wrapper for PIL.Image that saves raw input bytes if modes and formats match.
+    '''
+    def __init__(self, bytes):
+        self.buffer = StringIO(bytes)
+        self.format = None
+        self._image = None
+        
+        #
+        # Guess image format based on magic number, if possible.
+        # http://www.astro.keele.ac.uk/oldusers/rno/Computing/File_magic.html
+        #
+        magic = {
+            '\x89\x50\x4e\x47': 'PNG',
+            '\xff\xd8\xff\xe0': 'JPEG',
+            '\x47\x49\x46\x38': 'GIF',
+            '\x47\x49\x46\x38': 'GIF',
+            '\x4d\x4d\x00\x2a': 'TIFF',
+            '\x49\x49\x2a\x00': 'TIFF'
+            }
+        
+        if bytes[:4] in magic:
+            self.format = magic[bytes[:4]]
+
+        else:
+            self.format = self.image().format
+    
+    def image(self):
+        ''' Return a guaranteed instance of PIL.Image.
+        '''
+        if self._image is None:
+            self._image = Image.open(self.buffer)
+        
+        return self._image
+    
+    def convert(self, mode):
+        if mode == self.image().mode:
+            return self
+        else:
+            return self.image().convert(mode)
+
+    def crop(self, bbox):
+        return self.image().crop(bbox)
+    
+    def save(self, output, format):
+        if format == self.format:
+            output.write(self.buffer.getvalue())
+        else:
+            self.image().save(output, format)
 
 class Proxy:
     """ Proxy provider, to pass through and cache tiles from other places.
@@ -164,93 +225,50 @@ class Proxy:
         else:
             raise Exception('Missing required url or provider parameter to Proxy provider')
 
+    @staticmethod
+    def prepareKeywordArgs(config_dict):
+        """ Convert configured parameters to keyword args for __init__().
+        """
+        kwargs = dict()
+
+        if 'url' in config_dict:
+            kwargs['url'] = config_dict['url']
+
+        if 'provider' in config_dict:
+            kwargs['provider_name'] = config_dict['provider']
+
+        return kwargs
+
     def renderTile(self, width, height, srs, coord):
         """
         """
         if srs != Geography.SphericalMercator.srs:
             raise Exception('Projection doesn\'t match EPSG:900913: "%(srs)s"' % locals())
-    
+
         if (width, height) != (256, 256):
             raise Exception("Image dimensions don't match expected tile size: %(width)dx%(height)d" % locals())
 
-        img = Image.new('RGBA', (width, height))
-        
-        for url in self.provider.getTileUrls(coord):
-            s, host, path, p, query, f = urlparse(url)
-            conn = HTTPConnection(host, 80)
-            conn.request('GET', path+'?'+query)
+        img = None
+        urls = self.provider.getTileUrls(coord)
 
-            body = conn.getresponse().read()
-            tile = Image.open(StringIO(body)).convert('RGBA')
+        for url in urls:
+            body = urllib.urlopen(url).read()
+            tile = Verbatim(body)
+
+            if len(urls) == 1:
+                #
+                # if there is only one URL, don't bother
+                # with PIL's non-Porter-Duff alpha channeling.
+                #
+                return tile
+            elif img is None:
+                #
+                # for many URLs, paste them to a new image.
+                #
+                img = Image.new('RGBA', (width, height))
+
             img.paste(tile, (0, 0), tile)
-        
-        return img
-            
-class Mapnik:
-    """ Built-in Mapnik provider. Renders map images from Mapnik XML files.
-    
-        This provider is identified by the name "mapnik" in the TileStache config.
-        
-        Additional arguments:
-        
-        - mapfile (required)
-            Local file path to Mapnik XML file.
-    
-        More information on Mapnik and Mapnik XML:
-        - http://mapnik.org
-        - http://trac.mapnik.org/wiki/XMLGettingStarted
-        - http://trac.mapnik.org/wiki/XMLConfigReference
-    """
-    
-    def __init__(self, layer, mapfile, fonts=None):
-        """ Initialize Mapnik provider with layer and mapfile.
-            
-            XML mapfile keyword arg comes from TileStache config,
-            and is an absolute path by the time it gets here.
-        """
-        maphref = urljoin(layer.config.dirpath, mapfile)
-        scheme, h, path, q, p, f = urlparse(maphref)
-        
-        if scheme in ('file', ''):
-            self.mapfile = path
-        else:
-            self.mapfile = maphref
-        
-        self.layer = layer
-        self.mapnik = None
-        
-        engine = mapnik.FontEngine.instance()
-        
-        if fonts:
-            for font in glob(fonts.rstrip('/') + '/*.ttf'):
-                engine.register_font(str(font))
 
-    def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
-        """
-        """
-        if self.mapnik is None:
-            self.mapnik = mapnik.Map(0, 0)
-            
-            if exists(self.mapfile):
-                mapnik.load_map(self.mapnik, str(self.mapfile))
-            
-            else:
-                handle, filename = mkstemp()
-                os.write(handle, urlopen(self.mapfile).read())
-                os.close(handle)
-    
-                mapnik.load_map(self.mapnik, filename)
-                os.unlink(filename)
-        
-        self.mapnik.width = width
-        self.mapnik.height = height
-        self.mapnik.zoom_to_box(mapnik.Envelope(xmin, ymin, xmax, ymax))
-        
-        img = mapnik.Image(width, height)
-        mapnik.render(self.mapnik, img)
-        
-        img = Image.fromstring('RGBA', (width, height), img.tostring())
-        
         return img
 
 class UrlTemplate:
@@ -263,17 +281,32 @@ class UrlTemplate:
         - template (required)
             String with substitutions suitable for use in string.Template.
 
+        - referer (optional)
+            String to use in the "Referer" header when making HTTP requests.
+
         More on string substitutions:
         - http://docs.python.org/library/string.html#template-strings
     """
 
-    def __init__(self, layer, template):
+    def __init__(self, layer, template, referer=None):
         """ Initialize a UrlTemplate provider with layer and template string.
         
             http://docs.python.org/library/string.html#template-strings
         """
         self.layer = layer
         self.template = Template(template)
+        self.referer = referer
+
+    @staticmethod
+    def prepareKeywordArgs(config_dict):
+        """ Convert configured parameters to keyword args for __init__().
+        """
+        kwargs = {'template': config_dict['template']}
+
+        if 'referer' in config_dict:
+            kwargs['referer'] = config_dict['referer']
+
+        return kwargs
 
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """ Return an image for an area.
@@ -282,9 +315,14 @@ class UrlTemplate:
         """
         mapping = {'width': width, 'height': height, 'srs': srs, 'zoom': zoom}
         mapping.update({'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax})
-        
+
         href = self.template.safe_substitute(mapping)
-        body = urlopen(href).read()
-        tile = Image.open(StringIO(body)).convert('RGBA')
+        req = urllib2.Request(href)
+
+        if self.referer:
+            req.add_header('Referer', self.referer)
+
+        body = urllib2.urlopen(req).read()
+        tile = Verbatim(body)
 
         return tile

@@ -14,7 +14,7 @@ live: $(TARBALL) doc
 $(TARBALL): doc
 	mkdir $(PACKAGE)
 	ln setup.py $(PACKAGE)/
-	ln README $(PACKAGE)/
+	ln README.md $(PACKAGE)/
 	ln VERSION $(PACKAGE)/
 	ln tilestache.cfg $(PACKAGE)/
 	ln tilestache.cgi $(PACKAGE)/
@@ -67,17 +67,31 @@ doc:
 	pydoc -w TileStache.Vector.Arc
 	pydoc -w TileStache.Geography
 	pydoc -w TileStache.Providers
+	pydoc -w TileStache.Mapnik
 	pydoc -w TileStache.MBTiles
+	pydoc -w TileStache.Sandwich
+	pydoc -w TileStache.Pixels
 	pydoc -w TileStache.Goodies
 	pydoc -w TileStache.Goodies.Caches
 	pydoc -w TileStache.Goodies.Caches.LimitedDisk
+	pydoc -w TileStache.Goodies.Caches.GoogleCloud
 	pydoc -w TileStache.Goodies.Providers
 	pydoc -w TileStache.Goodies.Providers.Composite
+	pydoc -w TileStache.Goodies.Providers.Cascadenik
 	pydoc -w TileStache.Goodies.Providers.PostGeoJSON
 	pydoc -w TileStache.Goodies.Providers.SolrGeoJSON
+	pydoc -w TileStache.Goodies.Providers.MapnikGrid
 	pydoc -w TileStache.Goodies.Providers.MirrorOSM
+	pydoc -w TileStache.Goodies.Providers.Monkeycache
+	pydoc -w TileStache.Goodies.Providers.UtfGridComposite
+	pydoc -w TileStache.Goodies.Providers.UtfGridCompositeOverlap
+	pydoc -w TileStache.Goodies.Providers.TileDataOSM
 	pydoc -w TileStache.Goodies.Providers.Grid
 	pydoc -w TileStache.Goodies.Providers.GDAL
+	pydoc -w TileStache.Goodies.AreaServer
+	pydoc -w TileStache.Goodies.StatusServer
+	pydoc -w TileStache.Goodies.Proj4Projection
+	pydoc -w TileStache.Goodies.ExternalConfigServer
 
 	pydoc -w scripts/tilestache-*.py
 

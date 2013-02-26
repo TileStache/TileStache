@@ -35,9 +35,13 @@ MBTiles provider parameters:
   tileset:
     Required local file path to MBTiles tileset file, a SQLite 3 database file.
 """
-from sqlite3 import connect as _connect
 from urlparse import urlparse, urljoin
 from os.path import exists
+
+# Heroku is missing standard python's sqlite3 package, so this will ImportError.
+from sqlite3 import connect as _connect
+
+from ModestMaps.Core import Coordinate
 
 def create_tileset(filename, name, type, version, description, format, bounds=None):
     """ Create a tileset 1.1 with the given filename and metadata.
@@ -110,6 +114,37 @@ def tileset_exists(filename):
     
     return True
 
+def tileset_info(filename):
+    """ Return name, type, version, description, format, and bounds for a tileset.
+    
+        Returns None if tileset does not exist.
+    """
+    if not tileset_exists(filename):
+        return None
+    
+    db = _connect(filename)
+    db.text_factory = bytes
+    
+    info = []
+    
+    for key in ('name', 'type', 'version', 'description', 'format', 'bounds'):
+        value = db.execute('SELECT value FROM metadata WHERE name = ?', (key, )).fetchone()
+        info.append(value and value[0] or None)
+    
+    return info
+
+def list_tiles(filename):
+    """ Get a list of tile coordinates.
+    """
+    db = _connect(filename)
+    db.text_factory = bytes
+    
+    tiles = db.execute('SELECT tile_row, tile_column, zoom_level FROM tiles')
+    tiles = (((2**z - 1) - y, x, z) for (y, x, z) in tiles) # Hello, Paul Ramsey.
+    tiles = [Coordinate(row, column, zoom) for (row, column, zoom) in tiles]
+    
+    return tiles
+
 def get_tile(filename, coord):
     """ Retrieve the mime-type and raw content of a tile by coordinate.
     
@@ -130,6 +165,16 @@ def get_tile(filename, coord):
 
     return mime_type, content
 
+def delete_tile(filename, coord):
+    """ Delete a tile by coordinate.
+    """
+    db = _connect(filename)
+    db.text_factory = bytes
+    
+    tile_row = (2**coord.zoom - 1) - coord.row # Hello, Paul Ramsey.
+    q = 'DELETE FROM tiles WHERE zoom_level=? AND tile_column=? AND tile_row=?'
+    db.execute(q, (coord.zoom, coord.column, tile_row))
+
 def put_tile(filename, coord, content):
     """
     """
@@ -138,7 +183,7 @@ def put_tile(filename, coord, content):
     
     tile_row = (2**coord.zoom - 1) - coord.row # Hello, Paul Ramsey.
     q = 'REPLACE INTO tiles (zoom_level, tile_column, tile_row, tile_data) VALUES (?, ?, ?, ?)'
-    db.execute(q, (coord.zoom, coord.column, tile_row, content))
+    db.execute(q, (coord.zoom, coord.column, tile_row, buffer(content)))
 
     db.commit()
     db.close()
@@ -159,6 +204,12 @@ class Provider:
         
         self.tileset = path
         self.layer = layer
+    
+    @staticmethod
+    def prepareKeywordArgs(config_dict):
+        """ Convert configured parameters to keyword args for __init__().
+        """
+        return {'tileset': config_dict['tileset']}
     
     def renderTile(self, width, height, srs, coord):
         """ Retrieve a single tile, return a TileResponse instance.
@@ -209,7 +260,12 @@ class Cache:
     
     def unlock(self, layer, coord, format):
         return
-    
+        
+    def remove(self, layer, coord, format):
+        """ Remove a cached tile.
+        """
+        delete_tile(self.filename, coord)
+        
     def read(self, layer, coord, format):
         """ Return raw tile content from tileset.
         """

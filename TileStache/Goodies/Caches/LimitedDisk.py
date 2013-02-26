@@ -122,7 +122,13 @@ class Cache:
                    (coord.row, coord.column, coord.zoom, format))
         db.connection.commit()
         db.connection.close()
-
+        
+    def remove(self, layer, coord, format):
+        """ Remove a cached tile.
+        """
+        # TODO: write me
+        raise NotImplementedError('LimitedDisk Cache does not yet implement the .remove() method.')
+        
     def read(self, layer, coord, format):
         """ Read a cached tile.
         

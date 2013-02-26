@@ -1,3 +1,230 @@
+2013-02-22: 1.44.0
+- Merged Ragi Burhum's Travis continuous integration tests with ~1/3rd test coverage.
+- Modified Proxy provider to return untouched original image if size and type match.
+- Updated Mapnik usage to reflect recently released versions.
+- Fixed Mapnik provider deadlock bug with patch from Lee Shepherd.
+- Added "key prefix" argument to Memcache cache provider.
+
+2013-01-03: 1.43.0
+- Added new tilestache-list.py script to feed tilestache-seed.py --tile-list.
+- Added new "use_locks" option to S3 cache provider to optionally reduce write costs.
+
+2012-10-01: 1.42.1
+- Papered over a strange appearance bug in GDAL provider with using cubicspline interpolation.
+
+2012-09-18: 1.42.0
+- Added support for tiled bitmap files in Sandwich provider layer src attribute.
+
+2012-09-14: 1.41.0
+- Added TileStache.Goodies.Providers.Cascadenik to skip Mapnik XML where possible.
+
+2012-09-09: 1.40.1
+- Re-attempting Vector import to trigger a more-useful error than NameError in getProviderByName().
+
+2012-09-04: 1.40.0
+- Added TileStache.Sandwich provider based on previous Composite provider under Goodies.
+- Modified import method for provider to reduce burden of required packages and improve error output.
+
+2012-07-18: 1.39.0
+- Fixed missing merge_grids() function in Mapnik Grid provider.
+- Added TileStache.Goodies.ExternalConfigServer from Ryan Breen.
+
+2012-07-05: 1.38.0
+- Added Mapnik Grid provider "layer id key" parameter.
+- Grid internals: response encodings to explicit UTF-8 for Chromium and using mapnik.render_layer().
+
+2012-07-05: 1.37.0
+- Added TileStache.Goodies.Proj4Projection for arbitrary PROJ.4 support.
+- Added per-layer "tile height" option, for non-256x256 tiles.
+
+2012-06-27: 1.36.1
+- Added more Memcache disconnect_all() calls.
+
+2012-05-22: 1.36.0
+- Added --jsonp-callback option to tilestache-seed.py.
+
+2012-05-22: 1.35.1
+- Updated tilestache-seed.py manpage to reflect new options.
+
+2012-05-22: 1.35.0
+- Added direct-to-S3 cache option to tilestache-seed.py script. 
+- Changed tilestache-seed.py default extension behavior to cover JSON.
+
+2012-05-21: 1.34.0
+- Added TileStache.Goodies.StatusServer alternate WSGI server for redis-backed internal status checks.
+- Added maskband parameter to TileStache.Goodies.Providers.GDAL provider.
+
+2012-05-09: 1.33.1
+- Fixed mapnik.Envelope/Box2d back-compatibility.
+
+2012-05-09: 1.33.0
+- Added Vector provider support for Spatialite, MySQL and Oracle from Andrew Semprebon.
+
+2012-05-08: 1.32.3
+- Fixed a dumb import error in TileStache.Providers.
+
+2012-05-07: 1.32.2
+- Disambiguated null vs. empty list behavior of Mapnik Grid fields. 
+
+2012-05-06: 1.32.1
+- Fixed output of Mapnik Grid to be pure UTF-8 instead of ASCII-encoded for size.
+
+2012-05-06: 1.32.0
+- Added core Mapnik Grid provider based on providers under TileStache.Goodies with contributions from Alexander Clausen, Tom Nightingale, Dave Leaver and Paul Smith.
+
+2012-04-09: 1.31.1
+- Fixed broken MBTiles support.
+
+2012-04-07: 1.31.0
+- Added support for per-extension redirects in Layer configuration.
+- Added new TileStache.Goodies.Provider.UtfGridComposite provider.
+- Added new TileStache.Goodies.Cache.GoogleCloud cache.
+- Added support for buffers around features in TileStache.Goodies.Provider.MapnikGrid.
+
+2012-04-05: 1.30.0
+- Added Goodies.AreaServer for serving static, non-tile images.
+- Added TileStache.Goodies.Providers.Monkeycache for serving tiles out of caches.
+- Documented JSONP callbacks in TileStache.requestHandler().
+
+2012-03-27: 1.29.3
+- Fixed a NameError in tilestache-seed.py.
+
+2012-03-18: 1.29.2
+- Ensured that in-process recent tiles features works with metatiles.
+
+2012-03-15: 1.29.1
+- Added debug logging to Mapnik provider.
+
+2012-03-14: 1.29.0
+- Added configurable HTTP referer header to URL Template provider.
+- Added optional precision parameter to Vector provider for JSON output.
+- Added basic logging facility, including getTile() logging at DEBUG level.
+
+2012-02-26: 1.28.0
+- Added new ways to define layer boundaries, including lists and partial limits.
+
+2012-02-26: 1.27.3
+- Fixed a forehead slapper in tilestache-seed.
+
+2012-02-26: 1.27.2
+- Fixed Mapnik fonts path bug.
+
+2012-02-20: 1.27.1
+- Fixed WSGITileServer issue in new Configuration.index support.
+
+2012-02-20: 1.27.0
+- Added new Configuration.index support for configurable index page responses.
+- Cleaned up some unnecessary errors  in preview and callback handling.
+
+2012-02-17: 1.26.4
+- Rewrote internals of tilestache-seed to support the no-config use case.
+
+2012-02-16: 1.26.3
+- Tweaked Vector mime-types and mapnik import details.
+
+2012-02-15: 1.26.2
+- Fixed os.rmdir() error handling in Caches.Disk.
+
+2012-02-15: 1.26.1
+- Changed lock in Providers.Mapnik to be a single global lock for the entire process instead of per-layer.
+
+2012-02-13: 1.26.0
+- Modified internals of Providers.Mapnik to ensure single-threaded access to mapnik.Map object.
+- Fixed MapnikGrid so its documentation can be made even though no one has mapnik2.
+- Added -i/--include-path flag to tilestache-compose.py script.
+
+2012-02-06: 1.25.1
+- Fixed tilestache-clean.py script to not complain on unsupported -e flag.
+
+2012-02-01: 1.25.0
+- Added "ALL" ("ALL LAYERS") option to tilestache-clean.py script.
+
+2012-01-30: 1.24.1
+- Fixed an error in WSGITileServer._response().
+
+2012-01-25: 1.24.0
+- Added support for HTTP Expires and Cache-Control headers with per-layer maximum cache age.
+- Merged Per Liedman's fox for disk cache lock directory removal bug.
+
+2012-01-23: 1.23.4
+- Fixed a bug in Multi Cache provider remove().
+
+2012-01-12: 1.23.3
+- Changed import delay from 1.23.2 to a specific conditional around sqlite3 for Heroku.
+
+2012-01-11: 1.23.2
+- Delayed import of MBTiles and Vector providers until last minute.
+
+2012-01-10: 1.23.1
+- Added Nikolai's httplib patch in Proxy provider.
+
+2012-01-10: 1.23.0
+- Added new tilestache-clean.py script and required remove() method for caches.
+
+2012-01-01: 1.22.0
+- Fixed inconsistencies with cache-ignore setting when using tilestache-compose.py.
+- Fixed use of write-cache setting in TileStache.Layer.
+- Adding configuration file's directory to sys.path in Config.buildConfiguration().
+- Stopped adding current working directory to sys.path for new classes.
+- Added new TileStache.Goodies.Providers.MapnikGrid:Provider by github user danzel.
+
+2011-12-25: 1.21.3
+- Fixed a bug where I'm an idiot.
+
+2011-12-25: 1.21.2
+- Fixed a locking bug in tilestache-compose.py.
+
+2011-12-25: 1.21.1
+- Added current working directory to sys.path for new classes.
+
+2011-12-18: 1.21.0
+- Added new tilestache-compose.py script.
+- Fixed preview body style to account for iOS viewport.
+
+2011-12-12: 1.20.1
+- Fixed body style to account for full-page map.
+
+2011-12-07: 1.20.0
+- Tile URLs can now contain negative integers.
+- Now reading files in Disk Cache using 'rb' mode for Windows compatibility.
+
+2011-11-23: 1.19.4
+- Fixed a silly bug where I was comparing ints and strings.
+
+2011-11-23: 1.19.3
+- Merged llimllib's support for zoom limits in Composite provider.
+
+2011-10-09: 1.19.2
+- Added support for GCPs and cubicspline in GDAL provider.
+
+2011-10-06: 1.19.1
+- Fixed TypeError bug with Access-Control-Allow-Origin in WSGITileServer.
+
+2011-09-04: 1.19.0
+- Added new resampling option to GDAL provider in Goodies.
+
+2011-08-30: 1.18.3
+- Fixed incorrect handling of grayscale datasources in GDAL provider.
+
+2011-08-24: 1.18.2
+- Fixed alpha channel handling for mixed-alpha combinations in Composite provider.
+
+2011-07-23: 1.18.1
+- Fixed new spacing configuration option on vector provider.
+
+2011-07-23: 1.18.0
+- Added new configuration options to vector provider: clipped=padded for Polymaps and spacing.
+
+2011-07-18: 1.17.0
+- Added configuration for HTTP Access-Control-Allow-Origin response header for cross-origin resource sharing (CORS).
+- Added --include-path option to tilestache-server.py.
+
+2011-07-15: 1.16.0
+- Added configuration for JPEG and PNG creation options, including 8-bit PNG output and Photoshop color table support.
+
+2011-07-13: 1.15.0
+- Added three new options to tilestache seed: --from-mbtiles, --enable-retries and --error-list.
+
 2011-07-12: 1.14.0
 - Added per-layer "write cache" option.
 - Added --tile-list option to tilestache-seed.py, so that tiles to seed can be explicitly enumerated.

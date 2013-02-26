@@ -34,9 +34,10 @@ via Github to suggest other formats: http://github.com/migurski/TileStache.
 Common parameters:
 
   driver:
-    String used to identify an OGR driver. Currently, only "ESRI Shapefile",
-    "PostgreSQL", and "GeoJSON" are supported as data source drivers, with
-    "postgis" and "shapefile" accepted as synonyms. Not case-sensitive.
+    String used to identify an OGR driver. Currently, "ESRI Shapefile",
+    "PostgreSQL", "MySQL", Oracle, Spatialite and "GeoJSON" are supported as 
+     data source drivers, with "postgis" and "shapefile" accepted as synonyms. 
+     Not case-sensitive.
     
     OGR's complete list of potential formats can be found here:
     http://www.gdal.org/ogr/ogr_formats.html. Feel free to get in touch via
@@ -64,7 +65,8 @@ Common parameters:
   clipped:
     Default is true.
     Boolean flag for optionally clipping the output geometries to the
-    bounds of the enclosing tile. This results in incomplete geometries,
+    bounds of the enclosing tile, or the string value "padded" for clipping
+    to the bounds of the tile plus 5%. This results in incomplete geometries,
     dramatically smaller file sizes, and improves performance and
     compatibility with Polymaps (http://polymaps.org).
   
@@ -75,10 +77,25 @@ Common parameters:
     mercator projection. Stylistically a poor fit for GeoJSON, but useful
     when returning Arc GeoServices responses.
   
+  precision:
+    Default is 6.
+    Optional number of decimal places to use for floating point values.
+  
+  spacing:
+    Optional number of tile pixels for spacing geometries in responses. Used
+    to cut down on the number of returned features by ensuring that only those
+    features at least this many pixels apart are returned. Order of features
+    in the data source matters: early features beat out later features.
+  
   verbose:
     Default is false.
     Boolean flag for optionally expanding output with additional whitespace
     for readability. Results in larger but more readable GeoJSON responses.
+
+  id_property:
+    Default is None.
+    Sets the id of the geojson feature to the specified field of the data source.
+    This can be used, for example, to identify a unique key field for the feature.
 
 Example TileStache provider configuration:
 
@@ -144,11 +161,7 @@ try:
 except ImportError:
     from simplejson import JSONEncoder, loads as json_loads
 
-try:
-    from osgeo import ogr, osr
-except ImportError:
-    # At least we'll be able to build the documentation.
-    pass
+from osgeo import ogr, osr
 
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
@@ -163,9 +176,10 @@ class VectorResponse:
         - content: Vector data to be serialized, typically a dictionary.
         - verbose: Boolean flag to expand response for better legibility.
     """
-    def __init__(self, content, verbose):
+    def __init__(self, content, verbose, precision=6):
         self.content = content
         self.verbose = verbose
+        self.precision = precision
 
     def save(self, out, format):
         """
@@ -206,7 +220,7 @@ class VectorResponse:
     
             for atom in encoded:
                 if float_pat.match(atom):
-                    out.write('%.6f' % float(atom))
+                    out.write(('%%.%if' % self.precision) % float(atom))
                 else:
                     out.write(atom)
         
@@ -234,15 +248,21 @@ def _sref_4326():
     
     return sref
 
-def _tile_perimeter(coord, projection):
+def _tile_perimeter(coord, projection, padded):
     """ Get a tile's outer edge for a coordinate and a projection.
     
         Returns a list of 17 (x, y) coordinates corresponding to a clockwise
         circumambulation of a tile boundary in a given projection. Projection
         is like those found in TileStache.Geography, used for tile output.
+        
+        If padded argument is True, pad bbox by 5% on all sides.
     """
-    ul = projection.coordinateProj(coord)
-    lr = projection.coordinateProj(coord.right().down())
+    if padded:
+        ul = projection.coordinateProj(coord.left(0.05).up(0.05))
+        lr = projection.coordinateProj(coord.down(1.05).right(1.05))
+    else:
+        ul = projection.coordinateProj(coord)
+        lr = projection.coordinateProj(coord.right().down())
     
     xmin, ymin, xmax, ymax = ul.x, ul.y, lr.x, lr.y
     xspan, yspan = xmax - xmin, ymax - ymin
@@ -269,12 +289,20 @@ def _tile_perimeter(coord, projection):
     
     return perimeter
 
-def _tile_perimeter_geom(coord, projection):
+def _tile_perimeter_width(coord, projection):
+    """ Get the width in projected coordinates of the coordinate tile polygon.
+    
+        Uses _tile_perimeter().
+    """
+    perimeter = _tile_perimeter(coord, projection, False)
+    return perimeter[8][0] - perimeter[0][0]
+
+def _tile_perimeter_geom(coord, projection, padded):
     """ Get an OGR Geometry object for a coordinate tile polygon.
     
         Uses _tile_perimeter().
     """
-    perimeter = _tile_perimeter(coord, projection)
+    perimeter = _tile_perimeter(coord, projection, padded)
     wkt = 'POLYGON((%s))' % ', '.join(['%.3f %.3f' % xy for xy in perimeter])
     geom = ogr.CreateGeometryFromWkt(wkt)
     
@@ -321,6 +349,12 @@ def _feature_properties(feature, layer_definition, whitelist=None):
     
     return properties
 
+def _append_with_delim(s, delim, data, key):
+    if key in data:
+        return s + delim + str(data[key])
+    else:
+        return s
+	
 def _open_layer(driver_name, parameters, dirpath):
     """ Open a layer, return it and its datasource.
     
@@ -331,7 +365,7 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     okay_drivers = {'postgis': 'PostgreSQL', 'esri shapefile': 'ESRI Shapefile',
                     'postgresql': 'PostgreSQL', 'shapefile': 'ESRI Shapefile',
-                    'geojson': 'GeoJSON'}
+                    'geojson': 'GeoJSON', 'spatialite': 'SQLite', 'oracle': 'OCI', 'mysql': 'MySQL'}
     
     if driver_name.lower() not in okay_drivers:
         raise KnownUnknown('Got a driver type Vector doesn\'t understand: "%s". Need one of %s.' % (driver_name, ', '.join(okay_drivers.keys())))
@@ -348,13 +382,42 @@ def _open_layer(driver_name, parameters, dirpath):
     
         conn_parts = []
         
-        for part in ('dbname', 'user', 'host', 'password'):
+        for part in ('dbname', 'user', 'host', 'password', 'port'):
             if part in parameters:
                 conn_parts.append("%s='%s'" % (part, parameters[part]))
         
         source_name = 'PG:' + ' '.join(conn_parts)
+
+    elif driver_name == 'MySQL':
+        if 'dbname' not in parameters:
+            raise KnownUnknown('Need a "dbname" parameter for MySQL')
+        if 'table' not in parameters:
+            raise KnownUnknown('Need a "table" parameter for MySQL')
+
+        conn_parts = []
         
-    elif driver_name in ('ESRI Shapefile', 'GeoJSON'):
+        for part in ('host', 'port', 'user', 'password'):
+            if part in parameters:
+                conn_parts.append("%s=%s" % (part, parameters[part]))
+        
+        source_name = 'MySql:' + parameters["dbname"] + "," + ','.join(conn_parts) + ",tables=" + parameters['table']
+
+    elif driver_name == 'OCI':
+        if 'host' not in parameters:
+            raise KnownUnknown('Need a "host" parameter for oracle')
+        if 'table' not in parameters:
+            raise KnownUnknown('Need a "table" parameter for oracle')
+        source_name = 'OCI:'
+        source_name = _append_with_delim(source_name, '', parameters, 'user')
+        source_name = _append_with_delim(source_name, '/', parameters, 'password')
+        if 'user' in parameters:
+	        source_name = source_name + '@'
+        source_name = source_name + parameters['host']
+        source_name = _append_with_delim(source_name, ':', parameters, 'port')
+        source_name = _append_with_delim(source_name, '/', parameters, 'dbname')
+        source_name = source_name + ":" + parameters['table']
+        
+    elif driver_name in ('ESRI Shapefile', 'GeoJSON', 'SQLite'):
         if 'file' not in parameters:
             raise KnownUnknown('Need at least a "file" parameter for a shapefile')
     
@@ -374,18 +437,19 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     # Set up the layer
     #
-    if driver_name == 'PostgreSQL':
+    if driver_name == 'PostgreSQL' or driver_name == 'OCI' or driver_name == 'MySQL':
         if 'query' in parameters:
             layer = datasource.ExecuteSQL(str(parameters['query']))
         elif 'table' in parameters:
             layer = datasource.GetLayerByName(str(parameters['table']))
         else:
-            raise KnownUnknown('Need at least a "query" or "table" parameter for postgis')
-
+            raise KnownUnknown('Need at least a "query" or "table" parameter for postgis or oracle')
+    elif driver_name == 'SQLite':
+        layer = datasource.GetLayerByName(str(parameters['layer']))
     else:
         layer = datasource.GetLayer(0)
 
-    if layer.GetSpatialRef() is None: 
+    if layer.GetSpatialRef() is None and driver_name != 'SQLite': 
         raise KnownUnknown('Couldn\'t get a layer from data source %s' % source_name)
 
     #
@@ -396,10 +460,12 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     return layer, datasource
 
-def _get_features(coord, properties, projection, layer, clipped, projected):
+def _get_features(coord, properties, projection, layer, clipped, projected, spacing, id_property):
     """ Return a list of features in an OGR layer with properties in GeoJSON form.
     
-        Optionally clip features to coordinate bounding box.
+        Optionally clip features to coordinate bounding box, and optionally
+        limit returned features to only those separated by number of pixels
+        given as spacing.
     """
     #
     # Prepare output spatial reference - always WGS84.
@@ -415,20 +481,29 @@ def _get_features(coord, properties, projection, layer, clipped, projected):
     #
     definition = layer.GetLayerDefn()
     layer_sref = layer.GetSpatialRef()
+    if layer_sref == None:
+        layer_sref = _sref_4326()
     
     #
     # Spatially filter the layer
     #
-    bbox = _tile_perimeter_geom(coord, projection)
+    bbox = _tile_perimeter_geom(coord, projection, clipped == 'padded')
     bbox.TransformTo(layer_sref)
     layer.SetSpatialFilter(bbox)
     
     features = []
+    mask = None
     
+    if spacing is not None:
+        buffer = spacing * _tile_perimeter_width(coord, projection) / 256.
+
     for feature in layer:
         geometry = feature.geometry().Clone()
         
         if not geometry.Intersect(bbox):
+            continue
+        
+        if mask and geometry.Intersect(mask):
             continue
         
         if clipped:
@@ -437,14 +512,24 @@ def _get_features(coord, properties, projection, layer, clipped, projected):
         if geometry is None:
             # may indicate a TopologyException
             continue
+
+        
+        # mask out subsequent features if spacing is defined
+        if mask and buffer:
+            mask = geometry.Buffer(buffer, 2).Union(mask)
+        elif spacing is not None:
+            mask = geometry.Buffer(buffer, 2)
         
         geometry.AssignSpatialReference(layer_sref)
         geometry.TransformTo(output_sref)
 
         geom = json_loads(geometry.ExportToJson())
         prop = _feature_properties(feature, definition, properties)
-        
-        features.append({'type': 'Feature', 'properties': prop, 'geometry': geom})
+
+        geojson_feature = {'type': 'Feature', 'properties': prop, 'geometry': geom}
+        if id_property != None and id_property in prop:
+           geojson_feature['id'] = prop[id_property]
+        features.append(geojson_feature)
     
     return features
 
@@ -454,20 +539,49 @@ class Provider:
         See module documentation for explanation of constructor arguments.
     """
     
-    def __init__(self, layer, driver, parameters, clipped, verbose, projected, properties):
-        self.layer = layer
-        self.driver = driver
-        self.clipped = clipped
-        self.verbose = verbose
-        self.projected = projected
+    def __init__(self, layer, driver, parameters, clipped, verbose, projected, spacing, properties, precision, id_property):
+        self.layer      = layer
+        self.driver     = driver
+        self.clipped    = clipped
+        self.verbose    = verbose
+        self.projected  = projected
+        self.spacing    = spacing
         self.parameters = parameters
         self.properties = properties
+        self.precision  = precision
+        self.id_property = id_property
 
+    @staticmethod
+    def prepareKeywordArgs(config_dict):
+        """ Convert configured parameters to keyword args for __init__().
+        """
+        kwargs = dict()
+        
+        kwargs['driver'] = config_dict['driver']
+        kwargs['parameters'] = config_dict['parameters']
+        kwargs['id_property'] = config_dict.get('id_property', None)
+        kwargs['properties'] = config_dict.get('properties', None)
+        kwargs['projected'] = bool(config_dict.get('projected', False))
+        kwargs['verbose'] = bool(config_dict.get('verbose', False))
+        kwargs['precision'] = int(config_dict.get('precision', 6))
+        
+        if 'spacing' in config_dict:
+            kwargs['spacing'] = float(config_dict.get('spacing', 0.0))
+        else:
+            kwargs['spacing'] = None
+        
+        if config_dict.get('clipped', None) == 'padded':
+            kwargs['clipped'] = 'padded'
+        else:
+            kwargs['clipped'] = bool(config_dict.get('clipped', True))
+        
+        return kwargs
+    
     def renderTile(self, width, height, srs, coord):
         """ Render a single tile, return a VectorResponse instance.
         """
         layer, ds = _open_layer(self.driver, self.parameters, self.layer.config.dirpath)
-        features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipped, self.projected)
+        features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipped, self.projected, self.spacing, self.id_property)
         response = {'type': 'FeatureCollection', 'features': features}
         
         if self.projected:
@@ -480,7 +594,7 @@ class Provider:
         else:
             response['crs'] = {'srid': 4326, 'wkid': 4326}
 
-        return VectorResponse(response, self.verbose)
+        return VectorResponse(response, self.verbose, self.precision)
         
     def getTypeByExtension(self, extension):
         """ Get mime-type and format by file extension.

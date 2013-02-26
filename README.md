@@ -1,12 +1,15 @@
-TileStache: a stylish alternative for caching your map tiles.
+#TileStache
 
-TileStache is a Python-based server application that can serve up map tiles
-based on rendered geographic data. You might be familiar with TileCache
-(http://tilecache.org), the venerable open source WMS server from MetaCarta.
-TileStache is similar, but we hope simpler and better-suited to the needs of
-designers and cartographers.
+_a stylish alternative for caching your map tiles_
 
----- Synopsis ----
+[![Build Status](https://travis-ci.org/migurski/TileStache.png)](https://travis-ci.org/migurski/TileStache)
+
+**TileStache** is a Python-based server application that can serve up map tiles
+based on rendered geographic data. You might be familiar with [TileCache](http://tilecache.org), 
+the venerable open source WMS server from MetaCarta. TileStache is similar, but we hope 
+simpler and better-suited to the needs of designers and cartographers.
+
+##Synopsis
 
     import TileStache
     import ModestMaps
@@ -24,31 +27,40 @@ designers and cartographers.
     # like http://tile.openstreetmap.org/1/0/0.png
     coord = ModestMaps.Core.Coordinate(0, 0, 1)
     config = TileStache.Config.buildConfiguration(config)
-    type, bytes = TileStache.getTile(config.layers['ex'], coord, 'png')
+    type, bytes = TileStache.getTile(config.layers['example'], coord, 'png')
     
     open('tile.png', 'w').write(bytes)
 
 
 
----- Dependencies ----
+##Dependencies
+
+###Required:
 
 - ModestMaps: http://modestmaps.com, http://github.com/migurski/modestmaps-py
-- Python Imaging Library (PIL):http://www.pythonware.com/products/pil
+- Python Imaging Library (PIL): http://www.pythonware.com/products/pil
+
+###Optional:
+
 - Simplejson: https://github.com/simplejson/simplejson (optional if using >= python 2.6)
 - mapnik: http://mapnik.org (optional)
 - werkzeug: http://werkzeug.pocoo.org/ (optional)
 
-Install them with pip:
+Install the pure python modules with pip:
 
-    sudo pip install -U simplejson modestmaps werkzeug PIL
+    sudo pip install -U PIL modestmaps simplejson werkzeug
 
 Install pip (http://www.pip-installer.org/) like:
 
     curl -O https://raw.github.com/pypa/pip/master/contrib/get-pip.py
     sudo python get-pip.py
 
+Install Mapnik via instructions at:
 
----- Installation ----
+    http://mapnik.org/download
+
+
+##Installation
 
 TileStache can be run from the download directory as is. For example the scripts:
 
@@ -56,7 +68,7 @@ TileStache can be run from the download directory as is. For example the scripts
 
 Can all be run locally like:
 
-    ./scripts tilestache-server.py
+    ./scripts/tilestache-server.py
 
 To install globally do:
 
@@ -66,43 +78,43 @@ To install globally do:
 to fully install TileStache.
 
 
----- Quickstart ----
+##Quickstart
 
 To make sure TileStache is working start the development server:
 
-    ./scripts tilestache-server.py
+    ./scripts/tilestache-server.py
 
 Then open a modern web browser and you should be able to preview tiles at:
 
     http://localhost:8080/osm/preview.html
 
-This is a previewer that uses ModestMaps and OpenStreetMap tiles 
-from http://tile.osm.org as defined in the default config file 'tilestache.cfg'
+This is a previewer that uses ModestMaps and OpenStreetMap tiles from
+http://tile.osm.org as defined in the default config file 'tilestache.cfg'
 
 
----- Documentation ----
+##Documentation
 
 The next step is to learn how build custom layers and serve them.
 
-See http://tilestache.org/doc/ for details.
+See the [docs](http://tilestache.org/doc/) for details.
 
 
----- Features ----
+##Features
 
 Rendering providers:
-- Mapnik
-- Proxy
-- Vector
-- Templated URLs
+* Mapnik
+* Proxy
+* Vector
+* Templated URLs
 
 Caching backends:
-- Local disk
-- Test
-- Memcache
-- S3
+* Local disk
+* Test
+* Memcache
+* S3
 
 
----- Design Goals ----
+##Design Goals
 
 The design of TileStache focuses on approachability at the expense of
 cleverness or completeness. Our hope is to make it easy for anyone to design
@@ -135,6 +147,6 @@ necessary to support any external system, but we eschew complex, impenetrable
 standards in favor of pragmatic, fast utility with basic web clients.
 
 
----- License ----
+##License
 
 BSD, see LICENSE file.

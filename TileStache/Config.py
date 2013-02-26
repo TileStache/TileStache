@@ -42,18 +42,38 @@ can be found in the TileStache.Core module documentation. Another sample:
       }
     }
 
+Configuration also supports these additional settings:
+
+- "logging": one of "debug", "info", "warning", "error" or "critical", as
+  described in Python's logging module: http://docs.python.org/howto/logging.html
+
+- "index": configurable index pages for the front page of an instance.
+  A custom index can be specified as a filename relative to the configuration
+  location. Typically an HTML document would be given here, but other kinds of
+  files such as images can be used, with MIME content-type headers determined
+  by mimetypes.guess_type. A simple text greeting is displayed if no index
+  is provided.
+
 In-depth explanations of the layer components can be found in the module
 documentation for TileStache.Providers, TileStache.Core, and TileStache.Geography.
 """
 
+import sys
+import logging
 from sys import stderr, modules
 from os.path import realpath, join as pathjoin
 from urlparse import urljoin, urlparse
+from mimetypes import guess_type
+from urllib import urlopen
+from json import dumps
 
 try:
     from json import dumps as json_dumps
 except ImportError:
     from simplejson import dumps as json_dumps
+
+from ModestMaps.Geo import Location
+from ModestMaps.Core import Coordinate
 
 import Core
 import Caches
@@ -93,19 +113,101 @@ class Configuration:
           dirpath:
             Local filesystem path for this configuration,
             useful for expanding relative paths.
+          
+        Optional attribute:
+        
+          index:
+            Mimetype, content tuple for default index response.
     """
     def __init__(self, cache, dirpath):
         self.cache = cache
         self.dirpath = dirpath
         self.layers = {}
+        
+        self.index = 'text/plain', 'TileStache bellows hello.'
+
+class Bounds:
+    """ Coordinate bounding box for tiles.
+    """
+    def __init__(self, upper_left_high, lower_right_low):
+        """ Two required Coordinate objects defining tile pyramid bounds.
+        
+            Boundaries are inclusive: upper_left_high is the left-most column,
+            upper-most row, and highest zoom level; lower_right_low is the
+            right-most column, furthest-dwn row, and lowest zoom level.
+        """
+        self.upper_left_high = upper_left_high
+        self.lower_right_low = lower_right_low
+    
+    def excludes(self, tile):
+        """ Check a tile Coordinate against the bounds, return true/false.
+        """
+        if tile.zoom > self.upper_left_high.zoom:
+            # too zoomed-in
+            return True
+        
+        if tile.zoom < self.lower_right_low.zoom:
+            # too zoomed-out
+            return True
+
+        # check the top-left tile corner against the lower-right bound
+        _tile = tile.zoomTo(self.lower_right_low.zoom)
+        
+        if _tile.column > self.lower_right_low.column:
+            # too far right
+            return True
+        
+        if _tile.row > self.lower_right_low.row:
+            # too far down
+            return True
+
+        # check the bottom-right tile corner against the upper-left bound
+        __tile = tile.right().down().zoomTo(self.upper_left_high.zoom)
+        
+        if __tile.column < self.upper_left_high.column:
+            # too far left
+            return True
+        
+        if __tile.row < self.upper_left_high.row:
+            # too far up
+            return True
+        
+        return False
+    
+    def __str__(self):
+        return 'Bound %s - %s' % (self.upper_left_high, self.lower_right_low)
+
+class BoundsList:
+    """ Multiple coordinate bounding boxes for tiles.
+    """
+    def __init__(self, bounds):
+        """ Single argument is a list of Bounds objects.
+        """
+        self.bounds = bounds
+    
+    def excludes(self, tile):
+        """ Check a tile Coordinate against the bounds, return false if none match.
+        """
+        for bound in self.bounds:
+            if not bound.excludes(tile):   
+                return False
+        
+        # Nothing worked.
+        return True
 
 def buildConfiguration(config_dict, dirpath='.'):
     """ Build a configuration dictionary into a Configuration object.
     
         The second argument is an optional dirpath that specifies where in the
         local filesystem the parsed dictionary originated, to make it possible
-        to resolve relative paths.
+        to resolve relative paths. It might be a path or more likely a full
+        URL including the "file://" prefix.
     """
+    scheme, h, path, p, q, f = urlparse(dirpath)
+    
+    if scheme in ('', 'file'):
+        sys.path.insert(0, path)
+    
     cache_dict = config_dict.get('cache', {})
     cache = _parseConfigfileCache(cache_dict, dirpath)
     
@@ -114,6 +216,19 @@ def buildConfiguration(config_dict, dirpath='.'):
     for (name, layer_dict) in config_dict.get('layers', {}).items():
         config.layers[name] = _parseConfigfileLayer(layer_dict, config, dirpath)
 
+    if 'index' in config_dict:
+        index_href = urljoin(dirpath, config_dict['index'])
+        index_body = urlopen(index_href).read()
+        index_type = guess_type(index_href)
+        
+        config.index = index_type[0], index_body
+    
+    if 'logging' in config_dict:
+        level = config_dict['logging'].upper()
+    
+        if hasattr(logging, level):
+            logging.basicConfig(level=getattr(logging, level))
+    
     return config
 
 def enforcedLocalPath(relpath, dirpath, context='Path'):
@@ -153,7 +268,7 @@ def enforcedLocalPath(relpath, dirpath, context='Path'):
 def _parseConfigfileCache(cache_dict, dirpath):
     """ Used by parseConfigfile() to parse just the cache parts of a config.
     """
-    if cache_dict.has_key('name'):
+    if 'name' in cache_dict:
         _class = Caches.getCacheByName(cache_dict['name'])
         kwargs = {}
         
@@ -171,7 +286,7 @@ def _parseConfigfileCache(cache_dict, dirpath):
         elif _class is Caches.Disk:
             kwargs['path'] = enforcedLocalPath(cache_dict['path'], dirpath, 'Disk cache path')
             
-            if cache_dict.has_key('umask'):
+            if 'umask' in cache_dict:
                 kwargs['umask'] = int(cache_dict['umask'], 8)
             
             add_kwargs('dirs', 'gzip')
@@ -181,15 +296,18 @@ def _parseConfigfileCache(cache_dict, dirpath):
                                for tier_dict in cache_dict['tiers']]
     
         elif _class is Caches.Memcache.Cache:
+            if 'key prefix' in cache_dict:
+                kwargs['key_prefix'] = cache_dict['key prefix']
+        
             add_kwargs('servers', 'lifespan', 'revision')
     
         elif _class is Caches.S3.Cache:
-            add_kwargs('bucket', 'access', 'secret')
+            add_kwargs('bucket', 'access', 'secret', 'use_locks', 'path')
     
         else:
             raise Exception('Unknown cache: %s' % cache_dict['name'])
         
-    elif cache_dict.has_key('class'):
+    elif 'class' in cache_dict:
         _class = loadClassPath(cache_dict['class'])
         kwargs = cache_dict.get('kwargs', {})
         kwargs = dict( [(str(k), v) for (k, v) in kwargs.items()] )
@@ -200,6 +318,21 @@ def _parseConfigfileCache(cache_dict, dirpath):
     cache = _class(**kwargs)
 
     return cache
+
+def _parseLayerBounds(bounds_dict, projection):
+    """
+    """
+    north, west = bounds_dict.get('north', 89), bounds_dict.get('west', -180)
+    south, east = bounds_dict.get('south', -89), bounds_dict.get('east', 180)
+    high, low = bounds_dict.get('high', 31), bounds_dict.get('low', 0)
+    
+    try:
+        ul_hi = projection.locationCoordinate(Location(north, west)).zoomTo(high)
+        lr_lo = projection.locationCoordinate(Location(south, east)).zoomTo(low)
+    except TypeError:
+        raise Core.KnownUnknown('Bad bounds for layer, need north, south, east, west, high, and low: ' + dumps(bounds_dict))
+    
+    return Bounds(ul_hi, lr_lo)
 
 def _parseConfigfileLayer(layer_dict, config, dirpath):
     """ Used by parseConfigfile() to parse just the layer parts of a config.
@@ -213,21 +346,48 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     
     layer_kwargs = {}
     
-    if layer_dict.has_key('cache lifespan'):
+    if 'cache lifespan' in layer_dict:
         layer_kwargs['cache_lifespan'] = int(layer_dict['cache lifespan'])
     
-    if layer_dict.has_key('stale lock timeout'):
+    if 'stale lock timeout' in layer_dict:
         layer_kwargs['stale_lock_timeout'] = int(layer_dict['stale lock timeout'])
     
-    if layer_dict.has_key('write cache'):
+    if 'write cache' in layer_dict:
         layer_kwargs['write_cache'] = bool(layer_dict['write cache'])
     
-    if layer_dict.has_key('preview'):
+    if 'allowed origin' in layer_dict:
+        layer_kwargs['allowed_origin'] = str(layer_dict['allowed origin'])
+    
+    if 'maximum cache age' in layer_dict:
+        layer_kwargs['max_cache_age'] = int(layer_dict['maximum cache age'])
+    
+    if 'redirects' in layer_dict:
+        layer_kwargs['redirects'] = dict(layer_dict['redirects'])
+    
+    if 'tile height' in layer_dict:
+        layer_kwargs['tile_height'] = int(layer_dict['tile height'])
+    
+    if 'preview' in layer_dict:
         preview_dict = layer_dict['preview']
         
         for (key, func) in zip(('lat', 'lon', 'zoom', 'ext'), (float, float, int, str)):
             if key in preview_dict:
                 layer_kwargs['preview_' + key] = func(preview_dict[key])
+    
+    #
+    # Do the bounds
+    #
+    
+    if 'bounds' in layer_dict:
+        if type(layer_dict['bounds']) is dict:
+            layer_kwargs['bounds'] = _parseLayerBounds(layer_dict['bounds'], projection)
+    
+        elif type(layer_dict['bounds']) is list:
+            bounds = [_parseLayerBounds(b, projection) for b in layer_dict['bounds']]
+            layer_kwargs['bounds'] = BoundsList(bounds)
+    
+        else:
+            raise Core.KnownUnknown('Layer bounds must be a dictionary, not: ' + dumps(layer_dict['bounds']))
     
     #
     # Do the metatile
@@ -237,46 +397,35 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     metatile_kwargs = {}
 
     for k in ('buffer', 'rows', 'columns'):
-        if meta_dict.has_key(k):
+        if k in meta_dict:
             metatile_kwargs[k] = int(meta_dict[k])
     
     metatile = Core.Metatile(**metatile_kwargs)
     
+    #
+    # Do the per-format options
+    #
+    
+    jpeg_kwargs = {}
+    png_kwargs = {}
+
+    if 'jpeg options' in layer_dict:
+        jpeg_kwargs = dict([(str(k), v) for (k, v) in layer_dict['jpeg options'].items()])
+
+    if 'png options' in layer_dict:
+        png_kwargs = dict([(str(k), v) for (k, v) in layer_dict['png options'].items()])
+
     #
     # Do the provider
     #
 
     provider_dict = layer_dict['provider']
 
-    if provider_dict.has_key('name'):
+    if 'name' in provider_dict:
         _class = Providers.getProviderByName(provider_dict['name'])
-        provider_kwargs = {}
+        provider_kwargs = _class.prepareKeywordArgs(provider_dict)
         
-        if _class is Providers.Mapnik:
-            provider_kwargs['mapfile'] = provider_dict['mapfile']
-            provider_kwargs['fonts'] = provider_dict.get('fonts', None)
-        
-        elif _class is Providers.Proxy:
-            if provider_dict.has_key('url'):
-                provider_kwargs['url'] = provider_dict['url']
-            if provider_dict.has_key('provider'):
-                provider_kwargs['provider_name'] = provider_dict['provider']
-        
-        elif _class is Providers.UrlTemplate:
-            provider_kwargs['template'] = provider_dict['template']
-        
-        elif _class is Providers.Vector.Provider:
-            provider_kwargs['driver'] = provider_dict['driver']
-            provider_kwargs['parameters'] = provider_dict['parameters']
-            provider_kwargs['properties'] = provider_dict.get('properties', None)
-            provider_kwargs['projected'] = bool(provider_dict.get('projected', False))
-            provider_kwargs['clipped'] = bool(provider_dict.get('clipped', True))
-            provider_kwargs['verbose'] = bool(provider_dict.get('verbose', False))
-        
-        elif _class is Providers.MBTiles.Provider:
-            provider_kwargs['tileset'] = provider_dict['tileset']
-            
-    elif provider_dict.has_key('class'):
+    elif 'class' in provider_dict:
         _class = loadClassPath(provider_dict['class'])
         provider_kwargs = provider_dict.get('kwargs', {})
         provider_kwargs = dict( [(str(k), v) for (k, v) in provider_kwargs.items()] )
@@ -290,6 +439,8 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
 
     layer = Core.Layer(config, projection, metatile, **layer_kwargs)
     layer.provider = _class(layer, **provider_kwargs)
+    layer.setSaveOptionsJPEG(**jpeg_kwargs)
+    layer.setSaveOptionsPNG(**png_kwargs)
     
     return layer
 

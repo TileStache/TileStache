@@ -124,6 +124,14 @@ class Test:
         if self.logfunc:
             self.logfunc('Test cache unlock: ' + name)
     
+    def remove(self, layer, coord, format):
+        """ Pretend to remove a cached tile.
+        """
+        name = self._description(layer, coord, format)
+
+        if self.logfunc:
+            self.logfunc('Test cache remove: ' + name)
+    
     def read(self, layer, coord, format):
         """ Pretend to read a cached tile.
         """
@@ -159,9 +167,10 @@ class Disk:
         - umask: optional string representation of octal permission mask
           for stored files. Defaults to 0022.
         - dirs: optional string saying whether to create cache directories that
-          are safe or portable. For an example tile 12/656/1582.png, "portable"
-          creates matching directory trees while "portable" guarantees directories
-          with fewer files, e.g. 12/000/656/001/582.png. Defaults to safe.
+          are safe, portable or quadtile. For an example tile 12/656/1582.png,
+          "portable" creates matching directory trees while "safe" guarantees
+          directories with fewer files, e.g. 12/000/656/001/582.png.
+          Defaults to safe.
         - gzip: optional list of file formats that should be stored in a
           compressed form. Defaults to "txt", "text", "json", and "xml".
           Provide an empty list in the configuration for no compression.
@@ -202,8 +211,24 @@ class Disk:
 
             filepath = os.sep.join( (l, z, x, y + '.' + e) )
             
+        elif self.dirs == 'quadtile':
+            pad, length = 1 << 31, 1 + coord.zoom
+
+            # two binary strings, one per dimension
+            xs = bin(pad + int(coord.column))[-length:]
+            ys = bin(pad + int(coord.row))[-length:]
+            
+            # interleave binary bits into plain digits, 0-3.
+            # adapted from ModestMaps.Tiles.toMicrosoft()
+            dirpath = ''.join([str(int(y+x, 2)) for (x, y) in zip(xs, ys)])
+            
+            # built a list of nested directory names and a file basename
+            parts = [dirpath[i:i+3] for i in range(0, len(dirpath), 3)]
+            
+            filepath = os.sep.join([l] + parts[:-1] + [parts[-1] + '.' + e])
+        
         else:
-            raise KnownUnknown('Please provide a valid "dirs" parameter to the Disk cache, either "safe" or "portable" but not "%s"' % self.dirs)
+            raise KnownUnknown('Please provide a valid "dirs" parameter to the Disk cache, either "safe", "portable" or "quadtile" but not "%s"' % self.dirs)
 
         return filepath
 
@@ -236,7 +261,11 @@ class Disk:
                 
                 if time.time() > due:
                     # someone left the door locked.
-                    os.rmdir(lockpath)
+                    try:
+                        os.rmdir(lockpath)
+                    except OSError:
+                        # Oh - no they didn't.
+                        pass
                 
                 os.makedirs(lockpath, 0777&~self.umask)
                 break
@@ -253,8 +282,25 @@ class Disk:
             Lock is implemented as an empty directory next to the tile file.
         """
         lockpath = self._lockpath(layer, coord, format)
-        os.rmdir(lockpath)
-    
+
+        try:
+            os.rmdir(lockpath)
+        except OSError:
+            # Ok, someone else deleted it already
+            pass
+        
+    def remove(self, layer, coord, format):
+        """ Remove a cached tile.
+        """
+        fullpath = self._fullpath(layer, coord, format)
+        
+        try:
+            os.remove(fullpath)
+        except OSError, e:
+            # errno=2 means that the file does not exist, which is fine
+            if e.errno != 2:
+                raise
+        
     def read(self, layer, coord, format):
         """ Read a cached tile.
         """
@@ -272,7 +318,8 @@ class Disk:
             return gzip.open(fullpath, 'r').read()
 
         else:
-            return open(fullpath, 'r').read()
+            body = open(fullpath, 'rb').read()
+            return body
     
     def save(self, body, layer, coord, format):
         """ Save a cached tile.
@@ -358,7 +405,13 @@ class Multi:
         """ Release a cache lock for this tile in the first tier.
         """
         return self.tiers[0].unlock(layer, coord, format)
-    
+        
+    def remove(self, layer, coord, format):
+        """ Remove a cached tile from every tier.
+        """
+        for (index, cache) in enumerate(self.tiers):
+            cache.remove(layer, coord, format)
+        
     def read(self, layer, coord, format):
         """ Read a cached tile.
         

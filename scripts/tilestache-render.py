@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """tilestache-render.py will warm your cache.
 
+This script is *deprecated* and will be removed in a future TileStache 2.0.
+
 This script is intended to be run directly. This example will save two tiles
 for San Francisco and Oakland to local temporary files:
 

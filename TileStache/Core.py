@@ -18,7 +18,15 @@ configuration file as a dictionary:
           "preview": { ... },
           "projection": ...,
           "stale lock timeout": ...,
-          "cache lifespan": ...
+          "cache lifespan": ...,
+          "write cache": ...,
+          "bounds": { ... },
+          "allowed origin": ...,
+          "maximum cache age": ...,
+          "redirects": ...,
+          "tile height": ...,
+          "jpeg options": ...,
+          "png options": ...
         }
       }
     }
@@ -39,10 +47,59 @@ configuration file as a dictionary:
 - "cache lifespan" is an optional number of seconds that cached tiles should
   be stored. This is defined on a per-layer basis. Defaults to forever if None,
   0 or omitted.
+- "write cache" is an optional boolean value to allow skipping cache write
+  altogether. This is defined on a per-layer basis. Defaults to true if omitted.
+- "bounds" is an optional dictionary of six tile boundaries to limit the
+  rendered area: low (lowest zoom level), high (highest zoom level), north,
+  west, south, and east (all in degrees).
+- "allowed origin" is an optional string that shows up in the response HTTP
+  header Access-Control-Allow-Origin, useful for when you need to provide
+  javascript direct access to response data such as GeoJSON or pixel values.
+  The header is part of a W3C working draft (http://www.w3.org/TR/cors/).
+- "maximum cache age" is an optional number of seconds used to control behavior
+  of downstream caches. Causes TileStache responses to include Cache-Control
+  and Expires HTTP response headers. Useful when TileStache is itself hosted
+  behind an HTTP cache such as Squid, Cloudfront, or Akamai.
+- "redirects" is an optional dictionary of per-extension HTTP redirects,
+  treated as lowercase. Useful in cases where your tile provider can support
+  many formats but you want to enforce limits to save on cache usage.
+  If a request is made for a tile with an extension in the dictionary keys,
+  a response can be generated that redirects the client to the same tile
+  with another extension.
+- "tile height" gives the height of the image tile in pixels. You almost always
+  want to leave this at the default value of 256, but you can use a value of 512
+  to create double-size, double-resolution tiles for high-density phone screens.
+- "jpeg options" is an optional dictionary of JPEG creation options, passed
+  through to PIL: http://www.pythonware.com/library/pil/handbook/format-jpeg.htm.
+- "png options" is an optional dictionary of PNG creation options, passed
+  through to PIL: http://www.pythonware.com/library/pil/handbook/format-png.htm.
 
 The public-facing URL of a single tile for this layer might look like this:
 
     http://example.com/tilestache.cgi/example-name/0/0/0.png
+
+Sample JPEG creation options:
+
+    {
+      "quality": 90,
+      "progressive": true,
+      "optimize": true
+    }
+
+Sample PNG creation options:
+
+    {
+      "optimize": true,
+      "palette": "filename.act"
+    }
+
+Sample bounds:
+
+    {
+        "low": 9, "high": 15,
+        "south": 37.749, "west": -122.358,
+        "north": 37.860, "east": -122.113
+    }
 
 Metatile represents a larger area to be rendered at one time. Metatiles are
 represented in the configuration file as a dictionary:
@@ -76,9 +133,73 @@ The preview can be accessed through a URL like /<layer name>/preview.html:
 - "ext" is the filename extension, e.g. "png".
 """
 
+import logging
 from StringIO import StringIO
+from urlparse import urljoin
+from time import time
+
+from Pixels import load_palette, apply_palette
+
+try:
+    from PIL import Image
+except ImportError:
+    import Image
 
 from ModestMaps.Core import Coordinate
+
+_recent_tiles = dict(hash={}, list=[])
+
+def _addRecentTile(layer, coord, format, body, age=300):
+    """ Add the body of a tile to _recent_tiles with a timeout.
+    """
+    key = (layer, coord, format)
+    due = time() + age
+    
+    _recent_tiles['hash'][key] = body, due
+    _recent_tiles['list'].append((key, due))
+    
+    logging.debug('TileStache.Core._addRecentTile() added tile to recent tiles: %s', key)
+    
+    # now look at the oldest keys and remove them if needed
+    for (key, due_by) in _recent_tiles['list']:
+        # new enough?
+        if time() < due_by:
+            break
+        
+        logging.debug('TileStache.Core._addRecentTile() removed tile from recent tiles: %s', key)
+        
+        try:
+            _recent_tiles['list'].remove((key, due_by))
+        except ValueError:
+            pass
+        
+        try:
+            del _recent_tiles['hash'][key]
+        except KeyError:
+            pass
+
+def _getRecentTile(layer, coord, format):
+    """ Return the body of a recent tile, or None if it's not there.
+    """
+    key = (layer, coord, format)
+    body, use_by = _recent_tiles['hash'].get(key, (None, 0))
+    
+    # non-existent?
+    if body is None:
+        return None
+    
+    # new enough?
+    if time() < use_by:
+        logging.debug('TileStache.Core._addRecentTile() found tile in recent tiles: %s', key)
+        return body
+    
+    # too old
+    try:
+        del _recent_tiles['hash'][key]
+    except KeyError:
+        pass
+    
+    return None
 
 class Metatile:
     """ Some basic characteristics of a metatile.
@@ -159,6 +280,18 @@ class Layer:
           write_cache:
             Allow skipping cache write altogether, default true.
 
+          bounds:
+            Instance of Config.Bounds for limiting rendered tiles.
+          
+          allowed_origin:
+            Value for the Access-Control-Allow-Origin HTTP response header.
+
+          max_cache_age:
+            Number of seconds that tiles from this layer may be cached by downstream clients.
+
+          redirects:
+            Dictionary of per-extension HTTP redirects, treated as lowercase.
+
           preview_lat:
             Starting latitude for slippy map layer preview, default 37.80.
 
@@ -170,8 +303,13 @@ class Layer:
 
           preview_ext:
             Tile name extension for slippy map layer preview, default "png".
+
+          tile_height:
+            Height of tile in pixels, as a single integer. Tiles are generally
+            assumed to be square, and Layer.render() will respond with an error
+            if the rendered image is not this height.
     """
-    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, write_cache=True, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png'):
+    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, write_cache=True, allowed_origin=None, max_cache_age=None, redirects=None, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png', bounds=None, tile_height=256):
         self.provider = None
         self.config = config
         self.projection = projection
@@ -180,11 +318,21 @@ class Layer:
         self.stale_lock_timeout = stale_lock_timeout
         self.cache_lifespan = cache_lifespan
         self.write_cache = write_cache
+        self.allowed_origin = allowed_origin
+        self.max_cache_age = max_cache_age
+        self.redirects = redirects or dict()
         
         self.preview_lat = preview_lat
         self.preview_lon = preview_lon
         self.preview_zoom = preview_zoom
         self.preview_ext = preview_ext
+        
+        self.bounds = bounds
+        self.dim = tile_height
+        
+        self.bitmap_palette = None
+        self.jpeg_options = {}
+        self.png_options = {}
 
     def name(self):
         """ Figure out what I'm called, return a name if there is one.
@@ -200,25 +348,35 @@ class Layer:
 
     def doMetatile(self):
         """ Return True if we have a real metatile and the provider is OK with it.
-        
-            self.write_cache == False will cause this to return False.
         """
-        return self.metatile.isForReal() and hasattr(self.provider, 'renderArea') and self.write_cache
+        return self.metatile.isForReal() and hasattr(self.provider, 'renderArea')
     
     def render(self, coord, format):
         """ Render a tile for a coordinate, return PIL Image-like object.
         
             Perform metatile slicing here as well, if required, writing the
             full set of rendered tiles to cache as we go.
+
+            Note that metatiling and pass-through mode of a Provider
+            are mutually exclusive options
         """
+        if self.bounds and self.bounds.excludes(coord):
+            raise NoTileLeftBehind(Image.new('RGB', (self.dim, self.dim), (0x99, 0x99, 0x99)))
+        
         srs = self.projection.srs
         xmin, ymin, xmax, ymax = self.envelope(coord)
-        width, height = 256, 256
+        width, height = self.dim, self.dim
         
         provider = self.provider
         metatile = self.metatile
+        pass_through = provider.pass_through if hasattr(provider, 'pass_through') else False
+
         
         if self.doMetatile():
+
+            if pass_through:
+                raise KnownUnknown('Your provider is configured for metatiling and pass_through mode. That does not work')
+
             # adjust render size and coverage for metatile
             xmin, ymin, xmax, ymax = self.metaEnvelope(coord)
             width, height = self.metaSize(coord)
@@ -231,7 +389,7 @@ class Layer:
         
         elif hasattr(provider, 'renderTile'):
             # draw a single tile
-            width, height = 256, 256
+            width, height = self.dim, self.dim
             tile = provider.renderTile(width, height, srs, coord)
 
         else:
@@ -240,8 +398,18 @@ class Layer:
         if not hasattr(tile, 'save'):
             raise KnownUnknown('Return value of provider.renderArea() must act like an image; e.g. have a "save" method.')
 
-        if hasattr(tile, 'size') and tile.size != (width, height):
-            raise KnownUnknown('Your provider returned the wrong image size: %s.' % repr(tile.size))
+        if hasattr(tile, 'size') and tile.size[1] != height:
+            raise KnownUnknown('Your provider returned the wrong image size: %s instead of %d pixels tall.' % (repr(tile.size), self.dim))
+        
+        if self.bitmap_palette:
+            # this is where we apply the palette if there is one
+
+            if pass_through:
+                raise KnownUnknown('Cannot apply palette in pass_through mode')
+
+            if format.lower() == 'png':
+                t_index = self.png_options.get('transparency', None)
+                tile = apply_palette(tile, self.bitmap_palette, t_index)
         
         if self.doMetatile():
             # tile will be set again later
@@ -249,19 +417,22 @@ class Layer:
             
             for (other, x, y) in subtiles:
                 buff = StringIO()
-                bbox = (x, y, x + 256, y + 256)
+                bbox = (x, y, x + self.dim, y + self.dim)
                 subtile = surtile.crop(bbox)
                 subtile.save(buff, format)
                 body = buff.getvalue()
-                
-                self.config.cache.save(body, self, other, format)
+
+                if self.write_cache:
+                    self.config.cache.save(body, self, other, format)
                 
                 if other == coord:
                     # the one that actually gets returned
                     tile = subtile
+                
+                _addRecentTile(self, other, format, body)
         
         return tile
-
+    
     def envelope(self, coord):
         """ Projected rendering envelope (xmin, ymin, xmax, ymax) for a Coordinate.
         """
@@ -274,7 +445,7 @@ class Layer:
         """ Projected rendering envelope (xmin, ymin, xmax, ymax) for a metatile.
         """
         # size of buffer expressed as fraction of tile size
-        buffer = float(self.metatile.buffer) / 256
+        buffer = float(self.metatile.buffer) / self.dim
         
         # full set of metatile coordinates
         coords = self.metatile.allCoords(coord)
@@ -294,11 +465,11 @@ class Layer:
         """ Pixel width and height of full rendered image for a metatile.
         """
         # size of buffer expressed as fraction of tile size
-        buffer = float(self.metatile.buffer) / 256
+        buffer = float(self.metatile.buffer) / self.dim
         
         # new master image render size
-        width = int(256 * (buffer * 2 + self.metatile.columns))
-        height = int(256 * (buffer * 2 + self.metatile.rows))
+        width = int(self.dim * (buffer * 2 + self.metatile.columns))
+        height = int(self.dim * (buffer * 2 + self.metatile.rows))
         
         return width, height
 
@@ -313,8 +484,8 @@ class Layer:
             r = other.row - coords[0].row
             c = other.column - coords[0].column
             
-            x = c * 256 + self.metatile.buffer
-            y = r * 256 + self.metatile.buffer
+            x = c * self.dim + self.metatile.buffer
+            y = r * self.dim + self.metatile.buffer
             
             subtiles.append((other, x, y))
 
@@ -334,6 +505,42 @@ class Layer:
     
         else:
             raise KnownUnknown('Unknown extension in configuration: "%s"' % extension)
+
+    def setSaveOptionsJPEG(self, quality=None, optimize=None, progressive=None):
+        """ Optional arguments are added to self.jpeg_options for pickup when saving.
+        
+            More information about options:
+                http://www.pythonware.com/library/pil/handbook/format-jpeg.htm
+        """
+        if quality is not None:
+            self.jpeg_options['quality'] = int(quality)
+
+        if optimize is not None:
+            self.jpeg_options['optimize'] = bool(optimize)
+
+        if progressive is not None:
+            self.jpeg_options['progressive'] = bool(progressive)
+
+    def setSaveOptionsPNG(self, optimize=None, palette=None):
+        """ Optional arguments are added to self.png_options for pickup when saving.
+        
+            Palette argument is a URL relative to the configuration file,
+            and it implies bits and optional transparency options.
+        
+            More information about options:
+                http://www.pythonware.com/library/pil/handbook/format-png.htm
+        """
+        if optimize is not None:
+            self.png_options['optimize'] = bool(optimize)
+        
+        if palette is not None:
+            palette = urljoin(self.config.dirpath, palette)
+            palette, bits, t_index = load_palette(palette)
+            
+            self.bitmap_palette, self.png_options['bits'] = palette, bits
+            
+            if t_index is not None:
+                self.png_options['transparency'] = t_index
 
 class KnownUnknown(Exception):
     """ There are known unknowns. That is to say, there are things that we now know we don't know.
@@ -359,6 +566,16 @@ class NoTileLeftBehind(Exception):
         self.tile = tile
         Exception.__init__(self, tile)
 
+class TheTileIsInAnotherCastle(Exception):
+    """ Ask a client to look someplace else for a tile.
+    
+        This exception can be thrown in a provider to signal
+        to HTTP clients that a tile should be asked-for elsewhere.
+    """
+    def __init__(self, path_info):
+        self.path_info = path_info
+        Exception.__init__(self, path_info)
+
 def _preview(layer):
     """ Get an HTML response for a given named layer.
     """
@@ -370,19 +587,33 @@ def _preview(layer):
     return """<!DOCTYPE html>
 <html>
 <head>
-	<title>TileStache Preview: %(layername)s</title>
-    <script src="http://code.modestmaps.com/0.13.2/modestmaps.min.js" type="text/javascript"></script>
+    <title>TileStache Preview: %(layername)s</title>
+    <script src="http://code.modestmaps.com/tilestache/modestmaps.min.js" type="text/javascript"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0;">
+    <style type="text/css">
+        html, body, #map {
+            position: absolute;
+            width: 100%%;
+            height: 100%%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
 </head>
 <body>
-    <script type="text/javascript">
+    <div id="map"></div>
+    <script type="text/javascript" defer>
     <!--
-    
         var template = '{Z}/{X}/{Y}.%(ext)s';
         var provider = new com.modestmaps.TemplatedMapProvider(template);
-        var map = new com.modestmaps.Map(document.body, provider);
+        var map = new MM.Map('map', provider, null, [
+            new MM.TouchHandler(),
+            new MM.DragHandler(),
+            new MM.DoubleClickHandler()
+        ]);
         map.setCenterZoom(new com.modestmaps.Location(%(lat).6f, %(lon).6f), %(zoom)d);
-        map.draw();
-    
+        // hashify it
+        new MM.Hash(map);
     //-->
     </script>
 </body>
