@@ -107,7 +107,7 @@ class Cache:
         """
         key_name = tile_key(layer, coord, format, self.path)
         key = self.bucket.get_key(key_name)
-        
+
         if key is None:
             return None
         
