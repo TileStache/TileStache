@@ -64,7 +64,7 @@ def create_tileset(filename, name, type, version, description, format, bounds=No
             A description of the layer as plain text.
           
           format:
-            The image file format of the tile data: png or jpg
+            The image file format of the tile data: png or jpg or json
         
         One row in metadata is suggested and, if provided, may enhance performance:
 
@@ -75,8 +75,8 @@ def create_tileset(filename, name, type, version, description, format, bounds=No
             format - left, bottom, right, top. Example of the full earth:
             -180.0,-85,180,85.
     """
-    if format not in ('png', 'jpg'):
-        raise Exception('Format must be one of "png" or "jpg", not "%s"' % format)
+    if format not in ('png', 'jpg',' json'):
+        raise Exception('Format must be one of "png" or "jpg" or "json", not "%s"' % format)
     
     db = _connect(filename)
     
@@ -153,7 +153,7 @@ def get_tile(filename, coord):
     db = _connect(filename)
     db.text_factory = bytes
     
-    formats = {'png': 'image/png', 'jpg': 'image/jpeg', None: None}
+    formats = {'png': 'image/png', 'jpg': 'image/jpeg', 'json': 'text/json', None: None}
     format = db.execute("SELECT value FROM metadata WHERE name='format'").fetchone()
     format = format and format[0] or None
     mime_type = formats[format]
@@ -215,8 +215,25 @@ class Provider:
         """ Retrieve a single tile, return a TileResponse instance.
         """
         mime_type, content = get_tile(self.tileset, coord)
-        formats = {'image/png': 'PNG', 'image/jpeg': 'JPEG', None: None}
+        formats = {'image/png': 'PNG', 'image/jpeg': 'JPEG', 'text/json': 'JSON', None: None}
         return TileResponse(formats[mime_type], content)
+
+    def getTypeByExtension(self, extension):
+        """ Get mime-type and format by file extension.
+        
+            This only accepts "png" or "jpg" or "json".
+        """
+        if extension.lower() == 'json':
+            return 'text/json', 'JSON'
+        
+        elif extension.lower() == 'png':
+            return 'image/png', 'PNG'
+
+        elif extension.lower() == 'jpg':
+            return 'image/jpg', 'JPEG'
+        
+        else:
+            raise KnownUnknown('MBTiles only makes .png and .jpg and .json tiles, not "%s"' % extension)
 
 class TileResponse:
     """ Wrapper class for tile response that makes it behave like a PIL.Image object.
