@@ -245,9 +245,6 @@ class Proxy:
         if srs != Geography.SphericalMercator.srs:
             raise Exception('Projection doesn\'t match EPSG:900913: "%(srs)s"' % locals())
 
-        if (width, height) != (256, 256):
-            raise Exception("Image dimensions don't match expected tile size: %(width)dx%(height)d" % locals())
-
         img = None
         urls = self.provider.getTileUrls(coord)
 
