@@ -179,7 +179,7 @@ class Provider:
             of repeatedly-used identical images.
         """
         # start with an empty base
-        rendered = Blit.Color(0, 0, 0, 0x10)
+        rendered = Blit.Color(0, 0, 0, 0)
     
         for layer in self.stack:
             if 'zoom' in layer and not in_zoom(coord, layer['zoom']):
