@@ -598,6 +598,11 @@ def _preview(layer):
             margin: 0;
             padding: 0;
         }
+
+        #map img {
+            width: 256px;
+            height: 256px;
+        }
     </style>
 </head>
 <body>
