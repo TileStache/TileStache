@@ -18,10 +18,10 @@ S3 cache parameters:
     Required bucket name for S3. If it doesn't exist, it will be created.
 
   access
-    Required access key ID for your S3 account.
+    Optional access key ID for your S3 account.
 
   secret
-    Required secret access key for your S3 account.
+    Optional secret access key for your S3 account.
 
   reduced_redundancy
     If set to true, use S3's Reduced Redundancy Storage feature. Storage is
@@ -31,9 +31,17 @@ S3 cache parameters:
     Optional boolean flag for whether to use the locking feature on S3.
     True by default. A good reason to set this to false would be the
     additional price and time required for each lock set in S3.
+    
+  path
+    Optional path under bucket to use as the cache dir. ex. 'cache' will 
+    put tiles under <bucket>/cache/
 
 Access and secret keys are under "Security Credentials" at your AWS account page:
   http://aws.amazon.com/account/
+  
+When access or secret are not provided, the environment variables
+AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY will be used
+    http://docs.pythonboto.org/en/latest/s3_tut.html#creating-a-connection
 """
 from time import time as _time, sleep as _sleep
 from mimetypes import guess_type
@@ -47,33 +55,35 @@ except ImportError:
     # at least we can build the documentation
     pass
 
-def tile_key(layer, coord, format):
+def tile_key(layer, coord, format, path = ''):
     """ Return a tile key string.
     """
+    path = path.strip('/')
     name = layer.name()
     tile = '%(zoom)d/%(column)d/%(row)d' % coord.__dict__
     ext = format.lower()
 
-    return str('%(name)s/%(tile)s.%(ext)s' % locals())
+    return str('%(path)s/%(name)s/%(tile)s.%(ext)s' % locals())
 
 class Cache:
     """
     """
-    def __init__(self, bucket, access, secret, use_locks=True, reduced_redundancy=False):
+    def __init__(self, bucket, access=None, secret=None, use_locks=True, path='', reduced_redundancy=False):
         self.bucket = S3Bucket(S3Connection(access, secret), bucket)
         self.use_locks = bool(use_locks)
+        self.path = path
         self.reduced_redundancy = reduced_redundancy
 
     def lock(self, layer, coord, format):
         """ Acquire a cache lock for this tile.
         
             Returns nothing, but blocks until the lock has been acquired.
-            Does nothing and returns immediately is `use_locks` is false.
+            Does nothing and returns immediately if `use_locks` is false.
         """
         if not self.use_locks:
             return
         
-        key_name = tile_key(layer, coord, format)
+        key_name = tile_key(layer, coord, format, self.path)
         due = _time() + layer.stale_lock_timeout
         
         while _time() < due:
@@ -88,21 +98,21 @@ class Cache:
     def unlock(self, layer, coord, format):
         """ Release a cache lock for this tile.
         """
-        key_name = tile_key(layer, coord, format)
+        key_name = tile_key(layer, coord, format, self.path)
         self.bucket.delete_key(key_name+'-lock')
         
     def remove(self, layer, coord, format):
         """ Remove a cached tile.
         """
-        key_name = tile_key(layer, coord, format)
+        key_name = tile_key(layer, coord, format, self.path)
         self.bucket.delete_key(key_name)
         
     def read(self, layer, coord, format):
         """ Read a cached tile.
         """
-        key_name = tile_key(layer, coord, format)
+        key_name = tile_key(layer, coord, format, self.path)
         key = self.bucket.get_key(key_name)
-        
+
         if key is None:
             return None
         
@@ -117,7 +127,7 @@ class Cache:
     def save(self, body, layer, coord, format):
         """ Save a cached tile.
         """
-        key_name = tile_key(layer, coord, format)
+        key_name = tile_key(layer, coord, format, self.path)
         key = self.bucket.new_key(key_name)
         
         content_type, encoding = guess_type('example.'+format)

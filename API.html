@@ -598,7 +598,8 @@ Example configuration:
   "cache": {
     "name": "Memcache",
     "servers": ["127.0.0.1:11211"],
-    "revision": 0
+    "revision": 0,
+    "key prefix": "unique-id"
   }<span class="bg">,
   "layers": { … }
 }</span>
@@ -619,6 +620,15 @@ Memcache cache parameters:
     <dd>
     Optional revision number for mass-expiry of cached tiles regardless of lifespan.
     Defaults to <samp>0</samp>.
+    </dd>
+
+    <dt>key prefix</dt>
+    <dd>
+    Optional string to prepend to Memcache generated key.
+    Useful when running multiple instances of TileStache
+    that share the same Memcache instance to avoid key
+    collisions. The key prefix will be prepended to the
+    key name. Defaults to <samp>""</samp>.
     </dd>
 </dl>
 
@@ -664,13 +674,13 @@ S3 cache parameters:
 
     <dt>access</dt>
     <dd>
-    Required access key ID for your S3 account. You can find this under “Security
+    Optional access key ID for your S3 account. You can find this under “Security
     Credentials” at your <a href="http://aws.amazon.com/account/">AWS account page</a>.
     </dd>
 
     <dt>secret</dt>
     <dd>
-    Required secret access key for your S3 account. You can find this under “Security
+    Optional secret access key for your S3 account. You can find this under “Security
     Credentials” at your <a href="http://aws.amazon.com/account/">AWS account page</a>.
     </dd>
 
@@ -688,7 +698,20 @@ S3 cache parameters:
     <samp>false</samp> would be the additional price and time required for each
     lock set in S3.
     </dd>
+
+    <dt>path</dt>
+    <dd>
+    Optional path under bucket to use as the cache directory. ex. <samp>'path': 'cache'</samp> will 
+	put tiles under <samp>{bucket}/cache/</samp>
+    </dd>
 </dl>
+
+<p>
+When access or secret are not provided, the environment variables
+AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY will be used.
+See <a href="http://docs.pythonboto.org/en/latest/s3_tut.html#creating-a-connection">Boto documentation</a>
+for more information.
+</p>
 
 <p>
 See

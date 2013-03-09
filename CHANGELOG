@@ -1,3 +1,22 @@
+2013-02-26: 1.45.0
+- Made S3 credentials optional since Boto allows them in via environment vars or config file.
+- Added path parameter to S3 cache, to use a subdirectory rather than bucket root.
+- Eased bitmap size checks in Sandwich provider for retina use.
+- Added "quadtile" directory layout for disk cache provider.
+- Added JSON support to MBTiles provider from Aaron Cope.
+- Added Travis CI tests for Vector layer.
+
+2013-02-22: 1.44.0
+- Merged Ragi Burhum's Travis continuous integration tests with ~1/3rd test coverage.
+- Modified Proxy provider to return untouched original image if size and type match.
+- Updated Mapnik usage to reflect recently released versions.
+- Fixed Mapnik provider deadlock bug with patch from Lee Shepherd.
+- Added "key prefix" argument to Memcache cache provider.
+
+2013-01-03: 1.43.0
+- Added new tilestache-list.py script to feed tilestache-seed.py --tile-list.
+- Added new "use_locks" option to S3 cache provider to optionally reduce write costs.
+
 2012-10-01: 1.42.1
 - Papered over a strange appearance bug in GDAL provider with using cubicspline interpolation.
 

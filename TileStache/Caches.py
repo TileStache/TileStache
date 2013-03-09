@@ -167,9 +167,10 @@ class Disk:
         - umask: optional string representation of octal permission mask
           for stored files. Defaults to 0022.
         - dirs: optional string saying whether to create cache directories that
-          are safe or portable. For an example tile 12/656/1582.png, "portable"
-          creates matching directory trees while "safe" guarantees directories
-          with fewer files, e.g. 12/000/656/001/582.png. Defaults to safe.
+          are safe, portable or quadtile. For an example tile 12/656/1582.png,
+          "portable" creates matching directory trees while "safe" guarantees
+          directories with fewer files, e.g. 12/000/656/001/582.png.
+          Defaults to safe.
         - gzip: optional list of file formats that should be stored in a
           compressed form. Defaults to "txt", "text", "json", and "xml".
           Provide an empty list in the configuration for no compression.
@@ -210,8 +211,24 @@ class Disk:
 
             filepath = os.sep.join( (l, z, x, y + '.' + e) )
             
+        elif self.dirs == 'quadtile':
+            pad, length = 1 << 31, 1 + coord.zoom
+
+            # two binary strings, one per dimension
+            xs = bin(pad + int(coord.column))[-length:]
+            ys = bin(pad + int(coord.row))[-length:]
+            
+            # interleave binary bits into plain digits, 0-3.
+            # adapted from ModestMaps.Tiles.toMicrosoft()
+            dirpath = ''.join([str(int(y+x, 2)) for (x, y) in zip(xs, ys)])
+            
+            # built a list of nested directory names and a file basename
+            parts = [dirpath[i:i+3] for i in range(0, len(dirpath), 3)]
+            
+            filepath = os.sep.join([l] + parts[:-1] + [parts[-1] + '.' + e])
+        
         else:
-            raise KnownUnknown('Please provide a valid "dirs" parameter to the Disk cache, either "safe" or "portable" but not "%s"' % self.dirs)
+            raise KnownUnknown('Please provide a valid "dirs" parameter to the Disk cache, either "safe", "portable" or "quadtile" but not "%s"' % self.dirs)
 
         return filepath
 

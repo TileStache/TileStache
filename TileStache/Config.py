@@ -296,10 +296,13 @@ def _parseConfigfileCache(cache_dict, dirpath):
                                for tier_dict in cache_dict['tiers']]
     
         elif _class is Caches.Memcache.Cache:
+            if 'key prefix' in cache_dict:
+                kwargs['key_prefix'] = cache_dict['key prefix']
+        
             add_kwargs('servers', 'lifespan', 'revision')
     
         elif _class is Caches.S3.Cache:
-            add_kwargs('bucket', 'access', 'secret', 'use_locks', 'reduced_redundancy')
+            add_kwargs('bucket', 'access', 'secret', 'use_locks', 'path', 'reduced_redundancy')
     
         else:
             raise Exception('Unknown cache: %s' % cache_dict['name'])

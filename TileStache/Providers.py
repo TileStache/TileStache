@@ -136,6 +136,56 @@ def getProviderByName(name):
 
     raise Exception('Unknown provider name: "%s"' % name)
 
+class Verbatim:
+    ''' Wrapper for PIL.Image that saves raw input bytes if modes and formats match.
+    '''
+    def __init__(self, bytes):
+        self.buffer = StringIO(bytes)
+        self.format = None
+        self._image = None
+        
+        #
+        # Guess image format based on magic number, if possible.
+        # http://www.astro.keele.ac.uk/oldusers/rno/Computing/File_magic.html
+        #
+        magic = {
+            '\x89\x50\x4e\x47': 'PNG',
+            '\xff\xd8\xff\xe0': 'JPEG',
+            '\x47\x49\x46\x38': 'GIF',
+            '\x47\x49\x46\x38': 'GIF',
+            '\x4d\x4d\x00\x2a': 'TIFF',
+            '\x49\x49\x2a\x00': 'TIFF'
+            }
+        
+        if bytes[:4] in magic:
+            self.format = magic[bytes[:4]]
+
+        else:
+            self.format = self.image().format
+    
+    def image(self):
+        ''' Return a guaranteed instance of PIL.Image.
+        '''
+        if self._image is None:
+            self._image = Image.open(self.buffer)
+        
+        return self._image
+    
+    def convert(self, mode):
+        if mode == self.image().mode:
+            return self
+        else:
+            return self.image().convert(mode)
+
+    def crop(self, bbox):
+        return self.image().crop(bbox)
+    
+    def save(self, output, format):
+        if format == self.format:
+            output.write(self.buffer.getvalue())
+        else:
+            self.image().save(output, format)
+
 class Proxy:
     """ Proxy provider, to pass through and cache tiles from other places.
     
@@ -186,24 +236,21 @@ class Proxy:
 
         if 'provider' in config_dict:
             kwargs['provider_name'] = config_dict['provider']
-        
+
         return kwargs
-    
+
     def renderTile(self, width, height, srs, coord):
         """
         """
         if srs != Geography.SphericalMercator.srs:
             raise Exception('Projection doesn\'t match EPSG:900913: "%(srs)s"' % locals())
-    
-        if (width, height) != (256, 256):
-            raise Exception("Image dimensions don't match expected tile size: %(width)dx%(height)d" % locals())
 
         img = None
         urls = self.provider.getTileUrls(coord)
-        
+
         for url in urls:
             body = urllib.urlopen(url).read()
-            tile = Image.open(StringIO(body)).convert('RGBA')
+            tile = Verbatim(body)
 
             if len(urls) == 1:
                 #
@@ -216,9 +263,9 @@ class Proxy:
                 # for many URLs, paste them to a new image.
                 #
                 img = Image.new('RGBA', (width, height))
-            
+
             img.paste(tile, (0, 0), tile)
-        
+
         return img
 
 class UrlTemplate:
@@ -255,9 +302,9 @@ class UrlTemplate:
 
         if 'referer' in config_dict:
             kwargs['referer'] = config_dict['referer']
-        
+
         return kwargs
-    
+
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """ Return an image for an area.
         
@@ -265,14 +312,14 @@ class UrlTemplate:
         """
         mapping = {'width': width, 'height': height, 'srs': srs, 'zoom': zoom}
         mapping.update({'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax})
-        
+
         href = self.template.safe_substitute(mapping)
         req = urllib2.Request(href)
-        
+
         if self.referer:
             req.add_header('Referer', self.referer)
-        
+
         body = urllib2.urlopen(req).read()
-        tile = Image.open(StringIO(body)).convert('RGBA')
+        tile = Verbatim(body)
 
         return tile
