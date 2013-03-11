@@ -1,7 +1,7 @@
-from math import pi, log
+from math import pi, log as _log
 from StringIO import StringIO
 from httplib import HTTPConnection
-from threading import Thread, Lock
+from threading import Thread, Lock as _Lock
 from itertools import product
 from urlparse import urlparse
 from gzip import GzipFile
@@ -16,10 +16,13 @@ from . import mvt, geojson
 diameter = 2 * pi * 6378137
 
 # zoom of one-meter pixels
-meter_zoom = log(diameter) / log(2) - 8
+meter_zoom = _log(diameter) / _log(2) - 8
 
 def utf8_keys(dictionary):
     ''' Convert dictionary keys to utf8-encoded strings for Mapnik.
+    
+        By default, json.load() returns dictionaries with unicode keys
+        but Mapnik is ultra-whiny about these and rejects them.
     '''
     return dict([(key.encode('utf8'), val) for (key, val) in dictionary.items()])
 
@@ -30,7 +33,7 @@ def list_tiles(query):
     '''
     # relative zoom from one-meter pixels to query pixels
     resolution = sum(query.resolution) / 2
-    diff = log(resolution) / log(2)
+    diff = _log(resolution) / _log(2)
     
     # calculated zoom level for this query
     zoom = round(meter_zoom + diff)
@@ -51,7 +54,7 @@ def load_features(jobs, host, port, path, tiles):
         Calls load_tile_features() in a thread pool to speak HTTP.
     '''
     features = []
-    lock = Lock()
+    lock = _Lock()
     
     args = (lock, host, port, path, tiles, features)
     threads = [Thread(target=load_tile_features, args=args) for i in range(jobs)]
@@ -145,10 +148,27 @@ def feature_sortkey((geom, props)):
     return layer
 
 class Datasource (mapnik.PythonDatasource):
-    '''
+    ''' Mapnik datasource to read tiled vector data in GeoJSON or MVT formats.
+
+        Sample usage in Mapnik configuration XML:
+        
+        <Layer name="test" srs="+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs">
+            <StyleName>...</StyleName>
+            <Datasource>
+                <Parameter name="type">python</Parameter>
+                <Parameter name="factory">TileStache.Goodies.VecTiles:Datasource</Parameter>
+                <Parameter name="template">http://example.com/{z}/{x}/{y}.mvt</Parameter>
+            </Datasource>
+        </Layer>
     '''
     def __init__(self, template):
-        '''
+        ''' Make a new Datasource.
+        
+            Parameters:
+        
+            template
+                Required URL template with placeholders for tile zoom, x and y,
+                e.g. "http://example.com/layer/{z}/{x}/{y}.json".
         '''
         scheme, host, path, p, query, f = urlparse(template)
         

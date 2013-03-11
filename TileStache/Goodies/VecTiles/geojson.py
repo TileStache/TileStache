@@ -13,9 +13,9 @@ def mercator((x, y)):
     return coord.x, coord.y
 
 def decode(file):
-    ''' Load data from a GeoJSON stream.
-        
-        Returns a list of (WKB, property dict) pairs.
+    ''' Decode a GeoJSON file into a list of (WKB, property dict) features.
+    
+        Result can be passed directly to mapnik.PythonDatasource.wkb_features().
     '''
     data = json.load(file)
     features = []

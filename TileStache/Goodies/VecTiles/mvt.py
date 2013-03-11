@@ -1,17 +1,54 @@
+''' Implementation of MVT (Mapnik Vector Tiles) data format.
+
+Mapnik's PythonDatasource.features() method can return a list of WKB features,
+pairs of WKB format geometry and dictionaries of key-value pairs that are
+rendered by Mapnik directly. PythonDatasource is new in Mapnik as of version
+2.1.0.
+
+More information:
+    http://mapnik.org/docs/v2.1.0/api/python/mapnik.PythonDatasource-class.html
+
+The MVT file format is a simple container for Mapnik-compatible vector tiles
+that minimizes the amount of conversion performed by the renderer, in contrast
+to other file formats such as GeoJSON.
+
+An MVT file starts with 8 bytes:
+
+    4 bytes "\\x89MVT"
+    uint32  Length of body
+    bytes   zlib-compressed body
+
+The following body is a zlib-compressed bytestream. When decompressed,
+it starts with four bytes indicating the total feature count.
+
+    uint32  Feature count
+    bytes   Stream of feature data
+
+Each feature has two parts, a raw WKB (well-known binary) representation of
+the geometry in spherical mercator and a JSON blob for feature properties.
+
+    uint32  Length of feature WKB
+    bytes   Raw bytes of WKB
+    uint32  Length of properties JSON
+    bytes   JSON dictionary of feature properties
+
+'''
 from StringIO import StringIO
-from zlib import decompress
-from struct import unpack
+from zlib import decompress as _decompress
+from struct import unpack as _unpack
 import json
 
 def decode(file):
-    '''
+    ''' Decode an MVT file into a list of (WKB, property dict) features.
+    
+        Result can be passed directly to mapnik.PythonDatasource.wkb_features().
     '''
     head = file.read(4)
     
     if head != '\x89MVT':
         raise Exception('Bad head: "%s"' % head)
     
-    body = StringIO(decompress(file.read(_next_int(file))))
+    body = StringIO(_decompress(file.read(_next_int(file))))
     features = []
     
     for i in range(_next_int(body)):
@@ -26,4 +63,4 @@ def decode(file):
 def _next_int(file):
     ''' Read the next big-endian 4-byte unsigned int from a file.
     '''
-    return unpack('!I', file.read(4))[0]
+    return _unpack('!I', file.read(4))[0]

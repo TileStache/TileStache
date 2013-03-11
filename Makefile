@@ -39,6 +39,9 @@ $(TARBALL): doc
 	ln TileStache/Goodies/Providers/*.py $(PACKAGE)/TileStache/Goodies/Providers/
 	ln TileStache/Goodies/Providers/*.ttf $(PACKAGE)/TileStache/Goodies/Providers/
 
+	mkdir $(PACKAGE)/TileStache/Goodies/VecTiles
+	ln TileStache/Goodies/VecTiles/*.py $(PACKAGE)/TileStache/Goodies/VecTiles/
+
 	mkdir $(PACKAGE)/scripts
 	ln scripts/*.py $(PACKAGE)/scripts/
 
@@ -92,6 +95,10 @@ doc:
 	pydoc -w TileStache.Goodies.StatusServer
 	pydoc -w TileStache.Goodies.Proj4Projection
 	pydoc -w TileStache.Goodies.ExternalConfigServer
+	pydoc -w TileStache.Goodies.VecTiles
+	pydoc -w TileStache.Goodies.VecTiles.mvt
+	pydoc -w TileStache.Goodies.VecTiles.ops
+	pydoc -w TileStache.Goodies.VecTiles.geojson
 
 	pydoc -w scripts/tilestache-*.py
 

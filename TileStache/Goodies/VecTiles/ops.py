@@ -1,4 +1,10 @@
-'''
+''' Per-coordinate transformation function for shapely geometries.
+
+To be replaced with shapely.ops.transform in Shapely 1.2.18.
+
+See also:
+    https://github.com/Toblerity/Shapely/issues/46
+
 >>> from shapely.geometry import *
 
 >>> coll0 = GeometryCollection()
