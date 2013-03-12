@@ -1,14 +1,11 @@
 from re import compile
+from math import pi, log, tan
 
 import json
-import mapnik
 
 from shapely.wkb import loads
 from shapely.geometry import asShape
 from .ops import transform
-
-srs = '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs'
-proj = mapnik.Projection(srs)
 
 float_pat = compile(r'^-?\d+\.\d+(e-?\d+)?$')
 charfloat_pat = compile(r'^[\[,\,]-?\d+\.\d+(e-?\d+)?$')
@@ -16,8 +13,9 @@ charfloat_pat = compile(r'^[\[,\,]-?\d+\.\d+(e-?\d+)?$')
 def mercator((x, y)):
     ''' Project an (x, y) tuple to spherical mercator.
     '''
-    coord = proj.forward(mapnik.Coord(x, y))
-    return coord.x, coord.y
+    x, y = pi * x/180, pi * y/180
+    y = log(tan(0.25 * pi + 0.5 * y))
+    return 6378137 * x, 6378137 * y
 
 def decode(file):
     ''' Decode a GeoJSON file into a list of (WKB, property dict) features.
