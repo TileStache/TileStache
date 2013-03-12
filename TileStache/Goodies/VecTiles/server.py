@@ -1,7 +1,14 @@
 from math import pi
 
-from psycopg2.extras import RealDictCursor
-from psycopg2 import connect
+try:
+    from psycopg2.extras import RealDictCursor
+    from psycopg2 import connect
+
+except ImportError, err:
+    # Still possible to build the documentation without psycopg2
+
+    def connect(*args, **kwargs):
+        raise err
 
 from . import mvt, geojson
 
