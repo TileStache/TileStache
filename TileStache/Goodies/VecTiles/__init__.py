@@ -11,6 +11,7 @@ import logging
 import mapnik
 
 from . import mvt, geojson
+from .server import Provider
 
 # earth's diameter in meters
 diameter = 2 * pi * 6378137

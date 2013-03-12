@@ -34,9 +34,11 @@ the geometry in spherical mercator and a JSON blob for feature properties.
 
 '''
 from StringIO import StringIO
-from zlib import decompress as _decompress
-from struct import unpack as _unpack
+from zlib import decompress as _decompress, compress as _compress
+from struct import unpack as _unpack, pack as _pack
 import json
+
+from .wkb import approximate_wkb
 
 def decode(file):
     ''' Decode an MVT file into a list of (WKB, property dict) features.
@@ -59,6 +61,23 @@ def decode(file):
         features.append((wkb, props))
     
     return features
+
+def encode(file, features):
+    '''
+    '''
+    parts = []
+    
+    for (wkb, prop) in features:
+        wkb = approximate_wkb(wkb)
+        prop = json.dumps(prop)
+        
+        parts.extend([_pack('>I', len(wkb)), wkb, _pack('>I', len(prop)), prop])
+    
+    body = _compress(_pack('>I', len(features)) + ''.join(parts))
+    
+    file.write('\x89MVT')
+    file.write(_pack('>I', len(body)))
+    file.write(body)
 
 def _next_int(file):
     ''' Read the next big-endian 4-byte unsigned int from a file.
