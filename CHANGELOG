@@ -1,3 +1,7 @@
+2013-03-12: 1.46.0
+- Added TileStache.Goodies.VecTiles to support efficient vector data tiles for use in Mapnik.
+- Fixed alpha-channel issue in Sandwich provider with patch from Lars Ahlzen.
+
 2013-02-26: 1.45.0
 - Made S3 credentials optional since Boto allows them in via environment vars or config file.
 - Added path parameter to S3 cache, to use a subdirectory rather than bucket root.
