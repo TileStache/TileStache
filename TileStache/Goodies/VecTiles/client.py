@@ -12,6 +12,7 @@ Sample usage in Mapnik configuration XML:
          <Parameter name="type">python</Parameter>
          <Parameter name="factory">TileStache.Goodies.VecTiles:Datasource</Parameter>
          <Parameter name="template">http://example.com/{z}/{x}/{y}.mvt</Parameter>
+         <Parameter name="sort_key">sort_key ascending</Parameter>
      </Datasource>
  </Layer>
 
@@ -162,17 +163,23 @@ class Datasource (PythonDatasource):
                 <Parameter name="type">python</Parameter>
                 <Parameter name="factory">TileStache.Goodies.VecTiles:Datasource</Parameter>
                 <Parameter name="template">http://example.com/{z}/{x}/{y}.mvt</Parameter>
+                <Parameter name="sort_key">sort_key ascending</Parameter>
             </Datasource>
         </Layer>
     '''
-    def __init__(self, template):
+    def __init__(self, template, sort_key=None):
         ''' Make a new Datasource.
         
             Parameters:
         
-            template
+              template:
                 Required URL template with placeholders for tile zoom, x and y,
                 e.g. "http://example.com/layer/{z}/{x}/{y}.json".
+        
+              sort_key:
+                Optional field name to use when sorting features for rendering.
+                E.g. "name" or "name ascending" to sort ascending by name,
+                "name descending" to sort descending by name.
         '''
         scheme, host, path, p, query, f = urlparse(template)
         
@@ -184,6 +191,15 @@ class Datasource (PythonDatasource):
         self.path = self.path.replace('{Z}', '{z}').replace('{z}', '%(z)d')
         self.path = self.path.replace('{X}', '{x}').replace('{x}', '%(x)d')
         self.path = self.path.replace('{Y}', '{y}').replace('{y}', '%(y)d')
+        
+        if sort_key is None:
+            self.sort, self.reverse = None, None
+        
+        elif sort_key.lower().endswith(' descending'):
+            self.sort, self.reverse = sort_key.split()[0], True
+        
+        else:
+            self.sort, self.reverse = sort_key.split()[0], False
         
         bbox = Box2d(-diameter/2, -diameter/2, diameter/2, diameter/2)
         PythonDatasource.__init__(self, envelope=bbox)
@@ -197,7 +213,10 @@ class Datasource (PythonDatasource):
         
         features = load_features(8, self.host, self.port, self.path, tiles)
         features = [(wkb, utf8_keys(props)) for (wkb, props) in features]
-        features.sort(key=lambda (wkb, props): props.get('sort_key', 0))
+        
+        if self.sort:
+            key_func = lambda (wkb, props): props.get(self.sort, None)
+            features.sort(reverse=self.reverse, key=key_func)
         
         # build a set of shared keys
         props = zip(*features)[1]
