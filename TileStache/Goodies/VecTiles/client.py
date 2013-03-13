@@ -38,9 +38,14 @@ from urlparse import urlparse
 from gzip import GzipFile
 
 import logging
-import mapnik
 
 from . import mvt, geojson
+
+try:
+    from mapnik import PythonDatasource, Box2d
+except ImportError:
+    # can still build documentation
+    PythonDatasource = object
 
 # earth's diameter in meters
 diameter = 2 * pi * 6378137
@@ -146,7 +151,7 @@ def load_tile_features(lock, host, port, path_fmt, tiles, features):
             logging.debug('%d features in %s:%d%s' % (len(file_features), host, port, path))
             features.extend(file_features)
 
-class Datasource (mapnik.PythonDatasource):
+class Datasource (PythonDatasource):
     ''' Mapnik datasource to read tiled vector data in GeoJSON or MVT formats.
 
         Sample usage in Mapnik configuration XML:
@@ -180,8 +185,8 @@ class Datasource (mapnik.PythonDatasource):
         self.path = self.path.replace('{X}', '{x}').replace('{x}', '%(x)d')
         self.path = self.path.replace('{Y}', '{y}').replace('{y}', '%(y)d')
         
-        bbox = mapnik.Box2d(-diameter/2, -diameter/2, diameter/2, diameter/2)
-        mapnik.PythonDatasource.__init__(self, envelope=bbox)
+        bbox = Box2d(-diameter/2, -diameter/2, diameter/2, diameter/2)
+        PythonDatasource.__init__(self, envelope=bbox)
 
     def features(self, query):
         '''
@@ -199,4 +204,4 @@ class Datasource (mapnik.PythonDatasource):
         keys = [set(prop.keys()) for prop in props]
         keys = reduce(lambda a, b: a & b, keys)
 
-        return mapnik.PythonDatasource.wkb_features(keys=keys, features=features)
+        return PythonDatasource.wkb_features(keys=keys, features=features)
