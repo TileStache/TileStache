@@ -96,9 +96,12 @@ doc:
 	pydoc -w TileStache.Goodies.Proj4Projection
 	pydoc -w TileStache.Goodies.ExternalConfigServer
 	pydoc -w TileStache.Goodies.VecTiles
-	pydoc -w TileStache.Goodies.VecTiles.mvt
-	pydoc -w TileStache.Goodies.VecTiles.ops
+	pydoc -w TileStache.Goodies.VecTiles.server
+	pydoc -w TileStache.Goodies.VecTiles.client
 	pydoc -w TileStache.Goodies.VecTiles.geojson
+	pydoc -w TileStache.Goodies.VecTiles.mvt
+	pydoc -w TileStache.Goodies.VecTiles.wkb
+	pydoc -w TileStache.Goodies.VecTiles.ops
 
 	pydoc -w scripts/tilestache-*.py
 

@@ -1,3 +1,34 @@
+''' Datasource for Mapnik that consumes vector tiles in GeoJSON or MVT format.
+
+VecTiles provides Mapnik with a Datasource that can read remote tiles of vector
+data in spherical mercator projection, providing for rendering of data without
+the use of a local PostGIS database.
+
+Sample usage in Mapnik configuration XML:
+    
+ <Layer name="test" srs="+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs">
+     <StyleName>...</StyleName>
+     <Datasource>
+         <Parameter name="type">python</Parameter>
+         <Parameter name="factory">TileStache.Goodies.VecTiles:Datasource</Parameter>
+         <Parameter name="template">http://example.com/{z}/{x}/{y}.mvt</Parameter>
+     </Datasource>
+ </Layer>
+
+From http://github.com/mapnik/mapnik/wiki/Python-Plugin:
+
+  The Mapnik Python plugin allows you to write data sources in the Python
+  programming language. This is useful if you want to rapidly prototype a
+  plugin, perform some custom manipulation on data or if you want to bind
+  mapnik to a datasource which is most conveniently accessed through Python.
+
+  The plugin may be used from the existing mapnik Python bindings or it can
+  embed the Python interpreter directly allowing it to be used from C++, XML
+  or even JavaScript.
+
+See also:
+    http://mapnik.org/docs/v2.1.0/api/python/mapnik.PythonDatasource-class.html
+'''
 from math import pi, log as _log
 from threading import Thread, Lock as _Lock
 from httplib import HTTPConnection

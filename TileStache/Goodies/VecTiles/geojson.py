@@ -39,7 +39,10 @@ def decode(file):
     return features
 
 def encode(file, features):
-    '''
+    ''' Encode a list of (WKB, property dict) features into a GeoJSON stream.
+    
+        Geometries in the features list are assumed to be unprojected lon, lats.
+        Floating point precision in the output is truncated to six digits.
     '''
     features = [dict(type='Feature', properties=p, geometry=loads(g).__geo_interface__) for (g, p) in features]
     

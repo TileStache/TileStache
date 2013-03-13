@@ -1,3 +1,12 @@
+''' Provider that returns PostGIS vector tiles in GeoJSON or MVT format.
+
+VecTiles is intended for rendering, and returns tiles with contents simplified,
+precision reduced and often clipped. The MVT format in particular is designed
+for use in Mapnik with the VecTiles Datasource, which can read binary MVT tiles.
+
+For a more general implementation, try the Vector provider:
+    http://tilestache.org/doc/#vector-provider
+'''
 from math import pi
 from urlparse import urljoin, urlparse
 from urllib import urlopen
@@ -78,7 +87,7 @@ class Provider:
             self.queries.append(query)
         
     def renderTile(self, width, height, srs, coord):
-        '''
+        ''' Render a single tile, return a Response instance.
         '''
         try:
             query = self.queries[coord.zoom]
@@ -95,7 +104,7 @@ class Provider:
         return Response(self.db, query, bbox, tolerances[coord.zoom])
 
     def getTypeByExtension(self, extension):
-        '''
+        ''' Get mime-type and format by file extension, one of "mvt" or "json".
         '''
         if extension.lower() == 'mvt':
             return 'application/octet-stream+mvt', 'MVT'
@@ -115,8 +124,8 @@ class Response:
         self.db = db
         
         self.query = {
-            'JSON': build_query(subquery, bbox, tolerance, True),
-            'MVT': build_query(subquery, bbox, tolerance, False)
+            'JSON': build_query(subquery, bbox, tolerance, is_geo=True),
+            'MVT': build_query(subquery, bbox, tolerance)
             }
     
     def save(self, out, format):
@@ -156,14 +165,16 @@ class EmptyResponse:
         else:
             raise ValueError(format)
 
-def build_query(subquery, bbox, tolerance, geo):
-    '''
+def build_query(subquery, bbox, tolerance, is_geo=False, is_clipped=True):
+    ''' Build and return an PostGIS query.
     '''
     bbox = 'SetSRID(%s, 900913)' % bbox
-
-    geom = 'Intersection(Simplify(q.geometry, %(tolerance).2f), %(bbox)s)' % locals()
+    geom = 'Simplify(q.geometry, %.2f)' % tolerance
     
-    if geo:
+    if is_clipped:
+        geom = 'Intersection(%s, %s)' % (geom, bbox)
+    
+    if is_geo:
         geom = 'Transform(%s, 4326)' % geom
     
     return '''SELECT q.*,

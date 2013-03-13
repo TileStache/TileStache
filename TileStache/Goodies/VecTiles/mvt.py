@@ -12,7 +12,7 @@ The MVT file format is a simple container for Mapnik-compatible vector tiles
 that minimizes the amount of conversion performed by the renderer, in contrast
 to other file formats such as GeoJSON.
 
-An MVT file starts with 8 bytes:
+An MVT file starts with 8 bytes.
 
     4 bytes "\\x89MVT"
     uint32  Length of body
@@ -32,6 +32,9 @@ the geometry in spherical mercator and a JSON blob for feature properties.
     uint32  Length of properties JSON
     bytes   JSON dictionary of feature properties
 
+By default, encode() approximates the floating point precision of WKB geometry
+to 26 bits for a significant compression improvement and no visible impact on
+rendering at zoom 18 and lower.
 '''
 from StringIO import StringIO
 from zlib import decompress as _decompress, compress as _compress
@@ -63,7 +66,10 @@ def decode(file):
     return features
 
 def encode(file, features):
-    '''
+    ''' Encode a list of (WKB, property dict) features into an MVT stream.
+    
+        Geometries in the features list are assumed to be in spherical mercator.
+        Floating point precision in the output is approximated to 26 bits.
     '''
     parts = []
     
