@@ -42,6 +42,14 @@ class Provider:
             column name, and must be in spherical mercator (900913) projection.
             A query can additionally be a file name or URL, interpreted
             relative to the location of the TileStache config file.
+          
+          clip:
+            Optional boolean flag determines whether geometries are clipped to
+            tile boundaries or returned in full. Default true: clip geometries.
+        
+          srid:
+            Optional numeric SRID used by PostGIS for spherical mercator.
+            Default 900913.
         
         Sample configuration, for a layer with no results at zooms 0-9, basic
         selection of lines with names and highway tags for zoom 10, a remote
@@ -70,7 +78,7 @@ class Provider:
             }
           }
     '''
-    def __init__(self, layer, dbinfo, queries):
+    def __init__(self, layer, dbinfo, queries, clip=True, srid=900913):
         '''
         '''
         self.layer = layer
@@ -78,6 +86,9 @@ class Provider:
         keys = 'host', 'user', 'password', 'database'
         dbinfo = dict([(k, v) for (k, v) in dbinfo.items() if k in keys])
         self.db = connect(**dbinfo).cursor(cursor_factory=RealDictCursor)
+
+        self.clip = bool(clip)
+        self.srid = int(srid)
         
         self.queries = []
         
@@ -115,7 +126,7 @@ class Provider:
         ur = self.layer.projection.coordinateProj(coord.right())
         bbox = 'MakeBox2D(MakePoint(%.2f, %.2f), MakePoint(%.2f, %.2f))' % (ll.x, ll.y, ur.x, ur.y)
         
-        return Response(self.db, query, bbox, tolerances[coord.zoom])
+        return Response(self.db, self.srid, query, bbox, tolerances[coord.zoom], self.clip)
 
     def getTypeByExtension(self, extension):
         ''' Get mime-type and format by file extension, one of "mvt" or "json".
@@ -132,14 +143,14 @@ class Provider:
 class Response:
     '''
     '''
-    def __init__(self, db, subquery, bbox, tolerance):
+    def __init__(self, db, srid, subquery, bbox, tolerance, clip):
         '''
         '''
         self.db = db
         
         self.query = {
-            'JSON': build_query(subquery, bbox, tolerance, is_geo=True),
-            'MVT': build_query(subquery, bbox, tolerance)
+            'JSON': build_query(srid, subquery, bbox, tolerance, True, clip),
+            'MVT': build_query(srid, subquery, bbox, tolerance, False, clip)
             }
     
     def save(self, out, format):
@@ -179,10 +190,10 @@ class EmptyResponse:
         else:
             raise ValueError(format)
 
-def build_query(subquery, bbox, tolerance, is_geo=False, is_clipped=True):
+def build_query(srid, subquery, bbox, tolerance, is_geo, is_clipped):
     ''' Build and return an PostGIS query.
     '''
-    bbox = 'SetSRID(%s, 900913)' % bbox
+    bbox = 'SetSRID(%s, %d)' % (bbox, srid)
     geom = 'Simplify(q.geometry, %.2f)' % tolerance
     
     if is_clipped:
