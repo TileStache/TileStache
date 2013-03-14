@@ -1,3 +1,6 @@
+2013-03-14: 1.46.2
+- Added new parameters to TileStache.Goodies.VecTiles Datasource and Provider.
+
 2013-03-14: 1.46.1
 - Fixed missing TileStache.Goodies.VecTiles by adding it to setup.py.
 
