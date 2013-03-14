@@ -167,7 +167,7 @@ class Datasource (PythonDatasource):
             </Datasource>
         </Layer>
     '''
-    def __init__(self, template, sort_key=None):
+    def __init__(self, template, sort_key=None, clipped='true'):
         ''' Make a new Datasource.
         
             Parameters:
@@ -180,6 +180,17 @@ class Datasource (PythonDatasource):
                 Optional field name to use when sorting features for rendering.
                 E.g. "name" or "name ascending" to sort ascending by name,
                 "name descending" to sort descending by name.
+              
+              clipped:
+                Optional boolean flag to determine correct behavior for
+                duplicate geometries. When tile data is not clipped, features()
+                will check geometry uniqueness and throw out duplicates.
+
+                Setting clipped to false for actually-clipped geometries has no
+                effect but wastes time. Setting clipped to false for unclipped
+                geometries will result in possibly wrong-looking output.
+
+                Default is "true".
         '''
         scheme, host, path, p, query, f = urlparse(template)
         
@@ -196,10 +207,14 @@ class Datasource (PythonDatasource):
             self.sort, self.reverse = None, None
         
         elif sort_key.lower().endswith(' descending'):
+            logging.debug('Will sort by %s descending' % sort_key)
             self.sort, self.reverse = sort_key.split()[0], True
         
         else:
+            logging.debug('Will sort by %s ascending' % sort_key)
             self.sort, self.reverse = sort_key.split()[0], False
+        
+        self.clipped = clipped.lower() not in ('false', 'no', '0')
         
         bbox = Box2d(-diameter/2, -diameter/2, diameter/2, diameter/2)
         PythonDatasource.__init__(self, envelope=bbox)
@@ -210,11 +225,23 @@ class Datasource (PythonDatasource):
         logging.debug('Rendering %s' % str(query.bbox))
         
         tiles = list_tiles(query)
+        features = []
+        seen = set()
         
-        features = load_features(8, self.host, self.port, self.path, tiles)
-        features = [(wkb, utf8_keys(props)) for (wkb, props) in features]
-        
+        for (wkb, props) in load_features(8, self.host, self.port, self.path, tiles):
+            if not self.clipped:
+                # not clipped means get rid of inevitable dupes
+                key = (wkb, tuple(sorted(props.items())))
+                
+                if key in seen:
+                    continue
+
+                seen.add(key)
+            
+            features.append((wkb, utf8_keys(props)))
+            
         if self.sort:
+            logging.debug('Sorting by %s %s' % (self.sort, 'descending' if self.reverse else 'ascending'))
             key_func = lambda (wkb, props): props.get(self.sort, None)
             features.sort(reverse=self.reverse, key=key_func)
         
