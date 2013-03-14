@@ -29,6 +29,13 @@ a remote URL containing a query for zoom 11, and a local file for zooms 12+:
     "class": "TileStache.Goodies.VecTiles:Provider",
     "kwargs":
     {
+      "dbinfo":
+      {
+        "host": "localhost",
+        "user": "gis",
+        "password": "gis",
+        "database": "gis"
+      },
       "queries":
       [
         null, null, null, null, null,

@@ -31,11 +31,15 @@ class Provider:
     
         Parameters:
         
+          dbinfo:
+            Required dictionary of Postgres connection parameters. Should
+            include some combination of 'host', 'user', 'password', and 'database'.
+        
           queries:
-            List of Postgres queries, one for each zoom level. The last query
-            in the list is repeated for higher zoom levels, and null queries
-            indicate an empty response. Query must use "geometry" for a column
-            name, and must be in spherical mercator (900913) projection.
+            Required list of Postgres queries, one for each zoom level. The
+            last query in the list is repeated for higher zoom levels, and null
+            queries indicate an empty response. Query must use "geometry" for a
+            column name, and must be in spherical mercator (900913) projection.
             A query can additionally be a file name or URL, interpreted
             relative to the location of the TileStache config file.
         
@@ -48,6 +52,13 @@ class Provider:
             "class": "TileStache.Goodies.VecTiles:Provider",
             "kwargs":
             {
+              "dbinfo":
+              {
+                "host": "localhost",
+                "user": "gis",
+                "password": "gis",
+                "database": "gis"
+              },
               "queries":
               [
                 null, null, null, null, null,
@@ -59,11 +70,14 @@ class Provider:
             }
           }
     '''
-    def __init__(self, layer, queries):
+    def __init__(self, layer, dbinfo, queries):
         '''
         '''
         self.layer = layer
-        self.db = connect(host='localhost', user='gis', password='gis', database='gis').cursor(cursor_factory=RealDictCursor)
+        
+        keys = 'host', 'user', 'password', 'database'
+        dbinfo = dict([(k, v) for (k, v) in dbinfo.items() if k in keys])
+        self.db = connect(**dbinfo).cursor(cursor_factory=RealDictCursor)
         
         self.queries = []
         
