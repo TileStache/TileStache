@@ -1,3 +1,6 @@
+2013-03-14: 1.46.1
+- Fixed missing TileStache.Goodies.VecTiles by adding it to setup.py.
+
 2013-03-12: 1.46.0
 - Added TileStache.Goodies.VecTiles to support efficient vector data tiles for use in Mapnik.
 - Fixed alpha-channel issue in Sandwich provider with patch from Lars Ahlzen.
