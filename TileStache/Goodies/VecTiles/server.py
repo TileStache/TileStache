@@ -51,6 +51,11 @@ class Provider:
             Optional numeric SRID used by PostGIS for spherical mercator.
             Default 900913.
         
+          simplify:
+            Optional floating point number of pixels to simplify all geometries.
+            Useful for creating double resolution (retina) tiles set to 0.5, or
+            set to 0.0 to prevent any simplification. Default 1.0.
+        
         Sample configuration, for a layer with no results at zooms 0-9, basic
         selection of lines with names and highway tags for zoom 10, a remote
         URL containing a query for zoom 11, and a local file for zooms 12+:
@@ -78,7 +83,7 @@ class Provider:
             }
           }
     '''
-    def __init__(self, layer, dbinfo, queries, clip=True, srid=900913):
+    def __init__(self, layer, dbinfo, queries, clip=True, srid=900913, simplify=1.0):
         '''
         '''
         self.layer = layer
@@ -89,6 +94,7 @@ class Provider:
 
         self.clip = bool(clip)
         self.srid = int(srid)
+        self.simplify = float(simplify)
         
         self.queries = []
         
@@ -126,7 +132,10 @@ class Provider:
         ur = self.layer.projection.coordinateProj(coord.right())
         bbox = 'MakeBox2D(MakePoint(%.2f, %.2f), MakePoint(%.2f, %.2f))' % (ll.x, ll.y, ur.x, ur.y)
         
-        return Response(self.db, self.srid, query, bbox, tolerances[coord.zoom], self.clip)
+        
+        tolerance = self.simplify * tolerances[coord.zoom]
+        
+        return Response(self.db, self.srid, query, bbox, tolerance, self.clip)
 
     def getTypeByExtension(self, extension):
         ''' Get mime-type and format by file extension, one of "mvt" or "json".

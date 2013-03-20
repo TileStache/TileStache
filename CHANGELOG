@@ -1,3 +1,6 @@
+2013-03-19: 1.46.3
+- Added new parameters to TileStache.Goodies.VecTiles Provider.
+
 2013-03-14: 1.46.2
 - Added new parameters to TileStache.Goodies.VecTiles Datasource and Provider.
 
