@@ -62,14 +62,15 @@ def utf8_keys(dictionary):
     '''
     return dict([(key.encode('utf8'), val) for (key, val) in dictionary.items()])
 
-def list_tiles(query):
+def list_tiles(query, zoom_adjust):
     ''' Return a list of tiles (z, x, y) dicts for a mapnik Query object.
     
         Query is assumed to be in spherical mercator projection.
+        Zoom_adjust is an integer delta to subtract from the calculated zoom.
     '''
     # relative zoom from one-meter pixels to query pixels
     resolution = sum(query.resolution) / 2
-    diff = _log(resolution) / _log(2)
+    diff = _log(resolution) / _log(2) - zoom_adjust
     
     # calculated zoom level for this query
     zoom = round(meter_zoom + diff)
@@ -167,7 +168,7 @@ class Datasource (PythonDatasource):
             </Datasource>
         </Layer>
     '''
-    def __init__(self, template, sort_key=None, clipped='true'):
+    def __init__(self, template, sort_key=None, clipped='true', zoom_data='single'):
         ''' Make a new Datasource.
         
             Parameters:
@@ -191,6 +192,16 @@ class Datasource (PythonDatasource):
                 geometries will result in possibly wrong-looking output.
 
                 Default is "true".
+              
+              zoom_data:
+                Optional keyword specifying single or double zoom data tiles.
+                Works especially well with relatively sparse label layers.
+                
+                When set to "double", tiles will be requested at one zoom level
+                out from the map view, e.g. double-sized z13 tiles will be used
+                to render a normal z14 map.
+
+                Default is "single".
         '''
         scheme, host, path, p, query, f = urlparse(template)
         
@@ -215,6 +226,7 @@ class Datasource (PythonDatasource):
             self.sort, self.reverse = sort_key.split()[0], False
         
         self.clipped = clipped.lower() not in ('false', 'no', '0')
+        self.zoom_adjust = {'double': 1}.get(zoom_data.lower(), 0)
         
         bbox = Box2d(-diameter/2, -diameter/2, diameter/2, diameter/2)
         PythonDatasource.__init__(self, envelope=bbox)
@@ -224,7 +236,7 @@ class Datasource (PythonDatasource):
         '''
         logging.debug('Rendering %s' % str(query.bbox))
         
-        tiles = list_tiles(query)
+        tiles = list_tiles(query, self.zoom_adjust)
         features = []
         seen = set()
         
