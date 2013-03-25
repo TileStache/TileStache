@@ -63,6 +63,10 @@ class Provider:
             Useful for creating double resolution (retina) tiles set to 0.5, or
             set to 0.0 to prevent any simplification. Default 1.0.
         
+          simplify_until:
+            Optional integer specifying a zoom level where no more geometry
+            simplification should occur. Default 16.
+        
         Sample configuration, for a layer with no results at zooms 0-9, basic
         selection of lines with names and highway tags for zoom 10, a remote
         URL containing a query for zoom 11, and a local file for zooms 12+:
@@ -90,7 +94,7 @@ class Provider:
             }
           }
     '''
-    def __init__(self, layer, dbinfo, queries, clip=True, srid=900913, simplify=1.0):
+    def __init__(self, layer, dbinfo, queries, clip=True, srid=900913, simplify=1.0, simplify_until=16):
         '''
         '''
         self.layer = layer
@@ -102,6 +106,7 @@ class Provider:
         self.clip = bool(clip)
         self.srid = int(srid)
         self.simplify = float(simplify)
+        self.simplify_until = int(simplify_until)
         
         self.queries = []
         
@@ -139,8 +144,7 @@ class Provider:
         ur = self.layer.projection.coordinateProj(coord.right())
         bbox = 'MakeBox2D(MakePoint(%.2f, %.2f), MakePoint(%.2f, %.2f))' % (ll.x, ll.y, ur.x, ur.y)
         
-        
-        tolerance = self.simplify * tolerances[coord.zoom]
+        tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
         
         return Response(self.db, self.srid, query, bbox, tolerance, self.clip)
 
@@ -213,7 +217,10 @@ def build_query(srid, subquery, bbox, tolerance, is_geo, is_clipped):
     ''' Build and return an PostGIS query.
     '''
     bbox = 'SetSRID(%s, %d)' % (bbox, srid)
-    geom = 'Simplify(q.geometry, %.2f)' % tolerance
+    geom = 'q.geometry'
+    
+    if tolerance is not None:
+        geom = 'Simplify(%s, %.2f)' % (geom, tolerance)
     
     if is_clipped:
         geom = 'Intersection(%s, %s)' % (geom, bbox)
