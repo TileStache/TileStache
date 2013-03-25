@@ -208,6 +208,10 @@ class Datasource (PythonDatasource):
         self.host = host
         self.port = 443 if scheme == 'https' else 80
         
+        if ':' in host:
+            self.host = host.split(':', 1)[0]
+            self.port = int(host.split(':', 1)[1])
+        
         self.path = path + ('?' if query else '') + query
         self.path = self.path.replace('%', '%%')
         self.path = self.path.replace('{Z}', '{z}').replace('{z}', '%(z)d')
