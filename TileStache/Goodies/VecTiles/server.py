@@ -177,6 +177,9 @@ class Response:
         features = []
         
         for row in self.db.fetchall():
+            if row['geometry'] is None:
+                continue
+        
             wkb = bytes(row['geometry'])
             prop = dict([(k, v) for (k, v) in row.items() if k != 'geometry'])
             
