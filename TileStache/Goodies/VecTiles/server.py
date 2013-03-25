@@ -42,6 +42,13 @@ class Provider:
             column name, and must be in spherical mercator (900913) projection.
             A query can additionally be a file name or URL, interpreted
             relative to the location of the TileStache config file.
+            
+            If the query contains the token "!bbox!", it will be replaced with
+            a constant bounding box geomtry like this:
+            "SetSRID(MakeBox2D(MakePoint(x, y), MakePoint(x, y)), <srid>)"
+            
+            This behavior is modeled on Mapnik's similar bbox token feature:
+            https://github.com/mapnik/mapnik/wiki/PostGIS#bbox-token
           
           clip:
             Optional boolean flag determines whether geometries are clipped to
@@ -210,6 +217,8 @@ def build_query(srid, subquery, bbox, tolerance, is_geo, is_clipped):
     
     if is_geo:
         geom = 'Transform(%s, 4326)' % geom
+    
+    subquery = subquery.replace('!bbox!', bbox)
     
     return '''SELECT q.*,
                      AsBinary(%(geom)s) AS geometry
