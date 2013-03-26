@@ -1,3 +1,8 @@
+2013-03-25: 1.46.5
+- Added new simplify_until parameter to VecTiles.Provider.
+- Added some invalid geometry checks to VecTiles.server.
+- Added !bbox! token to VecTiles query parser.
+
 2013-03-19: 1.46.4
 - Added new zoom_data parameter to TileStache.Goodies.VecTiles Datasource.
 
