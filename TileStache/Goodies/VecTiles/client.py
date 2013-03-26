@@ -148,7 +148,8 @@ def load_tile_features(lock, host, port, path_fmt, tiles, features):
                 file_features = mvt.decode(file)
             
             else:
-                raise ValueError('Unknown MIME-Type "%s"' % mime_type)
+                logging.error('Unknown MIME-Type "%s" from %s:%d%s' % (mime_type, host, port, path))
+                return
                 
             logging.debug('%d features in %s:%d%s' % (len(file_features), host, port, path))
             features.extend(file_features)
@@ -260,6 +261,9 @@ class Datasource (PythonDatasource):
             logging.debug('Sorting by %s %s' % (self.sort, 'descending' if self.reverse else 'ascending'))
             key_func = lambda (wkb, props): props.get(self.sort, None)
             features.sort(reverse=self.reverse, key=key_func)
+        
+        if len(features) == 0:
+            return PythonDatasource.wkb_features(keys=[], features=[])
         
         # build a set of shared keys
         props = zip(*features)[1]
