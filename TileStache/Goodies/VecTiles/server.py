@@ -100,8 +100,8 @@ class Provider:
         self.layer = layer
         
         keys = 'host', 'user', 'password', 'database'
-        dbinfo = dict([(k, v) for (k, v) in dbinfo.items() if k in keys])
-        self.db = connect(**dbinfo).cursor(cursor_factory=RealDictCursor)
+        self.dbinfo = dict([(k, v) for (k, v) in dbinfo.items() if k in keys])
+        self.db = connect(**self.dbinfo).cursor(cursor_factory=RealDictCursor)
 
         self.clip = bool(clip)
         self.srid = int(srid)
@@ -139,6 +139,9 @@ class Provider:
 
         if not query:
             return EmptyResponse()
+        
+        if self.db.closed:
+            self.db = connect(**self.dbinfo).cursor(cursor_factory=RealDictCursor)
         
         ll = self.layer.projection.coordinateProj(coord.down())
         ur = self.layer.projection.coordinateProj(coord.right())
@@ -235,6 +238,7 @@ def build_query(srid, subquery, bbox, tolerance, is_geo, is_clipped):
               FROM (
                 %(subquery)s
                 ) AS q
-              WHERE q.geometry && %(bbox)s
+              WHERE IsValid(q.geometry)
+                AND q.geometry && %(bbox)s
                 AND Intersects(q.geometry, %(bbox)s)''' \
             % locals()
