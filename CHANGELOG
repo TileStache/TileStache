@@ -1,3 +1,6 @@
+2013-03-27: 1.46.7
+- Fixed a stupid error in VecTiles.server discarding important Postgres connection details.
+
 2013-03-26: 1.46.6
 - Improved error tolerance in VecTiles client and server.
 

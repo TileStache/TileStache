@@ -99,7 +99,7 @@ class Provider:
         '''
         self.layer = layer
         
-        keys = 'host', 'user', 'password', 'database'
+        keys = 'host', 'user', 'password', 'database', 'port', 'dbname'
         self.dbinfo = dict([(k, v) for (k, v) in dbinfo.items() if k in keys])
         self.db = connect(**self.dbinfo).cursor(cursor_factory=RealDictCursor)
 
