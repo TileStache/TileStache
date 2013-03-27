@@ -1,3 +1,6 @@
+2013-03-26: 1.46.6
+- Improved error tolerance in VecTiles client and server.
+
 2013-03-25: 1.46.5
 - Added new simplify_until parameter to VecTiles.Provider.
 - Added some invalid geometry checks to VecTiles.server.
