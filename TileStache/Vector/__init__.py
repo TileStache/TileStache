@@ -325,12 +325,17 @@ def _feature_properties(feature, layer_definition, whitelist=None):
         OFTBinary (8), OFTDate (9), OFTTime (10), OFTDateTime (11).
     """
     properties = {}
-    okay_types = ogr.OFTInteger, ogr.OFTReal, ogr.OFTString, ogr.OFTWideString
+    okay_types = ogr.OFTInteger, ogr.OFTReal, ogr.OFTString, ogr.OFTWideString, ogr.OFTDateTime
     
     for index in range(layer_definition.GetFieldCount()):
         field_definition = layer_definition.GetFieldDefn(index)
         field_type = field_definition.GetType()
         
+        name = field_definition.GetNameRef()
+        
+        if type(whitelist) in (list, dict) and name not in whitelist:
+            continue
+      
         if field_type not in okay_types:
             try:
                 name = [oft for oft in dir(ogr) if oft.startswith('OFT') and getattr(ogr, oft) == field_type][0]
@@ -338,12 +343,7 @@ def _feature_properties(feature, layer_definition, whitelist=None):
                 raise KnownUnknown("Found an OGR field type I've never even seen: %d" % field_type)
             else:
                 raise KnownUnknown("Found an OGR field type I don't know what to do with: ogr.%s" % name)
-
-        name = field_definition.GetNameRef()
-        
-        if type(whitelist) in (list, dict) and name not in whitelist:
-            continue
-        
+       
         property = type(whitelist) is dict and whitelist[name] or name
         properties[property] = feature.GetField(name)
     
