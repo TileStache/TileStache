@@ -325,7 +325,7 @@ def _feature_properties(feature, layer_definition, whitelist=None):
         OFTBinary (8), OFTDate (9), OFTTime (10), OFTDateTime (11).
     """
     properties = {}
-    okay_types = ogr.OFTInteger, ogr.OFTReal, ogr.OFTString, ogr.OFTWideString, ogr.OFTDateTime
+    okay_types = ogr.OFTInteger, ogr.OFTReal, ogr.OFTString, ogr.OFTWideString, ogr.OFTDate, ogr.OFTTime, ogr.OFTDateTime
     
     for index in range(layer_definition.GetFieldCount()):
         field_definition = layer_definition.GetFieldDefn(index)

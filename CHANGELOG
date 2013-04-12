@@ -1,3 +1,6 @@
+2013-04-12: 1.46.9
+- Added ogr.OFTDate and ogr.OFTTime to list of acceptable field types in Vector provider.
+
 2013-04-12: 1.46.8
 - Added ogr.OFTDateTime to list of acceptable field types in Vector provider, with patch from probabble.
 
