@@ -1,3 +1,6 @@
+2013-04-12: 1.46.10
+- Prefixed most Postgis functions in VecTile provider with "ST_" for forward compatibility.
+
 2013-04-12: 1.46.9
 - Added ogr.OFTDate and ogr.OFTTime to list of acceptable field types in Vector provider.
 
