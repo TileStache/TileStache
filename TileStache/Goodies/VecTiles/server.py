@@ -219,26 +219,26 @@ class EmptyResponse:
 def build_query(srid, subquery, bbox, tolerance, is_geo, is_clipped):
     ''' Build and return an PostGIS query.
     '''
-    bbox = 'SetSRID(%s, %d)' % (bbox, srid)
+    bbox = 'ST_SetSRID(%s, %d)' % (bbox, srid)
     geom = 'q.geometry'
     
     if tolerance is not None:
-        geom = 'Simplify(%s, %.2f)' % (geom, tolerance)
+        geom = 'ST_Simplify(%s, %.2f)' % (geom, tolerance)
     
     if is_clipped:
-        geom = 'Intersection(%s, %s)' % (geom, bbox)
+        geom = 'ST_Intersection(%s, %s)' % (geom, bbox)
     
     if is_geo:
-        geom = 'Transform(%s, 4326)' % geom
+        geom = 'ST_Transform(%s, 4326)' % geom
     
     subquery = subquery.replace('!bbox!', bbox)
     
     return '''SELECT q.*,
-                     AsBinary(%(geom)s) AS geometry
+                     ST_AsBinary(%(geom)s) AS geometry
               FROM (
                 %(subquery)s
                 ) AS q
-              WHERE IsValid(q.geometry)
+              WHERE ST_IsValid(q.geometry)
                 AND q.geometry && %(bbox)s
-                AND Intersects(q.geometry, %(bbox)s)''' \
+                AND ST_Intersects(q.geometry, %(bbox)s)''' \
             % locals()
