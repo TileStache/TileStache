@@ -45,7 +45,7 @@ class Provider:
             
             If the query contains the token "!bbox!", it will be replaced with
             a constant bounding box geomtry like this:
-            "SetSRID(MakeBox2D(MakePoint(x, y), MakePoint(x, y)), <srid>)"
+            "ST_SetSRID(ST_MakeBox2D(ST_MakePoint(x, y), ST_MakePoint(x, y)), <srid>)"
             
             This behavior is modeled on Mapnik's similar bbox token feature:
             https://github.com/mapnik/mapnik/wiki/PostGIS#bbox-token
@@ -145,7 +145,7 @@ class Provider:
         
         ll = self.layer.projection.coordinateProj(coord.down())
         ur = self.layer.projection.coordinateProj(coord.right())
-        bbox = 'MakeBox2D(MakePoint(%.2f, %.2f), MakePoint(%.2f, %.2f))' % (ll.x, ll.y, ur.x, ur.y)
+        bbox = 'ST_MakeBox2D(ST_MakePoint(%.2f, %.2f), ST_MakePoint(%.2f, %.2f))' % (ll.x, ll.y, ur.x, ur.y)
         
         tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
         
