@@ -1,21 +1,33 @@
 """ Caches tiles to Redis
 
-Requires redis-py
+Requires redis-py and redis-server
   https://pypi.python.org/pypi/redis/
+  http://redis.io/
+
+  sudo apt-get install redis-server
+  pip install redis
+
 
 Example configuration:
 
   "cache": {
     "name": "Redis",
-    "server": "localhost:6379:0",
+    "host": "localhost",
+    "port": 6379,
+    "db": 0,
     "key prefix": "unique-id"
   }
 
 Redis cache parameters:
 
-  server
-    "host:port:db" 
-    Defaults to "localhost:6379:0" if omitted.
+  host
+    Defaults to "localhost" if omitted.
+
+  port
+    Integer; Defaults to 6379 if omitted.
+
+  db
+    Integer; Redis database number, defaults to 0 if omitted.
 
   key prefix
     Optional string to prepend to generated key.
@@ -29,11 +41,13 @@ Redis cache parameters:
 """
 from time import time as _time, sleep as _sleep
 
+
 try:
     import redis
 except ImportError:
     # at least we can build the documentation
     pass
+
 
 def tile_key(layer, coord, format, key_prefix):
     """ Return a tile key string.
@@ -43,26 +57,38 @@ def tile_key(layer, coord, format, key_prefix):
     key = str('%(key_prefix)s/%(name)s/%(tile)s.%(format)s' % locals())
     return key
 
+
 class Cache:
     """
     """
-    def __init__(self, server='127.0.0.1:6379:0', key_prefix=''):
-        self.host, self.port, self.db = server.split(":")
-        self.conn = redis.Redis(host=self.host, port=int(self.port), db=int(self.db))
+    def __init__(self, host="localhost", port=6379, db=0, key_prefix=''):
+        self.host = host
+        self.port = port
+        self.db = db
+        self.conn = redis.Redis(host=self.host, port=self.port, db=self.db)
         self.key_prefix = key_prefix
+
 
     def lock(self, layer, coord, format):
         """ Acquire a cache lock for this tile.
             Returns nothing, but blocks until the lock has been acquired.
-            NOT IMPLEMENTED YET
         """
+        key = tile_key(layer, coord, format, self.key_prefix) + "-lock" 
+        due = _time() + layer.stale_lock_timeout
+
+        while _time() < due:
+            if not self.conn.get(key):
+                self.conn.set(key, 'locked.')
+                return
+
+            _sleep(.2)
+
+        self.conn.set(key, 'locked.')
         return
         
     def unlock(self, layer, coord, format):
         """ Release a cache lock for this tile.
-            NOT IMPLEMENTED YET
         """
-        return
         key = tile_key(layer, coord, format, self.key_prefix)
         self.conn.delete(key+'-lock')
         
@@ -83,4 +109,4 @@ class Cache:
         """ Save a cached tile.
         """
         key = tile_key(layer, coord, format, self.key_prefix)
-        self.conn.set(key, body)  #, layer.cache_lifespan or 0)
+        self.conn.set(key, body)
