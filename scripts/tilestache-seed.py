@@ -127,8 +127,8 @@ def generateCoordinates(ul, lr, zooms, padding):
         ul_ = ul.zoomTo(zoom).container().left(padding).up(padding)
         lr_ = lr.zoomTo(zoom).container().right(padding).down(padding)
 
-        for row in range(int(ul_.row), int(lr_.row + 1)):
-            for column in range(int(ul_.column), int(lr_.column + 1)):
+        for row in xrange(int(ul_.row), int(lr_.row + 1)):
+            for column in xrange(int(ul_.column), int(lr_.column + 1)):
                 coord = Coordinate(row, column, zoom)
                 
                 yield (offset, count, coord)
@@ -308,8 +308,6 @@ if __name__ == '__main__':
         coordinates = tilesetCoordinates(options.mbtiles_input)
     else:
         coordinates = generateCoordinates(ul, lr, zooms, padding)
-    
-    coordinates = list(coordinates)
     
     for (offset, count, coord) in coordinates:
         path = '%s/%d/%d/%d.%s' % (layer.name(), coord.zoom, coord.column, coord.row, extension)
