@@ -127,8 +127,8 @@ def generateCoordinates(ul, lr, zooms, padding):
         ul_ = ul.zoomTo(zoom).container().left(padding).up(padding)
         lr_ = lr.zoomTo(zoom).container().right(padding).down(padding)
 
-        for row in range(int(ul_.row), int(lr_.row + 1)):
-            for column in range(int(ul_.column), int(lr_.column + 1)):
+        for row in xrange(int(ul_.row), int(lr_.row + 1)):
+            for column in xrange(int(ul_.column), int(lr_.column + 1)):
                 coord = Coordinate(row, column, zoom)
                 
                 yield (offset, count, coord)
