@@ -413,6 +413,7 @@ defined in
 <p>
 Jump to <a href="#test-cache">Test</a>, <a href="#disk-cache">Disk</a>,
 <a href="#multi-cache">Multi</a>, <a href="#memcache-cache">Memcache</a>,
+<a href="#redis-cache">Redis</a>, 
 or <a href="#s3-cache">S3</a> cache.
 </p>
 
@@ -635,6 +636,68 @@ Memcache cache parameters:
 <p>
 See
 <a href="http://tilestache.org/doc/TileStache.Memcache.html#Cache">TileStache.Memcache.Cache</a>
+documentation for more information.
+</p>
+
+<h4><a id="redis-cache" name="redis-cache">Redis</a> <a href="#redis-cache" class="permalink">¶</a></h4>
+
+<p>
+Caches tiles to <a href="http://redis.io/">Redis</a>,
+requires <a href="https://pypi.python.org/pypi/redis/">redis-py</a> and <a href="http://redis.io/">redis server</a>.
+</p>
+ 
+<p>
+Example configuration:
+</p>
+ 
+<pre>
+<span class="bg">
+{</span>
+  "cache": {
+    "name": "Redis",
+    "host": "localhost",
+    "port": 6379,
+    "db": 0,
+    "key prefix": "unique-id"
+  }<span class="bg">,
+  "layers": { … }
+}</span>
+</pre>
+ 
+<p>
+Redis cache parameters:
+</p>
+
+<dl>
+    <dt>host</dt>
+    <dd>
+    Defaults to <samp>"localhost"</samp> if omitted.
+    </dd>
+
+    <dt>port</dt>
+    <dd>
+    Integer; Defaults to <samp>6379</samp> if omitted.
+    </dd>
+
+    <dt>db</dt>
+    <dd>
+    Integer; Redis database number, defaults to <samp>0</samp> if omitted.
+    </dd>
+
+    <dt>key prefix</dt>
+    <dd>
+    Optional string to prepend to generated key.
+    Useful when running multiple instances of TileStache
+    that share the same Redis database to avoid key
+    collisions (though the prefered solution is to use a different
+    db number). The key prefix will be prepended to the
+    key name. Defaults to <samp>""</samp>.
+    </dd>
+</dl>
+
+<p>
+See
+<a href="http://tilestache.org/doc/TileStache.Redis.html#Cache">TileStache.Redis.Cache</a>
 documentation for more information.
 </p>
 
