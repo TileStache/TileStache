@@ -1,3 +1,7 @@
+- Improved PIL dependency in setup requirements to include Pillow, with patch from Fabian Büchler.
+- Fixed coordinate generator usage in tilestache-seed with patch from Seth Fitzsimmons.
+- Added Redis cache provider with patch from Matthew Perry.
+
 2013-04-12: 1.46.10
 - Prefixed most Postgis functions in VecTile provider with "ST_" for forward compatibility.
 
