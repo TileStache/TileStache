@@ -77,8 +77,7 @@ class Cache:
         due = _time() + layer.stale_lock_timeout
 
         while _time() < due:
-            if not self.conn.get(key):
-                self.conn.set(key, 'locked.')
+            if self.conn.setnx(key, 'locked.'):
                 return
 
             _sleep(.2)
