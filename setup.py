@@ -1,8 +1,29 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
+import pkg_resources
+import sys
+
 
 version = open('VERSION', 'r').read().strip()
+
+
+def is_installed(name):
+    try:
+        pkg_resources.get_distribution(name)
+        return True
+    except:
+        return False
+
+
+requires = ['ModestMaps >=1.3.0','simplejson']
+
+# Soft dependency on PIL or Pillow
+if is_installed('Pillow') or sys.plattform == 'win32':
+    requires.append('Pillow')
+else:
+    requires.append('PIL')
+
 
 setup(name='TileStache',
       version=version,
@@ -10,7 +31,7 @@ setup(name='TileStache',
       author='Michal Migurski',
       author_email='mike@stamen.com',
       url='http://tilestache.org',
-      install_requires=['ModestMaps >=1.3.0','simplejson','PIL'],
+      install_requires=requires,
       packages=['TileStache',
                 'TileStache.Vector',
                 'TileStache.Goodies',
