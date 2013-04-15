@@ -300,6 +300,12 @@ def _parseConfigfileCache(cache_dict, dirpath):
                 kwargs['key_prefix'] = cache_dict['key prefix']
         
             add_kwargs('servers', 'lifespan', 'revision')
+
+        elif _class is Caches.Redis.Cache:
+            if 'key prefix' in cache_dict:
+                kwargs['key_prefix'] = cache_dict['key prefix']
+
+            add_kwargs('server', 'lifespan')
     
         elif _class is Caches.S3.Cache:
             add_kwargs('bucket', 'access', 'secret', 'use_locks', 'path')

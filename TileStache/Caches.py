@@ -57,6 +57,7 @@ from os.path import isdir, exists, dirname, basename, join as pathjoin
 
 from .Core import KnownUnknown
 from . import Memcache
+from . import Redis
 from . import S3
 
 def getCacheByName(name):
@@ -75,6 +76,9 @@ def getCacheByName(name):
 
     elif name.lower() == 'memcache':
         return Memcache.Cache
+
+    elif name.lower() == 'redis':
+        return Redis.Cache
 
     elif name.lower() == 's3':
         return S3.Cache
