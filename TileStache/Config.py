@@ -305,7 +305,7 @@ def _parseConfigfileCache(cache_dict, dirpath):
             if 'key prefix' in cache_dict:
                 kwargs['key_prefix'] = cache_dict['key prefix']
 
-            add_kwargs('server', 'lifespan')
+            add_kwargs('host', 'port', 'db')
     
         elif _class is Caches.S3.Cache:
             add_kwargs('bucket', 'access', 'secret', 'use_locks', 'path')
