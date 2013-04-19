@@ -576,6 +576,19 @@ class TheTileIsInAnotherCastle(Exception):
         self.path_info = path_info
         Exception.__init__(self, path_info)
 
+class TheTileLeftANote(Exception):
+    """ A tile exists, but it shouldn't be returned to the client. Headers
+        and/or a status code are provided in its stead.
+
+        This exception can be thrown in a provider or a cache to signal to
+        upstream servers where a tile can be found or to clients that a tile
+        is empty (or solid).
+    """
+    def __init__(self, headers=dict(), status_code=200):
+        self.headers = headers
+        self.status_code = status_code
+        Exception.__init__(self, headers, status_code)
+
 def _preview(layer):
     """ Get an HTML response for a given named layer.
     """

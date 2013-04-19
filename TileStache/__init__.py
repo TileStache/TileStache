@@ -44,7 +44,7 @@ _pathinfo_pat = re.compile(r'^/?(?P<l>\w.+)/(?P<z>\d+)/(?P<x>-?\d+)/(?P<y>-?\d+)
 _preview_pat = re.compile(r'^/?(?P<l>\w.+)/(preview\.html)?$')
 
 def getTile(layer, coord, extension, ignore_cached=False):
-    """ Get a type string and tile binary for a given request layer tile.
+    """ Get some headers and tile binary for a given request layer tile.
     
         Arguments:
         - layer: instance of Core.Layer to render.
@@ -58,11 +58,22 @@ def getTile(layer, coord, extension, ignore_cached=False):
     start_time = time()
     
     mimetype, format = layer.getTypeByExtension(extension)
+
+    # default response values
+    status_code = 200
+    headers = makeHeaders(mimetype)
+    body = None
+
     cache = layer.config.cache
 
     if not ignore_cached:
         # Start by checking for a tile in the cache.
-        body = cache.read(layer, coord, format)
+        try:
+            body = cache.read(layer, coord, format)
+        except Core.TheTileLeftANote, e:
+            headers = e.headers
+            status_code = e.status_code
+
         tile_from = 'cache'
 
     else:
@@ -85,7 +96,12 @@ def getTile(layer, coord, extension, ignore_cached=False):
             if not ignore_cached:
                 # There's a chance that some other process has
                 # written the tile while the lock was being acquired.
-                body = cache.read(layer, coord, format)
+                try:
+                    body = cache.read(layer, coord, format)
+                except Core.TheTileLeftANote, e:
+                    headers = e.headers
+                    status_code = e.status_code
+
                 tile_from = 'cache after all'
     
             if body is None:
@@ -98,6 +114,9 @@ def getTile(layer, coord, extension, ignore_cached=False):
                 except Core.NoTileLeftBehind, e:
                     tile = e.tile
                     save = False
+                except TheTileLeftANote, e:
+                    headers = e.headers
+                    status_code = e.status_code
 
                 if not layer.write_cache:
                     save = False
@@ -125,12 +144,12 @@ def getTile(layer, coord, extension, ignore_cached=False):
     Core._addRecentTile(layer, coord, format, body)
     logging.info('TileStache.getTile() %s/%d/%d/%d.%s via %s in %.3f', layer.name(), coord.zoom, coord.column, coord.row, extension, tile_from, time() - start_time)
     
-    return mimetype, body
+    return status_code, headers, body
 
 def getPreview(layer):
     """ Get a type string and dynamic map viewer HTML for a given layer.
     """
-    return 'text/html', Core._preview(layer)
+    return 200, makeHeaders('text/html'), Core._preview(layer)
 
 def parseConfigfile(configpath):
     """ Parse a configuration file and return a Configuration object.
@@ -199,6 +218,15 @@ def mergePathInfo(layer, coord, extension):
     
     return '/%(layer)s/%(z)d/%(x)d/%(y)d.%(extension)s' % locals()
 
+def makeHeaders(mimetype):
+    """ Create a headers dict (containing only a content-type for now).
+    """
+    headers = dict()
+
+    headers['Content-Type'] = mimetype
+
+    return headers
+
 def requestLayer(config, path_info):
     """ Return a Layer.
     
@@ -242,7 +270,7 @@ def requestLayer(config, path_info):
     return config.layers[layername]
 
 def requestHandler(config_hint, path_info, query_string):
-    """ Generate a mime-type and response body for a given request.
+    """ Generate a set of headers and response body for a given request.
     
         Requires a configuration and PATH_INFO (e.g. "/example/0/0/0.png").
         
@@ -272,11 +300,8 @@ def requestHandler(config_hint, path_info, query_string):
 
         coord, extension = splitPathInfo(path_info)[1:]
         
-        if path_info == '/':
-            raise Exception(path_info)
-        
-        elif extension == 'html' and coord is None:
-            mimetype, content = getPreview(layer)
+        if extension == 'html' and coord is None:
+            status_code, headers, content = getPreview(layer)
 
         elif extension.lower() in layer.redirects:
             other_extension = layer.redirects[extension.lower()]
@@ -284,10 +309,10 @@ def requestHandler(config_hint, path_info, query_string):
             raise Core.TheTileIsInAnotherCastle(other_path_info)
         
         else:
-            mimetype, content = getTile(layer, coord, extension)
+            status_code, headers, content = getTile(layer, coord, extension)
     
-        if callback and 'json' in mimetype:
-            mimetype, content = 'application/javascript; charset=utf-8', '%s(%s)' % (callback, content)
+        if callback and 'json' in headers['Content-Type']:
+            headers, content = makeHeaders('application/javascript; charset=utf-8'), '%s(%s)' % (callback, content)
 
     except Core.KnownUnknown, e:
         out = StringIO()
@@ -297,9 +322,9 @@ def requestHandler(config_hint, path_info, query_string):
         print >> out, ''
         print >> out, '\n'.join(Core._rummy())
         
-        mimetype, content = 'text/plain', out.getvalue()
+        status_code, headers, content = 500, makeHeaders('text/plain'), out.getvalue()
 
-    return mimetype, content
+    return status_code, headers, content
 
 def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     """ Read environment PATH_INFO, load up configuration, talk to stdout by CGI.
@@ -317,7 +342,7 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     query_string = environ.get('QUERY_STRING', None)
     
     try:
-        mimetype, content = requestHandler(config, path_info, query_string)
+        status_code, headers, content = requestHandler(config, path_info, query_string)
     
     except Core.TheTileIsInAnotherCastle, e:
         other_uri = environ['SCRIPT_NAME'] + e.path_info
@@ -334,15 +359,22 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     layer = requestLayer(config, path_info)
     
     if layer.allowed_origin:
-        print >> stdout, 'Access-Control-Allow-Origin:', layer.allowed_origin
+        headers['Access-Control-Allow-Origin'] = layer.allowed_origin
     
     if layer.max_cache_age is not None:
         expires = datetime.utcnow() + timedelta(seconds=layer.max_cache_age)
-        print >> stdout, 'Expires:', expires.strftime('%a %d %b %Y %H:%M:%S GMT')
-        print >> stdout, 'Cache-Control: public, max-age=%d' % layer.max_cache_age
+        headers['Expires'] = expires.strftime('%a %d %b %Y %H:%M:%S GMT')
+        headers['Cache-Control'] = 'public, max-age=%d' % layer.max_cache_age
     
-    print >> stdout, 'Content-Length: %d' % len(content)
-    print >> stdout, 'Content-Type: %s\n' % mimetype
+    headers['Content-Length'] = len(content)
+
+    # output the status code as a header
+    print >> stdout, 'Status: %s', status_code
+
+    # output gathered headers
+    for k, v in headers:
+        print >> stdout, '%s: %s\n' % (k, v)
+
     print >> stdout, content
 
 class WSGITileServer:
@@ -402,7 +434,7 @@ class WSGITileServer:
             return self._response(start_response, '404 Not Found')
 
         try:
-            mimetype, content = requestHandler(self.config, environ['PATH_INFO'], environ['QUERY_STRING'])
+            status_code, headers, content = requestHandler(self.config, environ['PATH_INFO'], environ['QUERY_STRING'])
         
         except Core.TheTileIsInAnotherCastle, e:
             other_uri = environ['SCRIPT_NAME'] + e.path_info
@@ -416,22 +448,31 @@ class WSGITileServer:
         request_layer = requestLayer(self.config, environ['PATH_INFO'])
         allowed_origin = request_layer.allowed_origin
         max_cache_age = request_layer.max_cache_age
-        return self._response(start_response, '200 OK', str(content), mimetype, allowed_origin, max_cache_age)
-
-    def _response(self, start_response, code, content='', mimetype='text/plain', allowed_origin='', max_cache_age=None):
-        """
-        """
-        headers = [('Content-Type', mimetype), ('Content-Length', str(len(content)))]
         
-        if allowed_origin:
+        if request_layer.allowed_origin:
             headers.append(('Access-Control-Allow-Origin', allowed_origin))
         
-        if max_cache_age is not None:
+        if request_layer.max_cache_age is not None:
             expires = datetime.utcnow() + timedelta(seconds=max_cache_age)
             headers.append(('Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT')))
             headers.append(('Cache-Control', 'public, max-age=%d' % max_cache_age))
+
+        return self._response(start_response, status_code, str(content), headers)
+
+    def _response(self, start_response, code, content='', headers=dict()):
+        """
+        """
+        # TODO headers should be internally represented as a list of tuples
+        # rather than a dict, otherwise multiple values for the same header
+        # won't work properly
+        if not headers.has_key('Content-Type'):
+            headers['Content-Type'] = 'text/plain'
+
+        if not headers.has_key('Content-Length'):
+            headers['Content-Length'] = str(len(content))
         
-        start_response(code, headers)
+        # TODO this needs a lookup for the string part of the response
+        start_response(str(code) + " blarg", headers.items())
         return [content]
 
 def modpythonHandler(request):
@@ -459,13 +500,16 @@ def modpythonHandler(request):
     path_info = request.path_info
     query_string = request.args
     
-    mimetype, content = requestHandler(config_path, path_info, query_string)
+    status_code, headers, content = requestHandler(config_path, path_info, query_string)
 
-    request.status = apache.HTTP_OK
-    request.content_type = mimetype
+    request.status = status_code
+
+    for k, v in headers:
+        request.headers_out.add(k, v)
+
     request.set_content_length(len(content))
     request.send_http_header()
 
     request.write(content)
 
-    return apache.OK
+    return status_code
