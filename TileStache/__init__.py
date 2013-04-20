@@ -24,6 +24,8 @@ from urlparse import urljoin, urlparse
 from urllib import urlopen
 from os import getcwd
 from time import time
+
+import httplib
 import logging
 
 try:
@@ -368,8 +370,7 @@ class WSGITileServer:
         if not headers.has_key('Content-Length'):
             headers['Content-Length'] = str(len(content))
         
-        # TODO this needs a lookup for the string part of the response
-        start_response(str(code) + " blarg", headers.items())
+        start_response(str(code) + httplib.responses[code], headers.items())
         return [content]
 
 def modpythonHandler(request):
