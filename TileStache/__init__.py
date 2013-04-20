@@ -181,6 +181,8 @@ def requestHandler(config_hint, path_info, query_string):
         
         Calls getTile() to render actual tiles, and getPreview() to render preview.html.
     """
+    headers = Headers([])
+    
     try:
         # ensure that path_info is at least a single "/"
         path_info = '/' + (path_info or '').lstrip('/')
@@ -215,6 +217,17 @@ def requestHandler(config_hint, path_info, query_string):
         if callback and 'json' in headers['Content-Type']:
             headers['Content-Type'] = 'application/javascript; charset=utf-8'
             content = '%s(%s)' % (callback, content)
+        
+        allowed_origin = layer.allowed_origin
+        max_cache_age = layer.max_cache_age
+        
+        if allowed_origin:
+            headers.setdefault('Access-Control-Allow-Origin', allowed_origin)
+        
+        if max_cache_age is not None:
+            expires = datetime.utcnow() + timedelta(seconds=max_cache_age)
+            headers.setdefault('Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT'))
+            headers.setdefault('Cache-Control', 'public, max-age=%d' % max_cache_age)
 
     except Core.KnownUnknown, e:
         out = StringIO()
@@ -261,16 +274,6 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
         print >> stdout, 'Content-Type: text/plain\n'
         print >> stdout, 'You are being redirected to', other_uri
         return
-    
-    layer = requestLayer(config, path_info)
-    
-    if layer.allowed_origin:
-        headers.setdefault('Access-Control-Allow-Origin', layer.allowed_origin)
-    
-    if layer.max_cache_age is not None:
-        expires = datetime.utcnow() + timedelta(seconds=layer.max_cache_age)
-        headers.setdefault('Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT'))
-        headers.setdefault('Cache-Control', 'public, max-age=%d' % layer.max_cache_age)
     
     headers.setdefault('Content-Length', str(len(content)))
 
@@ -337,6 +340,10 @@ class WSGITileServer:
         except Core.KnownUnknown, e:
             return self._response(start_response, 400, str(e))
 
+        #
+        # WSGI behavior is different from CGI behavior, because we may not want
+        # to return a chatty rummy for likely-deployed WSGI vs. testing CGI.
+        #
         if layer and layer not in self.config.layers:
             return self._response(start_response, 404)
 
@@ -355,18 +362,6 @@ class WSGITileServer:
             start_response('302 Found', [('Location', other_uri), ('Content-Type', 'text/plain')])
             return ['You are being redirected to %s\n' % other_uri]
         
-        request_layer = requestLayer(self.config, environ['PATH_INFO'])
-        allowed_origin = request_layer.allowed_origin
-        max_cache_age = request_layer.max_cache_age
-        
-        if request_layer.allowed_origin:
-            headers.setdefault('Access-Control-Allow-Origin', allowed_origin)
-        
-        if request_layer.max_cache_age is not None:
-            expires = datetime.utcnow() + timedelta(seconds=max_cache_age)
-            headers.setdefault('Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT'))
-            headers.setdefault('Cache-Control', 'public, max-age=%d' % max_cache_age)
-
         return self._response(start_response, status_code, str(content), headers)
 
     def _response(self, start_response, code, content='', headers=None):
@@ -378,7 +373,7 @@ class WSGITileServer:
             headers.setdefault('Content-Type', 'text/plain')
             headers.setdefault('Content-Length', str(len(content)))
         
-        start_response('%d %s' % (code, httplib.responses[code]), headers)
+        start_response('%d %s' % (code, httplib.responses[code]), headers.items())
         return [content]
 
 def modpythonHandler(request):
