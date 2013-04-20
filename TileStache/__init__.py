@@ -21,6 +21,7 @@ from StringIO import StringIO
 from os.path import dirname, join as pathjoin, realpath
 from datetime import datetime, timedelta
 from urlparse import urljoin, urlparse
+from wsgiref.headers import Headers
 from urllib import urlopen
 from os import getcwd
 from time import time
@@ -48,7 +49,7 @@ _preview_pat = re.compile(r'^/?(?P<l>\w.+)/(preview\.html)?$')
 def getPreview(layer):
     """ Get a type string and dynamic map viewer HTML for a given layer.
     """
-    return 200, makeHeaders('text/html'), Core._preview(layer)
+    return 200, Headers([('Content-Type', 'text/html')]), Core._preview(layer)
 
 def parseConfigfile(configpath):
     """ Parse a configuration file and return a Configuration object.
@@ -211,7 +212,8 @@ def requestHandler(config_hint, path_info, query_string):
             status_code, headers, content = layer.getTile(coord, extension)
     
         if callback and 'json' in headers['Content-Type']:
-            headers, content = makeHeaders('application/javascript; charset=utf-8'), '%s(%s)' % (callback, content)
+            headers['Content-Type'] = 'application/javascript; charset=utf-8'
+            content = '%s(%s)' % (callback, content)
 
     except Core.KnownUnknown, e:
         out = StringIO()
@@ -221,7 +223,8 @@ def requestHandler(config_hint, path_info, query_string):
         print >> out, ''
         print >> out, '\n'.join(Core._rummy())
         
-        status_code, headers, content = 500, makeHeaders('text/plain'), out.getvalue()
+        headers['Content-Type'] = 'text/plain'
+        status_code, content = 500, out.getvalue()
 
     return status_code, headers, content
 
@@ -327,15 +330,18 @@ class WSGITileServer:
         try:
             layer, coord, ext = splitPathInfo(environ['PATH_INFO'])
         except Core.KnownUnknown, e:
-            return self._response(start_response, '400 Bad Request', str(e))
+            return self._response(start_response, 400, str(e))
 
         if layer and layer not in self.config.layers:
-            return self._response(start_response, '404 Not Found')
+            return self._response(start_response, 404)
 
         try:
             status_code, headers, content = requestHandler(self.config, environ['PATH_INFO'], environ['QUERY_STRING'])
         
         except Core.TheTileIsInAnotherCastle, e:
+            #
+            # TODO: does this whole section disappear with proper headers from requestHandler?
+            #
             other_uri = environ['SCRIPT_NAME'] + e.path_info
             
             if environ['QUERY_STRING']:
@@ -349,28 +355,25 @@ class WSGITileServer:
         max_cache_age = request_layer.max_cache_age
         
         if request_layer.allowed_origin:
-            headers.append(('Access-Control-Allow-Origin', allowed_origin))
+            headers.setdefault('Access-Control-Allow-Origin', allowed_origin)
         
         if request_layer.max_cache_age is not None:
             expires = datetime.utcnow() + timedelta(seconds=max_cache_age)
-            headers.append(('Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT')))
-            headers.append(('Cache-Control', 'public, max-age=%d' % max_cache_age))
+            headers.setdefault('Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT'))
+            headers.setdefault('Cache-Control', 'public, max-age=%d' % max_cache_age)
 
         return self._response(start_response, status_code, str(content), headers)
 
-    def _response(self, start_response, code, content='', headers=dict()):
+    def _response(self, start_response, code, content='', headers=None):
         """
         """
-        # TODO headers should be internally represented as a list of tuples
-        # rather than a dict, otherwise multiple values for the same header
-        # won't work properly
-        if not headers.has_key('Content-Type'):
-            headers['Content-Type'] = 'text/plain'
+        headers = headers or Headers([])
 
-        if not headers.has_key('Content-Length'):
-            headers['Content-Length'] = str(len(content))
+        if content:
+            headers.setdefault('Content-Type', 'text/plain')
+            headers.setdefault('Content-Length', str(len(content)))
         
-        start_response(str(code) + httplib.responses[code], headers.items())
+        start_response('%d %s' % (code, httplib.responses[code]), headers)
         return [content]
 
 def modpythonHandler(request):

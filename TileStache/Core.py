@@ -134,6 +134,7 @@ The preview can be accessed through a URL like /<layer name>/preview.html:
 """
 
 import logging
+from wsgiref.headers import Headers
 from StringIO import StringIO
 from urlparse import urljoin
 from time import time
@@ -363,8 +364,7 @@ class Layer:
 
         # default response values
         status_code = 200
-        headers = dict()
-        headers['Content-Type'] = mimetype
+        headers = Headers([('Content-Type', mimetype)])
         body = None
 
         cache = self.config.cache
@@ -687,8 +687,8 @@ class TheTileLeftANote(Exception):
         upstream servers where a tile can be found or to clients that a tile
         is empty (or solid).
     """
-    def __init__(self, headers=dict(), status_code=200):
-        self.headers = headers
+    def __init__(self, headers=None, status_code=200):
+        self.headers = headers or Headers([])
         self.status_code = status_code
         Exception.__init__(self, headers, status_code)
 
