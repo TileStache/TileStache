@@ -196,7 +196,8 @@ def requestHandler(config_hint, path_info, query_string):
         # Special case for index page.
         #
         if path_info == '/':
-            return getattr(layer.config, 'index', ('text/plain', 'TileStache says hello.'))
+            mimetype, content = getattr(layer.config, 'index', ('text/plain', 'TileStache says hello.'))
+            return 200, Headers([('Content-Type', mimetype)]), content
 
         coord, extension = splitPathInfo(path_info)[1:]
         
@@ -247,6 +248,9 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
         status_code, headers, content = requestHandler(config, path_info, query_string)
     
     except Core.TheTileIsInAnotherCastle, e:
+        #
+        # TODO: does this whole section disappear with proper headers from requestHandler?
+        #
         other_uri = environ['SCRIPT_NAME'] + e.path_info
         
         if query_string:
@@ -261,23 +265,24 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     layer = requestLayer(config, path_info)
     
     if layer.allowed_origin:
-        headers['Access-Control-Allow-Origin'] = layer.allowed_origin
+        headers.setdefault('Access-Control-Allow-Origin', layer.allowed_origin)
     
     if layer.max_cache_age is not None:
         expires = datetime.utcnow() + timedelta(seconds=layer.max_cache_age)
-        headers['Expires'] = expires.strftime('%a %d %b %Y %H:%M:%S GMT')
-        headers['Cache-Control'] = 'public, max-age=%d' % layer.max_cache_age
+        headers.setdefault('Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT'))
+        headers.setdefault('Cache-Control', 'public, max-age=%d' % layer.max_cache_age)
     
-    headers['Content-Length'] = len(content)
+    headers.setdefault('Content-Length', str(len(content)))
 
     # output the status code as a header
-    print >> stdout, 'Status: %s', status_code
+    stdout.write('Status: %d\n' % status_code)
 
     # output gathered headers
-    for k, v in headers:
-        print >> stdout, '%s: %s\n' % (k, v)
+    for k, v in headers.items():
+        stdout.write('%s: %s\n' % (k, v))
 
-    print >> stdout, content
+    stdout.write('\n')
+    stdout.write(content)
 
 class WSGITileServer:
     """ Create a WSGI application that can handle requests from any server that talks WSGI.
@@ -405,7 +410,7 @@ def modpythonHandler(request):
 
     request.status = status_code
 
-    for k, v in headers:
+    for k, v in headers.items():
         request.headers_out.add(k, v)
 
     request.set_content_length(len(content))
