@@ -43,109 +43,6 @@ import Config
 _pathinfo_pat = re.compile(r'^/?(?P<l>\w.+)/(?P<z>\d+)/(?P<x>-?\d+)/(?P<y>-?\d+)\.(?P<e>\w+)$')
 _preview_pat = re.compile(r'^/?(?P<l>\w.+)/(preview\.html)?$')
 
-def getTile(layer, coord, extension, ignore_cached=False):
-    """ Get some headers and tile binary for a given request layer tile.
-    
-        Arguments:
-        - layer: instance of Core.Layer to render.
-        - coord: one ModestMaps.Core.Coordinate corresponding to a single tile.
-        - extension: filename extension to choose response type, e.g. "png" or "jpg".
-        - ignore_cached: always re-render the tile, whether it's in the cache or not.
-    
-        This is the main entry point, after site configuration has been loaded
-        and individual tiles need to be rendered.
-    """
-    start_time = time()
-    
-    mimetype, format = layer.getTypeByExtension(extension)
-
-    # default response values
-    status_code = 200
-    headers = makeHeaders(mimetype)
-    body = None
-
-    cache = layer.config.cache
-
-    if not ignore_cached:
-        # Start by checking for a tile in the cache.
-        try:
-            body = cache.read(layer, coord, format)
-        except Core.TheTileLeftANote, e:
-            headers = e.headers
-            status_code = e.status_code
-
-        tile_from = 'cache'
-
-    else:
-        # Then look in the bag of recent tiles.
-        body = Core._getRecentTile(layer, coord, format)
-        tile_from = 'recent tiles'
-    
-    # If no tile was found, dig deeper
-    if body is None:
-        try:
-            lockCoord = None
-
-            if layer.write_cache:
-                # this is the coordinate that actually gets locked.
-                lockCoord = layer.metatile.firstCoord(coord)
-                
-                # We may need to write a new tile, so acquire a lock.
-                cache.lock(layer, lockCoord, format)
-            
-            if not ignore_cached:
-                # There's a chance that some other process has
-                # written the tile while the lock was being acquired.
-                try:
-                    body = cache.read(layer, coord, format)
-                except Core.TheTileLeftANote, e:
-                    headers = e.headers
-                    status_code = e.status_code
-
-                tile_from = 'cache after all'
-    
-            if body is None:
-                # No one else wrote the tile, do it here.
-                buff = StringIO()
-
-                try:
-                    tile = layer.render(coord, format)
-                    save = True
-                except Core.NoTileLeftBehind, e:
-                    tile = e.tile
-                    save = False
-                except TheTileLeftANote, e:
-                    headers = e.headers
-                    status_code = e.status_code
-
-                if not layer.write_cache:
-                    save = False
-                
-                if format.lower() == 'jpeg':
-                    save_kwargs = layer.jpeg_options
-                elif format.lower() == 'png':
-                    save_kwargs = layer.png_options
-                else:
-                    save_kwargs = {}
-                
-                tile.save(buff, format, **save_kwargs)
-                body = buff.getvalue()
-                
-                if save:
-                    cache.save(body, layer, coord, format)
-
-                tile_from = 'layer.render()'
-
-        finally:
-            if lockCoord:
-                # Always clean up a lock when it's no longer being used.
-                cache.unlock(layer, lockCoord, format)
-    
-    Core._addRecentTile(layer, coord, format, body)
-    logging.info('TileStache.getTile() %s/%d/%d/%d.%s via %s in %.3f', layer.name(), coord.zoom, coord.column, coord.row, extension, tile_from, time() - start_time)
-    
-    return status_code, headers, body
-
 def getPreview(layer):
     """ Get a type string and dynamic map viewer HTML for a given layer.
     """
@@ -309,7 +206,7 @@ def requestHandler(config_hint, path_info, query_string):
             raise Core.TheTileIsInAnotherCastle(other_path_info)
         
         else:
-            status_code, headers, content = getTile(layer, coord, extension)
+            status_code, headers, content = layer.getTile(coord, extension)
     
         if callback and 'json' in headers['Content-Type']:
             headers, content = makeHeaders('application/javascript; charset=utf-8'), '%s(%s)' % (callback, content)

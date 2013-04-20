@@ -346,6 +346,109 @@ class Layer:
 
         return None
 
+    def getTile(self, coord, extension, ignore_cached=False):
+        """ Get some headers and tile binary for a given request layer tile.
+        
+            Arguments:
+            - coord: one ModestMaps.Core.Coordinate corresponding to a single tile.
+            - extension: filename extension to choose response type, e.g. "png" or "jpg".
+            - ignore_cached: always re-render the tile, whether it's in the cache or not.
+        
+            This is the main entry point, after site configuration has been loaded
+            and individual tiles need to be rendered.
+        """
+        start_time = time()
+        
+        mimetype, format = self.getTypeByExtension(extension)
+
+        # default response values
+        status_code = 200
+        headers = dict()
+        headers['Content-Type'] = mimetype
+        body = None
+
+        cache = self.config.cache
+
+        if not ignore_cached:
+            # Start by checking for a tile in the cache.
+            try:
+                body = cache.read(self, coord, format)
+            except TheTileLeftANote, e:
+                headers = e.headers
+                status_code = e.status_code
+
+            tile_from = 'cache'
+
+        else:
+            # Then look in the bag of recent tiles.
+            body = _getRecentTile(self, coord, format)
+            tile_from = 'recent tiles'
+        
+        # If no tile was found, dig deeper
+        if body is None:
+            try:
+                lockCoord = None
+
+                if self.write_cache:
+                    # this is the coordinate that actually gets locked.
+                    lockCoord = self.metatile.firstCoord(coord)
+                    
+                    # We may need to write a new tile, so acquire a lock.
+                    cache.lock(self, lockCoord, format)
+                
+                if not ignore_cached:
+                    # There's a chance that some other process has
+                    # written the tile while the lock was being acquired.
+                    try:
+                        body = cache.read(self, coord, format)
+                    except TheTileLeftANote, e:
+                        headers = e.headers
+                        status_code = e.status_code
+
+                    tile_from = 'cache after all'
+        
+                if body is None:
+                    # No one else wrote the tile, do it here.
+                    buff = StringIO()
+
+                    try:
+                        tile = self.render(coord, format)
+                        save = True
+                    except NoTileLeftBehind, e:
+                        tile = e.tile
+                        save = False
+                    except TheTileLeftANote, e:
+                        headers = e.headers
+                        status_code = e.status_code
+
+                    if not self.write_cache:
+                        save = False
+                    
+                    if format.lower() == 'jpeg':
+                        save_kwargs = self.jpeg_options
+                    elif format.lower() == 'png':
+                        save_kwargs = self.png_options
+                    else:
+                        save_kwargs = {}
+                    
+                    tile.save(buff, format, **save_kwargs)
+                    body = buff.getvalue()
+                    
+                    if save:
+                        cache.save(body, self, coord, format)
+
+                    tile_from = 'layer.render()'
+
+            finally:
+                if lockCoord:
+                    # Always clean up a lock when it's no longer being used.
+                    cache.unlock(self, lockCoord, format)
+        
+        _addRecentTile(self, coord, format, body)
+        logging.info('TileStache.getTile() %s/%d/%d/%d.%s via %s in %.3f', self.name(), coord.zoom, coord.column, coord.row, extension, tile_from, time() - start_time)
+        
+        return status_code, headers, body
+
     def doMetatile(self):
         """ Return True if we have a real metatile and the provider is OK with it.
         """
