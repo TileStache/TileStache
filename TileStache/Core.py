@@ -669,16 +669,6 @@ class NoTileLeftBehind(Exception):
         self.tile = tile
         Exception.__init__(self, tile)
 
-class TheTileIsInAnotherCastle(Exception):
-    """ Ask a client to look someplace else for a tile.
-    
-        This exception can be thrown in a provider to signal
-        to HTTP clients that a tile should be asked-for elsewhere.
-    """
-    def __init__(self, path_info):
-        self.path_info = path_info
-        Exception.__init__(self, path_info)
-
 class TheTileLeftANote(Exception):
     """ A tile exists, but it shouldn't be returned to the client. Headers
         and/or a status code are provided in its stead.

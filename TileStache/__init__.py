@@ -169,7 +169,7 @@ def requestLayer(config, path_info):
     
     return config.layers[layername]
 
-def requestHandler(config_hint, path_info, query_string):
+def requestHandler(config_hint, path_info, query_string, script_name=''):
     """ Generate a set of headers and response body for a given request.
     
         Requires a configuration and PATH_INFO (e.g. "/example/0/0/0.png").
@@ -208,8 +208,17 @@ def requestHandler(config_hint, path_info, query_string):
 
         elif extension.lower() in layer.redirects:
             other_extension = layer.redirects[extension.lower()]
-            other_path_info = mergePathInfo(layer.name(), coord, other_extension)
-            raise Core.TheTileIsInAnotherCastle(other_path_info)
+            
+            redirect_uri = script_name
+            redirect_uri += mergePathInfo(layer.name(), coord, other_extension)
+            
+            if query_string:
+                redirect_uri += '?' + query_string
+            
+            headers['Location'] = redirect_uri
+            headers['Content-Type'] = 'text/plain'
+            
+            return 302, headers, 'You are being redirected to %s\n' % redirect_uri
         
         else:
             status_code, headers, content = layer.getTile(coord, extension)
@@ -256,24 +265,9 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     
     path_info = environ.get('PATH_INFO', None)
     query_string = environ.get('QUERY_STRING', None)
+    script_name = environ.get('SCRIPT_NAME', None)
     
-    try:
-        status_code, headers, content = requestHandler(config, path_info, query_string)
-    
-    except Core.TheTileIsInAnotherCastle, e:
-        #
-        # TODO: does this whole section disappear with proper headers from requestHandler?
-        #
-        other_uri = environ['SCRIPT_NAME'] + e.path_info
-        
-        if query_string:
-            other_uri += '?' + query_string
-
-        print >> stdout, 'Status: 302 Found'
-        print >> stdout, 'Location:', other_uri
-        print >> stdout, 'Content-Type: text/plain\n'
-        print >> stdout, 'You are being redirected to', other_uri
-        return
+    status_code, headers, content = requestHandler(config, path_info, query_string, script_name)
     
     headers.setdefault('Content-Length', str(len(content)))
 
@@ -347,20 +341,11 @@ class WSGITileServer:
         if layer and layer not in self.config.layers:
             return self._response(start_response, 404)
 
-        try:
-            status_code, headers, content = requestHandler(self.config, environ['PATH_INFO'], environ['QUERY_STRING'])
+        path_info = environ.get('PATH_INFO', None)
+        query_string = environ.get('QUERY_STRING', None)
+        script_name = environ.get('SCRIPT_NAME', None)
         
-        except Core.TheTileIsInAnotherCastle, e:
-            #
-            # TODO: does this whole section disappear with proper headers from requestHandler?
-            #
-            other_uri = environ['SCRIPT_NAME'] + e.path_info
-            
-            if environ['QUERY_STRING']:
-                other_uri += '?' + environ['QUERY_STRING']
-    
-            start_response('302 Found', [('Location', other_uri), ('Content-Type', 'text/plain')])
-            return ['You are being redirected to %s\n' % other_uri]
+        status_code, headers, content = requestHandler(self.config, path_info, query_string, script_name)
         
         return self._response(start_response, status_code, str(content), headers)
 
@@ -401,7 +386,10 @@ def modpythonHandler(request):
     path_info = request.path_info
     query_string = request.args
     
-    status_code, headers, content = requestHandler(config_path, path_info, query_string)
+    #
+    # TODO: wtf with script_name here?
+    #
+    status_code, headers, content = requestHandler(config_path, path_info, query_string, request.script_name)
 
     request.status = status_code
 
