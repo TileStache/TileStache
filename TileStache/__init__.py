@@ -355,7 +355,6 @@ class WSGITileServer:
         headers = headers or Headers([])
 
         if content:
-            headers.setdefault('Content-Type', 'text/plain')
             headers.setdefault('Content-Length', str(len(content)))
         
         start_response('%d %s' % (code, httplib.responses[code]), headers.items())
