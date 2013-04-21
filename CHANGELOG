@@ -1,3 +1,6 @@
+2013-04-20: 1.47.1
+- Fixed typo in setup.py.
+
 2013-04-20: 1.47.0
 - Exposed mutable HTTP status codes and headers to TileStache.getTile() and caches via TheTileLeftANote exception.
 - Removed old layer.redirects implementation via TheTileIsInAnotherCastle exception.
