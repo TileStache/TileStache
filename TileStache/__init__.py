@@ -118,15 +118,6 @@ def mergePathInfo(layer, coord, extension):
     
     return '/%(layer)s/%(z)d/%(x)d/%(y)d.%(extension)s' % locals()
 
-def makeHeaders(mimetype):
-    """ Create a headers dict (containing only a content-type for now).
-    """
-    headers = dict()
-
-    headers['Content-Type'] = mimetype
-
-    return headers
-
 def requestLayer(config, path_info):
     """ Return a Layer.
     
