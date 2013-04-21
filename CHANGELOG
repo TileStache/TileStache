@@ -1,3 +1,6 @@
+2013-04-20: 1.47.0
+- Exposed mutable HTTP status codes and headers to TileStache.getTile() and caches via TheTileLeftANote exception.
+- Removed old layer.redirects implementation via TheTileIsInAnotherCastle exception.
 - Improved PIL dependency in setup requirements to include Pillow, with patch from Fabian Büchler.
 - Fixed coordinate generator usage in tilestache-seed with patch from Seth Fitzsimmons.
 - Added Redis cache provider with patch from Matthew Perry.
