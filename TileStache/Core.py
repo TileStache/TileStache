@@ -399,12 +399,7 @@ class Layer:
                 if not ignore_cached:
                     # There's a chance that some other process has
                     # written the tile while the lock was being acquired.
-                    try:
-                        body = cache.read(self, coord, format)
-                    except TheTileLeftANote, e:
-                        headers = e.headers
-                        status_code = e.status_code
-
+                    body = cache.read(self, coord, format)
                     tile_from = 'cache after all'
         
                 if body is None:
@@ -417,9 +412,6 @@ class Layer:
                     except NoTileLeftBehind, e:
                         tile = e.tile
                         save = False
-                    except TheTileLeftANote, e:
-                        headers = e.headers
-                        status_code = e.status_code
 
                     if not self.write_cache:
                         save = False
@@ -438,6 +430,14 @@ class Layer:
                         cache.save(body, self, coord, format)
 
                     tile_from = 'layer.render()'
+
+            except TheTileLeftANote, e:
+                headers = e.headers
+                status_code = e.status_code
+                body = ''
+                
+                if e.emit_content_type:
+                    headers.setdefault('Content-Type', mimetype)
 
             finally:
                 if lockCoord:
@@ -677,10 +677,14 @@ class TheTileLeftANote(Exception):
         upstream servers where a tile can be found or to clients that a tile
         is empty (or solid).
     """
-    def __init__(self, headers=None, status_code=200):
+    def __init__(self, headers=None, status_code=200, content='', emit_content_type=True):
         self.headers = headers or Headers([])
         self.status_code = status_code
-        Exception.__init__(self, headers, status_code)
+        self.content = content
+        self.emit_content_type = bool(emit_content_type)
+
+        Exception.__init__(self, self.headers, self.status_code,
+                           self.content, self.emit_content_type)
 
 def _preview(layer):
     """ Get an HTML response for a given named layer.
