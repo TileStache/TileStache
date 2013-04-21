@@ -14,7 +14,7 @@ except ImportError:
 
 
 from ModestMaps.Core import Coordinate
-from TileStache import parseConfigfile
+from TileStache import getTile, parseConfigfile
 from TileStache.Core import KnownUnknown
 
 def request(config_file_content, layer_name, format, row, column, zoom):
@@ -27,7 +27,7 @@ def request(config_file_content, layer_name, format, row, column, zoom):
     config = parseConfigfile(absolute_file_name)
     layer = config.layers[layer_name]
     coord = Coordinate(int(row), int(column), int(zoom))
-    status_code, headers, tile_content = layer.getTile(coord, format)
+    status_code, headers, tile_content = getTile(layer, coord, format)
 
     os.remove(absolute_file_name)
 

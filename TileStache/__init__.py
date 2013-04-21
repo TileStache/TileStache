@@ -46,6 +46,8 @@ import Config
 _pathinfo_pat = re.compile(r'^/?(?P<l>\w.+)/(?P<z>\d+)/(?P<x>-?\d+)/(?P<y>-?\d+)\.(?P<e>\w+)$')
 _preview_pat = re.compile(r'^/?(?P<l>\w.+)/(preview\.html)?$')
 
+getTile = Core.Layer.getTile
+
 def getPreview(layer):
     """ Get a type string and dynamic map viewer HTML for a given layer.
     """
