@@ -46,7 +46,7 @@ class Provider (ModestMaps.Providers.IMapProvider):
         """ Return tile URLs that start with file://, by first retrieving them.
         """
         if self.threadsafe or self.lock.acquire():
-            mime_type, tile_data = TileStache.getTile(self.layer, coord, 'png', self.ignore_cached)
+            _, _, tile_data = TileStache.getTile(self.layer, coord, 'png', self.ignore_cached)
             
             handle, filename = mkstemp(prefix='tilestache-compose-', suffix='.png')
             write(handle, tile_data)
