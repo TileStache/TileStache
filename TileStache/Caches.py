@@ -101,7 +101,7 @@ class Test:
         - verbose: optional boolean flag to write cache activities to a logging
           function, defaults to False if omitted.
     """
-    def __init__(self, logfunc=None):
+    def __init__(self, logfunc=None, **kwargs):
         self.logfunc = logfunc
 
     def _description(self, layer, coord, format):
@@ -183,7 +183,7 @@ class Disk:
         "http://example.com/tilestache.cfg", the path *must* be an unambiguous
         filesystem path, e.g. "file:///tmp/cache"
     """
-    def __init__(self, path, umask=0022, dirs='safe', gzip='txt text json xml'.split()):
+    def __init__(self, path, umask=0022, dirs='safe', gzip='txt text json xml'.split(), **kwargs):
         self.cachepath = path
         self.umask = int(umask)
         self.dirs = dirs
@@ -395,7 +395,7 @@ class Multi:
             make a great pair.
 
     """
-    def __init__(self, tiers):
+    def __init__(self, tiers, **kwargs):
         self.tiers = tiers
 
     def lock(self, layer, coord, format):
