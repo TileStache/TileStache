@@ -1,3 +1,6 @@
+2013-04-22: 1.47.2
+- Fixed getTile bugs introduced in 1.47.0.
+
 2013-04-20: 1.47.1
 - Fixed typo in setup.py.
 
