@@ -185,7 +185,7 @@ class Disk:
     """
     def __init__(self, path, umask=0022, dirs='safe', gzip='txt text json xml'.split()):
         self.cachepath = path
-        self.umask = umask
+        self.umask = int(umask)
         self.dirs = dirs
         self.gzip = [format.lower() for format in gzip]
 

@@ -376,6 +376,7 @@ class Layer:
             except TheTileLeftANote, e:
                 headers = e.headers
                 status_code = e.status_code
+                body = e.content
 
             tile_from = 'cache'
 
@@ -434,7 +435,7 @@ class Layer:
             except TheTileLeftANote, e:
                 headers = e.headers
                 status_code = e.status_code
-                body = ''
+                body = e.content
                 
                 if e.emit_content_type:
                     headers.setdefault('Content-Type', mimetype)
