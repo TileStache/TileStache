@@ -200,7 +200,7 @@ if __name__ == '__main__':
         has_fake_source = bool(options.mbtiles_input)
         
         if has_fake_destination and has_fake_source:
-            config_dict, config_dirpath = parseConfigfile(options.config)
+            config_dict, config_dirpath = dict(layers={}), '' # parseConfigfile(options.config)
             layer_dict = dict()
             
             config_dict['cache'] = dict(name='test')
@@ -272,7 +272,7 @@ if __name__ == '__main__':
         # create a real config object
         
         config = buildConfiguration(config_dict, config_dirpath)
-        layer = config.layers[options.layer]
+        layer = config.layers[options.layer or 'tiles-layer']
         
         # do the actual work
         
