@@ -94,7 +94,7 @@ class Test:
 
             "cache": {
               "name": "Test",
-              "verbose": True
+              "verbose": true
             }
 
         Extra configuration parameters:
