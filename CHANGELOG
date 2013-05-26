@@ -1,3 +1,6 @@
+2013-05-26: 1.48.0
+- Fixed a serious documentation incompatibility with TileStache.getTile() introduced in 1.47.0.
+
 2013-04-24: 1.47.4
 - Fixed from-mbtiles/output-directory use case in tilestache-seed, which I had broken.
 
