@@ -348,7 +348,7 @@ class Layer:
         return None
 
     def getTile(self, coord, extension, ignore_cached=False):
-        """ Get some headers and tile binary for a given request layer tile.
+        """ Get status code, headers, and a tile binary for a given request layer tile.
         
             Arguments:
             - coord: one ModestMaps.Core.Coordinate corresponding to a single tile.

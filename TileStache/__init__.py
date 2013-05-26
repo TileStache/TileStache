@@ -46,7 +46,22 @@ import Config
 _pathinfo_pat = re.compile(r'^/?(?P<l>\w.+)/(?P<z>\d+)/(?P<x>-?\d+)/(?P<y>-?\d+)\.(?P<e>\w+)$')
 _preview_pat = re.compile(r'^/?(?P<l>\w.+)/(preview\.html)?$')
 
-getTile = Core.Layer.getTile
+def getTile(coord, extension, ignore_cached=False):
+    ''' Get a type string and tile binary for a given request layer tile.
+    
+        Arguments:
+        - layer: instance of Core.Layer to render.
+        - coord: one ModestMaps.Core.Coordinate corresponding to a single tile.
+        - extension: filename extension to choose response type, e.g. "png" or "jpg".
+        - ignore_cached: always re-render the tile, whether it's in the cache or not.
+    
+        This is the main entry point, after site configuration has been loaded
+        and individual tiles need to be rendered.
+    '''
+    status_code, headers, body = Core.Layer.getTile(coord, extension, ignore_cached)
+    mimetype = headers.get('Content-Type')
+
+    return mimetype, content
 
 def getPreview(layer):
     """ Get a type string and dynamic map viewer HTML for a given layer.
