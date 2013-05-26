@@ -66,7 +66,7 @@ class Provider:
 
 	def addLayer( self, layerDef, coord ):
 		
-		_, _, layer = TileStache.getTile(self.layer.config.layers[layerDef['src']], coord, 'JSON')[1]
+		mime, layer = TileStache.getTile(self.layer.config.layers[layerDef['src']], coord, 'JSON')[1]
 #		raise KnownUnknown(layer)
 		if layerDef['wrapper'] == None:
 			layer = json.loads(layer)
