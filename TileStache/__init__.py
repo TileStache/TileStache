@@ -49,6 +49,9 @@ _preview_pat = re.compile(r'^/?(?P<l>\w.+)/(preview\.html)?$')
 def getTile(layer, coord, extension, ignore_cached=False):
     ''' Get a type string and tile binary for a given request layer tile.
     
+        This function is documented as part of TileStache's public API:
+            http://tilestache.org/doc/#tilestache-gettile
+    
         Arguments:
         - layer: instance of Core.Layer to render.
         - coord: one ModestMaps.Core.Coordinate corresponding to a single tile.
@@ -180,6 +183,10 @@ def requestLayer(config, path_info):
 def requestHandler(config_hint, path_info, query_string, script_name=''):
     """ Generate a set of headers and response body for a given request.
     
+        This function is documented as part of TileStache's public API:
+            http://tilestache.org/doc/#tilestache-requesthandler
+            *FIXME*: The return value of this function does not currently match the docs.
+        
         Requires a configuration and PATH_INFO (e.g. "/example/0/0/0.png").
         
         Config_hint parameter can be a path string for a JSON configuration file
@@ -262,6 +269,9 @@ def requestHandler(config_hint, path_info, query_string, script_name=''):
 def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     """ Read environment PATH_INFO, load up configuration, talk to stdout by CGI.
     
+        This function is documented as part of TileStache's public API:
+            http://tilestache.org/doc/#cgi
+    
         Calls requestHandler().
         
         Config parameter can be a file path string for a JSON configuration file
@@ -291,6 +301,9 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
 
 class WSGITileServer:
     """ Create a WSGI application that can handle requests from any server that talks WSGI.
+    
+        This class is documented as part of TileStache's public API:
+            http://tilestache.org/doc/#wsgi
 
         The WSGI application is an instance of this class. Example:
 
