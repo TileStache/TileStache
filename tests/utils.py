@@ -27,11 +27,11 @@ def request(config_file_content, layer_name, format, row, column, zoom):
     config = parseConfigfile(absolute_file_name)
     layer = config.layers[layer_name]
     coord = Coordinate(int(row), int(column), int(zoom))
-    status_code, headers, tile_content = getTile(layer, coord, format)
+    mime_type, tile_content = getTile(layer, coord, format)
 
     os.remove(absolute_file_name)
 
-    return headers['Content-Type'], tile_content
+    return mime_type, tile_content
 
 def create_temp_file(buffer):
     '''
