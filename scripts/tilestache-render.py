@@ -81,7 +81,7 @@ if __name__ == '__main__':
     
     for coord in coords:
         # render
-        _, _, content = getTile(layer, coord, extension)
+        mimetype, content = getTile(layer, coord, extension)
         
         # save
         handle, filename = mkstemp(prefix='tile-', suffix='.'+extension)

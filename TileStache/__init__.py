@@ -46,7 +46,22 @@ import Config
 _pathinfo_pat = re.compile(r'^/?(?P<l>\w.+)/(?P<z>\d+)/(?P<x>-?\d+)/(?P<y>-?\d+)\.(?P<e>\w+)$')
 _preview_pat = re.compile(r'^/?(?P<l>\w.+)/(preview\.html)?$')
 
-getTile = Core.Layer.getTile
+def getTile(layer, coord, extension, ignore_cached=False):
+    ''' Get a type string and tile binary for a given request layer tile.
+    
+        Arguments:
+        - layer: instance of Core.Layer to render.
+        - coord: one ModestMaps.Core.Coordinate corresponding to a single tile.
+        - extension: filename extension to choose response type, e.g. "png" or "jpg".
+        - ignore_cached: always re-render the tile, whether it's in the cache or not.
+    
+        This is the main entry point, after site configuration has been loaded
+        and individual tiles need to be rendered.
+    '''
+    status_code, headers, body = layer.getTileResponse(coord, extension, ignore_cached)
+    mime = headers.get('Content-Type')
+
+    return mime, body
 
 def getPreview(layer):
     """ Get a type string and dynamic map viewer HTML for a given layer.
@@ -172,7 +187,7 @@ def requestHandler(config_hint, path_info, query_string, script_name=''):
         
         Query string is optional, currently used for JSON callbacks.
         
-        Calls getTile() to render actual tiles, and getPreview() to render preview.html.
+        Calls Layer.getTileResponse() to render actual tiles, and getPreview() to render preview.html.
     """
     headers = Headers([])
     
@@ -214,7 +229,7 @@ def requestHandler(config_hint, path_info, query_string, script_name=''):
             return 302, headers, 'You are being redirected to %s\n' % redirect_uri
         
         else:
-            status_code, headers, content = layer.getTile(coord, extension)
+            status_code, headers, content = layer.getTileResponse(coord, extension)
     
         if callback and 'json' in headers['Content-Type']:
             headers['Content-Type'] = 'application/javascript; charset=utf-8'
