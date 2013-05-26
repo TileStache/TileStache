@@ -59,9 +59,9 @@ def getTile(coord, extension, ignore_cached=False):
         and individual tiles need to be rendered.
     '''
     status_code, headers, body = Core.Layer.getTile(coord, extension, ignore_cached)
-    mimetype = headers.get('Content-Type')
+    mime = headers.get('Content-Type')
 
-    return mimetype, content
+    return mime, body
 
 def getPreview(layer):
     """ Get a type string and dynamic map viewer HTML for a given layer.
