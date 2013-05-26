@@ -58,7 +58,7 @@ def getTile(layer, coord, extension, ignore_cached=False):
         This is the main entry point, after site configuration has been loaded
         and individual tiles need to be rendered.
     '''
-    status_code, headers, body = layer.getTile(coord, extension, ignore_cached)
+    status_code, headers, body = layer.getTileResponse(coord, extension, ignore_cached)
     mime = headers.get('Content-Type')
 
     return mime, body
@@ -187,7 +187,7 @@ def requestHandler(config_hint, path_info, query_string, script_name=''):
         
         Query string is optional, currently used for JSON callbacks.
         
-        Calls getTile() to render actual tiles, and getPreview() to render preview.html.
+        Calls Layer.getTileResponse() to render actual tiles, and getPreview() to render preview.html.
     """
     headers = Headers([])
     
@@ -229,7 +229,7 @@ def requestHandler(config_hint, path_info, query_string, script_name=''):
             return 302, headers, 'You are being redirected to %s\n' % redirect_uri
         
         else:
-            status_code, headers, content = layer.getTile(coord, extension)
+            status_code, headers, content = layer.getTileResponse(coord, extension)
     
         if callback and 'json' in headers['Content-Type']:
             headers['Content-Type'] = 'application/javascript; charset=utf-8'

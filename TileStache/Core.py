@@ -347,7 +347,7 @@ class Layer:
 
         return None
 
-    def getTile(self, coord, extension, ignore_cached=False):
+    def getTileResponse(self, coord, extension, ignore_cached=False):
         """ Get status code, headers, and a tile binary for a given request layer tile.
         
             Arguments:
@@ -449,7 +449,7 @@ class Layer:
                     cache.unlock(self, lockCoord, format)
         
         _addRecentTile(self, coord, format, body)
-        logging.info('TileStache.getTile() %s/%d/%d/%d.%s via %s in %.3f', self.name(), coord.zoom, coord.column, coord.row, extension, tile_from, time() - start_time)
+        logging.info('TileStache.Core.Layer.getTileResponse() %s/%d/%d/%d.%s via %s in %.3f', self.name(), coord.zoom, coord.column, coord.row, extension, tile_from, time() - start_time)
         
         return status_code, headers, body
 
