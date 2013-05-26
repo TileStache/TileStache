@@ -276,7 +276,7 @@ def layer_bitmap(layer, coord):
     """
     from . import getTile
 
-    _, _, body = getTile(layer, coord, 'png')
+    mime, body = getTile(layer, coord, 'png')
     image = Image.open(StringIO(body)).convert('RGBA')
 
     return Blit.Bitmap(image)

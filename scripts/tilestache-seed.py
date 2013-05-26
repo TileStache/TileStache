@@ -328,8 +328,7 @@ if __name__ == '__main__':
                 print >> stderr, '%(offset)d of %(total)d...' % progress,
     
             try:
-                status_code, headers, content = getTile(layer, coord, extension, options.ignore_cached)
-                mimetype = headers['Content-Type']
+                mimetype, content = getTile(layer, coord, extension, options.ignore_cached)
                 
                 if mimetype and 'json' in mimetype and options.callback:
                     js_path = '%s/%d/%d/%d.js' % (layer.name(), coord.zoom, coord.column, coord.row)
