@@ -23,6 +23,10 @@ S3 cache parameters:
   secret
     Optional secret access key for your S3 account.
 
+  reduced_redundancy
+    If set to true, use S3's Reduced Redundancy Storage feature. Storage is
+    cheaper but has lower redundancy on Amazon's servers. Defaults to false.
+
   use_locks
     Optional boolean flag for whether to use the locking feature on S3.
     True by default. A good reason to set this to false would be the
