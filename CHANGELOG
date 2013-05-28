@@ -1,3 +1,6 @@
+2013-05-27: 1.48.1
+- Fixed Werkzeug dependency in setup.py.
+
 2013-05-26: 1.48.0
 - Fixed a serious documentation incompatibility with TileStache.getTile() introduced in 1.47.0.
 
