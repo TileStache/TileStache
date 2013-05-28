@@ -94,6 +94,11 @@ class Proj4Projection(LinearProjection):
         p.x = p.x / scale
         p.y = p.y / scale
         return p
+
+    def locationCoordinate(self, location):
+        point = self.locationProj(location)
+        point = self.project(point, 1.0 / self.tile_dimensions[self.zoom])
+        return Coordinate(point.y, point.x, self.zoom)
         
     def coordinateProj(self, coord):
         """Convert from Coordinate object to a Point object in the defined projection"""
