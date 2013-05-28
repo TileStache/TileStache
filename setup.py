@@ -16,7 +16,7 @@ def is_installed(name):
         return False
 
 
-requires = ['ModestMaps >=1.3.0','simplejson']
+requires = ['ModestMaps >=1.3.0','simplejson', 'Werkzeug']
 
 # Soft dependency on PIL or Pillow
 if is_installed('Pillow') or sys.platform == 'win32':
