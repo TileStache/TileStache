@@ -397,6 +397,8 @@ class WSGITileServer:
 def modpythonHandler(request):
     """ Handle a mod_python request.
     
+        TODO: Upgrade to new requestHandler() so this can return non-200 HTTP.
+    
         Calls requestHandler().
     
         Example Apache configuration for TileStache:
