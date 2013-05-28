@@ -100,6 +100,11 @@ class Proj4Projection(LinearProjection):
         point = self.project(point, 1.0 / self.tile_dimensions[self.zoom])
         return Coordinate(point.y, point.x, self.zoom)
         
+    def coordinateLocation(self, coord):
+        ''' TODO: write me.
+        '''
+        raise NotImplementedError('Missing Proj4Projection.coordinateLocation(), see https://github.com/migurski/TileStache/pull/127')
+        
     def coordinateProj(self, coord):
         """Convert from Coordinate object to a Point object in the defined projection"""
         if coord.zoom >= len(self.tile_dimensions):
