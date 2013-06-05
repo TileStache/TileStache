@@ -101,7 +101,6 @@ class Provider:
         
         keys = 'host', 'user', 'password', 'database', 'port', 'dbname'
         self.dbinfo = dict([(k, v) for (k, v) in dbinfo.items() if k in keys])
-        self.db = connect(**self.dbinfo).cursor(cursor_factory=RealDictCursor)
 
         self.clip = bool(clip)
         self.srid = int(srid)
@@ -140,8 +139,8 @@ class Provider:
         if not query:
             return EmptyResponse()
         
-        if self.db.closed:
-            self.db = connect(**self.dbinfo).cursor(cursor_factory=RealDictCursor)
+        db = connect(**self.dbinfo).cursor(cursor_factory=RealDictCursor)
+        print 'CONNECTED'
         
         ll = self.layer.projection.coordinateProj(coord.down())
         ur = self.layer.projection.coordinateProj(coord.right())
@@ -149,7 +148,7 @@ class Provider:
         
         tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
         
-        return Response(self.db, self.srid, query, bbox, tolerance, self.clip)
+        return Response(db, self.srid, query, bbox, tolerance, self.clip)
 
     def getTypeByExtension(self, extension):
         ''' Get mime-type and format by file extension, one of "mvt" or "json".
@@ -200,6 +199,12 @@ class Response:
         
         else:
             raise ValueError(format)
+    
+    def __del__(self):
+        '''
+        '''
+        print 'WE OUT'
+        self.db.connection.close()
 
 class EmptyResponse:
     ''' Simple empty response renders valid MVT or GeoJSON with no features.
