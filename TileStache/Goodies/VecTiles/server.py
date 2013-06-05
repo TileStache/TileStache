@@ -101,7 +101,6 @@ class Provider:
         
         keys = 'host', 'user', 'password', 'database', 'port', 'dbname'
         self.dbinfo = dict([(k, v) for (k, v) in dbinfo.items() if k in keys])
-        self.db = connect(**self.dbinfo).cursor(cursor_factory=RealDictCursor)
 
         self.clip = bool(clip)
         self.srid = int(srid)
@@ -140,16 +139,13 @@ class Provider:
         if not query:
             return EmptyResponse()
         
-        if self.db.closed:
-            self.db = connect(**self.dbinfo).cursor(cursor_factory=RealDictCursor)
-        
         ll = self.layer.projection.coordinateProj(coord.down())
         ur = self.layer.projection.coordinateProj(coord.right())
         bbox = 'ST_MakeBox2D(ST_MakePoint(%.2f, %.2f), ST_MakePoint(%.2f, %.2f))' % (ll.x, ll.y, ur.x, ur.y)
         
         tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
         
-        return Response(self.db, self.srid, query, bbox, tolerance, self.clip)
+        return Response(self.dbinfo, self.srid, query, bbox, tolerance, self.clip)
 
     def getTypeByExtension(self, extension):
         ''' Get mime-type and format by file extension, one of "mvt" or "json".
@@ -166,10 +162,10 @@ class Provider:
 class Response:
     '''
     '''
-    def __init__(self, db, srid, subquery, bbox, tolerance, clip):
+    def __init__(self, dbinfo, srid, subquery, bbox, tolerance, clip):
         '''
         '''
-        self.db = db
+        self.dbinfo = dbinfo
         
         self.query = {
             'JSON': build_query(srid, subquery, bbox, tolerance, True, clip),
@@ -179,11 +175,12 @@ class Response:
     def save(self, out, format):
         '''
         '''
-        self.db.execute(self.query[format])
+        db = connect(**self.dbinfo).cursor(cursor_factory=RealDictCursor)
+        db.execute(self.query[format])
         
         features = []
         
-        for row in self.db.fetchall():
+        for row in db.fetchall():
             if row['geometry'] is None:
                 continue
         
@@ -192,14 +189,18 @@ class Response:
             
             features.append((wkb, prop))
 
-        if format == 'MVT':
-            mvt.encode(out, features)
+        try:
+            if format == 'MVT':
+                mvt.encode(out, features)
+            
+            elif format == 'JSON':
+                geojson.encode(out, features)
+            
+            else:
+                raise ValueError(format)
         
-        elif format == 'JSON':
-            geojson.encode(out, features)
-        
-        else:
-            raise ValueError(format)
+        finally:
+            db.connection.close()
 
 class EmptyResponse:
     ''' Simple empty response renders valid MVT or GeoJSON with no features.
