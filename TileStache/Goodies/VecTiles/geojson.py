@@ -41,10 +41,18 @@ def decode(file):
 def encode(file, features):
     ''' Encode a list of (WKB, property dict) features into a GeoJSON stream.
     
+        Also accept three-element tuples as features: (WKB, property dict, id).
+    
         Geometries in the features list are assumed to be unprojected lon, lats.
         Floating point precision in the output is truncated to six digits.
     '''
-    features = [dict(type='Feature', properties=p, geometry=loads(g).__geo_interface__) for (g, p) in features]
+    try:
+        # Assume three-element features
+        features = [dict(type='Feature', properties=p, geometry=loads(g).__geo_interface__, id=i) for (g, p, i) in features]
+
+    except ValueError:
+        # Fall back to two-element features
+        features = [dict(type='Feature', properties=p, geometry=loads(g).__geo_interface__) for (g, p) in features]
     
     geojson = dict(type='FeatureCollection', features=features)
     encoder = json.JSONEncoder(separators=(',', ':'))

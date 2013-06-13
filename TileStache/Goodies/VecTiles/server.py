@@ -185,9 +185,16 @@ class Response:
                 continue
         
             wkb = bytes(row['geometry'])
-            prop = dict([(k, v) for (k, v) in row.items() if k != 'geometry'])
+            prop = dict([(k, v) for (k, v) in row.items()
+                         if k not in ('geometry', 'geometry_hash')])
             
-            features.append((wkb, prop))
+            if 'geometry_hash' in row:
+                id = row['geometry_hash']
+                del row['geometry_hash']
+                features.append((wkb, prop, id))
+
+            else:
+                features.append((wkb, prop))
 
         try:
             if format == 'MVT':
@@ -235,6 +242,7 @@ def build_query(srid, subquery, bbox, tolerance, is_geo, is_clipped):
     subquery = subquery.replace('!bbox!', bbox)
     
     return '''SELECT q.*,
+                     Substr(MD5(ST_AsBinary(q.geometry)), 1, 10) AS geometry_hash,
                      ST_AsBinary(%(geom)s) AS geometry
               FROM (
                 %(subquery)s
