@@ -1,3 +1,6 @@
+2013-06-14: 1.49.1
+- Updated magic column names in VecTiles Provider to __geometry__ and __id__ for feature ID.
+
 2013-06-05: 1.49.0
 - Added option to use S3 reduced redundancy storage for cheaper caching.
 - Made Postgres connections per-request instead of long term in VecTiles Provider.
