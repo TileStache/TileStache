@@ -171,10 +171,7 @@ class Response:
         '''
         self.dbinfo = dbinfo
         
-        db = connect(**self.dbinfo).cursor(cursor_factory=RealDictCursor)
-        db.execute(subquery + ' LIMIT 1')
-        columns = set(db.fetchone().keys())
-        db.connection.close()
+        columns = query_columns(self.dbinfo, srid, subquery, bbox)
         
         self.query = {
             'JSON': build_query(srid, subquery, columns, bbox, tolerance, True, clip),
@@ -230,6 +227,19 @@ class EmptyResponse:
         
         else:
             raise ValueError(format)
+
+def query_columns(dbinfo, srid, subquery, bbox):
+    ''' Get information about the columns returned for a subquery.
+    '''
+    bbox = 'ST_SetSRID(%s, %d)' % (bbox, srid)
+    subquery = subquery.replace('!bbox!', bbox)
+
+    db = connect(**dbinfo).cursor(cursor_factory=RealDictCursor)
+    db.execute(subquery + ' LIMIT 1')
+    columns = set(db.fetchone().keys())
+    db.connection.close()
+    
+    return columns
 
 def build_query(srid, subquery, subcolumns, bbox, tolerance, is_geo, is_clipped):
     ''' Build and return an PostGIS query.
