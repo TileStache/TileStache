@@ -112,6 +112,7 @@ class Provider:
         self.simplify_until = int(simplify_until)
         
         self.queries = []
+        self.columns = {}
         
         for query in queries:
             if query is None:
@@ -149,7 +150,10 @@ class Provider:
         
         tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
         
-        return Response(self.dbinfo, self.srid, query, bbox, tolerance, self.clip)
+        if query not in self.columns:
+            self.columns[query] = query_columns(self.dbinfo, self.srid, query, bbox)
+        
+        return Response(self.dbinfo, self.srid, query, self.columns[query], bbox, tolerance, self.clip)
 
     def getTypeByExtension(self, extension):
         ''' Get mime-type and format by file extension, one of "mvt" or "json".
@@ -166,12 +170,10 @@ class Provider:
 class Response:
     '''
     '''
-    def __init__(self, dbinfo, srid, subquery, bbox, tolerance, clip):
+    def __init__(self, dbinfo, srid, subquery, columns, bbox, tolerance, clip):
         '''
         '''
         self.dbinfo = dbinfo
-        
-        columns = query_columns(self.dbinfo, srid, subquery, bbox)
         
         self.query = {
             'JSON': build_query(srid, subquery, columns, bbox, tolerance, True, clip),
@@ -233,7 +235,7 @@ def query_columns(dbinfo, srid, subquery, bbox):
     '''
     bbox = 'ST_SetSRID(%s, %d)' % (bbox, srid)
     subquery = subquery.replace('!bbox!', bbox)
-
+    
     db = connect(**dbinfo).cursor(cursor_factory=RealDictCursor)
     db.execute(subquery + ' LIMIT 1')
     columns = set(db.fetchone().keys())
