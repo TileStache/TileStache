@@ -40,7 +40,7 @@ class Provider:
             last query in the list is repeated for higher zoom levels, and null
             queries indicate an empty response.
             
-            Query must use "geometry" for a column name, and must be in
+            Query must use "__geometry__" for a column name, and must be in
             spherical mercator (900913) projection. A query may include an
             "__id__" column, which will be used as a feature ID in GeoJSON
             instead of a dynamically-generated hash of the geometry. A query
@@ -91,7 +91,7 @@ class Provider:
               [
                 null, null, null, null, null,
                 null, null, null, null, null,
-                "SELECT way AS geometry, highway, name FROM planet_osm_line -- zoom 10+ ",
+                "SELECT way AS __geometry__, highway, name FROM planet_osm_line -- zoom 10+ ",
                 "http://example.com/query-z11.pgsql",
                 "query-z12-plus.pgsql"
               ]
@@ -205,12 +205,12 @@ class Response:
             features = []
             
             for row in db.fetchall():
-                if row['geometry'] is None:
+                if row['__geometry__'] is None:
                     continue
             
-                wkb = bytes(row['geometry'])
+                wkb = bytes(row['__geometry__'])
                 prop = dict([(k, v) for (k, v) in row.items()
-                             if k not in ('geometry', '__id__')])
+                             if k not in ('__geometry__', '__id__')])
                 
                 if '__id__' in row:
                     features.append((wkb, prop, row['__id__']))
@@ -264,7 +264,7 @@ def build_query(srid, subquery, subcolumns, bbox, tolerance, is_geo, is_clipped)
     ''' Build and return an PostGIS query.
     '''
     bbox = 'ST_SetSRID(%s, %d)' % (bbox, srid)
-    geom = 'q.geometry'
+    geom = 'q.__geometry__'
     
     if tolerance is not None:
         geom = 'ST_Simplify(%s, %.2f)' % (geom, tolerance)
@@ -276,22 +276,22 @@ def build_query(srid, subquery, subcolumns, bbox, tolerance, is_geo, is_clipped)
         geom = 'ST_Transform(%s, 4326)' % geom
     
     subquery = subquery.replace('!bbox!', bbox)
-    columns = ['q."%s"' % c for c in subcolumns if c not in ('geometry', )]
+    columns = ['q."%s"' % c for c in subcolumns if c not in ('__geometry__', )]
     
-    if 'geometry' not in subcolumns:
-        raise Exception("There's supposed to be a geometry column.")
+    if '__geometry__' not in subcolumns:
+        raise Exception("There's supposed to be a __geometry__ column.")
     
     if '__id__' not in subcolumns:
-        columns.append('Substr(MD5(ST_AsBinary(q.geometry)), 1, 10) AS __id__')
+        columns.append('Substr(MD5(ST_AsBinary(q.__geometry__)), 1, 10) AS __id__')
     
     columns = ', '.join(columns)
     
     return '''SELECT %(columns)s,
-                     ST_AsBinary(%(geom)s) AS geometry
+                     ST_AsBinary(%(geom)s) AS __geometry__
               FROM (
                 %(subquery)s
                 ) AS q
-              WHERE ST_IsValid(q.geometry)
-                AND q.geometry && %(bbox)s
-                AND ST_Intersects(q.geometry, %(bbox)s)''' \
+              WHERE ST_IsValid(q.__geometry__)
+                AND q.__geometry__ && %(bbox)s
+                AND ST_Intersects(q.__geometry__, %(bbox)s)''' \
             % locals()
