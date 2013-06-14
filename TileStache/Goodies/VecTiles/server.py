@@ -38,10 +38,14 @@ class Provider:
           queries:
             Required list of Postgres queries, one for each zoom level. The
             last query in the list is repeated for higher zoom levels, and null
-            queries indicate an empty response. Query must use "geometry" for a
-            column name, and must be in spherical mercator (900913) projection.
-            A query can additionally be a file name or URL, interpreted
-            relative to the location of the TileStache config file.
+            queries indicate an empty response.
+            
+            Query must use "geometry" for a column name, and must be in
+            spherical mercator (900913) projection. A query may include an
+            "__id__" column, which will be used as a feature ID in GeoJSON
+            instead of a dynamically-generated hash of the geometry. A query
+            can additionally be a file name or URL, interpreted relative to
+            the location of the TileStache config file.
             
             If the query contains the token "!bbox!", it will be replaced with
             a constant bounding box geomtry like this:
@@ -186,12 +190,13 @@ class Response:
         
             wkb = bytes(row['geometry'])
             prop = dict([(k, v) for (k, v) in row.items()
-                         if k not in ('geometry', 'geometry_hash')])
+                         if k not in ('geometry', '__id__', 'geometry_hash')])
             
-            if 'geometry_hash' in row:
-                id = row['geometry_hash']
-                del row['geometry_hash']
-                features.append((wkb, prop, id))
+            if '__id__' in row:
+                features.append((wkb, prop, str(row['__id__'])))
+            
+            elif 'geometry_hash' in row:
+                features.append((wkb, prop, str(row['geometry_hash'])))
 
             else:
                 features.append((wkb, prop))
