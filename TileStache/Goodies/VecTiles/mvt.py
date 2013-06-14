@@ -73,9 +73,9 @@ def encode(file, features):
     '''
     parts = []
     
-    for (wkb, prop) in features:
-        wkb = approximate_wkb(wkb)
-        prop = json.dumps(prop)
+    for feature in features:
+        wkb = approximate_wkb(feature[0])
+        prop = json.dumps(feature[1])
         
         parts.extend([_pack('>I', len(wkb)), wkb, _pack('>I', len(prop)), prop])
     
