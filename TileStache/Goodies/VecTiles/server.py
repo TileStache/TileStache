@@ -270,7 +270,7 @@ def build_query(srid, subquery, subcolumns, bbox, tolerance, is_geo, is_clipped)
         geom = 'ST_Transform(%s, 4326)' % geom
     
     subquery = subquery.replace('!bbox!', bbox)
-    columns = ['q."%s"' % c for c in subcolumns]
+    columns = ['q."%s"' % c for c in subcolumns if c not in ('geometry', )]
     
     if 'geometry' not in subcolumns:
         raise Exception("There's supposed to be a geometry column.")
