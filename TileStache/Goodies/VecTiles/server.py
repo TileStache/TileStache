@@ -171,9 +171,14 @@ class Response:
         '''
         self.dbinfo = dbinfo
         
+        db = connect(**self.dbinfo).cursor(cursor_factory=RealDictCursor)
+        db.execute(subquery + ' LIMIT 1')
+        columns = set(db.fetchone().keys())
+        db.connection.close()
+        
         self.query = {
-            'JSON': build_query(srid, subquery, bbox, tolerance, True, clip),
-            'MVT': build_query(srid, subquery, bbox, tolerance, False, clip)
+            'JSON': build_query(srid, subquery, columns, bbox, tolerance, True, clip),
+            'MVT': build_query(srid, subquery, columns, bbox, tolerance, False, clip)
             }
     
     def save(self, out, format):
@@ -190,14 +195,11 @@ class Response:
         
             wkb = bytes(row['geometry'])
             prop = dict([(k, v) for (k, v) in row.items()
-                         if k not in ('geometry', '__id__', '__hash__')])
+                         if k not in ('geometry', '__id__')])
             
             if '__id__' in row:
                 features.append((wkb, prop, str(row['__id__'])))
             
-            elif '__hash__' in row:
-                features.append((wkb, prop, str(row['__hash__'])))
-
             else:
                 features.append((wkb, prop))
 
@@ -229,7 +231,7 @@ class EmptyResponse:
         else:
             raise ValueError(format)
 
-def build_query(srid, subquery, bbox, tolerance, is_geo, is_clipped):
+def build_query(srid, subquery, subcolumns, bbox, tolerance, is_geo, is_clipped):
     ''' Build and return an PostGIS query.
     '''
     bbox = 'ST_SetSRID(%s, %d)' % (bbox, srid)
@@ -245,9 +247,17 @@ def build_query(srid, subquery, bbox, tolerance, is_geo, is_clipped):
         geom = 'ST_Transform(%s, 4326)' % geom
     
     subquery = subquery.replace('!bbox!', bbox)
+    columns = ['q."%s"' % c for c in subcolumns]
     
-    return '''SELECT q.*,
-                     Substr(MD5(ST_AsBinary(q.geometry)), 1, 10) AS __hash__,
+    if 'geometry' not in subcolumns:
+        raise Exception("There's supposed to be a geometry column.")
+    
+    if '__id__' not in subcolumns:
+        columns.append('Substr(MD5(ST_AsBinary(q.geometry)), 1, 10) AS __id__')
+    
+    columns = ', '.join(columns)
+    
+    return '''SELECT %(columns)s,
                      ST_AsBinary(%(geom)s) AS geometry
               FROM (
                 %(subquery)s
