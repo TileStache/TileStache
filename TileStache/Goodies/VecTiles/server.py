@@ -144,14 +144,14 @@ class Provider:
         if not query:
             return EmptyResponse()
         
+        if query not in self.columns:
+            self.columns[query] = query_columns(self.dbinfo, self.srid, query)
+        
         ll = self.layer.projection.coordinateProj(coord.down())
         ur = self.layer.projection.coordinateProj(coord.right())
         bbox = 'ST_MakeBox2D(ST_MakePoint(%.2f, %.2f), ST_MakePoint(%.2f, %.2f))' % (ll.x, ll.y, ur.x, ur.y)
         
         tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
-        
-        if query not in self.columns:
-            self.columns[query] = query_columns(self.dbinfo, self.srid, query, bbox)
         
         return Response(self.dbinfo, self.srid, query, self.columns[query], bbox, tolerance, self.clip)
 
@@ -242,10 +242,16 @@ class EmptyResponse:
         else:
             raise ValueError(format)
 
-def query_columns(dbinfo, srid, subquery, bbox):
+def query_columns(dbinfo, srid, subquery):
     ''' Get information about the columns returned for a subquery.
     '''
+    #
+    # Bounding box for columns is the whole world.
+    #
+    bbox = -20037507.58, -20037506.44, 20037507.76, 20037504.73
+    bbox = 'ST_MakeBox2D(ST_MakePoint(%f, %f), ST_MakePoint(%f, %f))' % bbox
     bbox = 'ST_SetSRID(%s, %d)' % (bbox, srid)
+
     subquery = subquery.replace('!bbox!', bbox)
     
     with Connection(dbinfo) as db:
