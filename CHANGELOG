@@ -1,3 +1,6 @@
+2013-06-14: 1.49.2
+- Fixed SQL bug in VecTiles Provider for limiting column queries.
+
 2013-06-14: 1.49.1
 - Updated magic column names in VecTiles Provider to __geometry__ and __id__ for feature ID.
 

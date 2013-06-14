@@ -255,7 +255,7 @@ def query_columns(dbinfo, srid, subquery):
     subquery = subquery.replace('!bbox!', bbox)
     
     with Connection(dbinfo) as db:
-        db.execute(subquery + ' LIMIT 1')
+        db.execute(subquery + '\n LIMIT 1') # newline is important here, to break out of comments.
         columns = set(db.fetchone().keys())
     
     return columns
