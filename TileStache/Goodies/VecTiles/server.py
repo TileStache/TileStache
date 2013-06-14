@@ -197,7 +197,7 @@ class Response:
                          if k not in ('geometry', '__id__')])
             
             if '__id__' in row:
-                features.append((wkb, prop, str(row['__id__'])))
+                features.append((wkb, prop, row['__id__']))
             
             else:
                 features.append((wkb, prop))
