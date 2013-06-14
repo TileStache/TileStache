@@ -190,13 +190,13 @@ class Response:
         
             wkb = bytes(row['geometry'])
             prop = dict([(k, v) for (k, v) in row.items()
-                         if k not in ('geometry', '__id__', 'geometry_hash')])
+                         if k not in ('geometry', '__id__', '__hash__')])
             
             if '__id__' in row:
                 features.append((wkb, prop, str(row['__id__'])))
             
-            elif 'geometry_hash' in row:
-                features.append((wkb, prop, str(row['geometry_hash'])))
+            elif '__hash__' in row:
+                features.append((wkb, prop, str(row['__hash__'])))
 
             else:
                 features.append((wkb, prop))
@@ -247,7 +247,7 @@ def build_query(srid, subquery, bbox, tolerance, is_geo, is_clipped):
     subquery = subquery.replace('!bbox!', bbox)
     
     return '''SELECT q.*,
-                     Substr(MD5(ST_AsBinary(q.geometry)), 1, 10) AS geometry_hash,
+                     Substr(MD5(ST_AsBinary(q.geometry)), 1, 10) AS __hash__,
                      ST_AsBinary(%(geom)s) AS geometry
               FROM (
                 %(subquery)s
