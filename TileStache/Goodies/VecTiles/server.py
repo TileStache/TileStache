@@ -25,7 +25,7 @@ except ImportError, err:
 from . import mvt, geojson
 
 tolerances = [6378137 * 2 * pi / (2 ** (zoom + 8)) for zoom in range(20)]
-    
+
 class Provider:
     ''' VecTiles provider for PostGIS data sources.
     
@@ -167,6 +167,22 @@ class Provider:
         else:
             raise ValueError(extension)
 
+class Connection:
+    ''' Context manager for Postgres connections.
+    
+        See http://www.python.org/dev/peps/pep-0343/
+        and http://effbot.org/zone/python-with-statement.htm
+    '''
+    def __init__(self, dbinfo):
+        self.dbinfo = dbinfo
+    
+    def __enter__(self):
+        self.db = connect(**self.dbinfo).cursor(cursor_factory=RealDictCursor)
+        return self.db
+    
+    def __exit__(self, type, value, traceback):
+        self.db.connection.close()
+
 class Response:
     '''
     '''
@@ -183,37 +199,33 @@ class Response:
     def save(self, out, format):
         '''
         '''
-        db = connect(**self.dbinfo).cursor(cursor_factory=RealDictCursor)
-        db.execute(self.query[format])
-        
-        features = []
-        
-        for row in db.fetchall():
-            if row['geometry'] is None:
-                continue
-        
-            wkb = bytes(row['geometry'])
-            prop = dict([(k, v) for (k, v) in row.items()
-                         if k not in ('geometry', '__id__')])
+        with Connection(self.dbinfo) as db:
+            db.execute(self.query[format])
             
-            if '__id__' in row:
-                features.append((wkb, prop, row['__id__']))
+            features = []
             
-            else:
-                features.append((wkb, prop))
+            for row in db.fetchall():
+                if row['geometry'] is None:
+                    continue
+            
+                wkb = bytes(row['geometry'])
+                prop = dict([(k, v) for (k, v) in row.items()
+                             if k not in ('geometry', '__id__')])
+                
+                if '__id__' in row:
+                    features.append((wkb, prop, row['__id__']))
+                
+                else:
+                    features.append((wkb, prop))
 
-        try:
-            if format == 'MVT':
-                mvt.encode(out, features)
-            
-            elif format == 'JSON':
-                geojson.encode(out, features)
-            
-            else:
-                raise ValueError(format)
+        if format == 'MVT':
+            mvt.encode(out, features)
         
-        finally:
-            db.connection.close()
+        elif format == 'JSON':
+            geojson.encode(out, features)
+        
+        else:
+            raise ValueError(format)
 
 class EmptyResponse:
     ''' Simple empty response renders valid MVT or GeoJSON with no features.
@@ -236,10 +248,9 @@ def query_columns(dbinfo, srid, subquery, bbox):
     bbox = 'ST_SetSRID(%s, %d)' % (bbox, srid)
     subquery = subquery.replace('!bbox!', bbox)
     
-    db = connect(**dbinfo).cursor(cursor_factory=RealDictCursor)
-    db.execute(subquery + ' LIMIT 1')
-    columns = set(db.fetchone().keys())
-    db.connection.close()
+    with Connection(dbinfo) as db:
+        db.execute(subquery + ' LIMIT 1')
+        columns = set(db.fetchone().keys())
     
     return columns
 
