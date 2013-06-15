@@ -256,15 +256,59 @@ class EmptyResponse:
 def topojson_encode(out, features):
     '''
     '''
-    out.write('''{
+    from shapely.wkb import loads
+    from json import dump, dumps
+    
+    objects, arcs = list(), list()
+    
+    for feature in features:
+        shape = loads(feature[0])
+        objects.append(feature[1])
+        id = feature[2]
+    
+        if shape.type == 'Point':
+            objects[-1].update(dict(type='Point', coordinates=[shape.x, shape.y], id=id))
+    
+        elif shape.type == 'LineString':
+            objects[-1].update(dict(type='LineString', arcs=[len(arcs)], id=id))
+            
+            coords = list(shape.coords)
+            pairs = zip(coords[:], coords[1:])
+            diffs = [(x2 - x1, y2 - y1) for ((x1, y1), (x2, y2)) in pairs]
+            
+            arcs.append(coords[:1] + diffs)
+    
+        elif shape.type == 'Polygon':
+            objects[-1].update(dict(type='Polygon', arcs=[], id=id))
+            
+            rings = [shape.exterior] + list(shape.interiors)
+            
+            for ring in rings:
+                objects[-1]['arcs'].append([len(arcs)])
+            
+                coords = list(ring.coords)
+                pairs = zip(coords[:], coords[1:])
+                diffs = [(x2 - x1, y2 - y1) for ((x1, y1), (x2, y2)) in pairs]
+                
+                arcs.append(coords[:1] + diffs)
+    
+    # objects should actually be a dictionary
+    objects = dict([(str(index), obj) for (index, obj) in enumerate(objects)])
+    
+    result = {
         "type": "Topology",
         "transform": {
             "scale": [1.0, 1.0],
             "translate": [0.0, 0.0]
             },
-        "objects": { },
-        "arcs": [ ]
-        }''')
+        "objects": objects,
+        "arcs": arcs
+        }
+    
+    print dumps(result, indent=2)
+    print '-' * 20
+    
+    dump(result, out)
 
 def query_columns(dbinfo, srid, subquery):
     ''' Get information about the columns returned for a subquery.
