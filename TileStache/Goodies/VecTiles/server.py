@@ -164,6 +164,9 @@ class Provider:
         elif extension.lower() == 'json':
             return 'text/json', 'JSON'
         
+        elif extension.lower() == 'topojson':
+            return 'application/json', 'TopoJSON'
+        
         else:
             raise ValueError(extension)
 
@@ -191,10 +194,9 @@ class Response:
         '''
         self.dbinfo = dbinfo
         
-        self.query = {
-            'JSON': build_query(srid, subquery, columns, bbox, tolerance, True, clip),
-            'MVT': build_query(srid, subquery, columns, bbox, tolerance, False, clip)
-            }
+        geo_query = build_query(srid, subquery, columns, bbox, tolerance, True, clip)
+        merc_query = build_query(srid, subquery, columns, bbox, tolerance, False, clip)
+        self.query = dict(TopoJSON=geo_query, JSON=geo_query, MVT=merc_query)
     
     def save(self, out, format):
         '''
@@ -224,6 +226,9 @@ class Response:
         elif format == 'JSON':
             geojson.encode(out, features)
         
+        elif format == 'TopoJSON':
+            topojson_encode(out, features)
+        
         else:
             raise ValueError(format)
 
@@ -239,8 +244,24 @@ class EmptyResponse:
         elif format == 'JSON':
             geojson.encode(out, [])
         
+        elif format == 'TopoJSON':
+            topojson_encode(out, [])
+        
         else:
             raise ValueError(format)
+
+def topojson_encode(out, features):
+    '''
+    '''
+    out.write('''{
+        "type": "Topology",
+        "transform": {
+            "scale": [1.0, 1.0],
+            "translate": [0.0, 0.0]
+            },
+        "objects": { },
+        "arcs": [ ]
+        }''')
 
 def query_columns(dbinfo, srid, subquery):
     ''' Get information about the columns returned for a subquery.
