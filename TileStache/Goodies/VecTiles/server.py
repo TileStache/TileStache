@@ -261,36 +261,41 @@ def topojson_encode(out, features):
     
     objects, arcs = list(), list()
     
+    def diff_encode(line):
+        ''' Differentially encode a shapely linestring or ring.
+        '''
+        coords = list(line.coords)
+        pairs = zip(coords[:], coords[1:])
+        diffs = [(x2 - x1, y2 - y1) for ((x1, y1), (x2, y2)) in pairs]
+        
+        return coords[:1] + diffs
+    
     for feature in features:
         shape = loads(feature[0])
-        objects.append(feature[1])
-        id = feature[2]
-    
+        object = dict(feature[1])
+        objects.append(object)
+        
+        if len(feature) >= 2:
+            object.update(dict(id=feature[2]))
+        
         if shape.type == 'Point':
-            objects[-1].update(dict(type='Point', coordinates=[shape.x, shape.y], id=id))
+            object.update(dict(type='Point', coordinates=[shape.x, shape.y]))
     
         elif shape.type == 'LineString':
-            objects[-1].update(dict(type='LineString', arcs=[len(arcs)], id=id))
-            
-            coords = list(shape.coords)
-            pairs = zip(coords[:], coords[1:])
-            diffs = [(x2 - x1, y2 - y1) for ((x1, y1), (x2, y2)) in pairs]
-            
-            arcs.append(coords[:1] + diffs)
+            object.update(dict(type='LineString', arcs=[len(arcs)]))
+            arcs.append(diff_encode(shape))
     
         elif shape.type == 'Polygon':
-            objects[-1].update(dict(type='Polygon', arcs=[], id=id))
-            
+            object.update(dict(type='Polygon', arcs=[]))
+
             rings = [shape.exterior] + list(shape.interiors)
             
             for ring in rings:
-                objects[-1]['arcs'].append([len(arcs)])
-            
-                coords = list(ring.coords)
-                pairs = zip(coords[:], coords[1:])
-                diffs = [(x2 - x1, y2 - y1) for ((x1, y1), (x2, y2)) in pairs]
-                
-                arcs.append(coords[:1] + diffs)
+                object['arcs'].append([len(arcs)])
+                arcs.append(diff_encode(ring))
+        
+        else:
+            raise NotImplementedError("Can't yet do %s geometries" % shape.type)
     
     # objects should actually be a dictionary
     objects = dict([(str(index), obj) for (index, obj) in enumerate(objects)])
