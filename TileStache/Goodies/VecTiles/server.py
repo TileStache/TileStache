@@ -144,12 +144,12 @@ class Provider:
         if not query:
             return EmptyResponse()
         
-        if query not in self.columns:
-            self.columns[query] = query_columns(self.dbinfo, self.srid, query)
-        
         ll = self.layer.projection.coordinateProj(coord.down())
         ur = self.layer.projection.coordinateProj(coord.right())
         bounds = ll.x, ll.y, ur.x, ur.y
+        
+        if query not in self.columns:
+            self.columns[query] = query_columns(self.dbinfo, self.srid, query, bounds)
         
         tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
         
@@ -315,24 +315,36 @@ def topojson_encode(out, features):
     
     dump(result, out)
 
-def query_columns(dbinfo, srid, subquery):
+def query_columns(dbinfo, srid, subquery, bounds):
     ''' Get information about the columns returned for a subquery.
     '''
-    #
-    # Bounding box for columns is the whole world.
-    #
-    bbox = -20037507.58, -20037506.44, 20037507.76, 20037504.73
-    bbox = 'ST_MakeBox2D(ST_MakePoint(%f, %f), ST_MakePoint(%f, %f))' % bbox
-    bbox = 'ST_SetSRID(%s, %d)' % (bbox, srid)
-
-    subquery = subquery.replace('!bbox!', bbox)
-    
     with Connection(dbinfo) as db:
-        db.execute(subquery + '\n LIMIT 1') # newline is important here, to break out of comments.
-        columns = set(db.fetchone().keys())
-    
-    return columns
-
+        #
+        # While bounds covers less than the full planet, look for just one feature.
+        #
+        while (abs(bounds[2] - bounds[0]) * abs(bounds[2] - bounds[0])) < 1.61e15:
+            bbox = 'ST_MakeBox2D(ST_MakePoint(%f, %f), ST_MakePoint(%f, %f))' % bounds
+            bbox = 'ST_SetSRID(%s, %d)' % (bbox, srid)
+        
+            query = subquery.replace('!bbox!', bbox)
+        
+            db.execute(query + '\n LIMIT 1') # newline is important here, to break out of comments.
+            row = db.fetchone()
+            
+            if row is None:
+                #
+                # Try zooming out three levels (8x) to look for features.
+                #
+                bounds = (bounds[0] - (bounds[2] - bounds[0]) * 3.5,
+                          bounds[1] - (bounds[3] - bounds[1]) * 3.5,
+                          bounds[2] + (bounds[2] - bounds[0]) * 3.5,
+                          bounds[3] + (bounds[3] - bounds[1]) * 3.5)
+                
+                continue
+            
+            column_names = set(row.keys())
+            return column_names
+        
 def build_query(srid, subquery, subcolumns, bbox, tolerance, is_geo, is_clipped):
     ''' Build and return an PostGIS query.
     '''

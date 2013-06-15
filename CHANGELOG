@@ -1,3 +1,6 @@
+2013-06-15: 1.49.3
+- Fixed runaway query bug in VecTiles Provider with looped bounds in query_columns().
+
 2013-06-14: 1.49.2
 - Fixed SQL bug in VecTiles Provider for limiting column queries.
 
