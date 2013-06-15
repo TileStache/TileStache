@@ -149,11 +149,11 @@ class Provider:
         
         ll = self.layer.projection.coordinateProj(coord.down())
         ur = self.layer.projection.coordinateProj(coord.right())
-        bbox = 'ST_MakeBox2D(ST_MakePoint(%.2f, %.2f), ST_MakePoint(%.2f, %.2f))' % (ll.x, ll.y, ur.x, ur.y)
+        bounds = ll.x, ll.y, ur.x, ur.y
         
         tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
         
-        return Response(self.dbinfo, self.srid, query, self.columns[query], bbox, tolerance, self.clip)
+        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, self.clip)
 
     def getTypeByExtension(self, extension):
         ''' Get mime-type and format by file extension, one of "mvt" or "json".
@@ -189,11 +189,14 @@ class Connection:
 class Response:
     '''
     '''
-    def __init__(self, dbinfo, srid, subquery, columns, bbox, tolerance, clip):
-        '''
+    def __init__(self, dbinfo, srid, subquery, columns, bounds, tolerance, clip):
+        ''' Create a new response object with Postgres connection info and a query.
+        
+            bounds argument is a 4-tuple with (xmin, ymin, xmax, ymax).
         '''
         self.dbinfo = dbinfo
         
+        bbox = 'ST_MakeBox2D(ST_MakePoint(%.2f, %.2f), ST_MakePoint(%.2f, %.2f))' % bounds
         geo_query = build_query(srid, subquery, columns, bbox, tolerance, True, clip)
         merc_query = build_query(srid, subquery, columns, bbox, tolerance, False, clip)
         self.query = dict(TopoJSON=geo_query, JSON=geo_query, MVT=merc_query)
