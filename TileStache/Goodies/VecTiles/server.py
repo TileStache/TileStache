@@ -272,7 +272,7 @@ def topojson_encode(out, features):
     
     for feature in features:
         shape = loads(feature[0])
-        object = dict(feature[1])
+        object = dict(properties=feature[1])
         objects.append(object)
         
         if len(feature) >= 2:
@@ -297,16 +297,18 @@ def topojson_encode(out, features):
         else:
             raise NotImplementedError("Can't yet do %s geometries" % shape.type)
     
-    # objects should actually be a dictionary
-    objects = dict([(str(index), obj) for (index, obj) in enumerate(objects)])
-    
     result = {
         "type": "Topology",
         "transform": {
             "scale": [1.0, 1.0],
             "translate": [0.0, 0.0]
             },
-        "objects": objects,
+        "objects": {
+            "vectile": {
+                "type": "GeometryCollection",
+                "geometries": objects
+                }
+            },
         "arcs": arcs
         }
     
