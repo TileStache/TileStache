@@ -23,6 +23,8 @@ except ImportError, err:
         raise err
 
 from . import mvt, geojson
+from ...Geography import SphericalMercator
+from ModestMaps.Core import Point
 
 tolerances = [6378137 * 2 * pi / (2 ** (zoom + 8)) for zoom in range(20)]
 
@@ -195,6 +197,7 @@ class Response:
             bounds argument is a 4-tuple with (xmin, ymin, xmax, ymax).
         '''
         self.dbinfo = dbinfo
+        self.bounds = bounds
         
         bbox = 'ST_MakeBox2D(ST_MakePoint(%.2f, %.2f), ST_MakePoint(%.2f, %.2f))' % bounds
         geo_query = build_query(srid, subquery, columns, bbox, tolerance, True, clip)
@@ -230,7 +233,9 @@ class Response:
             geojson.encode(out, features)
         
         elif format == 'TopoJSON':
-            topojson_encode(out, features)
+            ll = SphericalMercator().projLocation(Point(*self.bounds[0:2]))
+            ur = SphericalMercator().projLocation(Point(*self.bounds[2:4]))
+            topojson_encode(out, features, (ll.lon, ll.lat, ur.lon, ur.lat))
         
         else:
             raise ValueError(format)
@@ -248,16 +253,18 @@ class EmptyResponse:
             geojson.encode(out, [])
         
         elif format == 'TopoJSON':
-            topojson_encode(out, [])
+            topojson_encode(out, [], None)
         
         else:
             raise ValueError(format)
 
-def topojson_encode(out, features):
+def topojson_encode(out, features, bounds):
     '''
     '''
     from shapely.wkb import loads
     from json import dump, dumps
+    
+    print 'bbox:', bounds
     
     objects, arcs = list(), list()
     
@@ -312,8 +319,8 @@ def topojson_encode(out, features):
         "arcs": arcs
         }
     
-    print dumps(result, indent=2)
-    print '-' * 20
+    #print dumps(result, indent=2)
+    #print '-' * 20
     
     dump(result, out)
 
