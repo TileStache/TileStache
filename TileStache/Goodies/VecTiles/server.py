@@ -264,14 +264,27 @@ def topojson_encode(out, features, bounds):
     from shapely.wkb import loads
     from json import dump, dumps
     
-    print 'bbox:', bounds
+    def get_transform(bounds, size=512):
+        ''' Return a TopoJSON transform dictionary and a point-transforming function.
+        '''
+        trans = bounds[0], bounds[1]
+        scale = (bounds[2] - bounds[0]) / size, (bounds[3] - bounds[1]) / size
+        
+        def forward(lon, lat):
+            ''' Transform a longitude and latitude to TopoJSON integer space.
+            '''
+            return int((lon - trans[0]) / scale[0]), int((lat - trans[1]) / scale[1])
+        
+        return dict(translate=trans, scale=scale), forward
     
+    transform, forward = get_transform(bounds)
     objects, arcs = list(), list()
     
-    def diff_encode(line):
+    def diff_encode(line, transform):
         ''' Differentially encode a shapely linestring or ring.
         '''
-        coords = list(line.coords)
+        coords = [forward(x, y) for (x, y) in line.coords]
+        
         pairs = zip(coords[:], coords[1:])
         diffs = [(x2 - x1, y2 - y1) for ((x1, y1), (x2, y2)) in pairs]
         
@@ -286,11 +299,11 @@ def topojson_encode(out, features, bounds):
             object.update(dict(id=feature[2]))
         
         if shape.type == 'Point':
-            object.update(dict(type='Point', coordinates=[shape.x, shape.y]))
+            object.update(dict(type='Point', coordinates=forward(shape.x, shape.y)))
     
         elif shape.type == 'LineString':
             object.update(dict(type='LineString', arcs=[len(arcs)]))
-            arcs.append(diff_encode(shape))
+            arcs.append(diff_encode(shape, forward))
     
         elif shape.type == 'Polygon':
             object.update(dict(type='Polygon', arcs=[]))
@@ -299,17 +312,14 @@ def topojson_encode(out, features, bounds):
             
             for ring in rings:
                 object['arcs'].append([len(arcs)])
-                arcs.append(diff_encode(ring))
+                arcs.append(diff_encode(ring, forward))
         
         else:
             raise NotImplementedError("Can't yet do %s geometries" % shape.type)
     
     result = {
         "type": "Topology",
-        "transform": {
-            "scale": [1.0, 1.0],
-            "translate": [0.0, 0.0]
-            },
+        "transform": transform,
         "objects": {
             "vectile": {
                 "type": "GeometryCollection",
