@@ -298,7 +298,11 @@ def topojson_encode(out, features, bounds):
         if len(feature) >= 2:
             object.update(dict(id=feature[2]))
         
-        if shape.type == 'Point':
+        if shape.type == 'GeometryCollection':
+            objects.pop()
+            continue
+    
+        elif shape.type == 'Point':
             object.update(dict(type='Point', coordinates=forward(shape.x, shape.y)))
     
         elif shape.type == 'LineString':
@@ -313,6 +317,32 @@ def topojson_encode(out, features, bounds):
             for ring in rings:
                 object['arcs'].append([len(arcs)])
                 arcs.append(diff_encode(ring, forward))
+        
+        elif shape.type == 'MultiPoint':
+            object.update(dict(type='MultiPoint', coordinates=[]))
+            
+            for point in shape.geoms:
+                object['coordinates'].append(forward(point.x, point.y))
+        
+        elif shape.type == 'MultiLineString':
+            object.update(dict(type='MultiLineString', arcs=[]))
+            
+            for line in shape.geoms:
+                object['arcs'].append([len(arcs)])
+                arcs.append(diff_encode(line, forward))
+        
+        elif shape.type == 'MultiPolygon':
+            object.update(dict(type='MultiPolygon', arcs=[]))
+            
+            for polygon in shape.geoms:
+                rings = [polygon.exterior] + list(polygon.interiors)
+                polygon_arcs = []
+                
+                for ring in rings:
+                    polygon_arcs.append([len(arcs)])
+                    arcs.append(diff_encode(ring, forward))
+            
+                arcs.append(polygon_arcs)
         
         else:
             raise NotImplementedError("Can't yet do %s geometries" % shape.type)
