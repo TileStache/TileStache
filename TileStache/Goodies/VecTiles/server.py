@@ -288,7 +288,7 @@ def topojson_encode(out, features, bounds):
         pairs = zip(coords[:], coords[1:])
         diffs = [(x2 - x1, y2 - y1) for ((x1, y1), (x2, y2)) in pairs]
         
-        return coords[:1] + diffs
+        return coords[:1] + [(x, y) for (x, y) in diffs if (x, y) != (0, 0)]
     
     for feature in features:
         shape = loads(feature[0])
@@ -296,6 +296,7 @@ def topojson_encode(out, features, bounds):
         objects.append(object)
         
         if len(feature) >= 2:
+            # ID is an optional third element in the feature tuple
             object.update(dict(id=feature[2]))
         
         if shape.type == 'GeometryCollection':
@@ -345,7 +346,7 @@ def topojson_encode(out, features, bounds):
                 arcs.append(polygon_arcs)
         
         else:
-            raise NotImplementedError("Can't yet do %s geometries" % shape.type)
+            raise NotImplementedError("Can't do %s geometries" % shape.type)
     
     result = {
         "type": "Topology",
@@ -358,9 +359,6 @@ def topojson_encode(out, features, bounds):
             },
         "arcs": arcs
         }
-    
-    #print dumps(result, indent=2)
-    #print '-' * 20
     
     dump(result, out)
 
