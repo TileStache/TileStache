@@ -343,7 +343,7 @@ def topojson_encode(out, features, bounds):
                     polygon_arcs.append([len(arcs)])
                     arcs.append(diff_encode(ring, forward))
             
-                arcs.append(polygon_arcs)
+                object['arcs'].append(polygon_arcs)
         
         else:
             raise NotImplementedError("Can't do %s geometries" % shape.type)
