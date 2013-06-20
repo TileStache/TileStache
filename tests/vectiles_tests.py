@@ -34,7 +34,7 @@ def topojson_dediff(points):
 
 class PostGISVectorTestBase(object):
     '''
-    Base Class for PostGIS Vector tests. Has methods to:
+    Base Class for VecTiles tests. Has methods to:
 
       - CREATE and DROP a single table (self.testTableName) that has a field called name
       - Define a geometry field
@@ -70,7 +70,7 @@ class PostGISVectorTestBase(object):
 
 
 class VectorProviderTest(PostGISVectorTestBase, TestCase):
-    '''Various vector tests on top of PostGIS'''
+    '''Various vectiles tests on top of PostGIS'''
 
     def setUp(self):
         self.initTestTable('dummy_table')
