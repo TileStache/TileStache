@@ -1,3 +1,6 @@
+2013-06-20: 1.49.4
+- Added TopoJSON support to VecTiles Provider.
+
 2013-06-15: 1.49.3
 - Fixed runaway query bug in VecTiles Provider with looped bounds in query_columns().
 
