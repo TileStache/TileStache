@@ -22,7 +22,9 @@ except ImportError, err:
     def connect(*args, **kwargs):
         raise err
 
-from . import mvt, geojson
+from . import mvt, geojson, topojson
+from ...Geography import SphericalMercator
+from ModestMaps.Core import Point
 
 tolerances = [6378137 * 2 * pi / (2 ** (zoom + 8)) for zoom in range(20)]
 
@@ -147,14 +149,13 @@ class Provider:
         ll = self.layer.projection.coordinateProj(coord.down())
         ur = self.layer.projection.coordinateProj(coord.right())
         bounds = ll.x, ll.y, ur.x, ur.y
-        bbox = 'ST_MakeBox2D(ST_MakePoint(%.2f, %.2f), ST_MakePoint(%.2f, %.2f))' % bounds
         
         if query not in self.columns:
             self.columns[query] = query_columns(self.dbinfo, self.srid, query, bounds)
         
         tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
         
-        return Response(self.dbinfo, self.srid, query, self.columns[query], bbox, tolerance, self.clip)
+        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, self.clip)
 
     def getTypeByExtension(self, extension):
         ''' Get mime-type and format by file extension, one of "mvt" or "json".
@@ -164,6 +165,9 @@ class Provider:
         
         elif extension.lower() == 'json':
             return 'text/json', 'JSON'
+        
+        elif extension.lower() == 'topojson':
+            return 'application/json', 'TopoJSON'
         
         else:
             raise ValueError(extension)
@@ -187,15 +191,18 @@ class Connection:
 class Response:
     '''
     '''
-    def __init__(self, dbinfo, srid, subquery, columns, bbox, tolerance, clip):
-        '''
+    def __init__(self, dbinfo, srid, subquery, columns, bounds, tolerance, clip):
+        ''' Create a new response object with Postgres connection info and a query.
+        
+            bounds argument is a 4-tuple with (xmin, ymin, xmax, ymax).
         '''
         self.dbinfo = dbinfo
+        self.bounds = bounds
         
-        self.query = {
-            'JSON': build_query(srid, subquery, columns, bbox, tolerance, True, clip),
-            'MVT': build_query(srid, subquery, columns, bbox, tolerance, False, clip)
-            }
+        bbox = 'ST_MakeBox2D(ST_MakePoint(%.2f, %.2f), ST_MakePoint(%.2f, %.2f))' % bounds
+        geo_query = build_query(srid, subquery, columns, bbox, tolerance, True, clip)
+        merc_query = build_query(srid, subquery, columns, bbox, tolerance, False, clip)
+        self.query = dict(TopoJSON=geo_query, JSON=geo_query, MVT=merc_query)
     
     def save(self, out, format):
         '''
@@ -225,6 +232,11 @@ class Response:
         elif format == 'JSON':
             geojson.encode(out, features)
         
+        elif format == 'TopoJSON':
+            ll = SphericalMercator().projLocation(Point(*self.bounds[0:2]))
+            ur = SphericalMercator().projLocation(Point(*self.bounds[2:4]))
+            topojson.encode(out, features, (ll.lon, ll.lat, ur.lon, ur.lat))
+        
         else:
             raise ValueError(format)
 
@@ -239,6 +251,9 @@ class EmptyResponse:
         
         elif format == 'JSON':
             geojson.encode(out, [])
+        
+        elif format == 'TopoJSON':
+            topojson_encode(out, [], None)
         
         else:
             raise ValueError(format)
