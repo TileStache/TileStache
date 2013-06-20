@@ -5,6 +5,8 @@ simplified, precision reduced and often clipped. The MVT format in particular
 is designed for use in Mapnik with the VecTiles Datasource, which can read
 binary MVT tiles.
 
+VecTiles generates tiles in two JSON formats, GeoJSON and TopoJSON.
+
 VecTiles also provides Mapnik with a Datasource that can read remote tiles of
 vector data in spherical mercator projection, providing for rendering of data
 without the use of a local PostGIS database.

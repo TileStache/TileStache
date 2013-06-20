@@ -1,3 +1,6 @@
+2013-06-20: 1.49.5
+- Tweaked VecTiles Provider documentation.
+
 2013-06-20: 1.49.4
 - Added TopoJSON support to VecTiles Provider.
 

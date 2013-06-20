@@ -100,6 +100,7 @@ doc:
 	pydoc -w TileStache.Goodies.VecTiles.server
 	pydoc -w TileStache.Goodies.VecTiles.client
 	pydoc -w TileStache.Goodies.VecTiles.geojson
+	pydoc -w TileStache.Goodies.VecTiles.topojson
 	pydoc -w TileStache.Goodies.VecTiles.mvt
 	pydoc -w TileStache.Goodies.VecTiles.wkb
 	pydoc -w TileStache.Goodies.VecTiles.ops
