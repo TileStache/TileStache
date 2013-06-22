@@ -1,6 +1,41 @@
 from shapely.wkb import loads
 import json
 
+class MultiProvider:
+    ''' TopoJSON provider to gather layers into a single multi-response.
+    
+        names:
+          List of names of TopoJSON-generating layers from elsewhere in config.
+        
+        Sample configuration, for a layer with combined data from water
+        and land areas, both assumed to be TopoJSON-returning layers:
+        
+          "provider":
+          {
+            "class": "TileStache.Goodies.VecTiles.topojson:MultiProvider",
+            "kwargs":
+            {
+              "names": ["water-areas", "land-areas"]
+            }
+          }
+    '''
+    def __init__(self, layer, names):
+        self.layer = layer
+        self.names = names
+        
+    def renderTile(self, width, height, srs, coord):
+        ''' Render a single tile, return a Response instance.
+        '''
+        raise NotImplementedError("Working on it")
+
+    def getTypeByExtension(self, extension):
+        ''' Get mime-type and format by file extension, "topojson" only.
+        '''
+        if extension.lower() != 'topojson':
+            return 'application/json', 'TopoJSON'
+        
+        raise ValueError(extension)
+
 def get_transform(bounds, size=512):
     ''' Return a TopoJSON transform dictionary and a point-transforming function.
     '''
