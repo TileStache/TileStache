@@ -1,3 +1,6 @@
+2013-06-21: 1.49.6
+- Switched to ST_SimplifyPreserveTopology in VecTiles clipping to calm GEOS.
+
 2013-06-20: 1.49.5
 - Tweaked VecTiles Provider documentation.
 

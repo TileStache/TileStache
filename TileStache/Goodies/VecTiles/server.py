@@ -295,7 +295,7 @@ def build_query(srid, subquery, subcolumns, bbox, tolerance, is_geo, is_clipped)
     geom = 'q.__geometry__'
     
     if tolerance is not None:
-        geom = 'ST_Simplify(%s, %.2f)' % (geom, tolerance)
+        geom = 'ST_SimplifyPreserveTopology(%s, %.2f)' % (geom, tolerance)
     
     if is_clipped:
         geom = 'ST_Intersection(%s, %s)' % (geom, bbox)
