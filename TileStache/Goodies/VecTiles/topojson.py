@@ -1,6 +1,9 @@
 from shapely.wkb import loads
 import json
 
+from ... import getTile
+from ...Core import KnownUnknown
+
 class MultiProvider:
     ''' TopoJSON provider to gather layers into a single multi-response.
     
@@ -26,7 +29,58 @@ class MultiProvider:
     def renderTile(self, width, height, srs, coord):
         ''' Render a single tile, return a Response instance.
         '''
-        raise NotImplementedError("Working on it")
+        unknown_layers = set(self.names) - set(self.layer.config.layers.keys())
+        
+        if unknown_layers:
+            raise KnownUnknown("%s didn't recognize %s when trying to load %s." % (self.__class__, ', '.join(unknown_layers), ', '.join(self.names)))
+        
+        topojsons = get_tile_topojsons(self.layer.config, self.names, coord)
+        
+        transform = topojsons[0]['transform']
+        merged_objects, merged_arcs = dict(), list()
+        
+        for (name, topo) in zip(self.names, topojsons):
+            for (index, object) in enumerate(topo['objects'].values()):
+                if len(topo['objects']) > 1:
+                    merged_objects['%(name)s-%(index)d' % locals()] = object
+                    print '%(name)s-%(index)d' % locals()
+                else:
+                    merged_objects[name] = object
+                    print name
+                
+                #
+                # Update arc indexes for each geometry in-place,
+                # adding them to merged_arcs as we go.
+                #
+                for geometry in object['geometries']:
+                    if 'arcs' not in geometry:
+                        continue
+                    
+                    elif geometry['type'] == 'LineString':
+                        for (arc_index, old_arc) in enumerate(geometry['arcs']):
+                            geometry['arcs'][arc_index] = len(merged_arcs)
+                            merged_arcs.append(topo['arcs'][old_arc])
+                            print '%d. %d --> %d' % (arc_index, old_arc, geometry['arcs'][arc_index])
+                    
+                    elif geometry['type'] == 'Polygon':
+                        for ring in geometry['arcs']:
+                            for (arc_index, old_arc) in enumerate(ring):
+                                ring[arc_index] = len(merged_arcs)
+                                merged_arcs.append(topo['arcs'][old_arc])
+                                print '%d. %d --> %d' % (arc_index, old_arc, ring[arc_index])
+                    
+                    else:
+                        raise NotImplementedError("Can't do %s geometries yet" % geometry['type'])
+        
+        result = {
+            'type': 'Topology',
+            'transform': transform,
+            'objects': merged_objects,
+            'arcs': merged_arcs
+            }
+        
+        print json.dumps(result)
+        raise Exception('bang')
 
     def getTypeByExtension(self, extension):
         ''' Get mime-type and format by file extension, "topojson" only.
@@ -35,6 +89,30 @@ class MultiProvider:
             return 'application/json', 'TopoJSON'
         
         raise ValueError(extension)
+
+def get_tile_topojsons(config, names, coord):
+    '''
+    '''
+    layers = [config.layers[name] for name in names]
+    mimes, bodies = zip(*[getTile(layer, coord, 'topojson') for layer in layers])
+    bad_mimes = [(name, mime) for (mime, name) in zip(mimes, names) if not mime.endswith('/json')]
+    
+    if bad_mimes:
+        raise KnownUnknown('%s.get_tile_topojsons encountered a non-JSON mime-type in %s sub-layer: "%s"' % ((__name__, ) + bad_mimes[0]))
+    
+    topojsons = map(json.loads, bodies)
+    bad_types = [(name, topo['type']) for (topo, name) in zip(topojsons, names) if topo['type'] != 'Topology']
+    
+    if bad_types:
+        raise KnownUnknown('%s.get_tile_topojsons encountered a non-Topology type in %s sub-layer: "%s"' % ((__name__, ) + bad_types[0]))
+    
+    transforms = [topo['transform'] for topo in topojsons]
+    unique_xforms = set([tuple(xform['scale'] + xform['translate']) for xform in transforms])
+    
+    if len(unique_xforms) > 1:
+        raise KnownUnknown('%s.get_tile_topojsons encountered incompatible transforms: %s' % (__name__, list(unique_xforms)))
+    
+    return topojsons
 
 def get_transform(bounds, size=512):
     ''' Return a TopoJSON transform dictionary and a point-transforming function.
