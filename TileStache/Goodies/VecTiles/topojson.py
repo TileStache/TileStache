@@ -31,7 +31,7 @@ class MultiProvider:
     def getTypeByExtension(self, extension):
         ''' Get mime-type and format by file extension, "topojson" only.
         '''
-        if extension.lower() != 'topojson':
+        if extension.lower() == 'topojson':
             return 'application/json', 'TopoJSON'
         
         raise ValueError(extension)
@@ -75,52 +75,52 @@ def encode(file, features, bounds):
         Bounds are given in geographic coordinates as (xmin, ymin, xmax, ymax).
     '''
     transform, forward = get_transform(bounds)
-    objects, arcs = list(), list()
+    geometries, arcs = list(), list()
     
     for feature in features:
         shape = loads(feature[0])
-        object = dict(properties=feature[1])
-        objects.append(object)
+        geometry = dict(properties=feature[1])
+        geometries.append(geometry)
         
         if len(feature) >= 2:
             # ID is an optional third element in the feature tuple
-            object.update(dict(id=feature[2]))
+            geometry.update(dict(id=feature[2]))
         
         if shape.type == 'GeometryCollection':
-            objects.pop()
+            geometries.pop()
             continue
     
         elif shape.type == 'Point':
-            object.update(dict(type='Point', coordinates=forward(shape.x, shape.y)))
+            geometry.update(dict(type='Point', coordinates=forward(shape.x, shape.y)))
     
         elif shape.type == 'LineString':
-            object.update(dict(type='LineString', arcs=[len(arcs)]))
+            geometry.update(dict(type='LineString', arcs=[len(arcs)]))
             arcs.append(diff_encode(shape, forward))
     
         elif shape.type == 'Polygon':
-            object.update(dict(type='Polygon', arcs=[]))
+            geometry.update(dict(type='Polygon', arcs=[]))
 
             rings = [shape.exterior] + list(shape.interiors)
             
             for ring in rings:
-                object['arcs'].append([len(arcs)])
+                geometry['arcs'].append([len(arcs)])
                 arcs.append(diff_encode(ring, forward))
         
         elif shape.type == 'MultiPoint':
-            object.update(dict(type='MultiPoint', coordinates=[]))
+            geometry.update(dict(type='MultiPoint', coordinates=[]))
             
             for point in shape.geoms:
-                object['coordinates'].append(forward(point.x, point.y))
+                geometry['coordinates'].append(forward(point.x, point.y))
         
         elif shape.type == 'MultiLineString':
-            object.update(dict(type='MultiLineString', arcs=[]))
+            geometry.update(dict(type='MultiLineString', arcs=[]))
             
             for line in shape.geoms:
-                object['arcs'].append([len(arcs)])
+                geometry['arcs'].append([len(arcs)])
                 arcs.append(diff_encode(line, forward))
         
         elif shape.type == 'MultiPolygon':
-            object.update(dict(type='MultiPolygon', arcs=[]))
+            geometry.update(dict(type='MultiPolygon', arcs=[]))
             
             for polygon in shape.geoms:
                 rings = [polygon.exterior] + list(polygon.interiors)
@@ -130,7 +130,7 @@ def encode(file, features, bounds):
                     polygon_arcs.append([len(arcs)])
                     arcs.append(diff_encode(ring, forward))
             
-                object['arcs'].append(polygon_arcs)
+                geometry['arcs'].append(polygon_arcs)
         
         else:
             raise NotImplementedError("Can't do %s geometries" % shape.type)
@@ -141,7 +141,7 @@ def encode(file, features, bounds):
         'objects': {
             'vectile': {
                 'type': 'GeometryCollection',
-                'geometries': objects
+                'geometries': geometries
                 }
             },
         'arcs': arcs
