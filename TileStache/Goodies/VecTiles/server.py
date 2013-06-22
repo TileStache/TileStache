@@ -143,12 +143,12 @@ class Provider:
         except IndexError:
             query = self.queries[-1]
 
-        if not query:
-            return EmptyResponse()
-        
         ll = self.layer.projection.coordinateProj(coord.down())
         ur = self.layer.projection.coordinateProj(coord.right())
         bounds = ll.x, ll.y, ur.x, ur.y
+        
+        if not query:
+            return EmptyResponse(bounds)
         
         if query not in self.columns:
             self.columns[query] = query_columns(self.dbinfo, self.srid, query, bounds)
@@ -243,6 +243,9 @@ class Response:
 class EmptyResponse:
     ''' Simple empty response renders valid MVT or GeoJSON with no features.
     '''
+    def __init__(self, bounds):
+        self.bounds = bounds
+    
     def save(self, out, format):
         '''
         '''
@@ -253,7 +256,9 @@ class EmptyResponse:
             geojson.encode(out, [])
         
         elif format == 'TopoJSON':
-            topojson_encode(out, [], None)
+            ll = SphericalMercator().projLocation(Point(*self.bounds[0:2]))
+            ur = SphericalMercator().projLocation(Point(*self.bounds[2:4]))
+            topojson.encode(out, [], (ll.lon, ll.lat, ur.lon, ur.lat))
         
         else:
             raise ValueError(format)
