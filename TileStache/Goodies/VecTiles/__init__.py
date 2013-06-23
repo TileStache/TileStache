@@ -50,5 +50,5 @@ a remote URL containing a query for zoom 11, and a local file for zooms 12+:
   }
 '''
 
-from .server import Provider
+from .server import Provider, MultiProvider
 from .client import Datasource

@@ -158,12 +158,53 @@ class Provider:
         return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, self.clip)
 
     def getTypeByExtension(self, extension):
-        ''' Get mime-type and format by file extension, one of "mvt" or "json".
+        ''' Get mime-type and format by file extension, one of "mvt", "json" or "topojson".
         '''
         if extension.lower() == 'mvt':
             return 'application/octet-stream+mvt', 'MVT'
         
         elif extension.lower() == 'json':
+            return 'text/json', 'JSON'
+        
+        elif extension.lower() == 'topojson':
+            return 'application/json', 'TopoJSON'
+        
+        else:
+            raise ValueError(extension)
+
+class MultiProvider:
+    ''' VecTiles provider to gather PostGIS tiles into a single multi-response.
+        
+        Returns a MultiResponse object for GeoJSON or TopoJSON requests.
+    
+        names:
+          List of names of vector-generating layers from elsewhere in config.
+        
+        Sample configuration, for a layer with combined data from water
+        and land areas, both assumed to be vector-returning layers:
+        
+          "provider":
+          {
+            "class": "TileStache.Goodies.VecTiles:MultiProvider",
+            "kwargs":
+            {
+              "names": ["water-areas", "land-areas"]
+            }
+          }
+    '''
+    def __init__(self, layer, names):
+        self.layer = layer
+        self.names = names
+        
+    def renderTile(self, width, height, srs, coord):
+        ''' Render a single tile, return a Response instance.
+        '''
+        return MultiResponse(self.layer.config, self.names, coord)
+
+    def getTypeByExtension(self, extension):
+        ''' Get mime-type and format by file extension, "json" or "topojson" only.
+        '''
+        if extension.lower() == 'json':
             return 'text/json', 'JSON'
         
         elif extension.lower() == 'topojson':
@@ -259,6 +300,28 @@ class EmptyResponse:
             ll = SphericalMercator().projLocation(Point(*self.bounds[0:2]))
             ur = SphericalMercator().projLocation(Point(*self.bounds[2:4]))
             topojson.encode(out, [], (ll.lon, ll.lat, ur.lon, ur.lat))
+        
+        else:
+            raise ValueError(format)
+
+class MultiResponse:
+    '''
+    '''
+    def __init__(self, config, names, coord):
+        ''' Create a new response object with TileStache config and layer names.
+        '''
+        self.config = config
+        self.names = names
+        self.coord = coord
+    
+    def save(self, out, format):
+        '''
+        '''
+        if format == 'TopoJSON':
+            topojson.merge(out, self.names, self.config, self.coord)
+        
+        elif format == 'JSON':
+            raise NotImplementedError(format)
         
         else:
             raise ValueError(format)

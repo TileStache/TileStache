@@ -4,95 +4,36 @@ import json
 from ... import getTile
 from ...Core import KnownUnknown
 
-class MultiProvider:
-    ''' TopoJSON provider to gather layers into a single multi-response.
+def get_tiles(names, config, coord):
+    ''' Retrieve a list of named TopoJSON layer tiles from a TileStache config.
     
-        names:
-          List of names of TopoJSON-generating layers from elsewhere in config.
-        
-        Sample configuration, for a layer with combined data from water
-        and land areas, both assumed to be TopoJSON-returning layers:
-        
-          "provider":
-          {
-            "class": "TileStache.Goodies.VecTiles.topojson:MultiProvider",
-            "kwargs":
-            {
-              "names": ["water-areas", "land-areas"]
-            }
-          }
-    '''
-    def __init__(self, layer, names):
-        self.layer = layer
-        self.names = names
-        
-    def renderTile(self, width, height, srs, coord):
-        ''' Render a single tile, return a Response instance.
-        '''
-        inputs = get_tile_topojsons(self.layer.config, self.names, coord)
-        
-        output = {
-            'type': 'Topology',
-            'transform': inputs[0]['transform'],
-            'objects': dict(),
-            'arcs': list()
-            }
-        
-        for (name, input) in zip(self.names, inputs):
-            for (index, object) in enumerate(input['objects'].values()):
-                if len(input['objects']) > 1:
-                    output['objects']['%(name)s-%(index)d' % locals()] = object
-                else:
-                    output['objects'][name] = object
-                
-                for geometry in object['geometries']:
-                    update_arc_indexes(geometry, output['arcs'], input['arcs'])
-        
-        return JSONResponse(output)
-
-    def getTypeByExtension(self, extension):
-        ''' Get mime-type and format by file extension, "topojson" only.
-        '''
-        if extension.lower() == 'topojson':
-            return 'application/json', 'TopoJSON'
-        
-        raise ValueError(extension)
-
-class JSONResponse:
-    '''
-    '''
-    def __init__(self, object):
-        self.object = object
-    
-    def save(self, out, format):
-        json.dump(self.object, out, separators=(',', ':'))
-
-def get_tile_topojsons(config, names, coord):
-    '''
+        Check integrity and compatibility of each, looking at known layers,
+        correct JSON mime-types, "Topology" in the type attributes, and
+        matching affine transformations.
     '''
     unknown_layers = set(names) - set(config.layers.keys())
     
     if unknown_layers:
-        raise KnownUnknown("%s.get_tile_topojsons didn't recognize %s when trying to load %s." % (__name__, ', '.join(unknown_layers), ', '.join(names)))
+        raise KnownUnknown("%s.get_tiles didn't recognize %s when trying to load %s." % (__name__, ', '.join(unknown_layers), ', '.join(names)))
     
     layers = [config.layers[name] for name in names]
     mimes, bodies = zip(*[getTile(layer, coord, 'topojson') for layer in layers])
     bad_mimes = [(name, mime) for (mime, name) in zip(mimes, names) if not mime.endswith('/json')]
     
     if bad_mimes:
-        raise KnownUnknown('%s.get_tile_topojsons encountered a non-JSON mime-type in %s sub-layer: "%s"' % ((__name__, ) + bad_mimes[0]))
+        raise KnownUnknown('%s.get_tiles encountered a non-JSON mime-type in %s sub-layer: "%s"' % ((__name__, ) + bad_mimes[0]))
     
     topojsons = map(json.loads, bodies)
     bad_types = [(name, topo['type']) for (topo, name) in zip(topojsons, names) if topo['type'] != 'Topology']
     
     if bad_types:
-        raise KnownUnknown('%s.get_tile_topojsons encountered a non-Topology type in %s sub-layer: "%s"' % ((__name__, ) + bad_types[0]))
+        raise KnownUnknown('%s.get_tiles encountered a non-Topology type in %s sub-layer: "%s"' % ((__name__, ) + bad_types[0]))
     
     transforms = [topo['transform'] for topo in topojsons]
     unique_xforms = set([tuple(xform['scale'] + xform['translate']) for xform in transforms])
     
     if len(unique_xforms) > 1:
-        raise KnownUnknown('%s.get_tile_topojsons encountered incompatible transforms: %s' % (__name__, list(unique_xforms)))
+        raise KnownUnknown('%s.get_tiles encountered incompatible transforms: %s' % (__name__, list(unique_xforms)))
     
     return topojsons
 
@@ -243,3 +184,29 @@ def encode(file, features, bounds):
         }
     
     json.dump(result, file, separators=(',', ':'))
+
+def merge(file, names, config, coord):
+    ''' Retrieve a list of TopoJSON tile responses and merge them into one.
+    
+        get_tiles() retrieves data and performs basic integrity checks.
+    '''
+    inputs = get_tiles(names, config, coord)
+    
+    output = {
+        'type': 'Topology',
+        'transform': inputs[0]['transform'],
+        'objects': dict(),
+        'arcs': list()
+        }
+    
+    for (name, input) in zip(names, inputs):
+        for (index, object) in enumerate(input['objects'].values()):
+            if len(input['objects']) > 1:
+                output['objects']['%(name)s-%(index)d' % locals()] = object
+            else:
+                output['objects'][name] = object
+            
+            for geometry in object['geometries']:
+                update_arc_indexes(geometry, output['arcs'], input['arcs'])
+    
+    json.dump(output, file, separators=(',', ':'))
