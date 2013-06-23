@@ -118,7 +118,7 @@ class Provider:
         if extension.lower() != 'json':
             raise KnownUnknown('PostGeoJSON only makes .json tiles, not "%s"' % extension)
 
-        return 'text/json', 'JSON'
+        return 'application/json', 'JSON'
 
     def unproject(self, x, y):
         x, y = x / 6378137, y / 6378137 # dimensions of the earth

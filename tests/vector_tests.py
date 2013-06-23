@@ -102,7 +102,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vector_test", "geojson", 0, 0, 0)
         geojson_result = json.loads(tile_content)
 
-        self.assertEqual(tile_mimetype, "text/json")
+        self.assertTrue(tile_mimetype.endswith('/json'))
         self.assertEqual(geojson_result['type'], 'FeatureCollection')
         self.assertEqual(len(geojson_result['features']), 2)
 
@@ -128,7 +128,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vector_test", "geojson", 0, 1, 0)
         geojson_result = json.loads(tile_content)
 
-        self.assertEqual(tile_mimetype, "text/json")
+        self.assertTrue(tile_mimetype.endswith('/json'))
         self.assertEqual(geojson_result['type'], 'FeatureCollection')
         self.assertEqual(len(geojson_result['features']), 1)
         self.assertTrue('Berlin' in geojson_result['features'][0]['properties']['name'])
@@ -147,7 +147,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
 
         # for western hemisphere....
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vector_test", "geojson", 0, 0, 0)
-        self.assertEqual(tile_mimetype, "text/json")
+        self.assertTrue(tile_mimetype.endswith('/json'))
         geojson_result = json.loads(tile_content)
         west_hemisphere_geometry = asShape(geojson_result['features'][0]['geometry'])
         expected_geometry = LineString([(-180, 32), (0, 32)])
@@ -155,7 +155,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
 
         # for eastern hemisphere....
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vector_test", "geojson", 0, 1, 0)
-        self.assertEqual(tile_mimetype, "text/json")
+        self.assertTrue(tile_mimetype.endswith('/json'))
         geojson_result = json.loads(tile_content)
         east_hemisphere_geometry = asShape(geojson_result['features'][0]['geometry'])
         expected_geometry = LineString([(0, 32), (180, 32)])
@@ -178,7 +178,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         self.insertTestRow(geom.wkt)
         
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vector_test", "geojson", 0, 0, 0)
-        self.assertEqual(tile_mimetype, "text/json")
+        self.assertTrue(tile_mimetype.endswith('/json'))
         geojson_result = json.loads(tile_content)
         
         result_geom = asShape(geojson_result['features'][0]['geometry'])

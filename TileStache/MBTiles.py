@@ -153,7 +153,7 @@ def get_tile(filename, coord):
     db = _connect(filename)
     db.text_factory = bytes
     
-    formats = {'png': 'image/png', 'jpg': 'image/jpeg', 'json': 'text/json', None: None}
+    formats = {'png': 'image/png', 'jpg': 'image/jpeg', 'json': 'application/json', None: None}
     format = db.execute("SELECT value FROM metadata WHERE name='format'").fetchone()
     format = format and format[0] or None
     mime_type = formats[format]
@@ -215,7 +215,7 @@ class Provider:
         """ Retrieve a single tile, return a TileResponse instance.
         """
         mime_type, content = get_tile(self.tileset, coord)
-        formats = {'image/png': 'PNG', 'image/jpeg': 'JPEG', 'text/json': 'JSON', None: None}
+        formats = {'image/png': 'PNG', 'image/jpeg': 'JPEG', 'application/json': 'JSON', None: None}
         return TileResponse(formats[mime_type], content)
 
     def getTypeByExtension(self, extension):
@@ -224,7 +224,7 @@ class Provider:
             This only accepts "png" or "jpg" or "json".
         """
         if extension.lower() == 'json':
-            return 'text/json', 'JSON'
+            return 'application/json', 'JSON'
         
         elif extension.lower() == 'png':
             return 'image/png', 'PNG'

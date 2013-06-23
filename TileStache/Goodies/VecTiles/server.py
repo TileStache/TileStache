@@ -164,7 +164,7 @@ class Provider:
             return 'application/octet-stream+mvt', 'MVT'
         
         elif extension.lower() == 'json':
-            return 'text/json', 'JSON'
+            return 'application/json', 'JSON'
         
         elif extension.lower() == 'topojson':
             return 'application/json', 'TopoJSON'
@@ -205,7 +205,7 @@ class MultiProvider:
         ''' Get mime-type and format by file extension, "json" or "topojson" only.
         '''
         if extension.lower() == 'json':
-            return 'text/json', 'JSON'
+            return 'application/json', 'JSON'
         
         elif extension.lower() == 'topojson':
             return 'application/json', 'TopoJSON'

@@ -602,10 +602,10 @@ class Provider:
             This only accepts "geojson" for the time being.
         """
         if extension.lower() == 'geojson':
-            return 'text/json', 'GeoJSON'
+            return 'application/json', 'GeoJSON'
     
         elif extension.lower() == 'arcjson':
-            return 'text/json', 'ArcJSON'
+            return 'application/json', 'ArcJSON'
             
         elif extension.lower() == 'geobson':
             return 'application/x-bson', 'GeoBSON'

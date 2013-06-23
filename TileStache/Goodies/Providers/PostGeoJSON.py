@@ -241,7 +241,7 @@ class Provider:
         if extension.lower() != 'json':
             raise KnownUnknown('PostGeoJSON only makes .json tiles, not "%s"' % extension)
     
-        return 'text/json', 'JSON'
+        return 'application/json', 'JSON'
 
     def renderTile(self, width, height, srs, coord):
         """ Render a single tile, return a SaveableResponse instance.
