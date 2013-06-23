@@ -5,10 +5,39 @@ import json
 
 from shapely.wkb import loads
 from shapely.geometry import asShape
+
+from ... import getTile
+from ...Core import KnownUnknown
 from .ops import transform
 
 float_pat = compile(r'^-?\d+\.\d+(e-?\d+)?$')
 charfloat_pat = compile(r'^[\[,\,]-?\d+\.\d+(e-?\d+)?$')
+
+def get_tiles(names, config, coord):
+    ''' Retrieve a list of named GeoJSON layer tiles from a TileStache config.
+    
+        Check integrity and compatibility of each, looking at known layers,
+        correct JSON mime-types and "FeatureCollection" in the type attributes.
+    '''
+    unknown_layers = set(names) - set(config.layers.keys())
+    
+    if unknown_layers:
+        raise KnownUnknown("%s.get_tiles didn't recognize %s when trying to load %s." % (__name__, ', '.join(unknown_layers), ', '.join(names)))
+    
+    layers = [config.layers[name] for name in names]
+    mimes, bodies = zip(*[getTile(layer, coord, 'json') for layer in layers])
+    bad_mimes = [(name, mime) for (mime, name) in zip(mimes, names) if not mime.endswith('/json')]
+    
+    if bad_mimes:
+        raise KnownUnknown('%s.get_tiles encountered a non-JSON mime-type in %s sub-layer: "%s"' % ((__name__, ) + bad_mimes[0]))
+    
+    geojsons = map(json.loads, bodies)
+    bad_types = [(name, topo['type']) for (topo, name) in zip(geojsons, names) if topo['type'] != 'FeatureCollection']
+    
+    if bad_types:
+        raise KnownUnknown('%s.get_tiles encountered a non-FeatureCollection type in %s sub-layer: "%s"' % ((__name__, ) + bad_types[0]))
+    
+    return geojsons
 
 def mercator((x, y)):
     ''' Project an (x, y) tuple to spherical mercator.
@@ -57,6 +86,37 @@ def encode(file, features):
     geojson = dict(type='FeatureCollection', features=features)
     encoder = json.JSONEncoder(separators=(',', ':'))
     encoded = encoder.iterencode(geojson)
+    
+    for token in encoded:
+        if charfloat_pat.match(token):
+            # in python 2.7, we see a character followed by a float literal
+            file.write(token[0] + '%.6f' % float(token[1:]))
+        
+        elif float_pat.match(token):
+            # in python 2.6, we see a simple float literal
+            file.write('%.6f' % float(token))
+        
+        else:
+            file.write(token)
+
+def merge(file, names, config, coord):
+    ''' Retrieve a list of GeoJSON tile responses and merge them into one.
+    
+        get_tiles() retrieves data and performs basic integrity checks.
+    '''
+    inputs = get_tiles(names, config, coord)
+    
+    output = {
+        'type': 'FeatureCollection',
+        'features': list()
+        }
+    
+    for (name, input) in zip(names, inputs):
+        input.update(dict(properties=dict(name=name)))
+        output['features'].append(input)
+    
+    encoder = json.JSONEncoder(separators=(',', ':'))
+    encoded = encoder.iterencode(output)
     
     for token in encoded:
         if charfloat_pat.match(token):

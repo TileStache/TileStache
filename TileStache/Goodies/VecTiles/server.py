@@ -321,7 +321,7 @@ class MultiResponse:
             topojson.merge(out, self.names, self.config, self.coord)
         
         elif format == 'JSON':
-            raise NotImplementedError(format)
+            geojson.merge(out, self.names, self.config, self.coord)
         
         else:
             raise ValueError(format)
