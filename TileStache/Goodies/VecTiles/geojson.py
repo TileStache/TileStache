@@ -1,5 +1,5 @@
 from re import compile
-from math import pi, log, tan
+from math import pi, log, tan, ceil
 
 import json
 
@@ -12,6 +12,9 @@ from .ops import transform
 
 float_pat = compile(r'^-?\d+\.\d+(e-?\d+)?$')
 charfloat_pat = compile(r'^[\[,\,]-?\d+\.\d+(e-?\d+)?$')
+
+# floating point lat/lon precision for each zoom level, good to ~1/4 pixel.
+precisions = [int(ceil(log(1<<zoom + 8+2) / log(10)) - 2) for zoom in range(23)]
 
 def get_tiles(names, config, coord):
     ''' Retrieve a list of named GeoJSON layer tiles from a TileStache config.
@@ -67,7 +70,7 @@ def decode(file):
     
     return features
 
-def encode(file, features):
+def encode(file, features, zoom):
     ''' Encode a list of (WKB, property dict) features into a GeoJSON stream.
     
         Also accept three-element tuples as features: (WKB, property dict, id).
@@ -86,15 +89,16 @@ def encode(file, features):
     geojson = dict(type='FeatureCollection', features=features)
     encoder = json.JSONEncoder(separators=(',', ':'))
     encoded = encoder.iterencode(geojson)
+    flt_fmt = '%%.%df' % precisions[zoom]
     
     for token in encoded:
         if charfloat_pat.match(token):
             # in python 2.7, we see a character followed by a float literal
-            file.write(token[0] + '%.6f' % float(token[1:]))
+            file.write(token[0] + flt_fmt % float(token[1:]))
         
         elif float_pat.match(token):
             # in python 2.6, we see a simple float literal
-            file.write('%.6f' % float(token))
+            file.write(flt_fmt % float(token))
         
         else:
             file.write(token)
@@ -109,15 +113,16 @@ def merge(file, names, config, coord):
 
     encoder = json.JSONEncoder(separators=(',', ':'))
     encoded = encoder.iterencode(output)
+    flt_fmt = '%%.%df' % precisions[coord.zoom]
     
     for token in encoded:
         if charfloat_pat.match(token):
             # in python 2.7, we see a character followed by a float literal
-            file.write(token[0] + '%.6f' % float(token[1:]))
+            file.write(token[0] + flt_fmt % float(token[1:]))
         
         elif float_pat.match(token):
             # in python 2.6, we see a simple float literal
-            file.write('%.6f' % float(token))
+            file.write(flt_fmt % float(token))
         
         else:
             file.write(token)

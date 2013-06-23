@@ -155,7 +155,7 @@ class Provider:
         
         tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
         
-        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, self.clip)
+        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, coord.zoom, self.clip)
 
     def getTypeByExtension(self, extension):
         ''' Get mime-type and format by file extension, one of "mvt", "json" or "topojson".
@@ -232,13 +232,14 @@ class Connection:
 class Response:
     '''
     '''
-    def __init__(self, dbinfo, srid, subquery, columns, bounds, tolerance, clip):
+    def __init__(self, dbinfo, srid, subquery, columns, bounds, tolerance, zoom, clip):
         ''' Create a new response object with Postgres connection info and a query.
         
             bounds argument is a 4-tuple with (xmin, ymin, xmax, ymax).
         '''
         self.dbinfo = dbinfo
         self.bounds = bounds
+        self.zoom = zoom
         
         bbox = 'ST_MakeBox2D(ST_MakePoint(%.2f, %.2f), ST_MakePoint(%.2f, %.2f))' % bounds
         geo_query = build_query(srid, subquery, columns, bbox, tolerance, True, clip)
@@ -271,7 +272,7 @@ class Response:
             mvt.encode(out, features)
         
         elif format == 'JSON':
-            geojson.encode(out, features)
+            geojson.encode(out, features, self.zoom)
         
         elif format == 'TopoJSON':
             ll = SphericalMercator().projLocation(Point(*self.bounds[0:2]))
@@ -294,7 +295,7 @@ class EmptyResponse:
             mvt.encode(out, [])
         
         elif format == 'JSON':
-            geojson.encode(out, [])
+            geojson.encode(out, [], 0)
         
         elif format == 'TopoJSON':
             ll = SphericalMercator().projLocation(Point(*self.bounds[0:2]))

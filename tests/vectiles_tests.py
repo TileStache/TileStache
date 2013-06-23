@@ -147,9 +147,9 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         
         self.defineGeometry('POINT')
 
-        point_sf = Point(-122.4183, 37.7750)
-        point_berlin = Point(13.4127, 52.5233)
-        point_lima = Point(-77.0283, 12.0433)
+        point_sf = Point(-122.42, 37.78)
+        point_berlin = Point(13.41, 52.52)
+        point_lima = Point(-77.03, 12.04)
 
         self.insertTestRow(point_sf.wkt, 'San Francisco')
         self.insertTestRow(point_berlin.wkt, 'Berlin')
@@ -219,11 +219,11 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         
         self.defineGeometry('POLYGON')
 
-        geom = Polygon( [(-180, -85.0511),
-                         ( 180, -85.0511),
-                         ( 180, 85.0511), 
-                         (-180, 85.0511), 
-                         (-180, -85.0511)])
+        geom = Polygon( [(-180, -85.05),
+                         ( 180, -85.05),
+                         ( 180, 85.05), 
+                         (-180, 85.05), 
+                         (-180, -85.05)])
 
         self.insertTestRow(geom.wkt)
         
@@ -232,7 +232,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         geojson_result = json.loads(tile_content)
         
         result_geom = asShape(geojson_result['features'][0]['geometry'])
-        expected_geom = Polygon( [(-180, -85.0511), (180, -85.0511), (180, 85.0511), (-180, 85.0511), (-180, -85.0511)])
+        expected_geom = Polygon( [(-180, -85.05), (180, -85.05), (180, 85.05), (-180, 85.05), (-180, -85.05)])
 
         # What is going on here is a bit unorthodox, but let me explain. The clipping
         # code inside TileStache relies on GEOS Intersection alongside some TileStache code
