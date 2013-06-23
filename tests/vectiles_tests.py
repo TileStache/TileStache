@@ -272,11 +272,9 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         self.assertTrue(tile_mimetype.endswith('/json'))
         geojson_result = json.loads(tile_content)
         
-        self.assertEqual(geojson_result['type'], 'FeatureCollection')
-        self.assertEqual(geojson_result['features'][0]['type'], 'FeatureCollection')
-        self.assertEqual(geojson_result['features'][1]['type'], 'FeatureCollection')
-        
-        feature1, feature2 = geojson_result['features'][0], geojson_result['features'][1]
+        feature1, feature2 = geojson_result['vectile_test'], geojson_result['vectile_copy']
+        self.assertEqual(feature1['type'], 'FeatureCollection')
+        self.assertEqual(feature2['type'], 'FeatureCollection')
         self.assertEqual(feature1['features'][0]['type'], 'Feature')
         self.assertEqual(feature2['features'][0]['type'], 'Feature')
         self.assertEqual(feature1['features'][0]['geometry']['type'], 'LineString')

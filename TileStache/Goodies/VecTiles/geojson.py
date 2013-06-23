@@ -105,16 +105,8 @@ def merge(file, names, config, coord):
         get_tiles() retrieves data and performs basic integrity checks.
     '''
     inputs = get_tiles(names, config, coord)
-    
-    output = {
-        'type': 'FeatureCollection',
-        'features': list()
-        }
-    
-    for (name, input) in zip(names, inputs):
-        input.update(dict(properties=dict(name=name)))
-        output['features'].append(input)
-    
+    output = dict(zip(names, inputs))
+
     encoder = json.JSONEncoder(separators=(',', ':'))
     encoded = encoder.iterencode(output)
     
