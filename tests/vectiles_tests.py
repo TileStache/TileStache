@@ -78,7 +78,8 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         self.config_file_content = '''
         {
            "layers":{
-              "vectile_test":{
+              "vectile_test":
+              {
                  "provider":
                  {
                      "class": "TileStache.Goodies.VecTiles:Provider",
@@ -96,6 +97,35 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
                              "SELECT * FROM dummy_table"
                          ]
                      }
+                 }
+              },
+              "vectile_copy":
+              {
+                 "provider":
+                 {
+                     "class": "TileStache.Goodies.VecTiles:Provider",
+                     "kwargs":
+                     {
+                         "dbinfo":
+                         {
+                             "host": "localhost",
+                             "user": "postgres",
+                             "password": "",
+                             "database": "test_tilestache"
+                         },
+                         "queries":
+                         [
+                             "SELECT * FROM dummy_table"
+                         ]
+                     }
+                 }
+              },
+              "vectile_multi":
+              {
+                 "provider":
+                 {
+                     "class": "TileStache.Goodies.VecTiles:MultiProvider",
+                     "kwargs": { "names": [ "vectile_test", "vectile_copy" ] }
                  }
               }
             },
@@ -226,6 +256,34 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         self.assertTrue(result_geom.difference(expected_geom.buffer(0.001)).is_empty)
         self.assertTrue(expected_geom.difference(result_geom.buffer(0.001)).is_empty)
     
+
+    def test_linestring_multi_geojson(self):
+        '''Create a line that goes from west to east (clip on), and test it in MultiProvider'''
+        
+        self.defineGeometry('LINESTRING')
+
+        geom = LineString( [(-180, 32), (180, 32)] )
+
+        self.insertTestRow(geom.wkt)
+
+        # we should have a line that clips at 0...
+
+        tile_mimetype, tile_content = utils.request(self.config_file_content, "vectile_multi", "json", 0, 0, 0)
+        self.assertTrue(tile_mimetype.endswith('/json'))
+        geojson_result = json.loads(tile_content)
+        
+        self.assertEqual(geojson_result['type'], 'FeatureCollection')
+        self.assertEqual(geojson_result['features'][0]['type'], 'FeatureCollection')
+        self.assertEqual(geojson_result['features'][1]['type'], 'FeatureCollection')
+        
+        feature1, feature2 = geojson_result['features'][0], geojson_result['features'][1]
+        self.assertEqual(feature1['features'][0]['type'], 'Feature')
+        self.assertEqual(feature2['features'][0]['type'], 'Feature')
+        self.assertEqual(feature1['features'][0]['geometry']['type'], 'LineString')
+        self.assertEqual(feature2['features'][0]['geometry']['type'], 'LineString')
+        self.assertEqual(feature1['features'][0]['id'], feature2['features'][0]['id'])
+
+
     def test_points_topojson(self):
         '''
         Create 3 points (2 on west, 1 on east hemisphere) and retrieve as topojson.
@@ -363,3 +421,29 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         # Close enough?
         self.assertTrue(result_geom.difference(expected_geom.buffer(1)).is_empty)
         self.assertTrue(expected_geom.difference(result_geom.buffer(1)).is_empty)
+
+
+    def test_linestring_multi_topojson(self):
+        '''Create a line that goes from west to east (clip on), and test it in MultiProvider'''
+        
+        self.defineGeometry('LINESTRING')
+
+        geom = LineString( [(-180, 32), (180, 32)] )
+
+        self.insertTestRow(geom.wkt)
+
+        # we should have a line that clips at 0...
+
+        tile_mimetype, tile_content = utils.request(self.config_file_content, "vectile_multi", "topojson", 0, 0, 0)
+        self.assertTrue(tile_mimetype.endswith('/json'))
+        topojson_result = json.loads(tile_content)
+        
+        self.assertEqual(topojson_result['type'], 'Topology')
+        self.assertEqual(topojson_result['objects']['vectile_test']['type'], 'GeometryCollection')
+        self.assertEqual(topojson_result['objects']['vectile_copy']['type'], 'GeometryCollection')
+        
+        geom1 = topojson_result['objects']['vectile_test']['geometries'][0]
+        geom2 = topojson_result['objects']['vectile_copy']['geometries'][0]
+        self.assertEqual(geom1['type'], 'LineString')
+        self.assertEqual(geom2['type'], 'LineString')
+        self.assertEqual(geom1['id'], geom2['id'])
