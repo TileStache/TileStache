@@ -143,27 +143,68 @@ class Provider:
         except IndexError:
             query = self.queries[-1]
 
-        if not query:
-            return EmptyResponse()
-        
         ll = self.layer.projection.coordinateProj(coord.down())
         ur = self.layer.projection.coordinateProj(coord.right())
         bounds = ll.x, ll.y, ur.x, ur.y
+        
+        if not query:
+            return EmptyResponse(bounds)
         
         if query not in self.columns:
             self.columns[query] = query_columns(self.dbinfo, self.srid, query, bounds)
         
         tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
         
-        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, self.clip)
+        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, coord.zoom, self.clip)
 
     def getTypeByExtension(self, extension):
-        ''' Get mime-type and format by file extension, one of "mvt" or "json".
+        ''' Get mime-type and format by file extension, one of "mvt", "json" or "topojson".
         '''
         if extension.lower() == 'mvt':
             return 'application/octet-stream+mvt', 'MVT'
         
         elif extension.lower() == 'json':
+            return 'text/json', 'JSON'
+        
+        elif extension.lower() == 'topojson':
+            return 'application/json', 'TopoJSON'
+        
+        else:
+            raise ValueError(extension)
+
+class MultiProvider:
+    ''' VecTiles provider to gather PostGIS tiles into a single multi-response.
+        
+        Returns a MultiResponse object for GeoJSON or TopoJSON requests.
+    
+        names:
+          List of names of vector-generating layers from elsewhere in config.
+        
+        Sample configuration, for a layer with combined data from water
+        and land areas, both assumed to be vector-returning layers:
+        
+          "provider":
+          {
+            "class": "TileStache.Goodies.VecTiles:MultiProvider",
+            "kwargs":
+            {
+              "names": ["water-areas", "land-areas"]
+            }
+          }
+    '''
+    def __init__(self, layer, names):
+        self.layer = layer
+        self.names = names
+        
+    def renderTile(self, width, height, srs, coord):
+        ''' Render a single tile, return a Response instance.
+        '''
+        return MultiResponse(self.layer.config, self.names, coord)
+
+    def getTypeByExtension(self, extension):
+        ''' Get mime-type and format by file extension, "json" or "topojson" only.
+        '''
+        if extension.lower() == 'json':
             return 'text/json', 'JSON'
         
         elif extension.lower() == 'topojson':
@@ -191,13 +232,15 @@ class Connection:
 class Response:
     '''
     '''
-    def __init__(self, dbinfo, srid, subquery, columns, bounds, tolerance, clip):
+    def __init__(self, dbinfo, srid, subquery, columns, bounds, tolerance, zoom, clip):
         ''' Create a new response object with Postgres connection info and a query.
         
             bounds argument is a 4-tuple with (xmin, ymin, xmax, ymax).
         '''
         self.dbinfo = dbinfo
         self.bounds = bounds
+        self.zoom = zoom
+        self.clip = clip
         
         bbox = 'ST_MakeBox2D(ST_MakePoint(%.2f, %.2f), ST_MakePoint(%.2f, %.2f))' % bounds
         geo_query = build_query(srid, subquery, columns, bbox, tolerance, True, clip)
@@ -230,12 +273,12 @@ class Response:
             mvt.encode(out, features)
         
         elif format == 'JSON':
-            geojson.encode(out, features)
+            geojson.encode(out, features, self.zoom, self.clip)
         
         elif format == 'TopoJSON':
             ll = SphericalMercator().projLocation(Point(*self.bounds[0:2]))
             ur = SphericalMercator().projLocation(Point(*self.bounds[2:4]))
-            topojson.encode(out, features, (ll.lon, ll.lat, ur.lon, ur.lat))
+            topojson.encode(out, features, (ll.lon, ll.lat, ur.lon, ur.lat), self.clip)
         
         else:
             raise ValueError(format)
@@ -243,6 +286,9 @@ class Response:
 class EmptyResponse:
     ''' Simple empty response renders valid MVT or GeoJSON with no features.
     '''
+    def __init__(self, bounds):
+        self.bounds = bounds
+    
     def save(self, out, format):
         '''
         '''
@@ -250,10 +296,34 @@ class EmptyResponse:
             mvt.encode(out, [])
         
         elif format == 'JSON':
-            geojson.encode(out, [])
+            geojson.encode(out, [], 0, False)
         
         elif format == 'TopoJSON':
-            topojson_encode(out, [], None)
+            ll = SphericalMercator().projLocation(Point(*self.bounds[0:2]))
+            ur = SphericalMercator().projLocation(Point(*self.bounds[2:4]))
+            topojson.encode(out, [], (ll.lon, ll.lat, ur.lon, ur.lat), False)
+        
+        else:
+            raise ValueError(format)
+
+class MultiResponse:
+    '''
+    '''
+    def __init__(self, config, names, coord):
+        ''' Create a new response object with TileStache config and layer names.
+        '''
+        self.config = config
+        self.names = names
+        self.coord = coord
+    
+    def save(self, out, format):
+        '''
+        '''
+        if format == 'TopoJSON':
+            topojson.merge(out, self.names, self.config, self.coord)
+        
+        elif format == 'JSON':
+            geojson.merge(out, self.names, self.config, self.coord)
         
         else:
             raise ValueError(format)
