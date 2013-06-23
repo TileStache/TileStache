@@ -48,8 +48,7 @@ class MultiProvider:
                 for geometry in object['geometries']:
                     update_arc_indexes(geometry, output['arcs'], input['arcs'])
         
-        print json.dumps(output)
-        raise Exception('bang')
+        return JSONResponse(output)
 
     def getTypeByExtension(self, extension):
         ''' Get mime-type and format by file extension, "topojson" only.
@@ -58,6 +57,15 @@ class MultiProvider:
             return 'application/json', 'TopoJSON'
         
         raise ValueError(extension)
+
+class JSONResponse:
+    '''
+    '''
+    def __init__(self, object):
+        self.object = object
+    
+    def save(self, out, format):
+        json.dump(self.object, out, separators=(',', ':'))
 
 def get_tile_topojsons(config, names, coord):
     '''
