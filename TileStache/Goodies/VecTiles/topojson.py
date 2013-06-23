@@ -72,18 +72,20 @@ def update_arc_indexes(geometry, merged_arcs, old_arcs):
     else:
         raise NotImplementedError("Can't do %s geometries" % geometry['type'])
 
-def get_transform(bounds, size=512):
+def get_transform(bounds, size=1024):
     ''' Return a TopoJSON transform dictionary and a point-transforming function.
+    
+        Size is the tile size in pixels and sets the implicit output resolution.
     '''
-    trans = bounds[0], bounds[1]
-    scale = (bounds[2] - bounds[0]) / size, (bounds[3] - bounds[1]) / size
+    tx, ty = bounds[0], bounds[1]
+    sx, sy = (bounds[2] - bounds[0]) / size, (bounds[3] - bounds[1]) / size
     
     def forward(lon, lat):
         ''' Transform a longitude and latitude to TopoJSON integer space.
         '''
-        return int((lon - trans[0]) / scale[0]), int((lat - trans[1]) / scale[1])
+        return int(round((lon - tx) / sx)), int(round((lat - ty) / sy))
     
-    return dict(translate=trans, scale=scale), forward
+    return dict(translate=(tx, ty), scale=(sx, sy)), forward
 
 def diff_encode(line, transform):
     ''' Differentially encode a shapely linestring or ring.
