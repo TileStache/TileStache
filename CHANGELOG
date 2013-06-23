@@ -1,3 +1,6 @@
+2013-06-23: 1.49.7
+- Added VecTiles:MultiProvider to merge TopoJSON and GeoJSON output layers.
+
 2013-06-21: 1.49.6
 - Switched to ST_SimplifyPreserveTopology in VecTiles clipping to calm GEOS.
 
