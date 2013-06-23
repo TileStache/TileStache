@@ -102,7 +102,7 @@ def decode(file):
     '''
     raise NotImplementedError('topojson.decode() not yet written')
 
-def encode(file, features, bounds):
+def encode(file, features, bounds, is_clipped):
     ''' Encode a list of (WKB, property dict) features into a TopoJSON stream.
     
         Also accept three-element tuples as features: (WKB, property dict, id).
@@ -117,6 +117,9 @@ def encode(file, features, bounds):
         shape = loads(feature[0])
         geometry = dict(properties=feature[1])
         geometries.append(geometry)
+        
+        if is_clipped:
+            geometry.update(dict(clipped=True))
         
         if len(feature) >= 2:
             # ID is an optional third element in the feature tuple

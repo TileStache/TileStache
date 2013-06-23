@@ -240,6 +240,7 @@ class Response:
         self.dbinfo = dbinfo
         self.bounds = bounds
         self.zoom = zoom
+        self.clip = clip
         
         bbox = 'ST_MakeBox2D(ST_MakePoint(%.2f, %.2f), ST_MakePoint(%.2f, %.2f))' % bounds
         geo_query = build_query(srid, subquery, columns, bbox, tolerance, True, clip)
@@ -272,12 +273,12 @@ class Response:
             mvt.encode(out, features)
         
         elif format == 'JSON':
-            geojson.encode(out, features, self.zoom)
+            geojson.encode(out, features, self.zoom, self.clip)
         
         elif format == 'TopoJSON':
             ll = SphericalMercator().projLocation(Point(*self.bounds[0:2]))
             ur = SphericalMercator().projLocation(Point(*self.bounds[2:4]))
-            topojson.encode(out, features, (ll.lon, ll.lat, ur.lon, ur.lat))
+            topojson.encode(out, features, (ll.lon, ll.lat, ur.lon, ur.lat), self.clip)
         
         else:
             raise ValueError(format)
@@ -295,12 +296,12 @@ class EmptyResponse:
             mvt.encode(out, [])
         
         elif format == 'JSON':
-            geojson.encode(out, [], 0)
+            geojson.encode(out, [], 0, False)
         
         elif format == 'TopoJSON':
             ll = SphericalMercator().projLocation(Point(*self.bounds[0:2]))
             ur = SphericalMercator().projLocation(Point(*self.bounds[2:4]))
-            topojson.encode(out, [], (ll.lon, ll.lat, ur.lon, ur.lat))
+            topojson.encode(out, [], (ll.lon, ll.lat, ur.lon, ur.lat), False)
         
         else:
             raise ValueError(format)

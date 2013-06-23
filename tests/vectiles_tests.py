@@ -85,6 +85,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
                      "class": "TileStache.Goodies.VecTiles:Provider",
                      "kwargs":
                      {
+                         "clip": false,
                          "dbinfo":
                          {
                              "host": "localhost",
@@ -280,6 +281,9 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         self.assertEqual(feature1['features'][0]['geometry']['type'], 'LineString')
         self.assertEqual(feature2['features'][0]['geometry']['type'], 'LineString')
         self.assertEqual(feature1['features'][0]['id'], feature2['features'][0]['id'])
+        
+        self.assertTrue('clipped' not in feature1['features'][0])
+        self.assertTrue(feature2['features'][0]['clipped'])
 
 
     def test_points_topojson(self):
@@ -445,3 +449,6 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         self.assertEqual(geom1['type'], 'LineString')
         self.assertEqual(geom2['type'], 'LineString')
         self.assertEqual(geom1['id'], geom2['id'])
+        
+        self.assertTrue('clipped' not in geom1)
+        self.assertTrue(geom2['clipped'])
