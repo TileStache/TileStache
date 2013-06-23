@@ -242,9 +242,6 @@ class Proxy:
     def renderTile(self, width, height, srs, coord):
         """
         """
-        if srs != Geography.SphericalMercator.srs:
-            raise Exception('Projection doesn\'t match EPSG:900913: "%(srs)s"' % locals())
-
         img = None
         urls = self.provider.getTileUrls(coord)
 
