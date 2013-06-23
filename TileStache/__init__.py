@@ -222,6 +222,9 @@ def requestHandler2(config_hint, path_info, query_string, script_name=''):
         except KeyError:
             callback = None
         
+        if layer.allowed_origin:
+            headers.setdefault('Access-Control-Allow-Origin', layer.allowed_origin)
+        
         #
         # Special case for index page.
         #
@@ -255,16 +258,10 @@ def requestHandler2(config_hint, path_info, query_string, script_name=''):
             headers['Content-Type'] = 'application/javascript; charset=utf-8'
             content = '%s(%s)' % (callback, content)
         
-        allowed_origin = layer.allowed_origin
-        max_cache_age = layer.max_cache_age
-        
-        if allowed_origin:
-            headers.setdefault('Access-Control-Allow-Origin', allowed_origin)
-        
-        if max_cache_age is not None:
-            expires = datetime.utcnow() + timedelta(seconds=max_cache_age)
+        if layer.max_cache_age is not None:
+            expires = datetime.utcnow() + timedelta(seconds=layer.max_cache_age)
             headers.setdefault('Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT'))
-            headers.setdefault('Cache-Control', 'public, max-age=%d' % max_cache_age)
+            headers.setdefault('Cache-Control', 'public, max-age=%d' % layer.max_cache_age)
 
     except Core.KnownUnknown, e:
         out = StringIO()
