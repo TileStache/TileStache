@@ -53,7 +53,7 @@ class MultiProvider:
                 # adding them to merged_arcs as we go.
                 #
                 for geometry in object['geometries']:
-                    if 'arcs' not in geometry:
+                    if geometry['type'] in ('Point', 'MultiPoint'):
                         continue
                     
                     elif geometry['type'] == 'LineString':
@@ -69,8 +69,23 @@ class MultiProvider:
                                 merged_arcs.append(topo['arcs'][old_arc])
                                 print '%d. %d --> %d' % (arc_index, old_arc, ring[arc_index])
                     
+                    elif geometry['type'] == 'MultiLineString':
+                        for part in geometry['arcs']:
+                            for (arc_index, old_arc) in enumerate(part):
+                                part[arc_index] = len(merged_arcs)
+                                merged_arcs.append(topo['arcs'][old_arc])
+                                print '%d. %d --> %d' % (arc_index, old_arc, part[arc_index])
+                    
+                    elif geometry['type'] == 'MultiPolygon':
+                        for part in geometry['arcs']:
+                            for ring in part:
+                                for (arc_index, old_arc) in enumerate(ring):
+                                    ring[arc_index] = len(merged_arcs)
+                                    merged_arcs.append(topo['arcs'][old_arc])
+                                    print '%d. %d --> %d' % (arc_index, old_arc, ring[arc_index])
+                    
                     else:
-                        raise NotImplementedError("Can't do %s geometries yet" % geometry['type'])
+                        raise NotImplementedError("Can't do %s geometries" % geometry['type'])
         
         result = {
             'type': 'Topology',
