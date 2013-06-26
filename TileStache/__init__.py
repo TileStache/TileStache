@@ -180,7 +180,7 @@ def requestLayer(config, path_info):
     
     return config.layers[layername]
 
-def requestHandler(config_hint, path_info, query_string):
+def requestHandler(config_hint, path_info, query_string=None):
     """ Generate a mime-type and response body for a given request.
     
         This function is documented as part of TileStache's public API:
@@ -195,7 +195,7 @@ def requestHandler(config_hint, path_info, query_string):
     
     return mimetype, content
 
-def requestHandler2(config_hint, path_info, query_string, script_name=''):
+def requestHandler2(config_hint, path_info, query_string=None, script_name=''):
     """ Generate a set of headers and response body for a given request.
     
         TODO: Replace requestHandler() with this function in TileStache 2.0.0.
