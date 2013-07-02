@@ -1,3 +1,10 @@
+2013-07-02: 1.49.8
+- Dropped Proxy provider srs=900913 check.
+- Updated most JSON mime-types from text/json to application/json.
+- Fixed requestHandler() query_string argument to match existing API docs.
+- Switched order of simplify and transform in VecTiles queries to handle GEOS bug.
+- Made Rummy CORS-compliant.
+
 2013-06-23: 1.49.7
 - Added VecTiles:MultiProvider to merge TopoJSON and GeoJSON output layers.
 
