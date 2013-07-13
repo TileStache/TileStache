@@ -170,7 +170,7 @@ class Provider:
             return 'application/json', 'TopoJSON'
         
         elif extension.lower() == 'geopack':
-            return 'text/plain', 'GeoPack'
+            return 'application/msgpack', 'GeoPack'
         
         else:
             raise ValueError(extension)
@@ -214,7 +214,7 @@ class MultiProvider:
             return 'application/json', 'TopoJSON'
         
         elif extension.lower() == 'geopack':
-            return 'text/plain', 'GeoPack'
+            return 'application/msgpack', 'GeoPack'
         
         else:
             raise ValueError(extension)

@@ -1,5 +1,5 @@
 from shapely.wkb import loads
-import json
+import msgpack
 
 from ... import getTile
 from ...Core import KnownUnknown
@@ -8,7 +8,7 @@ def get_tiles(names, config, coord):
     ''' Retrieve a list of named GeoPack layer tiles from a TileStache config.
     
         Check integrity and compatibility of each, looking at known layers,
-        correct JSON mime-types and matching affine transformations.
+        correct MessagePack mime-types and matching affine transformations.
     '''
     unknown_layers = set(names) - set(config.layers.keys())
     
@@ -17,12 +17,12 @@ def get_tiles(names, config, coord):
     
     layers = [config.layers[name] for name in names]
     mimes, bodies = zip(*[getTile(layer, coord, 'geopack') for layer in layers])
-    bad_mimes = [(name, mime) for (mime, name) in zip(mimes, names) if not mime.startswith('text/plain')]
+    bad_mimes = [(name, mime) for (mime, name) in zip(mimes, names) if not mime == 'application/msgpack']
     
     if bad_mimes:
         raise KnownUnknown('%s.get_tiles encountered a non-plaintext mime-type in %s sub-layer: "%s"' % ((__name__, ) + bad_mimes[0]))
     
-    geopacks = map(json.loads, bodies)
+    geopacks = map(msgpack.loads, bodies)
     transforms = [pack['transform'] for pack in geopacks]
     unique_xforms = set([tuple(xform['scale'] + xform['translate']) for xform in transforms])
     
@@ -182,7 +182,7 @@ def encode(file, features, bounds, is_clipped):
         'arcs': arcs
         }
     
-    json.dump(result, file, separators=(',', ':'))
+    msgpack.dump(result, file)
 
 def merge(file, names, config, coord):
     ''' Retrieve a list of GeoPack tile responses and merge them into one.
@@ -207,4 +207,4 @@ def merge(file, names, config, coord):
             for geometry in object['geometries']:
                 update_arc_indexes(geometry, output['arcs'], input['arcs'])
     
-    json.dump(output, file, separators=(',', ':'))
+    msgpack.dump(output, file)
