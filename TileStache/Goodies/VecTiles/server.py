@@ -22,7 +22,7 @@ except ImportError, err:
     def connect(*args, **kwargs):
         raise err
 
-from . import mvt, geojson, topojson
+from . import mvt, geojson, topojson, geopack
 from ...Geography import SphericalMercator
 from ModestMaps.Core import Point
 
@@ -169,6 +169,9 @@ class Provider:
         elif extension.lower() == 'topojson':
             return 'application/json', 'TopoJSON'
         
+        elif extension.lower() == 'geopack':
+            return 'text/plain', 'GeoPack'
+        
         else:
             raise ValueError(extension)
 
@@ -210,6 +213,9 @@ class MultiProvider:
         elif extension.lower() == 'topojson':
             return 'application/json', 'TopoJSON'
         
+        elif extension.lower() == 'geopack':
+            return 'text/plain', 'GeoPack'
+        
         else:
             raise ValueError(extension)
 
@@ -245,7 +251,7 @@ class Response:
         bbox = 'ST_MakeBox2D(ST_MakePoint(%.2f, %.2f), ST_MakePoint(%.2f, %.2f))' % bounds
         geo_query = build_query(srid, subquery, columns, bbox, tolerance, True, clip)
         merc_query = build_query(srid, subquery, columns, bbox, tolerance, False, clip)
-        self.query = dict(TopoJSON=geo_query, JSON=geo_query, MVT=merc_query)
+        self.query = dict(TopoJSON=geo_query, JSON=geo_query, MVT=merc_query, GeoPack=geo_query)
     
     def save(self, out, format):
         '''
@@ -279,6 +285,11 @@ class Response:
             ll = SphericalMercator().projLocation(Point(*self.bounds[0:2]))
             ur = SphericalMercator().projLocation(Point(*self.bounds[2:4]))
             topojson.encode(out, features, (ll.lon, ll.lat, ur.lon, ur.lat), self.clip)
+        
+        elif format == 'GeoPack':
+            ll = SphericalMercator().projLocation(Point(*self.bounds[0:2]))
+            ur = SphericalMercator().projLocation(Point(*self.bounds[2:4]))
+            geopack.encode(out, features, (ll.lon, ll.lat, ur.lon, ur.lat), self.clip)
         
         else:
             raise ValueError(format)
@@ -324,6 +335,9 @@ class MultiResponse:
         
         elif format == 'JSON':
             geojson.merge(out, self.names, self.config, self.coord)
+        
+        elif format == 'GeoPack':
+            geopack.merge(out, self.names, self.config, self.coord)
         
         else:
             raise ValueError(format)
