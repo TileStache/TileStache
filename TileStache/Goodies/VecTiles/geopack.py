@@ -72,7 +72,7 @@ def update_arc_indexes(geometry, merged_arcs, old_arcs):
     else:
         raise NotImplementedError("Can't do %s geometries" % geometry['type'])
 
-def get_transform(bounds, size=1024):
+def get_transform(bounds, size=1<<12):
     ''' Return a TopoJSON transform dictionary and a point-transforming function.
     
         Size is the tile size in pixels and sets the implicit output resolution.

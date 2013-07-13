@@ -251,7 +251,7 @@ class Response:
         bbox = 'ST_MakeBox2D(ST_MakePoint(%.2f, %.2f), ST_MakePoint(%.2f, %.2f))' % bounds
         geo_query = build_query(srid, subquery, columns, bbox, tolerance, True, clip)
         merc_query = build_query(srid, subquery, columns, bbox, tolerance, False, clip)
-        self.query = dict(TopoJSON=geo_query, JSON=geo_query, MVT=merc_query, GeoPack=geo_query)
+        self.query = dict(TopoJSON=geo_query, JSON=geo_query, MVT=merc_query, GeoPack=merc_query)
     
     def save(self, out, format):
         '''
@@ -287,9 +287,7 @@ class Response:
             topojson.encode(out, features, (ll.lon, ll.lat, ur.lon, ur.lat), self.clip)
         
         elif format == 'GeoPack':
-            ll = SphericalMercator().projLocation(Point(*self.bounds[0:2]))
-            ur = SphericalMercator().projLocation(Point(*self.bounds[2:4]))
-            geopack.encode(out, features, (ll.lon, ll.lat, ur.lon, ur.lat), self.clip)
+            geopack.encode(out, features, self.bounds, self.clip)
         
         else:
             raise ValueError(format)
@@ -313,6 +311,9 @@ class EmptyResponse:
             ll = SphericalMercator().projLocation(Point(*self.bounds[0:2]))
             ur = SphericalMercator().projLocation(Point(*self.bounds[2:4]))
             topojson.encode(out, [], (ll.lon, ll.lat, ur.lon, ur.lat), False)
+        
+        elif format == 'GeoPack':
+            geopack.encode(out, [], self.bounds, False)
         
         else:
             raise ValueError(format)
