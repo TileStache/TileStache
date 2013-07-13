@@ -117,7 +117,7 @@ def encode(file, features, bounds, is_clipped):
     
     for feature in features:
         shape = loads(feature[0])
-        geometry = dict(properties=feature[1])
+        geometry = dict(properties=feature[1], bounds=shape.bounds)
         geometries.append(geometry)
         
         if is_clipped:
@@ -133,6 +133,7 @@ def encode(file, features, bounds, is_clipped):
     
         elif shape.type == 'Point':
             geometry.update(dict(type='Point', coordinates=forward(shape.x, shape.y)))
+            geometry.update(dict(bounds=geometry['bounds'][:2]))
     
         elif shape.type == 'LineString':
             geometry.update(dict(type='LineString', arcs=[len(arcs)]))
