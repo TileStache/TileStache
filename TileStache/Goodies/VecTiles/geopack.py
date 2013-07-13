@@ -5,11 +5,10 @@ from ... import getTile
 from ...Core import KnownUnknown
 
 def get_tiles(names, config, coord):
-    ''' Retrieve a list of named TopoJSON layer tiles from a TileStache config.
+    ''' Retrieve a list of named GeoPack layer tiles from a TileStache config.
     
         Check integrity and compatibility of each, looking at known layers,
-        correct JSON mime-types, "Topology" in the type attributes, and
-        matching affine transformations.
+        correct JSON mime-types and matching affine transformations.
     '''
     unknown_layers = set(names) - set(config.layers.keys())
     
@@ -23,19 +22,14 @@ def get_tiles(names, config, coord):
     if bad_mimes:
         raise KnownUnknown('%s.get_tiles encountered a non-plaintext mime-type in %s sub-layer: "%s"' % ((__name__, ) + bad_mimes[0]))
     
-    topojsons = map(json.loads, bodies)
-    bad_types = [(name, topo['type']) for (topo, name) in zip(topojsons, names) if topo['type'] != 'Topology']
-    
-    if bad_types:
-        raise KnownUnknown('%s.get_tiles encountered a non-Topology type in %s sub-layer: "%s"' % ((__name__, ) + bad_types[0]))
-    
-    transforms = [topo['transform'] for topo in topojsons]
+    geopacks = map(json.loads, bodies)
+    transforms = [pack['transform'] for pack in geopacks]
     unique_xforms = set([tuple(xform['scale'] + xform['translate']) for xform in transforms])
     
     if len(unique_xforms) > 1:
         raise KnownUnknown('%s.get_tiles encountered incompatible transforms: %s' % (__name__, list(unique_xforms)))
     
-    return topojsons
+    return geopacks
 
 def update_arc_indexes(geometry, merged_arcs, old_arcs):
     ''' Updated geometry arc indexes, and add arcs to merged_arcs along the way.
@@ -73,7 +67,7 @@ def update_arc_indexes(geometry, merged_arcs, old_arcs):
         raise NotImplementedError("Can't do %s geometries" % geometry['type'])
 
 def get_transform(bounds, size=1<<12):
-    ''' Return a TopoJSON transform dictionary and a point-transforming function.
+    ''' Return a GeoPack transform dictionary and a point-transforming function.
     
         Size is the tile size in pixels and sets the implicit output resolution.
     '''
@@ -81,7 +75,7 @@ def get_transform(bounds, size=1<<12):
     sx, sy = (bounds[2] - bounds[0]) / size, (bounds[3] - bounds[1]) / size
     
     def forward(lon, lat):
-        ''' Transform a longitude and latitude to TopoJSON integer space.
+        ''' Transform a longitude and latitude to GeoPack integer space.
         '''
         return int(round((lon - tx) / sx)), int(round((lat - ty) / sy))
     
@@ -98,14 +92,14 @@ def diff_encode(line, transform):
     return coords[:1] + [(x, y) for (x, y) in diffs if (x, y) != (0, 0)]
 
 def decode(file):
-    ''' Stub function to decode a TopoJSON file into a list of features.
+    ''' Stub function to decode a GeoPack file into a list of features.
     
         Not currently implemented, modeled on geojson.decode().
     '''
-    raise NotImplementedError('topojson.decode() not yet written')
+    raise NotImplementedError('geopack.decode() not yet written')
 
 def encode(file, features, bounds, is_clipped):
-    ''' Encode a list of (WKB, property dict) features into a TopoJSON stream.
+    ''' Encode a list of (WKB, property dict) features into a GeoPack stream.
     
         Also accept three-element tuples as features: (WKB, property dict, id).
     
@@ -178,7 +172,6 @@ def encode(file, features, bounds, is_clipped):
             raise NotImplementedError("Can't do %s geometries" % shape.type)
     
     result = {
-        'type': 'Topology',
         'transform': transform,
         'objects': {
             'vectile': {
@@ -192,14 +185,13 @@ def encode(file, features, bounds, is_clipped):
     json.dump(result, file, separators=(',', ':'))
 
 def merge(file, names, config, coord):
-    ''' Retrieve a list of TopoJSON tile responses and merge them into one.
+    ''' Retrieve a list of GeoPack tile responses and merge them into one.
     
         get_tiles() retrieves data and performs basic integrity checks.
     '''
     inputs = get_tiles(names, config, coord)
     
     output = {
-        'type': 'Topology',
         'transform': inputs[0]['transform'],
         'objects': dict(),
         'arcs': list()
