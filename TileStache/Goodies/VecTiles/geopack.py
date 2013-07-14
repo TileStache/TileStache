@@ -33,7 +33,7 @@ def get_tiles(names, config, coord):
     
     layers = [config.layers[name] for name in names]
     mimes, bodies = zip(*[getTile(layer, coord, 'geopack') for layer in layers])
-    bad_mimes = [(name, mime) for (mime, name) in zip(mimes, names) if not mime == 'application/msgpack']
+    bad_mimes = [(name, mime) for (mime, name) in zip(mimes, names) if not mime == 'application/x-msgpack']
     
     if bad_mimes:
         raise KnownUnknown('%s.get_tiles encountered a non-plaintext mime-type in %s sub-layer: "%s"' % ((__name__, ) + bad_mimes[0]))
