@@ -1,8 +1,24 @@
+''' GeoPack encoding support for VecTiles.
+
+GeoPack is a data format based on TopoJSON, with three key differences:
+
+ 1. Geometries are assumed to be in spherical mercator projection.
+ 2. No "type=Topology" property is included in the base object.
+ 3. Each geometry has an additional "bounds" array with four elements,
+    xmin, ymin, xmax, and ymax. Point geometries have two elements, x and y.
+
+GeoPack also implicitly uses a tile dimension of 4096 pixels instead of
+1024 pixels, because it's expected to be used in server-side cases where
+zoom=14 tiles supply complete geometry for zoom=18 tiles.
+'''
 from shapely.wkb import loads
 import msgpack
 
 from ... import getTile
 from ...Core import KnownUnknown
+
+# most core geometry functions are simply borrowed from TopoJSON
+from .topojson import update_arc_indexes, get_transform, diff_encode
 
 def get_tiles(names, config, coord):
     ''' Retrieve a list of named GeoPack layer tiles from a TileStache config.
@@ -31,66 +47,6 @@ def get_tiles(names, config, coord):
     
     return geopacks
 
-def update_arc_indexes(geometry, merged_arcs, old_arcs):
-    ''' Updated geometry arc indexes, and add arcs to merged_arcs along the way.
-    
-        Arguments are modified in-place, and nothing is returned.
-    '''
-    if geometry['type'] in ('Point', 'MultiPoint'):
-        return
-    
-    elif geometry['type'] == 'LineString':
-        for (arc_index, old_arc) in enumerate(geometry['arcs']):
-            geometry['arcs'][arc_index] = len(merged_arcs)
-            merged_arcs.append(old_arcs[old_arc])
-    
-    elif geometry['type'] == 'Polygon':
-        for ring in geometry['arcs']:
-            for (arc_index, old_arc) in enumerate(ring):
-                ring[arc_index] = len(merged_arcs)
-                merged_arcs.append(old_arcs[old_arc])
-    
-    elif geometry['type'] == 'MultiLineString':
-        for part in geometry['arcs']:
-            for (arc_index, old_arc) in enumerate(part):
-                part[arc_index] = len(merged_arcs)
-                merged_arcs.append(old_arcs[old_arc])
-    
-    elif geometry['type'] == 'MultiPolygon':
-        for part in geometry['arcs']:
-            for ring in part:
-                for (arc_index, old_arc) in enumerate(ring):
-                    ring[arc_index] = len(merged_arcs)
-                    merged_arcs.append(old_arcs[old_arc])
-    
-    else:
-        raise NotImplementedError("Can't do %s geometries" % geometry['type'])
-
-def get_transform(bounds, size=1<<12):
-    ''' Return a GeoPack transform dictionary and a point-transforming function.
-    
-        Size is the tile size in pixels and sets the implicit output resolution.
-    '''
-    tx, ty = bounds[0], bounds[1]
-    sx, sy = (bounds[2] - bounds[0]) / size, (bounds[3] - bounds[1]) / size
-    
-    def forward(lon, lat):
-        ''' Transform a longitude and latitude to GeoPack integer space.
-        '''
-        return int(round((lon - tx) / sx)), int(round((lat - ty) / sy))
-    
-    return dict(translate=(tx, ty), scale=(sx, sy)), forward
-
-def diff_encode(line, transform):
-    ''' Differentially encode a shapely linestring or ring.
-    '''
-    coords = [transform(x, y) for (x, y) in line.coords]
-    
-    pairs = zip(coords[:], coords[1:])
-    diffs = [(x2 - x1, y2 - y1) for ((x1, y1), (x2, y2)) in pairs]
-    
-    return coords[:1] + [(x, y) for (x, y) in diffs if (x, y) != (0, 0)]
-
 def decode(file):
     ''' Stub function to decode a GeoPack file into a list of features.
     
@@ -106,7 +62,7 @@ def encode(file, features, bounds, is_clipped):
         Geometries in the features list are assumed to be unprojected lon, lats.
         Bounds are given in geographic coordinates as (xmin, ymin, xmax, ymax).
     '''
-    transform, forward = get_transform(bounds)
+    transform, forward = get_transform(bounds, 1<<12)
     geometries, arcs = list(), list()
     
     for feature in features:
