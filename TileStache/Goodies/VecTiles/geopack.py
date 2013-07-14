@@ -2,14 +2,14 @@
 
 GeoPack is a data format based on TopoJSON, with three key differences:
 
- 1. Geometries are assumed to be in spherical mercator projection.
- 2. No "type=Topology" property is included in the base object.
- 3. Each geometry has an additional "bounds" array with four elements,
-    xmin, ymin, xmax, and ymax. Point geometries have two elements, x and y.
+ 1. No "type=Topology" property is included in the base object.
 
-GeoPack also implicitly uses a tile dimension of 4096 pixels instead of
-1024 pixels, because it's expected to be used in server-side cases where
-zoom=14 tiles supply complete geometry for zoom=18 tiles.
+ 2. Each geometry has an additional "bounds" array with four elements: minlon,
+    minlat, maxlon, and maxlat. Point bounds have two elements, lon and lat.
+
+ 3. GeoPack implicitly uses a tile dimension of 4096 pixels instead of 1024
+    pixels as in TopoJSON, because it's expected to be used in server-side
+    cases where zoom=14 tiles supply complete geometry for zoom=18 tiles.
 '''
 from shapely.wkb import loads
 import msgpack
