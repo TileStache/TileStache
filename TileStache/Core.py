@@ -334,6 +334,7 @@ class Layer:
         self.bitmap_palette = None
         self.jpeg_options = {}
         self.png_options = {}
+        self.palette256 = False
 
     def name(self):
         """ Figure out what I'm called, return a name if there is one.
