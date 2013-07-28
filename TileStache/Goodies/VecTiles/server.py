@@ -72,6 +72,12 @@ class Provider:
           simplify_until:
             Optional integer specifying a zoom level where no more geometry
             simplification should occur. Default 16.
+
+          project_geojson:
+            Optional boolean flag determines whether geometries for the 
+            GeoJSON format remain in spherical mercator.  Default false:
+            geometries are transformed to EPSG:4326.
+
         
         Sample configuration, for a layer with no results at zooms 0-9, basic
         selection of lines with names and highway tags for zoom 10, a remote
@@ -100,7 +106,7 @@ class Provider:
             }
           }
     '''
-    def __init__(self, layer, dbinfo, queries, clip=True, srid=900913, simplify=1.0, simplify_until=16):
+    def __init__(self, layer, dbinfo, queries, clip=True, srid=900913, simplify=1.0, simplify_until=16, project_geojson=False):
         '''
         '''
         self.layer = layer
@@ -112,6 +118,7 @@ class Provider:
         self.srid = int(srid)
         self.simplify = float(simplify)
         self.simplify_until = int(simplify_until)
+        self.project_geojson = bool(project_geojson)
         
         self.queries = []
         self.columns = {}
@@ -155,7 +162,7 @@ class Provider:
         
         tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
         
-        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, coord.zoom, self.clip)
+        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, coord.zoom, self.clip, self.project_geojson)
 
     def getTypeByExtension(self, extension):
         ''' Get mime-type and format by file extension, one of "mvt", "json" or "topojson".
@@ -232,7 +239,7 @@ class Connection:
 class Response:
     '''
     '''
-    def __init__(self, dbinfo, srid, subquery, columns, bounds, tolerance, zoom, clip):
+    def __init__(self, dbinfo, srid, subquery, columns, bounds, tolerance, zoom, clip, project_geojson):
         ''' Create a new response object with Postgres connection info and a query.
         
             bounds argument is a 4-tuple with (xmin, ymin, xmax, ymax).
@@ -241,10 +248,15 @@ class Response:
         self.bounds = bounds
         self.zoom = zoom
         self.clip = clip
+        self.project_geojson = project_geojson
         
         bbox = 'ST_MakeBox2D(ST_MakePoint(%.2f, %.2f), ST_MakePoint(%.2f, %.2f))' % bounds
-        geo_query = build_query(srid, subquery, columns, bbox, tolerance, True, clip)
         merc_query = build_query(srid, subquery, columns, bbox, tolerance, False, clip)
+
+        if self.project_geojson:
+            geo_query = merc_query
+        else:
+            geo_query = build_query(srid, subquery, columns, bbox, tolerance, True, clip)
         self.query = dict(TopoJSON=geo_query, JSON=geo_query, MVT=merc_query)
     
     def save(self, out, format):
