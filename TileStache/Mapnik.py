@@ -109,24 +109,24 @@ class ImageProvider:
         #
         # Mapnik can behave strangely when run in threads, so place a lock on the instance.
         #
-        if global_mapnik_lock.acquire():
-            try:
-                if self.mapnik is None:
-                    self.mapnik = get_mapnikMap(self.mapfile)
-                    logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %.3f to load %s', time() - start_time, self.mapfile)
+#         if global_mapnik_lock.acquire():
+        try:
+            if self.mapnik is None:
+                self.mapnik = get_mapnikMap(self.mapfile)
+                logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %.3f to load %s', time() - start_time, self.mapfile)
 
-                self.mapnik.width = width
-                self.mapnik.height = height
-                self.mapnik.zoom_to_box(Box2d(xmin, ymin, xmax, ymax))
-            
-                img = mapnik.Image(width, height)
-                mapnik.render(self.mapnik, img) 
-            except:
-                self.mapnik = None
-                raise
-            finally:
-                # always release the lock
-                global_mapnik_lock.release()
+            self.mapnik.width = width
+            self.mapnik.height = height
+            self.mapnik.zoom_to_box(Box2d(xmin, ymin, xmax, ymax))
+        
+            img = mapnik.Image(width, height)
+            mapnik.render(self.mapnik, img) 
+        except:
+            self.mapnik = None
+            raise
+#             finally:
+#                 # always release the lock
+#                 global_mapnik_lock.release()
 
         img = Image.fromstring('RGBA', (width, height), img.tostring())
         
