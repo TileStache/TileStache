@@ -41,12 +41,13 @@ class DynamicLayers:
         # the prior lookup failed to find this layer.
         if self.cache_responses:
             if key in self.seen_layers:
+                logging.debug("cache layer %s", self.url_root + "/layer/" + key)
                 return True
             elif key in self.lookup_failures:
                 return False
         
         res = urlopen(self.url_root + "/layer/" + key)
-        logging.debug("Requesting layer %s", self.url_root + "/layer/" + key)
+        logging.debug("contains Requesting layer %s", self.url_root + "/layer/" + key)
         if self.cache_responses:
             if res.getcode() != 200:
                 # Cache a failed lookup
@@ -72,12 +73,13 @@ class DynamicLayers:
     def __getitem__(self, key):
         if self.cache_responses:
             if key in self.seen_layers:
+                logging.debug("cache layer %s", self.url_root + "/layer/" + key)
                 return self.seen_layers[key]
             elif key in self.lookup_failures:
                 # If we are caching, raise KnownUnknown if we have previously failed to find this layer
                 raise TileStache.KnownUnknown("Layer %s previously not found", key)
         
-        logging.debug("Requesting layer %s", self.url_root + "/layer/" + key)
+        logging.debug("getitem Requesting layer %s", self.url_root + "/layer/" + key)
         res = urlopen(self.url_root + "/layer/" + key)
         if (res.getcode() != 200) :
             logging.info("Config response code %s for %s", res.getcode(), key)

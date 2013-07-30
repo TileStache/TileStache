@@ -377,6 +377,7 @@ class WSGITileServer:
 #         query_string = environ.get('QUERY_STRING', None)
 #         script_name = environ.get('SCRIPT_NAME', None)
 
+        logging.debug("self is %s",self)
         path_info = environ.get('PATH_INFO', None)
         query_string = environ.get('QUERY_STRING', None)
         script_name = environ.get('SCRIPT_NAME', None)
@@ -384,6 +385,7 @@ class WSGITileServer:
         
         if version_str is not None:
             version  = long(version_str[0])
+            logging.debug("layer %s version %d", layer,version)
         else:
             version = None
         
@@ -392,11 +394,11 @@ class WSGITileServer:
         
         layer_obj = self.config.layers[layer]
         
+        if layer_obj is None:
+            return self._response(start_response, 404)
+        
         if version is not None and layer_obj.version < version:
             self.config.layers.pop(layer)
-        
-        if layer not in self.config.layers:
-            return self._response(start_response, 404)
         
         if version is not None :
             layer_obj = self.config.layers[layer]
