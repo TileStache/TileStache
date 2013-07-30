@@ -28,6 +28,7 @@ from time import time
 
 import httplib
 import logging
+import urlparse
 
 try:
     from json import load as json_load
@@ -369,12 +370,37 @@ class WSGITileServer:
         # WSGI behavior is different from CGI behavior, because we may not want
         # to return a chatty rummy for likely-deployed WSGI vs. testing CGI.
         #
-        if layer and layer not in self.config.layers:
-            return self._response(start_response, 404)
+#         if layer and layer not in self.config.layers:
+#             return self._response(start_response, 404)
+# 
+#         path_info = environ.get('PATH_INFO', None)
+#         query_string = environ.get('QUERY_STRING', None)
+#         script_name = environ.get('SCRIPT_NAME', None)
 
         path_info = environ.get('PATH_INFO', None)
         query_string = environ.get('QUERY_STRING', None)
         script_name = environ.get('SCRIPT_NAME', None)
+        version_str = urlparse.parse_qs(query_string,True).get('version')
+        
+        if version_str is not None:
+            version  = long(version_str[0])
+        else:
+            version = None
+        
+        if version is not None and layer is None:
+            return self._response(start_response, 404)
+        
+        layer_obj = self.config.layers[layer]
+        
+        if version is not None and layer_obj.version < version:
+            self.config.layers.pop(layer)
+        
+        if layer not in self.config.layers:
+            return self._response(start_response, 404)
+        
+        if version is not None :
+            layer_obj = self.config.layers[layer]
+            layer_obj.version = version
         
         status_code, headers, content = requestHandler2(self.config, path_info, query_string, script_name)
         
