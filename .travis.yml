@@ -11,10 +11,10 @@ virtualenv:
 
 before_install:
   - sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq postgis gdal-bin libgdal-dev libgdal1 libgdal1-dev libpq-dev memcached python-pip
-  - sudo apt-get install -qq python-nose python-imaging python-memcache python-gdal
-  - sudo apt-get install -qq python-coverage python-werkzeug python-psycopg2
+  - sudo apt-get update -qq -y
+  - sudo apt-get install -qq postgis gdal-bin libgdal-dev libpq-dev memcached python-pip -y
+  - sudo apt-get install -qq python-nose python-imaging python-memcache python-gdal -y
+  - sudo apt-get install -qq python-coverage python-werkzeug python-psycopg2 -y
   - ogrinfo --version
   - ogrinfo --formats
   - sudo -u postgres psql -c "drop database if exists test_tilestache"
