@@ -75,6 +75,9 @@ class ImageProvider:
         else:
             self.mapfile = maphref
         
+        if mapfile.startswith('<?xml'):
+            self.mapfile = mapfile
+
         self.layer = layer
         self.mapnik = None
         
@@ -212,6 +215,9 @@ class GridProvider:
             self.mapfile = path
         else:
             self.mapfile = maphref
+
+        if mapfile.startswith('<?xml'):
+            self.mapfile = mapfile
 
         self.scale = scale
         self.layer_id_key = layer_id_key
@@ -395,9 +401,12 @@ def get_mapnikMap(mapfile):
     """
     mmap = mapnik.Map(0, 0)
     
-    if exists(mapfile):
-        mapnik.load_map(mmap, str(mapfile))
+    if mapfile.startswith('<?xml'):
+        mapnik.load_map_from_string(mmap, str(mapfile))
     
+    elif exists(mapfile):
+        mapnik.load_map(mmap, str(mapfile))
+
     else:
         handle, filename = mkstemp()
         os.write(handle, urlopen(mapfile).read())
