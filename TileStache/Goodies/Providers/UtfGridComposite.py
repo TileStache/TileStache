@@ -40,9 +40,6 @@ class Provider:
 	def __init__(self, layer, stack, layer_id=None, wrapper=None):
 
 		#Set up result storage
-		self.resultGrid = []
-		self.gridKeys = []
-		self.gridData = {}
 		
 		self.layer = layer
 		self.stack = stack
@@ -50,10 +47,14 @@ class Provider:
 		self.wrapper = wrapper
 	
 	def renderTile(self, width, height, srs, coord):
-	
+
+		resultGrid = []
+		gridKeys = []
+		gridData = {}
+		
 		for l in self.stack:
-			self.addLayer(l, coord)
-		return SaveableResponse(self.writeResult())
+			self.addLayer(resultGrid, gridKeys, gridData, l, coord)
+		return SaveableResponse(self.writeResult(resultGrid, gridKeys, gridData))
 
 	def getTypeByExtension(self, extension):
 		""" Get mime-type and format by file extension.
@@ -64,9 +65,9 @@ class Provider:
 		
 		return 'text/json', 'JSON'
 
-	def addLayer( self, layerDef, coord ):
+	def addLayer( self, resultGrid, gridKeys, gridData, layerDef, coord ):
 		
-		mime, layer = TileStache.getTile(self.layer.config.layers[layerDef['src']], coord, 'JSON')[1]
+		mime, layer = TileStache.getTile(self.layer.config.layers[layerDef['src']], coord, 'JSON')
 #		raise KnownUnknown(layer)
 		if layerDef['wrapper'] == None:
 			layer = json.loads(layer)
@@ -76,19 +77,19 @@ class Provider:
 		gridSize = len(layer['grid'])
 
 		#init resultGrid based on given layers (if required)
-		if len(self.resultGrid) == 0:
+		if len(resultGrid) == 0:
 			for i in xrange(gridSize):
-				self.resultGrid.append([])
+				resultGrid.append([])
 				for j in xrange(gridSize):
-					self.resultGrid[i].append(-1)
+					resultGrid[i].append(-1)
 	
 		keys = layer['keys']
 		
 		keyRemap = {}
 		for k in keys:
-			if k in self.gridKeys:
+			if k in gridKeys:
 				for ext in xrange(ord('a'), ord('z')+1):
-					if not k+chr(ext) in self.gridKeys:
+					if not k+chr(ext) in gridKeys:
 						keyRemap[k] = (k+chr(ext))
 						break
 				if not k in keyRemap:
@@ -109,19 +110,19 @@ class Provider:
 					key = keyRemap[keys[idNo]]
 				
 				if not key in addedKeys:
-					self.gridKeys.append(key)
+					gridKeys.append(key)
 					addedKeys.append(key)
 					if layerDef['layer_id'] != None and self.layer_id != None: #Add layer name attribute
 						layer['data'][keys[idNo]][self.layer_id] = layerDef['layer_id']
-					self.gridData[key] = layer['data'][keys[idNo]]
+					gridData[key] = layer['data'][keys[idNo]]
 						
 						
-				newId = self.gridKeys.index(key)
+				newId = gridKeys.index(key)
 				
-				self.resultGrid[x][y] = newId
+				resultGrid[x][y] = newId
 
-	def writeResult( self ):
-		gridSize = len(self.resultGrid)
+	def writeResult( self, resultGrid, gridKeys, gridData ):
+		gridSize = len(resultGrid)
 	
 		finalKeys = []
 		finalData = {}
@@ -134,7 +135,7 @@ class Provider:
 		
 		for y in xrange(gridSize):
 			for x in xrange(gridSize):
-				id = self.resultGrid[x][y]
+				id = resultGrid[x][y]
 				
 				if not id in idToFinalId:
 					idToFinalId[id] = finalIdCounter
@@ -143,8 +144,8 @@ class Provider:
 					if id == -1:
 						finalKeys.append("")
 					else:
-						finalKeys.append(self.gridKeys[id])
-						finalData[self.gridKeys[id]] = self.gridData[self.gridKeys[id]]
+						finalKeys.append(gridKeys[id])
+						finalData[gridKeys[id]] = gridData[gridKeys[id]]
 				
 				finalId = idToFinalId[id]
 				finalGrid[y] = finalGrid[y] + self.encodeId(finalId)
@@ -158,11 +159,11 @@ class Provider:
 		result += "], \"data\": { "
 		
 		first = True
-		for entry in self.gridData:
+		for entry in gridData:
 			if not first:
 				result += ","
 			first = False
-			result += "\"" + entry + "\": " + json.dumps(self.gridData[entry]) + ""
+			result += "\"" + entry + "\": " + json.dumps(gridData[entry]) + ""
 		
 		result += "}, \"grid\": ["
 		
