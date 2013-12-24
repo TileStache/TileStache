@@ -430,7 +430,7 @@ class Layer:
                     tile.save(buff, format, **save_kwargs)
                     body = buff.getvalue()
                     
-                    if save:
+                    if save and not self.doMetatile():
                         cache.save(body, self, coord, format)
 
                     tile_from = 'layer.render()'
