@@ -278,11 +278,14 @@ class UrlTemplate:
         - referer (optional)
             String to use in the "Referer" header when making HTTP requests.
 
+        - source projection (optional)
+            Projection to transform coordinates into before making request
+
         More on string substitutions:
         - http://docs.python.org/library/string.html#template-strings
     """
 
-    def __init__(self, layer, template, referer=None):
+    def __init__(self, layer, template, referer=None, source_projection=None):
         """ Initialize a UrlTemplate provider with layer and template string.
         
             http://docs.python.org/library/string.html#template-strings
@@ -290,6 +293,7 @@ class UrlTemplate:
         self.layer = layer
         self.template = Template(template)
         self.referer = referer
+        self.source_projection = source_projection
 
     @staticmethod
     def prepareKeywordArgs(config_dict):
@@ -300,6 +304,9 @@ class UrlTemplate:
         if 'referer' in config_dict:
             kwargs['referer'] = config_dict['referer']
 
+        if 'source projection' in config_dict:
+            kwargs['source_projection'] = Geography.getProjectionByName(config_dict['source projection'])
+
         return kwargs
 
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
@@ -307,6 +314,17 @@ class UrlTemplate:
         
             Each argument (width, height, etc.) is substituted into the template.
         """
+        if self.source_projection is not None:
+            ne_location = self.layer.projection.projLocation(Point(xmax, ymax))
+            ne_point = self.source_projection.locationProj(ne_location)
+            ymax = ne_point.y
+            xmax = ne_point.x
+            sw_location = self.layer.projection.projLocation(Point(xmin, ymin))
+            sw_point = self.source_projection.locationProj(sw_location)
+            ymin = sw_point.y
+            xmin = sw_point.x
+            srs = self.source_projection.srs
+
         mapping = {'width': width, 'height': height, 'srs': srs, 'zoom': zoom}
         mapping.update({'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax})
 
