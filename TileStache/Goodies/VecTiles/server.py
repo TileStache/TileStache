@@ -143,10 +143,15 @@ class Provider:
         except IndexError:
             query = self.queries[-1]
 
-        ll = self.layer.projection.coordinateProj(coord.down())
-        ur = self.layer.projection.coordinateProj(coord.right())
-        bounds = ll.x, ll.y, ur.x, ur.y
-        
+        if self.srid == 4326:
+            ll = self.layer.projection.coordinateLocation(coord.down())
+            ur = self.layer.projection.coordinateLocation(coord.right())
+            bounds = ll.lon, ll.lat, ur.lon, ur.lat
+        else:
+            ll = self.layer.projection.coordinateProj(coord.down())
+            ur = self.layer.projection.coordinateProj(coord.right())
+            bounds = ll.x, ll.y, ur.x, ur.y
+
         if not query:
             return EmptyResponse(bounds)
         
