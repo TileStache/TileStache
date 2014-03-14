@@ -27,6 +27,8 @@ from ...Geography import SphericalMercator
 from ModestMaps.Core import Point
 
 tolerances = [6378137 * 2 * pi / (2 ** (zoom + 8)) for zoom in range(20)]
+tolerances4326 = [360.0/(2 ** zoom)/256 for zoom in range(20)]
+
 
 class Provider:
     ''' VecTiles provider for PostGIS data sources.
@@ -147,19 +149,20 @@ class Provider:
             ll = self.layer.projection.coordinateLocation(coord.down())
             ur = self.layer.projection.coordinateLocation(coord.right())
             bounds = ll.lon, ll.lat, ur.lon, ur.lat
+            tolerance = self.simplify * tolerances4326[coord.zoom] if coord.zoom < self.simplify_until else None
         else:
             ll = self.layer.projection.coordinateProj(coord.down())
             ur = self.layer.projection.coordinateProj(coord.right())
             bounds = ll.x, ll.y, ur.x, ur.y
+            tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
+
 
         if not query:
             return EmptyResponse(bounds)
         
         if query not in self.columns:
             self.columns[query] = query_columns(self.dbinfo, self.srid, query, bounds)
-        
-        tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
-        
+                
         return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, coord.zoom, self.clip)
 
     def getTypeByExtension(self, extension):
