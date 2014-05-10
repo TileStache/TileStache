@@ -1,3 +1,4 @@
+VERSION:=$(shell cat TileStache/VERSION)
 DOCROOT=tilestache.org:public_html/tilestache/www
 
 live: doc
@@ -62,7 +63,7 @@ doc:
 
 	cp API.html doc/index.html
 	perl -pi -e 's#http://tilestache.org/doc/##' doc/index.html
-	perl -pi -e 's#\bN\.N\.N\b#$(TileStache/VERSION)#' doc/index.html
+	perl -pi -e 's#\bN\.N\.N\b#$(VERSION)#' doc/index.html
 
 clean:
 	find TileStache -name '*.pyc' -delete
