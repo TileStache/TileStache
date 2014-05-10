@@ -8,7 +8,9 @@ designers and cartographers.
 
 Documentation available at http://tilestache.org/doc/
 """
-__version__ = 'N.N.N'
+import os.path
+
+__version__ = open(os.path.join(os.path.dirname(__file__), 'VERSION')).read().strip()
 
 import re
 

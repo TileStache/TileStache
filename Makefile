@@ -1,61 +1,8 @@
-VERSION:=$(shell cat VERSION)
-PACKAGE=TileStache-$(VERSION)
-TARBALL=$(PACKAGE).tar.gz
 DOCROOT=tilestache.org:public_html/tilestache/www
 
-all: $(TARBALL)
-	#
-
-live: $(TARBALL) doc
-	scp $(TARBALL) $(DOCROOT)/download/
+live: doc
 	rsync -Cr doc/ $(DOCROOT)/doc/
-	python setup.py register
-
-$(TARBALL): doc
-	mkdir $(PACKAGE)
-	ln setup.py $(PACKAGE)/
-	ln README.md $(PACKAGE)/
-	ln VERSION $(PACKAGE)/
-	ln tilestache.cfg $(PACKAGE)/
-	ln tilestache.cgi $(PACKAGE)/
-
-	mkdir $(PACKAGE)/TileStache
-	ln TileStache/*.py $(PACKAGE)/TileStache/
-
-	rm $(PACKAGE)/TileStache/__init__.py
-	cp TileStache/__init__.py $(PACKAGE)/TileStache/__init__.py
-	perl -pi -e 's#\bN\.N\.N\b#$(VERSION)#' $(PACKAGE)/TileStache/__init__.py
-
-	mkdir $(PACKAGE)/TileStache/Vector
-	ln TileStache/Vector/*.py $(PACKAGE)/TileStache/Vector/
-
-	mkdir $(PACKAGE)/TileStache/Goodies
-	ln TileStache/Goodies/*.py $(PACKAGE)/TileStache/Goodies/
-
-	mkdir $(PACKAGE)/TileStache/Goodies/Caches
-	ln TileStache/Goodies/Caches/*.py $(PACKAGE)/TileStache/Goodies/Caches/
-
-	mkdir $(PACKAGE)/TileStache/Goodies/Providers
-	ln TileStache/Goodies/Providers/*.py $(PACKAGE)/TileStache/Goodies/Providers/
-	ln TileStache/Goodies/Providers/*.ttf $(PACKAGE)/TileStache/Goodies/Providers/
-
-	mkdir $(PACKAGE)/TileStache/Goodies/VecTiles
-	ln TileStache/Goodies/VecTiles/*.py $(PACKAGE)/TileStache/Goodies/VecTiles/
-
-	mkdir $(PACKAGE)/scripts
-	ln scripts/*.py $(PACKAGE)/scripts/
-
-	mkdir $(PACKAGE)/examples
-	#ln examples/*.py $(PACKAGE)/examples/
-
-	mkdir $(PACKAGE)/doc
-	ln doc/*.html $(PACKAGE)/doc/
-
-	mkdir $(PACKAGE)/man
-	ln man/*.1 $(PACKAGE)/man/
-
-	tar -czf $(TARBALL) $(PACKAGE)
-	rm -rf $(PACKAGE)
+	python setup.py sdist upload
 
 doc:
 	mkdir doc
@@ -115,8 +62,8 @@ doc:
 
 	cp API.html doc/index.html
 	perl -pi -e 's#http://tilestache.org/doc/##' doc/index.html
-	perl -pi -e 's#\bN\.N\.N\b#$(VERSION)#' doc/index.html
+	perl -pi -e 's#\bN\.N\.N\b#$(TileStache/VERSION)#' doc/index.html
 
 clean:
 	find TileStache -name '*.pyc' -delete
-	rm -rf $(TARBALL) doc
+	rm -rf doc
