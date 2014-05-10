@@ -88,7 +88,6 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
                          "clip": false,
                          "dbinfo":
                          {
-                             "host": "localhost",
                              "user": "postgres",
                              "password": "",
                              "database": "test_tilestache"
@@ -109,7 +108,6 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
                      {
                          "dbinfo":
                          {
-                             "host": "localhost",
                              "user": "postgres",
                              "password": "",
                              "database": "test_tilestache"

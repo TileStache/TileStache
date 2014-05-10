@@ -9,21 +9,26 @@ python:
 virtualenv:
   system_site_packages: true
 
+services:
+  - memcached
+
 before_install:
-  - sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
+#  - sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
   - sudo apt-get update -qq
-  - sudo apt-get install -qq postgis gdal-bin libgdal-dev libgdal1 libgdal1-dev libpq-dev memcached python-pip
+  - sudo apt-get install -qq gdal-bin memcached python-pip
   - sudo apt-get install -qq python-nose python-imaging python-memcache python-gdal
   - sudo apt-get install -qq python-coverage python-werkzeug python-psycopg2
   - ogrinfo --version
   - ogrinfo --formats
+
+before_script:
   - sudo -u postgres psql -c "drop database if exists test_tilestache"
   - sudo -u postgres psql -c "create database test_tilestache"
   - sudo -u postgres psql -c "create extension postgis" -d test_tilestache
   - sudo -u postgres ogr2ogr -nlt MULTIPOLYGON -f "PostgreSQL" PG:"user=postgres dbname=test_tilestache" ./examples/sample_data/world_merc.shp
 
 install:
-  - sudo pip install -r requirements.txt --use-mirrors
+  - sudo pip install -r requirements.txt --use-mirrors --allow-external ModestMaps --allow-unverified ModestMaps
 
 script:
   - nosetests -v --with-coverage --cover-package TileStache
