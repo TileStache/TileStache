@@ -7,52 +7,52 @@ live: doc
 doc:
 	mkdir doc
 
-	pydoc -w TileStache
-	pydoc -w TileStache.Core
-	pydoc -w TileStache.Caches
-	pydoc -w TileStache.Memcache
-	pydoc -w TileStache.Redis
-	pydoc -w TileStache.S3
-	pydoc -w TileStache.Config
-	pydoc -w TileStache.Vector
-	pydoc -w TileStache.Vector.Arc
-	pydoc -w TileStache.Geography
-	pydoc -w TileStache.Providers
-	pydoc -w TileStache.Mapnik
-	pydoc -w TileStache.MBTiles
-	pydoc -w TileStache.Sandwich
-	pydoc -w TileStache.Pixels
-	pydoc -w TileStache.Goodies
-	pydoc -w TileStache.Goodies.Caches
-	pydoc -w TileStache.Goodies.Caches.LimitedDisk
-	pydoc -w TileStache.Goodies.Caches.GoogleCloud
-	pydoc -w TileStache.Goodies.Providers
-	pydoc -w TileStache.Goodies.Providers.Composite
-	pydoc -w TileStache.Goodies.Providers.Cascadenik
-	pydoc -w TileStache.Goodies.Providers.PostGeoJSON
-	pydoc -w TileStache.Goodies.Providers.SolrGeoJSON
-	pydoc -w TileStache.Goodies.Providers.MapnikGrid
-	pydoc -w TileStache.Goodies.Providers.MirrorOSM
-	pydoc -w TileStache.Goodies.Providers.Monkeycache
-	pydoc -w TileStache.Goodies.Providers.UtfGridComposite
-	pydoc -w TileStache.Goodies.Providers.UtfGridCompositeOverlap
-	pydoc -w TileStache.Goodies.Providers.TileDataOSM
-	pydoc -w TileStache.Goodies.Providers.Grid
-	pydoc -w TileStache.Goodies.Providers.GDAL
-	pydoc -w TileStache.Goodies.AreaServer
-	pydoc -w TileStache.Goodies.StatusServer
-	pydoc -w TileStache.Goodies.Proj4Projection
-	pydoc -w TileStache.Goodies.ExternalConfigServer
-	pydoc -w TileStache.Goodies.VecTiles
-	pydoc -w TileStache.Goodies.VecTiles.server
-	pydoc -w TileStache.Goodies.VecTiles.client
-	pydoc -w TileStache.Goodies.VecTiles.geojson
-	pydoc -w TileStache.Goodies.VecTiles.topojson
-	pydoc -w TileStache.Goodies.VecTiles.mvt
-	pydoc -w TileStache.Goodies.VecTiles.wkb
-	pydoc -w TileStache.Goodies.VecTiles.ops
+	python -m pydoc -w TileStache
+	python -m pydoc -w TileStache.Core
+	python -m pydoc -w TileStache.Caches
+	python -m pydoc -w TileStache.Memcache
+	python -m pydoc -w TileStache.Redis
+	python -m pydoc -w TileStache.S3
+	python -m pydoc -w TileStache.Config
+	python -m pydoc -w TileStache.Vector
+	python -m pydoc -w TileStache.Vector.Arc
+	python -m pydoc -w TileStache.Geography
+	python -m pydoc -w TileStache.Providers
+	python -m pydoc -w TileStache.Mapnik
+	python -m pydoc -w TileStache.MBTiles
+	python -m pydoc -w TileStache.Sandwich
+	python -m pydoc -w TileStache.Pixels
+	python -m pydoc -w TileStache.Goodies
+	python -m pydoc -w TileStache.Goodies.Caches
+	python -m pydoc -w TileStache.Goodies.Caches.LimitedDisk
+	python -m pydoc -w TileStache.Goodies.Caches.GoogleCloud
+	python -m pydoc -w TileStache.Goodies.Providers
+	python -m pydoc -w TileStache.Goodies.Providers.Composite
+	python -m pydoc -w TileStache.Goodies.Providers.Cascadenik
+	python -m pydoc -w TileStache.Goodies.Providers.PostGeoJSON
+	python -m pydoc -w TileStache.Goodies.Providers.SolrGeoJSON
+	python -m pydoc -w TileStache.Goodies.Providers.MapnikGrid
+	python -m pydoc -w TileStache.Goodies.Providers.MirrorOSM
+	python -m pydoc -w TileStache.Goodies.Providers.Monkeycache
+	python -m pydoc -w TileStache.Goodies.Providers.UtfGridComposite
+	python -m pydoc -w TileStache.Goodies.Providers.UtfGridCompositeOverlap
+	python -m pydoc -w TileStache.Goodies.Providers.TileDataOSM
+	python -m pydoc -w TileStache.Goodies.Providers.Grid
+	python -m pydoc -w TileStache.Goodies.Providers.GDAL
+	python -m pydoc -w TileStache.Goodies.AreaServer
+	python -m pydoc -w TileStache.Goodies.StatusServer
+	python -m pydoc -w TileStache.Goodies.Proj4Projection
+	python -m pydoc -w TileStache.Goodies.ExternalConfigServer
+	python -m pydoc -w TileStache.Goodies.VecTiles
+	python -m pydoc -w TileStache.Goodies.VecTiles.server
+	python -m pydoc -w TileStache.Goodies.VecTiles.client
+	python -m pydoc -w TileStache.Goodies.VecTiles.geojson
+	python -m pydoc -w TileStache.Goodies.VecTiles.topojson
+	python -m pydoc -w TileStache.Goodies.VecTiles.mvt
+	python -m pydoc -w TileStache.Goodies.VecTiles.wkb
+	python -m pydoc -w TileStache.Goodies.VecTiles.ops
 
-	pydoc -w scripts/tilestache-*.py
+	python -m pydoc -w scripts/tilestache-*.py
 
 	mv TileStache.html doc/
 	mv TileStache.*.html doc/
