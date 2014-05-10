@@ -4,6 +4,7 @@ ImageProvider is known as "mapnik" in TileStache config, GridProvider is
 known as "mapnik grid". Both require Mapnik to be installed; Grid requires
 Mapnik 2.0.0 and above.
 """
+from __future__ import absolute_import
 from time import time
 from os.path import exists
 from thread import allocate_lock
@@ -16,6 +17,11 @@ from urllib import urlopen
 import os
 import logging
 import json
+
+# We enabled absolute_import because case insensitive filesystems
+# cause this file to be loaded twice (the name of this file
+# conflicts with the name of the module we want to import).
+# Forcing absolute imports fixes the issue.
 
 try:
     import mapnik
