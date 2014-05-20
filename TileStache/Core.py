@@ -655,6 +655,8 @@ class Layer:
 
         if palette256 is not None:
             self.palette256 = bool(palette256)
+        else:
+            self.palette256 = None
 
 class KnownUnknown(Exception):
     """ There are known unknowns. That is to say, there are things that we now know we don't know.
