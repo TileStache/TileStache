@@ -2,7 +2,7 @@
 
 _a stylish alternative for caching your map tiles_
 
-[![Build Status](https://travis-ci.org/migurski/TileStache.png)](https://travis-ci.org/migurski/TileStache)
+[![Build Status](https://travis-ci.org/TileStache/TileStache.png)](https://travis-ci.org/TileStache/TileStache)
 
 **TileStache** is a Python-based server application that can serve up map tiles
 based on rendered geographic data. You might be familiar with [TileCache](http://tilecache.org), 
