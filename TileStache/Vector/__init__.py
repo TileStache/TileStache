@@ -450,7 +450,7 @@ def _open_layer(driver_name, parameters, dirpath):
         layer = datasource.GetLayer(0)
 
     if layer.GetSpatialRef() is None and driver_name != 'SQLite': 
-        raise KnownUnknown('Couldn\'t get a layer from data source %s' % source_name)
+        raise KnownUnknown('The layer has no spatial reference: %s' % source_name)
 
     #
     # Return the layer and the datasource.
