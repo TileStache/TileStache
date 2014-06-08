@@ -1,3 +1,11 @@
+2014-06-07: 1.49.11
+- Fixed 'allow-origin header' getting overwritten (JesseCrocker)
+- Added 'source projection' parameter to UrlTemplate provider (JesseCrocker)
+- Fixed minor AttributeError when palette256 argument is None (PerryGeo)
+- Added Timeout feature to Proxy and UrlTemplate providers (Juliomalegria)
+- Adjusted curl examples (Peter Richardson)
+- More specific error message when SpatialRef is missing (probabble)
+
 2014-05-10: 1.49.10
 - Fixed Travis build.
 - Fixed import errors for case-insensitive filesystems.
