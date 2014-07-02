@@ -303,7 +303,7 @@ def _tile_perimeter_geom(coord, projection, padded):
         Uses _tile_perimeter().
     """
     perimeter = _tile_perimeter(coord, projection, padded)
-    wkt = 'POLYGON((%s))' % ', '.join(['%.3f %.3f' % xy for xy in perimeter])
+    wkt = 'POLYGON((%s))' % ', '.join(['%.7f %.7f' % xy for xy in perimeter])
     geom = ogr.CreateGeometryFromWkt(wkt)
     
     ref = osr.SpatialReference()

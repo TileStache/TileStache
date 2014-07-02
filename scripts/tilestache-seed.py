@@ -54,7 +54,7 @@ parser.add_option('-l', '--layer', dest='layer',
                   help='Layer name from configuration, typically required.')
 
 parser.add_option('-b', '--bbox', dest='bbox',
-                  help='Bounding box in floating point geographic coordinates: south west north east. Default value is %.3f, %.3f, %.3f, %.3f.' % defaults['bbox'],
+                  help='Bounding box in floating point geographic coordinates: south west north east. Default value is %.7f, %.7f, %.7f, %.7f.' % defaults['bbox'],
                   type='float', nargs=4)
 
 parser.add_option('-p', '--padding', dest='padding',

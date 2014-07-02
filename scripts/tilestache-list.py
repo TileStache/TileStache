@@ -41,7 +41,7 @@ defaults = dict(padding=0, bbox=(37.777, -122.352, 37.839, -122.226))
 parser.set_defaults(**defaults)
 
 parser.add_option('-b', '--bbox', dest='bbox',
-                  help='Bounding box in floating point geographic coordinates: south west north east. Default value is %.3f, %.3f, %.3f, %.3f.' % defaults['bbox'],
+                  help='Bounding box in floating point geographic coordinates: south west north east. Default value is %.7f, %.7f, %.7f, %.7f.' % defaults['bbox'],
                   type='float', nargs=4)
 
 parser.add_option('-p', '--padding', dest='padding',
