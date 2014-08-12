@@ -1398,7 +1398,7 @@ Example Mapnik Grid provider configurations:
       {
         "name": "mapnik grid", 
         "mapfile": "style.xml",
-        "layer index": 1
+        "layer_index": 1
       },
     <span class="bg">}
     "two-grids":
@@ -1433,21 +1433,21 @@ Mapnik Grid provider parameters:
     An empty list will return no field names, while a value of <samp>null</samp>
     is equivalent to all.
     </dd>
-    <dt>layer index</dt>
+    <dt>layer_index</dt>
     <dd>
     Optional layer from the mapfile to render, defaults to <samp>0</samp> (first layer).
     </dd>
     <dt>layers</dt>
     <dd>
-    Optional ordered list of (layer index, fields) to combine; if provided
-    <var>layers</var> overrides both <var>layer index</var> and <var>fields</var>
+    Optional ordered list of (layer_index, fields) to combine; if provided
+    <var>layers</var> overrides both <var>layer_index</var> and <var>fields</var>
     arguments.
     </dd>
     <dt>scale</dt>
     <dd>
     Optional scale factor of output raster, defaults to <samp>4</samp> (64×64).
     </dd>
-    <dt>layer id key</dt>
+    <dt>layer_id_key</dt>
     <dd>
     Optional. If set, each item in the <samp>"data"</samp> property will have
     its source mapnik layer name added, keyed by this value. Useful for
