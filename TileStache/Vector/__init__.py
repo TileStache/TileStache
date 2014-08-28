@@ -303,7 +303,7 @@ def _tile_perimeter_geom(coord, projection, padded):
         Uses _tile_perimeter().
     """
     perimeter = _tile_perimeter(coord, projection, padded)
-    wkt = 'POLYGON((%s))' % ', '.join(['%.7f %.7f' % xy for xy in perimeter])
+    wkt = 'POLYGON((%s))' % ', '.join(['%.3f %.3f' % xy for xy in perimeter])
     geom = ogr.CreateGeometryFromWkt(wkt)
     
     ref = osr.SpatialReference()
@@ -355,10 +355,11 @@ def _append_with_delim(s, delim, data, key):
     else:
         return s
 	
-def _open_layer(driver_name, parameters, dirpath):
+def _open_layer(driver_name, parameters, dirpath, the_layer):
     """ Open a layer, return it and its datasource.
     
         Dirpath comes from configuration, and is used to locate files.
+        ABL hack add the_layer refence to Layer instance
     """
     #
     # Set up the driver
@@ -439,7 +440,11 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     if driver_name == 'PostgreSQL' or driver_name == 'OCI' or driver_name == 'MySQL':
         if 'query' in parameters:
-            layer = datasource.ExecuteSQL(str(parameters['query']))
+            # ABL hack resolve user_id from user_id_lookup and the_layer._query.user_id
+            if parameters.get('user_id_lookup'):
+                parameters['user_id'] = parameters['user_id_lookup'][the_layer._query['user_id'][0]]
+            # ABL hack add .format(parametrs)
+            layer = datasource.ExecuteSQL(str(parameters['query'].format(**parameters)))
         elif 'table' in parameters:
             layer = datasource.GetLayerByName(str(parameters['table']))
         else:
@@ -580,7 +585,8 @@ class Provider:
     def renderTile(self, width, height, srs, coord):
         """ Render a single tile, return a VectorResponse instance.
         """
-        layer, ds = _open_layer(self.driver, self.parameters, self.layer.config.dirpath)
+        # ABL hack add forth argument self.layer
+        layer, ds = _open_layer(self.driver, self.parameters, self.layer.config.dirpath, self.layer)
         features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipped, self.projected, self.spacing, self.id_property)
         response = {'type': 'FeatureCollection', 'features': features}
         
