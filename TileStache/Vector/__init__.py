@@ -152,7 +152,6 @@ If you are using PostGIS and spherical mercator a.k.a. SRID 900913,
 you can save yourself a world of trouble by using this definition:
   http://github.com/straup/postgis-tools/raw/master/spatial_ref_900913-8.3.sql
 """
-
 from re import compile
 from urlparse import urlparse, urljoin
 
@@ -166,6 +165,10 @@ from osgeo import ogr, osr
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
 from Arc import reserialize_to_arc, pyamf_classes
+# ABL logging to test driver opening
+import logging
+from time import time
+logger = logging.getLogger(__name__)
 
 class VectorResponse:
     """ Wrapper class for Vector response that makes it behave like a PIL.Image object.
@@ -430,7 +433,9 @@ def _open_layer(driver_name, parameters, dirpath, the_layer):
         
         source_name = file_path
 
+    start_time = time()
     datasource = driver.Open(str(source_name))
+    logger.info('TileStache.Vector.__init__._open_layer() in %.3f', time() - start_time)
 
     if datasource is None:
         raise KnownUnknown('Couldn\'t open datasource %s' % source_name)

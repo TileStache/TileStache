@@ -336,7 +336,6 @@ class Layer:
         self.png_options = {}
 
 
-    _layer_to_name = None
     def name(self):
         """ Figure out what I'm called, return a name if there is one.
 
@@ -344,10 +343,8 @@ class Layer:
             config.layers must be inspected to find a matching name.
         """
         # ABL hack
-        if not self.__class__._layer_to_name:
-            self.__class__._layer_to_name = {v: k for k, v in self.config.layers.items()}
-
-        return self.__class__._layer_to_name[self]
+        if self.config._layer_to_name and self.config._layer_to_name.get(self):
+            return self.config._layer_to_name[self]
         for (name, layer) in self.config.layers.items():
             if layer is self:
                 return name

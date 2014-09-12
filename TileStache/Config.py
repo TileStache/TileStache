@@ -215,6 +215,8 @@ def buildConfiguration(config_dict, dirpath='.'):
     
     for (name, layer_dict) in config_dict.get('layers', {}).items():
         config.layers[name] = _parseConfigfileLayer(layer_dict, config, dirpath)
+    if not config._layer_to_name:
+        config._layer_to_name = {v: k for k, v in config.layers.items()}
 
     if 'index' in config_dict:
         index_href = urljoin(dirpath, config_dict['index'])
