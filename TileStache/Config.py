@@ -123,7 +123,9 @@ class Configuration:
         self.cache = cache
         self.dirpath = dirpath
         self.layers = {}
-        
+        # ABL Hack
+        self._layer_to_name = None
+
         self.index = 'text/plain', 'TileStache bellows hello.'
 
 class Bounds:
@@ -215,6 +217,7 @@ def buildConfiguration(config_dict, dirpath='.'):
     
     for (name, layer_dict) in config_dict.get('layers', {}).items():
         config.layers[name] = _parseConfigfileLayer(layer_dict, config, dirpath)
+    #ABL hack
     if not config._layer_to_name:
         config._layer_to_name = {v: k for k, v in config.layers.items()}
 
