@@ -47,100 +47,25 @@ class DBLayers:
 
     def __getitem__(self, key):
         # return the layer named by the key
-        return self.query_db("SELECT layer FROM tilestache_layer WHERE key={0}".format(key))
+        return self.query_db("SELECT layer FROM tilestache_layer WHERE key={0}".format(key))[0]
 
 
+class PGConfiguration:
 
-class DBConfig:
-	
-    def __init__(self, db_connection_dict, config_name='default'):
+    def __init__(self, db_connection_dict, dirpath):
         self.db_connection = psycopg2.connect(**db_connection_dict)
-        self.cursor = self.db_connection.cursor()
-        self.cache = self.get_cache_dict(config_name)
+
+        cache_dict = self.get_cache_dict(config_name)
+        self.cache = TileStache.Config._parseConfigfileCache(cache_dict, dirpath)
+        self.dirpath = dirpath
+        self.layers = DBLayers(self, url_root, cache_responses, dirpath)
+
 
     def get_cache_dict(self, config_name):
         self.cursor.execute("SELECT cache FROM tilestache_config WHERE name={0}".format(config_name))
-        config_singleton = self.cursor.fetchone()
+        config_singleton = self.cursor.fetchone()[0]
         return config_singleton
 
-	def keys(self):
-		return self.seen_layers.keys()
-	
-	def items(self):
-		return self.seen_layers.items()
-
-	def parse_layer(self, layer_json):
-		layer_dict = json_load(layer_json)
-		return TileStache.Config._parseConfigfileLayer(layer_dict, self.config, self.dirpath)
-	
-	def __contains__(self, key):
-		# If caching is enabled and we've seen a request for this layer before, return True unless
-		# the prior lookup failed to find this layer.
-		if self.cache_responses:
-			if key in self.seen_layers:
-				return True
-			elif key in self.lookup_failures:
-				return False
-		
-		res = urlopen(self.url_root + "/layer/" + key)
-		
-		if self.cache_responses:
-			if res.getcode() != 200:
-				# Cache a failed lookup
-				self.lookup_failures.add(key)
-			else :
-				# If lookup succeeded and we are caching, parse the layer now so that a subsequent
-				# call to __getitem__ doesn't require a call to the config server.  If we aren't
-				# caching, we skip this step to avoid an unnecessary json parse.
-				try:
-					self.seen_layers[key] = self.parse_layer(res)
-				except ValueError:
-					# The JSON received by the config server was invalid.  Treat this layer as a
-					# failure.  We don't want to raise ValueError from here because other parts
-					# of TileStache are just expecting a boolean response from __contains__
-					logging.error("Invalid JSON response seen for %s", key)
-					self.lookup_failures.add(key)
-					return False
-
-		if res.getcode() != 200:
-			logging.info("Config response code %s for %s", res.getcode(), key)		
-		return res.getcode() == 200
-	
-	def __getitem__(self, key):
-		if self.cache_responses:
-			if key in self.seen_layers:
-				return self.seen_layers[key]
-			elif key in self.lookup_failures:
-				# If we are caching, raise KnownUnknown if we have previously failed to find this layer
-				raise TileStache.KnownUnknown("Layer %s previously not found", key)
-		
-		logging.debug("Requesting layer %s", self.url_root + "/layer/" + key)
-		res = urlopen(self.url_root + "/layer/" + key)
-		if (res.getcode() != 200) :
-			logging.info("Config response code %s for %s", res.getcode(), key)
-			if (self.cache_responses) :
-				self.lookup_failures.add(key)
-			raise TileStache.KnownUnknown("Layer %s not found", key)
-		
-		try :
-			layer = self.parse_layer(res)
-			self.seen_layers[key] = layer
-			return layer
-		except ValueError:
-			logging.error("Invalid JSON response seen for %s", key)
-			if (self.cache_responses) :
-				# If caching responses, cache this failure
-				self.lookup_failures.add(key)
-			# KnownUnknown seems like the appropriate thing to raise here since this is akin
-			# to a missing configuration.
-			raise TileStache.KnownUnknown("Failed to parse JSON configuration for %s", key)
-
-class ExternalConfiguration:
-	
-	def __init__(self, url_root, cache_dict, cache_responses, dirpath):
-		self.cache = TileStache.Config._parseConfigfileCache(cache_dict, dirpath)
-		self.dirpath = dirpath
-		self.layers = DynamicLayers(self, url_root, cache_responses, dirpath)
 
 class WSGIServer (TileStache.WSGITileServer):
 	
@@ -157,15 +82,16 @@ class WSGIServer (TileStache.WSGITileServer):
 		the configuration server.
 	"""
 	
-	def __init__(self, url_root, cache_responses=True, debug_level="DEBUG"):
+	def __init__(self, db_connection_str, debug_level="DEBUG"):
 		logging.basicConfig(level=debug_level)
-		
+
+		db_connection_dict = db_connection_str.split(' ')
 		# Call API server at url to grab cache_dict
 		cache_dict = json_load(urlopen(url_root + "/cache"))
 		
 		dirpath = '/tmp/stache'
 		
-		config = ExternalConfiguration(url_root, cache_dict, cache_responses, dirpath)
+		config = PGConfiguration(db_connection_dict)
 		
 		TileStache.WSGITileServer.__init__(self, config, False)
 	
