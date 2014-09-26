@@ -342,6 +342,10 @@ class Layer:
             Layer names are stored in the Configuration object, so
             config.layers must be inspected to find a matching name.
         """
+        # EKB hack to work with DBLayers
+        if getattr(self, 'key', None):
+            return self.key
+
         # ABL hack
         if self.config._layer_to_name and self.config._layer_to_name.get(self):
             return self.config._layer_to_name[self]
