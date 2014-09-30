@@ -335,20 +335,16 @@ class Layer:
         self.jpeg_options = {}
         self.png_options = {}
 
-
     def name(self):
         """ Figure out what I'm called, return a name if there is one.
 
             Layer names are stored in the Configuration object, so
             config.layers must be inspected to find a matching name.
         """
-        # EKB hack to work with DBLayers
+        # Allow Layers to know their own name
         if getattr(self, 'key', None):
             return self.key
 
-        # ABL hack
-        if self.config._layer_to_name and self.config._layer_to_name.get(self):
-            return self.config._layer_to_name[self]
         for (name, layer) in self.config.layers.items():
             if layer is self:
                 return name
