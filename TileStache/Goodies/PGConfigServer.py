@@ -10,10 +10,12 @@ from urllib import urlopen
 import logging
 import psycopg2
 import json
+
+
 try:
-	from json import load as json_load
+    from json import load as json_load
 except ImportError:
-	from simplejson import load as json_load
+    from simplejson import load as json_load
 
 import TileStache
 
@@ -31,7 +33,7 @@ class DBLayers:
         return result
 
     def __init__(self, config, db_connection_dict, config_name='default'):
-        self.connection = psycopg2.connect(**db_connection_dict)
+        self.connection = config.db_connection
         self.seen_layers = {}
         self.config = config
 
@@ -52,7 +54,7 @@ class DBLayers:
             return result[0] == True
 
     def fetch_layer_from_db(self, key):
-        raw_result =  self.query_db("SELECT value FROM tilestache_layer WHERE key='{0}'".format(key))[0]
+        raw_result = self.query_db("SELECT value FROM tilestache_layer WHERE key='{0}'".format(key))[0]
         layer_dict = json.loads(raw_result[0])
         layer = TileStache.Config._parseConfigfileLayer(layer_dict, self.config, '/tmp/stache')
         layer.key = key
@@ -89,32 +91,29 @@ class PGConfiguration:
 
 
 class WSGIServer (TileStache.WSGITileServer):
-	
-	"""
-		Wrap WSGI application, passing it a custom configuration.
-		
-		The WSGI application is an instance of TileStache:WSGITileServer.
-		
-		This method is initiated with a url_root that contains the scheme, host, port
-		and path that must prefix the API calls on our local server.  Any valid http
-		or https urls should work.
-		
-		The cache_responses parameter tells TileStache to cache all responses from
-		the configuration server.
-	"""
-	
-	def __init__(self, dbname, user, db_password=None, debug_level="INFO"):
 
-		logging.basicConfig(level=debug_level)
+    """
+    Wrap WSGI application, passing it a custom configuration.
 
-		db_connection_dict = dict(dbname=dbname, user=user)
-		
-		dirpath = '/tmp/stache'
+    The WSGI application is an instance of TileStache:WSGITileServer.
 
-		config = PGConfiguration(db_connection_dict, dirpath, debug_level)
-		
-		TileStache.WSGITileServer.__init__(self, config, False)
-	
-	def __call__(self, environ, start_response):
-		response = TileStache.WSGITileServer.__call__(self, environ, start_response)
-		return response
+    This method is initiated with a url_root that contains the scheme, host, port
+    and path that must prefix the API calls on our local server.  Any valid http
+    or https urls should work.
+
+    The cache_responses parameter tells TileStache to cache all responses from
+    the configuration server.
+    """
+
+    def __init__(self, dbname, user, pw=None, debug_level="INFO"):
+        logging.basicConfig(level=debug_level)
+        db_connection_dict = dict(dbname=dbname, user=user)
+        if pw:
+            db_connection_dict['password'] = pw
+        dirpath = '/tmp/stache'
+        config = PGConfiguration(db_connection_dict, dirpath, debug_level)
+        TileStache.WSGITileServer.__init__(self, config, False)
+
+    def __call__(self, environ, start_response):
+        response = TileStache.WSGITileServer.__call__(self, environ, start_response)
+        return response
