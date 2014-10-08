@@ -43,7 +43,7 @@ class DBLayers:
 
     def items(self):
         # return a list of (key, layer) tuples
-        return self.query_db("SELECT key, layer FROM tilestache_layer;")
+        return self.query_db("SELECT key, value FROM tilestache_layer;")
 
     def __contains__(self, key):
         if key in self.seen_layers:
