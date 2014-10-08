@@ -32,7 +32,7 @@ class DBLayers:
         cursor.close()
         return result
 
-    def __init__(self, config, db_connection_dict, config_name='default'):
+    def __init__(self, config, config_name='default'):
         self.connection = config.db_connection
         self.seen_layers = {}
         self.config = config
@@ -71,8 +71,8 @@ class DBLayers:
 
 class PGConfiguration:
 
-    def __init__(self, db_connection_dict, dirpath, loglevel, config_name='default'):
-        self.db_connection = psycopg2.connect(**db_connection_dict)
+    def __init__(self, connection, dirpath, loglevel, config_name='default'):
+        self.db_connection = connection
 
         cache_dict = self.get_cache_dict(config_name)
         if loglevel not in cache_dict:
@@ -80,7 +80,7 @@ class PGConfiguration:
         path = cache_dict.get('path', dirpath)
         self.cache = TileStache.Config._parseConfigfileCache(cache_dict, path)
         self.dirpath = path
-        self.layers = DBLayers(self, db_connection_dict)
+        self.layers = DBLayers(self)
 
     def get_cache_dict(self, config_name):
         cur = self.db_connection.cursor()
@@ -108,10 +108,13 @@ class WSGIServer (TileStache.WSGITileServer):
     def __init__(self, dbname, user, pw=None, debug_level="INFO"):
         logging.basicConfig(level=debug_level)
         db_connection_dict = dict(dbname=dbname, user=user)
+
         if pw:
             db_connection_dict['password'] = pw
         dirpath = '/tmp/stache'
-        config = PGConfiguration(db_connection_dict, dirpath, debug_level)
+
+        connection = psycopg2.connect(**db_connection_dict)
+        config = PGConfiguration(connection, dirpath, debug_level)
         TileStache.WSGITileServer.__init__(self, config, False)
 
     def __call__(self, environ, start_response):
