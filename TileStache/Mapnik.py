@@ -60,6 +60,13 @@ class ImageProvider:
     
         - fonts (optional)
             Local directory path to *.ttf font files.
+
+        - "scale factor" (optional)
+            Scale multiplier used for Mapnik rendering pipeline. Used for
+            supporting retina resolution.
+
+            For more information about the scale factor, see: 
+            https://github.com/mapnik/mapnik/wiki/Scale-factor
     
         More information on Mapnik and Mapnik XML:
         - http://mapnik.org
@@ -67,7 +74,7 @@ class ImageProvider:
         - http://trac.mapnik.org/wiki/XMLConfigReference
     """
     
-    def __init__(self, layer, mapfile, fonts=None):
+    def __init__(self, layer, mapfile, fonts=None, scale_factor=None):
         """ Initialize Mapnik provider with layer and mapfile.
             
             XML mapfile keyword arg comes from TileStache config,
@@ -96,6 +103,8 @@ class ImageProvider:
             for font in glob(path.rstrip('/') + '/*.ttf'):
                 engine.register_font(str(font))
 
+        self.scale_factor = scale_factor
+
     @staticmethod
     def prepareKeywordArgs(config_dict):
         """ Convert configured parameters to keyword args for __init__().
@@ -104,6 +113,9 @@ class ImageProvider:
 
         if 'fonts' in config_dict:
             kwargs['fonts'] = config_dict['fonts']
+
+        if 'scale factor' in config_dict:
+            kwargs['scale_factor'] = int(config_dict['scale factor'])
         
         return kwargs
     
@@ -126,7 +138,12 @@ class ImageProvider:
                 self.mapnik.zoom_to_box(Box2d(xmin, ymin, xmax, ymax))
             
                 img = mapnik.Image(width, height)
-                mapnik.render(self.mapnik, img) 
+                # Don't even call render with scale factor if it's not
+                # defined. Plays safe with older versions.
+                if self.scale_factor is None:
+                    mapnik.render(self.mapnik, img) 
+                else:
+                    mapnik.render(self.mapnik, img, self.scale_factor) 
             except:
                 self.mapnik = None
                 raise
