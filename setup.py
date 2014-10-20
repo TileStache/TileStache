@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
+
 import pkg_resources
 import sys
 
@@ -19,10 +23,10 @@ def is_installed(name):
 requires = ['ModestMaps >=1.3.0','simplejson', 'Werkzeug']
 
 # Soft dependency on PIL or Pillow
-if is_installed('Pillow') or sys.platform == 'win32':
-    requires.append('Pillow')
-else:
+if is_installed('PIL'):
     requires.append('PIL')
+else:
+    requires.append('Pillow')
 
 
 setup(name='TileStache',
