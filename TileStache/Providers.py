@@ -346,8 +346,8 @@ class UrlTemplate:
             xmin = sw_point.x
             srs = self.source_projection.srs
 
-        mapping = {'width': width, 'height': height, 'srs': srs, 'zoom': zoom}
-        mapping.update({'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax})
+        mapping = {'width': width, 'height': height, 'srs': srs, 'zoom': zoom,
+                   'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax}
 
         href = self.template.safe_substitute(mapping)
         req = urllib2.Request(href)
