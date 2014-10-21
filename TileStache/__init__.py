@@ -113,14 +113,7 @@ def splitPathInfo(pathinfo):
     """
     if pathinfo == '/':
         return None, None, None
-
-    if pathinfo == '/favicon.ico':
-        try:
-            f = open('favicon.ico')
-            return 200, Headers([('Content-Type', 'image/x-icon')]), f.read()
-        except IOError, e:
-            return 404, None, None
-            
+    
     if _pathinfo_pat.match(pathinfo or ''):
         path = _pathinfo_pat.match(pathinfo)
         layer, row, column, zoom, extension = [path.group(p) for p in 'lyxze']
