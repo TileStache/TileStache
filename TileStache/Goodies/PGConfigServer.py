@@ -32,14 +32,17 @@ class DBLayers:
         cursor.close()
         return result
 
-    def __init__(self, config, config_name='default'):
+    def __init__(self, config):
         self.connection = config.db_connection
         self.seen_layers = {}
         self.config = config
+        for key in self.keys():
+            self.fetch_layer_from_db(key)
 
     def keys(self):
         # return a list of key strings
-        return self.query_db("SELECT key FROM tilestache_layer;")
+        key_results = self.query_db("SELECT key FROM tilestache_layer;")
+        return [k[0] for k in key_results]
 
     def items(self):
         # return a list of (key, layer) tuples
@@ -64,9 +67,12 @@ class DBLayers:
     def __getitem__(self, key):
         # return the layer named by the key
         if key in self.seen_layers:
-            return self.seen_layers[key]
-        else:
-            return self.fetch_layer_from_db(key)
+            layer = self.seen_layers.get(key, 'not found')
+            if not layer:
+                del self.seen_layers[key]
+            else:
+                return layer
+        return self.fetch_layer_from_db(key)
 
 
 class PGConfiguration:
