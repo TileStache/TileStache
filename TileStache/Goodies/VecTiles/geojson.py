@@ -70,7 +70,7 @@ def decode(file):
     
     return features
 
-def encode(file, features, zoom, is_clipped):
+def encode(file, features, zoom, is_clipped, crs_name=None):
     ''' Encode a list of (WKB, property dict) features into a GeoJSON stream.
     
         Also accept three-element tuples as features: (WKB, property dict, id).
@@ -91,6 +91,9 @@ def encode(file, features, zoom, is_clipped):
             feature.update(dict(clipped=True))
     
     geojson = dict(type='FeatureCollection', features=features)
+    if crs_name is not None:
+        geojson['crs'] = {'type': 'name', 'properties': {'name': crs_name}}
+
     encoder = json.JSONEncoder(separators=(',', ':'))
     encoded = encoder.iterencode(geojson)
     flt_fmt = '%%.%df' % precisions[zoom]

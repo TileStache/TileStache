@@ -72,6 +72,12 @@ class Provider:
           simplify_until:
             Optional integer specifying a zoom level where no more geometry
             simplification should occur. Default 16.
+
+          project_geojson:
+            Optional boolean flag determines whether geometries for the 
+            GeoJSON format remain in spherical mercator.  Default false:
+            geometries are transformed to EPSG:4326.
+
         
         Sample configuration, for a layer with no results at zooms 0-9, basic
         selection of lines with names and highway tags for zoom 10, a remote
@@ -100,7 +106,7 @@ class Provider:
             }
           }
     '''
-    def __init__(self, layer, dbinfo, queries, clip=True, srid=900913, simplify=1.0, simplify_until=16):
+    def __init__(self, layer, dbinfo, queries, clip=True, srid=900913, simplify=1.0, simplify_until=16, project_geojson=False):
         '''
         '''
         self.layer = layer
@@ -112,6 +118,7 @@ class Provider:
         self.srid = int(srid)
         self.simplify = float(simplify)
         self.simplify_until = int(simplify_until)
+        self.mercator_crs_name = None
         
         self.queries = []
         self.columns = {}
@@ -134,6 +141,11 @@ class Provider:
                 query = urlopen(url).read()
         
             self.queries.append(query)
+
+        if project_geojson:
+            self.mercator_crs_name = '{}:{}'.format(
+                    query_auth_name(dbinfo, srid), srid)
+
         
     def renderTile(self, width, height, srs, coord):
         ''' Render a single tile, return a Response instance.
@@ -155,7 +167,7 @@ class Provider:
         
         tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
         
-        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, coord.zoom, self.clip)
+        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, coord.zoom, self.clip, self.mercator_crs_name)
 
     def getTypeByExtension(self, extension):
         ''' Get mime-type and format by file extension, one of "mvt", "json" or "topojson".
@@ -232,19 +244,28 @@ class Connection:
 class Response:
     '''
     '''
-    def __init__(self, dbinfo, srid, subquery, columns, bounds, tolerance, zoom, clip):
+    def __init__(self, dbinfo, srid, subquery, columns, bounds, tolerance, zoom, clip, mercator_crs_name):
         ''' Create a new response object with Postgres connection info and a query.
         
             bounds argument is a 4-tuple with (xmin, ymin, xmax, ymax).
+
+            mercator_crs_name is the CRS name used in the GeoJSON file when
+            the geometries will remain projected.  If None, then data is
+            transformed back to WGS84 and no CRS is written.
         '''
         self.dbinfo = dbinfo
         self.bounds = bounds
         self.zoom = zoom
         self.clip = clip
+        self.mercator_crs_name = mercator_crs_name
         
         bbox = 'ST_MakeBox2D(ST_MakePoint(%.2f, %.2f), ST_MakePoint(%.2f, %.2f))' % bounds
-        geo_query = build_query(srid, subquery, columns, bbox, tolerance, True, clip)
         merc_query = build_query(srid, subquery, columns, bbox, tolerance, False, clip)
+
+        if self.mercator_crs_name:
+            geo_query = merc_query
+        else:
+            geo_query = build_query(srid, subquery, columns, bbox, tolerance, True, clip)
         self.query = dict(TopoJSON=geo_query, JSON=geo_query, MVT=merc_query)
     
     def save(self, out, format):
@@ -273,7 +294,7 @@ class Response:
             mvt.encode(out, features)
         
         elif format == 'JSON':
-            geojson.encode(out, features, self.zoom, self.clip)
+            geojson.encode(out, features, self.zoom, self.clip, self.mercator_crs_name)
         
         elif format == 'TopoJSON':
             ll = SphericalMercator().projLocation(Point(*self.bounds[0:2]))
@@ -393,3 +414,18 @@ def build_query(srid, subquery, subcolumns, bbox, tolerance, is_geo, is_clipped)
                 AND q.__geometry__ && %(bbox)s
                 AND ST_Intersects(q.__geometry__, %(bbox)s)''' \
             % locals()
+
+
+def query_auth_name(dbinfo, srid):
+    with Connection(dbinfo) as db:
+        # Query the authority for the srid
+        db.execute('SELECT auth_name FROM spatial_ref_sys WHERE srid = %s',
+            (srid,))
+        row = db.fetchone()
+
+        srid_auth_name = row['auth_name']
+
+        return srid_auth_name
+
+    return ''
+
