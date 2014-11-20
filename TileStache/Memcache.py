@@ -1,7 +1,7 @@
 """ Caches tiles to Memcache.
 
-Requires python-memcached:
-  http://pypi.python.org/pypi/python-memcached
+Requires pylibmc:
+  http://sendapatch.se/projects/pylibmc/
 
 Example configuration:
 
@@ -28,7 +28,7 @@ Memcache cache parameters:
     that share the same Memcache instance to avoid key
     collisions. The key prefix will be prepended to the
     key name. Defaults to "".
-    
+
 
 """
 from __future__ import absolute_import
@@ -40,7 +40,7 @@ from time import time as _time, sleep as _sleep
 # Forcing absolute imports fixes the issue.
 
 try:
-    from memcache import Client
+    from pylibmc import Client, ClientPool
 except ImportError:
     # at least we can build the documentation
     pass
@@ -55,67 +55,62 @@ def tile_key(layer, coord, format, rev, key_prefix):
 class Cache:
     """
     """
-    def __init__(self, servers=['127.0.0.1:11211'], revision=0, key_prefix=''):
+    def __init__(self, servers=['127.0.0.1:11211'], revision=0, key_prefix='', username=None, password=None, binary=True, pool_size=2):
         self.servers = servers
         self.revision = revision
         self.key_prefix = key_prefix
 
+        mc = Client(servers=servers, username=username, password=password, binary=binary)
+        self.mc_pool = ClientPool(mc, pool_size)
+
     def lock(self, layer, coord, format):
         """ Acquire a cache lock for this tile.
-        
+
             Returns nothing, but blocks until the lock has been acquired.
         """
-        mem = Client(self.servers)
         key = tile_key(layer, coord, format, self.revision, self.key_prefix)
         due = _time() + layer.stale_lock_timeout
-        
-        try:
+
+        with self.mc_pool.reserve() as mem:
             while _time() < due:
                 if mem.add(key+'-lock', 'locked.', layer.stale_lock_timeout):
                     return
-                
+
                 _sleep(.2)
-            
+
             mem.set(key+'-lock', 'locked.', layer.stale_lock_timeout)
             return
 
-        finally:
-            mem.disconnect_all()
-        
     def unlock(self, layer, coord, format):
         """ Release a cache lock for this tile.
         """
-        mem = Client(self.servers)
         key = tile_key(layer, coord, format, self.revision, self.key_prefix)
-        
-        mem.delete(key+'-lock')
-        mem.disconnect_all()
-        
+
+        with self.mc_pool.reserve() as mem:
+            mem.delete(key+'-lock')
+
     def remove(self, layer, coord, format):
         """ Remove a cached tile.
         """
-        mem = Client(self.servers)
         key = tile_key(layer, coord, format, self.revision, self.key_prefix)
-        
-        mem.delete(key)
-        mem.disconnect_all()
-        
+
+        with self.mc_pool.reserve() as mem:
+            mem.delete(key)
+
     def read(self, layer, coord, format):
         """ Read a cached tile.
         """
-        mem = Client(self.servers)
         key = tile_key(layer, coord, format, self.revision, self.key_prefix)
-        
-        value = mem.get(key)
-        mem.disconnect_all()
-        
+
+        with self.mc_pool.reserve() as mem:
+            value = mem.get(key)
+
         return value
-        
+
     def save(self, body, layer, coord, format):
         """ Save a cached tile.
         """
-        mem = Client(self.servers)
         key = tile_key(layer, coord, format, self.revision, self.key_prefix)
-        
-        mem.set(key, body, layer.cache_lifespan or 0)
-        mem.disconnect_all()
+
+        with self.mc_pool.reserve() as mem:
+            mem.set(key, body, layer.cache_lifespan or 0)
