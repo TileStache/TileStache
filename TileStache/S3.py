@@ -23,6 +23,9 @@ S3 cache parameters:
   secret
     Optional secret access key for your S3 account.
 
+  policy
+    Optional S3 ACL policy for uploaded tiles. Default is 'public-read'.
+
   use_locks
     Optional boolean flag for whether to use the locking feature on S3.
     True by default. A good reason to set this to false would be the
@@ -68,11 +71,12 @@ def tile_key(layer, coord, format, path = ''):
 class Cache:
     """
     """
-    def __init__(self, bucket, access=None, secret=None, use_locks=True, path='', reduced_redundancy=False):
+    def __init__(self, bucket, access=None, secret=None, use_locks=True, path='', reduced_redundancy=False, policy='public-read'):
         self.bucket = S3Bucket(S3Connection(access, secret), bucket)
         self.use_locks = bool(use_locks)
         self.path = path
         self.reduced_redundancy = reduced_redundancy
+        self.policy = policy
 
     def lock(self, layer, coord, format):
         """ Acquire a cache lock for this tile.
@@ -133,4 +137,4 @@ class Cache:
         content_type, encoding = guess_type('example.'+format)
         headers = content_type and {'Content-Type': content_type} or {}
         
-        key.set_contents_from_string(body, headers, policy='public-read', reduced_redundancy=self.reduced_redundancy)
+        key.set_contents_from_string(body, headers, policy=self.policy, reduced_redundancy=self.reduced_redundancy)
