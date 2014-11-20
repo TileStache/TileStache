@@ -198,19 +198,19 @@ class GridProvider:
           An empty list will return no field names, while a value of null is
           equivalent to all.
         
-        - layer index (optional)
+        - layer_index (optional)
           Which layer from the mapfile to render, defaults to 0 (first layer).
         
         - layers (optional)
-          Ordered list of (layer index, fields) to combine; if provided
-          layers overrides both layer index and fields arguments.
+          Ordered list of (layer_index, fields) to combine; if provided
+          layers overrides both layer_index and fields arguments.
           An empty fields list will return no field names, while a value of null 
           is equivalent to all fields.
  
         - scale (optional)
           Scale factor of output raster, defaults to 4 (64x64).
         
-        - layer id key (optional)
+        - layer_id_key (optional)
           If set, each item in the 'data' property will have its source mapnik
           layer name added, keyed by this value. Useful for distingushing
           between data items.
