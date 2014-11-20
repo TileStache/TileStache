@@ -468,7 +468,7 @@ class Layer:
             are mutually exclusive options
         """
         if self.bounds and self.bounds.excludes(coord):
-            raise NoTileLeftBehind(Image.new('RGB', (self.dim, self.dim), (0x99, 0x99, 0x99)))
+            raise NoTileLeftBehind(Image.new('RGBA', (self.dim, self.dim), (0, 0, 0, 0)))
         
         srs = self.projection.srs
         xmin, ymin, xmax, ymax = self.envelope(coord)
