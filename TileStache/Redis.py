@@ -113,4 +113,10 @@ class Cache:
         """ Save a cached tile.
         """
         key = tile_key(layer, coord, format, self.key_prefix)
-        self.conn.set(key, body)
+
+        # note: setting ex=0 will raise an error
+        cache_lifespan = layer.cache_lifespan
+        if cache_lifespan == 0:
+            cache_lifespan = None
+
+        self.conn.set(key, body, ex=cache_lifespan)
