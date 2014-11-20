@@ -99,6 +99,20 @@ class Provider:
               ]
             }
           }
+
+        The queries field has an alternate dictionary-like syntax which maps
+        zoom levels to their associated query.  Zoom levels for which there is
+        no query may be omitted and are assumed null.  This is equivalent to
+        the queries defined above:
+
+              "queries": {
+                "10": "SELECT way AS __geometry__, highway, name FROM planet_osm_line -- zoom 10+ ",
+                "11": "http://example.com/query-z11.pgsql",
+                "12": "query-z12-plus.pgsql"
+              }
+
+        Note that JSON requires keys to be strings, therefore the zoom levels
+        must be enclosed in quotes.
     '''
     def __init__(self, layer, dbinfo, queries, clip=True, srid=900913, simplify=1.0, simplify_until=16):
         '''
@@ -113,12 +127,22 @@ class Provider:
         self.simplify = float(simplify)
         self.simplify_until = int(simplify_until)
         
-        self.queries = []
         self.columns = {}
-        
-        for query in queries:
+
+        # Each type creates an iterator yielding tuples of:
+        # (zoom level (int), query (string))
+        if isinstance(queries, dict):
+            # Add 1 to include space for zoom level 0
+            n_zooms = max(int(z) for z in queries) + 1
+            queryiter = ((int(z), q) for z, q in queries.iteritems())
+        else:  # specified as array
+            n_zooms = len(queries)
+            queryiter = enumerate(queries)
+
+        # For the dict case, unspecified zoom levels are assumed to be null.
+        self.queries = [None] * n_zooms
+        for z, query in queryiter:
             if query is None:
-                self.queries.append(None)
                 continue
         
             #
@@ -133,7 +157,7 @@ class Provider:
             elif scheme == 'http' and ' ' not in url:
                 query = urlopen(url).read()
         
-            self.queries.append(query)
+            self.queries[z] = query
         
     def renderTile(self, width, height, srs, coord):
         ''' Render a single tile, return a Response instance.
