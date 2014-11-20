@@ -308,7 +308,7 @@ def _parseConfigfileCache(cache_dict, dirpath):
             add_kwargs('host', 'port', 'db')
     
         elif _class is Caches.S3.Cache:
-            add_kwargs('bucket', 'access', 'secret', 'use_locks', 'path', 'reduced_redundancy')
+            add_kwargs('bucket', 'access', 'secret', 'use_locks', 'path', 'reduced_redundancy', 'headers')
     
         else:
             raise Exception('Unknown cache: %s' % cache_dict['name'])

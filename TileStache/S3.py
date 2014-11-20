@@ -35,6 +35,10 @@ S3 cache parameters:
   reduced_redundancy
     If set to true, use S3's Reduced Redundancy Storage feature. Storage is
     cheaper but has lower redundancy on Amazon's servers. Defaults to false.
+    
+  headers
+    Optional metadata dictionary containing key/value header pairs that will 
+    be set on each saved tile, e.g. {"Cache-Control": "max-age=25200, public"}
 
 Access and secret keys are under "Security Credentials" at your AWS account page:
   http://aws.amazon.com/account/
@@ -68,11 +72,12 @@ def tile_key(layer, coord, format, path = ''):
 class Cache:
     """
     """
-    def __init__(self, bucket, access=None, secret=None, use_locks=True, path='', reduced_redundancy=False):
+    def __init__(self, bucket, access=None, secret=None, use_locks=True, path='', reduced_redundancy=False, headers={}):
         self.bucket = S3Bucket(S3Connection(access, secret), bucket)
         self.use_locks = bool(use_locks)
         self.path = path
         self.reduced_redundancy = reduced_redundancy
+        self.headers = {str(k):str(v) for k,v in headers.items() if v}
 
     def lock(self, layer, coord, format):
         """ Acquire a cache lock for this tile.
@@ -131,6 +136,8 @@ class Cache:
         key = self.bucket.new_key(key_name)
         
         content_type, encoding = guess_type('example.'+format)
-        headers = content_type and {'Content-Type': content_type} or {}
+        content_header = content_type and {'Content-Type': content_type} or {}
+        
+        headers = dict(self.headers.items() + content_header.items())
         
         key.set_contents_from_string(body, headers, policy='public-read', reduced_redundancy=self.reduced_redundancy)
