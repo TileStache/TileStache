@@ -73,6 +73,9 @@ configuration file as a dictionary:
   through to PIL: http://effbot.org/imagingbook/format-jpeg.htm.
 - "png options" is an optional dictionary of PNG creation options, passed
   through to PIL: http://effbot.org/imagingbook/format-png.htm.
+- "pixel effect" is an optional dictionary that defines an effect to be applied
+   for all tiles of this layer. Pixel effect can be any of these: blackwhite,
+  greyscale, desaturate, pixelate, halftone, or blur.
 
 The public-facing URL of a single tile for this layer might look like this:
 
@@ -91,6 +94,13 @@ Sample PNG creation options:
     {
       "optimize": true,
       "palette": "filename.act"
+    }
+
+Sample pixel effect:
+
+    {
+        "name": "desaturate",
+        "factor": 0.85
     }
 
 Sample bounds:
@@ -334,6 +344,7 @@ class Layer:
         self.bitmap_palette = None
         self.jpeg_options = {}
         self.png_options = {}
+        self.pixel_effect = None
 
     def name(self):
         """ Figure out what I'm called, return a name if there is one.
@@ -517,6 +528,18 @@ class Layer:
             if format.lower() == 'png':
                 t_index = self.png_options.get('transparency', None)
                 tile = apply_palette(tile, self.bitmap_palette, t_index)
+
+        if self.pixel_effect:
+            # this is where we apply the pixel effect if there is one
+
+            if pass_through:
+                raise KnownUnknown(
+                    'Cannot apply pixel effect in pass_through mode'
+                )
+
+            # if tile is an image
+            if format.lower() in ('png', 'jpeg', 'tiff', 'bmp', 'gif'):
+                tile = self.pixel_effect.apply(tile)
         
         if self.doMetatile():
             # tile will be set again later

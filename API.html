@@ -837,7 +837,8 @@ Example layer configuration:
       "redirects": …,
       "tile height": …,
       "jpeg options": …,
-      "png options": …
+      "png options": …,
+      "pixel effect": { … }
     }
   <span class="bg">}
 }</span>
@@ -972,6 +973,14 @@ Shared layer parameters:
     <a href="http://effbot.org/imagingbook/format-png.htm">to PIL</a>.
     Valid options include <var>palette</var> (URL or filename), <var>palette256</var>
 	(boolean) and <var>optimize</var> (boolean).
+    </dd>
+
+    <dt>pixel effect</dt>
+    <dd>
+    An optional dictionary that defines an effect to be applied for all tiles
+    of this layer. Pixel effect can be any of these: <samp>blackwhite</samp>,
+    <samp>greyscale</samp>, <samp>desaturate</samp>, <samp>pixelate</samp>,
+    <samp>halftone</samp>, or <samp>blur</samp>.
     </dd>
 </dl>
 

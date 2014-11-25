@@ -79,6 +79,7 @@ import Core
 import Caches
 import Providers
 import Geography
+import PixelEffects
 
 class Configuration:
     """ A complete site configuration, with a collection of Layer objects.
@@ -422,6 +423,22 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
         png_kwargs = dict([(str(k), v) for (k, v) in layer_dict['png options'].items()])
 
     #
+    # Do pixel effect
+    #
+
+    pixel_effect = None
+
+    if 'pixel effect' in layer_dict:
+        pixel_effect_dict = layer_dict['pixel effect']
+        pixel_effect_name = pixel_effect_dict.get('name')
+        if pixel_effect_name in PixelEffects.all:
+            pixel_effect_kwargs = {}
+            for k, v in pixel_effect_dict.items():
+                if k != 'name':
+                    pixel_effect_kwargs[str(k)] = float(v)
+            PixelEffectClass = PixelEffects.all[pixel_effect_name]
+            pixel_effect = PixelEffectClass(**pixel_effect_kwargs)
+    #
     # Do the provider
     #
 
@@ -447,6 +464,7 @@ def _parseConfigfileLayer(layer_dict, config, dirpath):
     layer.provider = _class(layer, **provider_kwargs)
     layer.setSaveOptionsJPEG(**jpeg_kwargs)
     layer.setSaveOptionsPNG(**png_kwargs)
+    layer.pixel_effect = pixel_effect
     
     return layer
 
