@@ -12,9 +12,10 @@ Example TileStache provider configuration:
 "ES": {
     "provider": {"class": "TileStache.Goodies.Providers.ESGeoJSON.Provider",
                  "kwargs": {
-                    "es_endpoint": "http://localhost:9200",
+                    "es_endpoint": "localhost:9200",
                     "es_index":"my_index",
-                    "es_record": "place.location"
+                    "es_record": "place.location",
+                    "es_size":1000
                  }}
 }
 
@@ -63,15 +64,16 @@ class Provider:
     """
     """
 
-    def __init__(self, layer, es_endpoint, es_index, es_record, **kwargs):
+    def __init__(self, layer, es_endpoint, es_index, es_size, es_record, **kwargs):
         self.projection = getProjectionByName('spherical mercator')
         self.layer = layer
 
         self.endpoint = str(es_endpoint)
         self.index = str(es_index)
-        self.index = str(es_record)
+        self.record = str(es_record)
+        self.size = int(es_size);
 
-        self.es = Elasticsearch()
+        self.es = Elasticsearch([self.endpoint])
 
         self.lat_field = kwargs.get('latitude_column', 'latitude')
         self.lon_field = kwargs.get('longitude_column', 'longitude')
@@ -105,7 +107,7 @@ class Provider:
         response = {'type': 'FeatureCollection', 'features': []}
 
         rsp = self.es.search(
-            index="places",
+            index=self.index,
             size=100,
             body={
                 "query": {
@@ -114,7 +116,7 @@ class Provider:
                             "match_all": {}
                         },
                         "filter": {"geo_bounding_box": {
-                            "place.location": {"top":ne_lat,"left":sw_lon,"bottom":sw_lat,"right":-ne_lon}
+                            self.record: {"top":ne_lat,"left":sw_lon,"bottom":sw_lat,"right":-ne_lon}
                         }}
                     }
                 }
@@ -129,6 +131,10 @@ class Provider:
                   "geometry": {
                     "type": "Point",
                     "coordinates": [feature["location"]["lon"], feature["location"]["lat"]]
+                  },
+                  "properties": {
+                    "name": feature["name"],
+                    "type":feature["type"]
                   }
                 }
                 response['features'].append(row)
