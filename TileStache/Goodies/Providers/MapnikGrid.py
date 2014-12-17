@@ -31,9 +31,13 @@ scale: What to divide the tile pixel size by to get the resulting grid size. Usu
 buffer: buffer around the queried features, in px, default 0. Use this to prevent problems on tile boundaries.
 """
 import json
+from os.path import exists
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
 from urlparse import urlparse, urljoin
+from tempfile import mkstemp
+from urllib import urlopen
+import os
 
 try:
     import mapnik
@@ -69,8 +73,7 @@ class Provider:
         """
         """
         if self.mapnik is None:
-            self.mapnik = mapnik.Map(0, 0)
-            mapnik.load_map(self.mapnik, str(self.mapfile))
+            self.mapnik = get_mapnikMap(self.mapfile)
 
         # buffer as fraction of tile size
         buffer = float(self.buffer) / 256
@@ -121,3 +124,21 @@ class SaveableResponse:
             raise KnownUnknown('MapnikGrid only saves .json tiles, not "%s"' % format)
 
         out.write(self.content)
+
+def get_mapnikMap(mapfile):
+    """ Get a new mapnik.Map instance for a mapfile
+    """
+    mmap = mapnik.Map(0, 0)
+
+    if exists(mapfile):
+        mapnik.load_map(mmap, str(mapfile))
+
+    else:
+        handle, filename = mkstemp()
+        os.write(handle, urlopen(mapfile).read())
+        os.close(handle)
+
+        mapnik.load_map(mmap, filename)
+        os.unlink(filename)
+
+    return mmap
