@@ -19,6 +19,7 @@ except ImportError:
 
 import TileStache
 
+logger = logging.getLogger(__name__)
 
 class DBLayers:
 
@@ -57,20 +58,38 @@ class DBLayers:
             return result[0] == True
 
     def fetch_layer_from_db(self, key):
-        raw_result = self.query_db("SELECT value FROM tilestache_layer WHERE key='{0}'".format(key))[0]
+        raw_result = self.query_db("SELECT value, updated FROM tilestache_layer WHERE key='{0}';".format(key))[0]
         layer_dict = json.loads(raw_result[0])
         layer = TileStache.Config._parseConfigfileLayer(layer_dict, self.config, '/tmp/stache')
         layer.key = key
-        self.seen_layers[key] = layer
+        self.seen_layers[key] = dict(layer=layer, updated=raw_result[1])
         return layer
+
+    def check_style_status(self, key):
+        """
+        if the layer has been updated within the last minute
+        remove the layer.provider.mapnik property to force TileStache to re-read the style
+        """
+        updated = self.query_db("SELECT updated from tilestache_layer where key='{0}';".format(key))[0][0]
+        last_read = self.seen_layers[key]['updated']
+        if updated != last_read:
+            self.seen_layers[key]['updated'] = updated
+            return True
+        else:
+            return False
 
     def __getitem__(self, key):
         # return the layer named by the key
         if key in self.seen_layers:
-            layer = self.seen_layers.get(key, 'not found')
+            layer = self.seen_layers.get(key, 'not found')['layer']
             if not layer:
                 del self.seen_layers[key]
             else:
+                stale = self.check_style_status(key)
+                if stale:
+                    logger.info("layer is stale - rereading mapnik style")
+                    layer.provider.mapnik = None
+
                 return layer
         return self.fetch_layer_from_db(key)
 
