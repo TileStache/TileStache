@@ -1,3 +1,13 @@
+2015-01-21: 1.50.0
+- Added 'scale factor' option to Mapnik image provider
+- Added S3 policy specification to config
+- Added dictionary config to VecTiles config
+- Added pixel effects to all layer configurations
+- Added remote configuration to MapnikGrid to match Mapnik
+- Fixed UtfGridComposite to work with latest TileStache
+- Fixed Pillow dependency
+- Fixed "cache lifespan" in Redis cache
+
 2014-06-07: 1.49.11
 - Fixed 'allow-origin header' getting overwritten (JesseCrocker)
 - Added 'source projection' parameter to UrlTemplate provider (JesseCrocker)
