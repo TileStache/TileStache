@@ -124,7 +124,9 @@ class Configuration:
         self.cache = cache
         self.dirpath = dirpath
         self.layers = {}
-        
+        # ABL Hack
+        self._layer_to_name = None
+
         self.index = 'text/plain', 'TileStache bellows hello.'
 
 class Bounds:

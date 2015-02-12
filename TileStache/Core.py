@@ -348,10 +348,14 @@ class Layer:
 
     def name(self):
         """ Figure out what I'm called, return a name if there is one.
-        
+
             Layer names are stored in the Configuration object, so
             config.layers must be inspected to find a matching name.
         """
+        # Allow Layers to know their own name
+        if getattr(self, 'key', None):
+            return self.key
+
         for (name, layer) in self.config.layers.items():
             if layer is self:
                 return name
@@ -365,7 +369,7 @@ class Layer:
             - coord: one ModestMaps.Core.Coordinate corresponding to a single tile.
             - extension: filename extension to choose response type, e.g. "png" or "jpg".
             - ignore_cached: always re-render the tile, whether it's in the cache or not.
-        
+
             This is the main entry point, after site configuration has been loaded
             and individual tiles need to be rendered.
         """
