@@ -391,7 +391,7 @@ class WSGITileServer:
 
         if content:
             headers.setdefault('Content-Length', str(len(content)))
-            headers.append( ('Etag', md5(content).hexdigest()) )
+            headers.setdefault('Etag', md5(content).hexdigest())
 
         start_response('%d %s' % (code, httplib.responses[code]), headers.items())
         return [content]
