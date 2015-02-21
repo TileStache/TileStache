@@ -23,6 +23,7 @@ configuration file as a dictionary:
           "bounds": { ... },
           "allowed origin": ...,
           "maximum cache age": ...,
+          "enable etag": ...,
           "redirects": ...,
           "tile height": ...,
           "jpeg options": ...,
@@ -60,6 +61,9 @@ configuration file as a dictionary:
   of downstream caches. Causes TileStache responses to include Cache-Control
   and Expires HTTP response headers. Useful when TileStache is itself hosted
   behind an HTTP cache such as Squid, Cloudfront, or Akamai.
+- "enable etag" is a boolean used to control behavior of downstream caches.
+  If set to true, causes TileStache tile responses to include an Etag
+  so downstream browsers and caches can identify that the tile has not changed.
 - "redirects" is an optional dictionary of per-extension HTTP redirects,
   treated as lowercase. Useful in cases where your tile provider can support
   many formats but you want to enforce limits to save on cache usage.
@@ -300,6 +304,9 @@ class Layer:
           max_cache_age:
             Number of seconds that tiles from this layer may be cached by downstream clients.
 
+          enable_etag:
+            Whether to generate an Etag HTTP header.
+
           redirects:
             Dictionary of per-extension HTTP redirects, treated as lowercase.
 
@@ -320,7 +327,7 @@ class Layer:
             assumed to be square, and Layer.render() will respond with an error
             if the rendered image is not this height.
     """
-    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, write_cache=True, allowed_origin=None, max_cache_age=None, redirects=None, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png', bounds=None, tile_height=256):
+    def __init__(self, config, projection, metatile, stale_lock_timeout=15, cache_lifespan=None, write_cache=True, allowed_origin=None, max_cache_age=None, enable_etag=None, redirects=None, preview_lat=37.80, preview_lon=-122.26, preview_zoom=10, preview_ext='png', bounds=None, tile_height=256):
         self.provider = None
         self.config = config
         self.projection = projection
@@ -331,6 +338,7 @@ class Layer:
         self.write_cache = write_cache
         self.allowed_origin = allowed_origin
         self.max_cache_age = max_cache_age
+        self.enable_etag = enable_etag
         self.redirects = redirects or dict()
         
         self.preview_lat = preview_lat

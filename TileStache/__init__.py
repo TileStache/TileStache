@@ -266,6 +266,9 @@ def requestHandler2(config_hint, path_info, query_string=None, script_name=''):
             headers.setdefault('Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT'))
             headers.setdefault('Cache-Control', 'public, max-age=%d' % layer.max_cache_age)
 
+        if layer.enable_etag is not None:
+            headers.setdefault('Etag', md5(content).hexdigest() )
+
     except Core.KnownUnknown, e:
         out = StringIO()
         
@@ -425,10 +428,18 @@ def modpythonHandler(request):
     
     mimetype, content = requestHandler(config_path, path_info, query_string)
 
+    # load the config so we can see about additional HTTP headers
+    layerconfig = requestLayer(config_path, path_info)
+    if 'enable_etag' in layerconfig and boolean(layerconfig['enable_etag']):
+        enable_etag = True
+    else:
+        enable_etag = False
+
     request.status = apache.HTTP_OK
     request.content_type = mimetype
     request.set_content_length(len(content))
-    request.headers_out['Etag'] = md5(content).hexdigest()
+    if enable_etag:
+        request.headers_out['Etag'] = md5(content).hexdigest()
     request.send_http_header()
 
     request.write(content)
