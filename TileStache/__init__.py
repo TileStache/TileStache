@@ -27,6 +27,7 @@ from wsgiref.headers import Headers
 from urllib import urlopen
 from os import getcwd
 from time import time
+from hashlib import md5
 
 import httplib
 import logging
@@ -298,8 +299,9 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     script_name = environ.get('SCRIPT_NAME', None)
     
     status_code, headers, content = requestHandler2(config, path_info, query_string, script_name)
-    
+
     headers.setdefault('Content-Length', str(len(content)))
+    headers.setdefault('Etag', md5(content).hexdigest() )
 
     # output the status code as a header
     stdout.write('Status: %d\n' % status_code)
@@ -389,7 +391,8 @@ class WSGITileServer:
 
         if content:
             headers.setdefault('Content-Length', str(len(content)))
-        
+            headers.append( ('Etag', md5(content).hexdigest()) )
+
         start_response('%d %s' % (code, httplib.responses[code]), headers.items())
         return [content]
 
@@ -425,6 +428,7 @@ def modpythonHandler(request):
     request.status = apache.HTTP_OK
     request.content_type = mimetype
     request.set_content_length(len(content))
+    request.headers_out['Etag'] = md5(content).hexdigest()
     request.send_http_header()
 
     request.write(content)
