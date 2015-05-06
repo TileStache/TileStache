@@ -12,10 +12,8 @@ sudo apt-get -q install python-software-properties
 sudo add-apt-repository ppa:mapnik/nightly-2.3 -y
 sudo apt-get -q update
 sudo apt-get -q install libmapnik-dev mapnik-utils python-mapnik virtualenvwrapper python-dev -y
-sudo apt-get -q install gdal-bin libgdal-dev -y
-
-# needed to build gdal bindings separately
-sudo apt-get install build-essential -y
+sudo apt-get -q install gdal-bin=1.10.1+dfsg-5ubuntu1 -y
+sudo apt-get -q install libgdal-dev=1.10.1+dfsg-5ubuntu1 -y
 
 # create a python virtualenv
 virtualenv -q ~/.virtualenvs/tilestache
@@ -37,10 +35,7 @@ cd /srv/tilestache/
 ~/.virtualenvs/tilestache/bin/pip install -r requirements.txt --allow-external ModestMaps --allow-unverified ModestMaps
 
 # workaround for gdal bindings
-~/.virtualenvs/tilestache/bin/pip install --no-install GDAL
-cd ~/.virtualenvs/tilestache/build/GDAL
-~/.virtualenvs/tilestache/bin/python setup.py build_ext --include-dirs=/usr/include/gdal/
-~/.virtualenvs/tilestache/bin/pip install --no-download GDAL
+~/.virtualenvs/tilestache/bin/pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==1.10.0
 
 # allow any user to connect as postgres to this test data. DO NOT USE IN PRODUCTION
 sudo sed -i '1i local  test_tilestache  postgres                     trust' /etc/postgresql/9.3/main/pg_hba.conf
