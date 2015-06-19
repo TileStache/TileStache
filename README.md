@@ -57,7 +57,7 @@ Install pip (http://www.pip-installer.org/) like:
 
 Install Mapnik via instructions at:
 
-    http://mapnik.org/download
+    http://mapnik.org/pages/downloads.html
 
 
 ##Installation
