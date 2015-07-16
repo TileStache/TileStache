@@ -1267,11 +1267,12 @@ Vector provider parameters:
     Boolean flag for optionally expanding output with additional whitespace
     for readability. Results in larger but more readable GeoJSON responses.
     </dd>
-    <dt>empty_fields</dt>
+    <dt>skip_empty_fields</dt>
     <dd>
-    Default is <samp>true</samp>.
+    Default is <samp>False</samp>.
     <br>
-    Boolean flag for optionally skipping null properties.
+    Boolean flag for optionally skipping empty fields when assembling the GEOJSON
+    feature's properties dictionary.
     </dd>
 </dl>
 

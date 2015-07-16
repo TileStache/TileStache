@@ -312,7 +312,7 @@ def _tile_perimeter_geom(coord, projection, padded):
     
     return geom
 
-def _feature_properties(feature, layer_definition, whitelist=None, empty_fields=True):
+def _feature_properties(feature, layer_definition, whitelist=None, skip_empty_fields=False):
     """ Returns a dictionary of feature properties for a feature in a layer.
     
         Third argument is an optional list or dictionary of properties to
@@ -344,7 +344,7 @@ def _feature_properties(feature, layer_definition, whitelist=None, empty_fields=
             else:
                 raise KnownUnknown("Found an OGR field type I don't know what to do with: ogr.%s" % name)
 
-        if empty_fields or feature.IsFieldSet(name):
+        if not skip_empty_fields or feature.IsFieldSet(name):
             property = type(whitelist) is dict and whitelist[name] or name
             properties[property] = feature.GetField(name)
 
@@ -461,7 +461,7 @@ def _open_layer(driver_name, parameters, dirpath):
     #
     return layer, datasource
 
-def _get_features(coord, properties, projection, layer, clipped, projected, spacing, id_property, empty_fields):
+def _get_features(coord, properties, projection, layer, clipped, projected, spacing, id_property, skip_empty_fields=False):
     """ Return a list of features in an OGR layer with properties in GeoJSON form.
     
         Optionally clip features to coordinate bounding box, and optionally
@@ -525,7 +525,7 @@ def _get_features(coord, properties, projection, layer, clipped, projected, spac
         geometry.TransformTo(output_sref)
 
         geom = json_loads(geometry.ExportToJson())
-        prop = _feature_properties(feature, definition, properties, empty_fields)
+        prop = _feature_properties(feature, definition, properties, skip_empty_fields)
 
         geojson_feature = {'type': 'Feature', 'properties': prop, 'geometry': geom}
         if id_property != None and id_property in prop:
@@ -540,7 +540,7 @@ class Provider:
         See module documentation for explanation of constructor arguments.
     """
     
-    def __init__(self, layer, driver, parameters, clipped, verbose, projected, spacing, properties, precision, id_property, empty_fields):
+    def __init__(self, layer, driver, parameters, clipped, verbose, projected, spacing, properties, precision, id_property, skip_empty_fields=False):
         self.layer      = layer
         self.driver     = driver
         self.clipped    = clipped
@@ -551,7 +551,7 @@ class Provider:
         self.properties = properties
         self.precision  = precision
         self.id_property = id_property
-        self.empty_fields = empty_fields
+        self.skip_empty_fields = skip_empty_fields
 
     @staticmethod
     def prepareKeywordArgs(config_dict):
@@ -566,7 +566,7 @@ class Provider:
         kwargs['projected'] = bool(config_dict.get('projected', False))
         kwargs['verbose'] = bool(config_dict.get('verbose', False))
         kwargs['precision'] = int(config_dict.get('precision', 6))
-        kwargs['empty_fields'] = bool(config_dict.get('empty_fields', True))
+        kwargs['skip_empty_fields'] = bool(config_dict.get('skip_empty_fields', False))
         
         if 'spacing' in config_dict:
             kwargs['spacing'] = float(config_dict.get('spacing', 0.0))
@@ -584,7 +584,7 @@ class Provider:
         """ Render a single tile, return a VectorResponse instance.
         """
         layer, ds = _open_layer(self.driver, self.parameters, self.layer.config.dirpath)
-        features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipped, self.projected, self.spacing, self.id_property, self.empty_fields)
+        features = _get_features(coord, self.properties, self.layer.projection, layer, self.clipped, self.projected, self.spacing, self.id_property, self.skip_empty_fields)
         response = {'type': 'FeatureCollection', 'features': features}
         
         if self.projected:
