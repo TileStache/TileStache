@@ -420,7 +420,7 @@ def _open_layer(driver_name, parameters, dirpath):
         
     elif driver_name in ('ESRI Shapefile', 'GeoJSON', 'SQLite'):
         if 'file' not in parameters:
-            raise KnownUnknown('Need at least a "file" parameter for a shapefile')
+            raise KnownUnknown('Need a "file" parameter')
     
         file_href = urljoin(dirpath, parameters['file'])
         scheme, h, file_path, q, p, f = urlparse(file_href)
