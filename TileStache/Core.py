@@ -172,22 +172,20 @@ def _addRecentTile(layer, coord, format, body, age=300):
     logging.debug('TileStache.Core._addRecentTile() added tile to recent tiles: %s', key)
     
     # now look at the oldest keys and remove them if needed
-    for (key, due_by) in _recent_tiles['list']:
+    cutoff = 0
+    for i, (key, due_by) in enumerate(_recent_tiles['list']):
         # new enough?
         if time() < due_by:
+            cutoff = i
             break
         
         logging.debug('TileStache.Core._addRecentTile() removed tile from recent tiles: %s', key)
         
         try:
-            _recent_tiles['list'].remove((key, due_by))
-        except ValueError:
-            pass
-        
-        try:
             del _recent_tiles['hash'][key]
         except KeyError:
             pass
+    _recent_tiles['list'] = _recent_tiles['list'][cutoff:]
 
 def _getRecentTile(layer, coord, format):
     """ Return the body of a recent tile, or None if it's not there.
