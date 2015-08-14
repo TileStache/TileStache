@@ -185,7 +185,7 @@ def _addRecentTile(layer, coord, format, body, age=300):
             del _recent_tiles['hash'][key]
         except KeyError:
             pass
-    _recent_tiles['list'] = _recent_tiles['list'][cutoff:]
+    del _recent_tiles['list'][:cutoff]
 
 def _getRecentTile(layer, coord, format):
     """ Return the body of a recent tile, or None if it's not there.
