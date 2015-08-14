@@ -280,6 +280,16 @@ if __name__ == '__main__':
         south, west = min(lat1, lat2), min(lon1, lon2)
         north, east = max(lat1, lat2), max(lon1, lon2)
 
+        if not (-90.0 < south < 90.0) or not (-90.0 < north < 90.0):
+            raise KnownUnknown(
+                'Latitude must be a value between -90 and 90 '
+                '(Hint: Maybe you did long/lat instead of lat/long?).'
+            )
+        if not (-180.0 < west < 180.0) or not (-180.0 < east < 180.0):
+            raise KnownUnknown(
+                'Longitude must be a value between -180 and 180.'
+            )
+
         northwest = Location(north, west)
         southeast = Location(south, east)
 
