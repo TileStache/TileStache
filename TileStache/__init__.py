@@ -266,7 +266,7 @@ def requestHandler2(config_hint, path_info, query_string=None, script_name=''):
             headers.setdefault('Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT'))
             headers.setdefault('Cache-Control', 'public, max-age=%d' % layer.max_cache_age)
 
-        if layer.enable_etag is not None:
+        if layer.enable_etag:
             headers.setdefault('Etag', md5(content).hexdigest() )
 
     except Core.KnownUnknown, e:
@@ -304,7 +304,6 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     status_code, headers, content = requestHandler2(config, path_info, query_string, script_name)
 
     headers.setdefault('Content-Length', str(len(content)))
-    headers.setdefault('Etag', md5(content).hexdigest() )
 
     # output the status code as a header
     stdout.write('Status: %d\n' % status_code)
@@ -394,7 +393,6 @@ class WSGITileServer:
 
         if content:
             headers.setdefault('Content-Length', str(len(content)))
-            headers.setdefault('Etag', md5(content).hexdigest())
 
         start_response('%d %s' % (code, httplib.responses[code]), headers.items())
         return [content]
@@ -430,15 +428,10 @@ def modpythonHandler(request):
 
     # load the config so we can see about additional HTTP headers
     layerconfig = requestLayer(config_path, path_info)
-    if 'enable_etag' in layerconfig and boolean(layerconfig['enable_etag']):
-        enable_etag = True
-    else:
-        enable_etag = False
-
     request.status = apache.HTTP_OK
     request.content_type = mimetype
     request.set_content_length(len(content))
-    if enable_etag:
+    if layerconfig.enable_etag:
         request.headers_out['Etag'] = md5(content).hexdigest()
     request.send_http_header()
 
