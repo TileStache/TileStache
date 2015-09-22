@@ -102,6 +102,9 @@ class Cache:
     def unlock(self, layer, coord, format):
         """ Release a cache lock for this tile.
         """
+        if not self.use_locks:
+            return
+
         key_name = tile_key(layer, coord, format, self.path)
         self.bucket.delete_key(key_name+'-lock')
         
