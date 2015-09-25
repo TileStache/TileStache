@@ -378,8 +378,10 @@ class Layer:
 
         if self.bounds and self.bounds.excludes(coord):
             status_code = 404
+            body = '' # not None
             del headers['Content-Type']
             ignore_cached = True
+            tile_from = 'out of bounds'
 
         cache = self.config.cache
 
@@ -397,7 +399,7 @@ class Layer:
 
             tile_from = 'cache'
 
-        else:
+        elif body is None:
             # Then look in the bag of recent tiles.
             body = _getRecentTile(self, coord, format)
             tile_from = 'recent tiles'
