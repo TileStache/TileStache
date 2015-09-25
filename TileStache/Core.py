@@ -376,6 +376,11 @@ class Layer:
         headers = Headers([('Content-Type', mimetype)])
         body = None
 
+        if self.bounds and self.bounds.excludes(coord):
+            status_code = 404
+            del headers['Content-Type']
+            ignore_cached = True
+
         cache = self.config.cache
 
         if not ignore_cached:
@@ -477,9 +482,6 @@ class Layer:
             Note that metatiling and pass-through mode of a Provider
             are mutually exclusive options
         """
-        if self.bounds and self.bounds.excludes(coord):
-            raise NoTileLeftBehind(Image.new('RGBA', (self.dim, self.dim), (0, 0, 0, 0)))
-        
         srs = self.projection.srs
         xmin, ymin, xmax, ymax = self.envelope(coord)
         width, height = self.dim, self.dim
