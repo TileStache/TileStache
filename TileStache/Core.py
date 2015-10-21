@@ -425,6 +425,7 @@ class Layer:
                     except NoTileLeftBehind, e:
                         tile = e.tile
                         save = False
+                        headers['Cache-Control'] = 'no-cache'
 
                     if not self.write_cache:
                         save = False
