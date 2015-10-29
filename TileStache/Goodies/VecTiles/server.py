@@ -176,7 +176,10 @@ class Provider:
         
         if query not in self.columns:
             self.columns[query] = query_columns(self.dbinfo, self.srid, query, bounds)
-        
+
+        if not self.columns[query]:
+            return EmptyResponse(bounds)
+
         tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
         
         return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, coord.zoom, self.clip)
