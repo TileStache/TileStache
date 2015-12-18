@@ -54,13 +54,13 @@ More information in http://tilestache.org/doc/#caches.
 Optional output file for tiles, will be created as an MBTiles 1.1 tileset. See http://mbtiles.org for more information.
 .TP
 .B \-\-from\-mbtiles
-Optional input file for tiles, will be read as an MBTiles 1.1 tileset. See http://mbtiles.org for more information. Overrides --extension, --bbox and --padding (this may change).
+Optional input file for tiles, will be read as an MBTiles 1.1 tileset. See http://mbtiles.org for more information. Overrides \-\-extension, \-\-bbox and \-\-padding (this may change).
 .TP
 .B \-\-to-s3
 Optional output bucket for tiles, will be populated with tiles in a standard Z/X/Y layout. Three required arguments: AWS access-key, secret, and bucket name.
 .TP
 .B \-\-tile\-list
-Optional file of tile coordinates, a simple text list of Z/X/Y coordinates. Overrides --bbox and --padding.
+Optional file of tile coordinates, a simple text list of Z/X/Y coordinates. Overrides \-\-bbox and \-\-padding.
 .TP
 .B \-\-error\-list
 Optional file of failed tile coordinates, a simple text list of Z/X/Y coordinates. If provided, failed tiles will be logged to this file instead of stopping tilestache-seed.
