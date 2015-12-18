@@ -156,7 +156,7 @@ class ImageProvider:
             img = Image.frombytes('RGBA', (width, height), img.tostring())
         else:
             # PIL still uses Image.fromstring
-            img = Image.fromstring('RGBA', (width, height), img.tostring() 
+            img = Image.fromstring('RGBA', (width, height), img.tostring())
         
         logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %dx%d in %.3f from %s', width, height, time() - start_time, self.mapfile)
     
