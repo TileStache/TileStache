@@ -755,15 +755,12 @@ def _preview(layer):
     <script type="text/javascript" defer>
     <!--
         var template = '{Z}/{X}/{Y}.%(ext)s';
-        var provider = new com.modestmaps.TemplatedMapProvider(template);
-        var map = new MM.Map('map', provider, null, [
+        var map = new MM.Map('map', new MM.TemplatedLayer(template), null, [
             new MM.TouchHandler(),
             new MM.DragHandler(),
             new MM.DoubleClickHandler()
         ]);
         map.setCenterZoom(new com.modestmaps.Location(%(lat).6f, %(lon).6f), %(zoom)d);
-        // hashify it
-        new MM.Hash(map);
     //-->
     </script>
 </body>
