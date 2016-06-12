@@ -1,0 +1,4 @@
+ModestMaps >=1.3.0
+simplejson
+Werkzeug
+Pillow
