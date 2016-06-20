@@ -75,7 +75,7 @@ def apply_palette(image, palette, t_index):
     """ Apply a palette array to an image, return a new image.
     """
     image = image.convert('RGBA')
-    pixels = image.tostring()
+    pixels = image.tobytes()
     t_value = (t_index in range(256)) and pack('!B', t_index) or None
     mapping = {}
     indexes = []
@@ -100,7 +100,7 @@ def apply_palette(image, palette, t_index):
         
         indexes.append(mapping[(r, g, b)])
 
-    output = Image.fromstring('P', image.size, ''.join(indexes))
+    output = Image.frombytes('P', image.size, ''.join(indexes))
     bits = int(ceil(log(len(palette)) / log(2)))
     
     palette += [(0, 0, 0)] * (256 - len(palette))
