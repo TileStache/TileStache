@@ -28,7 +28,7 @@ before_script:
   - sudo -u postgres ogr2ogr -nlt MULTIPOLYGON -f "PostgreSQL" PG:"user=postgres dbname=test_tilestache" ./examples/sample_data/world_merc.shp
 
 install:
-  - sudo pip install -r requirements.txt --use-mirrors --allow-external ModestMaps --allow-unverified ModestMaps
+  - sudo pip install -r requirements.txt --allow-external ModestMaps --allow-unverified ModestMaps
 
 script:
   - nosetests -v --with-coverage --cover-package TileStache
