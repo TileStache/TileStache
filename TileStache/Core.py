@@ -733,7 +733,7 @@ def _preview(layer):
 <html>
 <head>
     <title>TileStache Preview: %(layername)s</title>
-    <script src="http://code.modestmaps.com/tilestache/modestmaps.min.js" type="text/javascript"></script>
+    <script src="//dlmn0obhi5td1.cloudfront.net/tilestache/modestmaps.min.js" type="text/javascript"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0;">
     <style type="text/css">
         html, body, #map {
