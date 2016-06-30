@@ -376,6 +376,13 @@ class Layer:
         headers = Headers([('Content-Type', mimetype)])
         body = None
 
+        if self.bounds and self.bounds.excludes(coord):
+            status_code = 404
+            body = '' # not None
+            del headers['Content-Type']
+            ignore_cached = True
+            tile_from = 'out of bounds'
+
         cache = self.config.cache
 
         if not ignore_cached:
@@ -392,7 +399,7 @@ class Layer:
 
             tile_from = 'cache'
 
-        else:
+        elif body is None:
             # Then look in the bag of recent tiles.
             body = _getRecentTile(self, coord, format)
             tile_from = 'recent tiles'
@@ -477,9 +484,6 @@ class Layer:
             Note that metatiling and pass-through mode of a Provider
             are mutually exclusive options
         """
-        if self.bounds and self.bounds.excludes(coord):
-            raise NoTileLeftBehind(Image.new('RGBA', (self.dim, self.dim), (0, 0, 0, 0)))
-        
         srs = self.projection.srs
         xmin, ymin, xmax, ymax = self.envelope(coord)
         width, height = self.dim, self.dim
