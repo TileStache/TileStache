@@ -175,11 +175,17 @@ class Provider:
             return EmptyResponse(bounds)
         
         if query not in self.columns:
-            self.columns[query] = query_columns(self.dbinfo, self.srid, query, bounds)
+            columns = query_columns(self.dbinfo, self.srid, query, bounds)
+            self.columns[query] = columns
+        else:
+            columns = self.columns[query]
+
+        if columns is None:
+            return EmptyResponse(bounds)
         
         tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
         
-        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, coord.zoom, self.clip)
+        return Response(self.dbinfo, self.srid, query, columns, bounds, tolerance, coord.zoom, self.clip)
 
     def getTypeByExtension(self, extension):
         ''' Get mime-type and format by file extension, one of "mvt", "json" or "topojson".
@@ -381,6 +387,8 @@ def query_columns(dbinfo, srid, subquery, bounds):
             
             column_names = set(row.keys())
             return column_names
+
+        return None
         
 def build_query(srid, subquery, subcolumns, bbox, tolerance, is_geo, is_clipped):
     ''' Build and return an PostGIS query.
