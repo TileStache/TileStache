@@ -48,7 +48,7 @@ simpler and better-suited to the needs of designers and cartographers.
 
 Install the pure python modules with pip:
 
-    sudo pip install -U python-pil modestmaps simplejson werkzeug
+    sudo pip install -U python-pil modestmaps simplejson werkzeug uuid
 
 Install pip (http://www.pip-installer.org/) like:
 
