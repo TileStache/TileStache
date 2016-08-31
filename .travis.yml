@@ -10,7 +10,7 @@ addons:
   postgresql: "9.3"
   apt:
     packages:
-      - postgresql-9.3-postgis-2.1
+      - postgresql-9.3-postgis-2.2
 
 virtualenv:
   system_site_packages: true
