@@ -4,6 +4,7 @@
 language: python
 
 sudo: required
+dist: trusty
 
 python:
   - "2.7"
@@ -12,7 +13,9 @@ addons:
   postgresql: "9.4"
   apt:
     packages:
-      - proj
+      - postgresql-9.4-postgis-2.2
+      - python-dev
+      - libgdal1-dev
       - python-werkzeug
 
 virtualenv:
@@ -23,9 +26,12 @@ services:
   - postgresql
 
 before_install:
-  - (cd ~ && wget http://download.osgeo.org/gdal/2.1.1/gdal-2.1.1.tar.gz -O gdal.tar.gz && tar xzf gdal.tar.gz && cd gdal-2.1.1 && ./configure --with-python && make -j 2 && sudo make install && sudo ldconfig)
+  - sudo apt-get -qq update
 
 install:
+  - export CPLUS_INCLUDE_PATH=/usr/include/gdal
+  - export C_INCLUDE_PATH=/usr/include/gdal
+  - pip install gdal==1.10
   - pip install nose coverage
   - pip install -r requirements.txt
 
@@ -33,7 +39,6 @@ before_script:
   - psql -U postgres -c "drop database if exists test_tilestache"
   - psql -U postgres -c "create database test_tilestache"
   - psql -U postgres -c "create extension postgis" -d test_tilestache
-  - ogr2ogr -nlt MULTIPOLYGON -f "PostgreSQL" PG:"user=postgres dbname=test_tilestache" ./examples/sample_data/world_merc.shp
 
 script:
   - nosetests -v --with-coverage --cover-package TileStache
