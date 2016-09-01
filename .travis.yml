@@ -4,7 +4,7 @@
 language: python
 
 dist: trusty
-sudo: false
+sudo: required
 
 python:
   - "2.7"
@@ -24,7 +24,7 @@ services:
   - postgresql
 
 before_install:
-  - (cd ~ && wget http://download.osgeo.org/gdal/2.1.1/gdal-2.1.1.tar.gz -O gdal.tar.gz && tar xzf gdal.tar.gz && cd gdal-2.1.1 && ./configure --with-python && make && make install && ldconfig)
+  - (cd ~ && wget http://download.osgeo.org/gdal/2.1.1/gdal-2.1.1.tar.gz -O gdal.tar.gz && tar xzf gdal.tar.gz && cd gdal-2.1.1 && ./configure --with-python && make -j 2 && sudo make install && sudo ldconfig)
 
 install:
   - pip install nose coverage
