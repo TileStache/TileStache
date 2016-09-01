@@ -451,13 +451,13 @@ def make_color(color):
 def _arr2img(ar):
     """ Convert Numeric array to PIL Image.
     """
-    return Image.frombytes('L', (ar.shape[1], ar.shape[0]), ar.astype(numpy.ubyte).tobytes())
+    return Image.frombytes('L', (ar.shape[1], ar.shape[0]), ar.astype(numpy.ubyte).tostring())
 
 def _img2arr(im):
     """ Convert PIL Image to Numeric array.
     """
     assert im.mode == 'L'
-    return numpy.reshape(numpy.frombytes(im.tobytes(), numpy.ubyte), (im.size[1], im.size[0]))
+    return numpy.reshape(numpy.fromstring(im.tobytes(), numpy.ubyte), (im.size[1], im.size[0]))
 
 def _rgba2img(rgba):
     """ Convert four Numeric array objects to PIL Image.
