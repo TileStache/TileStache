@@ -1,3 +1,4 @@
 ModestMaps
 simplejson
 shapely
+pillow
