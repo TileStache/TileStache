@@ -3,7 +3,6 @@
 
 language: python
 
-dist: trusty
 sudo: required
 
 python:
