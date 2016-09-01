@@ -1,3 +1,6 @@
 ModestMaps
 simplejson
 shapely
+pillow
+psycopg2
+python-memcached
