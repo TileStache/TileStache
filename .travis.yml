@@ -3,7 +3,7 @@
 
 language: python
 
-sudo: false
+sudo: required
 dist: trusty
 
 python:
