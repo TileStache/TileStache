@@ -138,11 +138,19 @@ class Provider:
 
             if mask_ds is None:
                 data = ''.join([''.join(pixel) for pixel in zip(r, g, b)])
-                area = Image.fromstring('RGB', (width, height), data)
+                try:
+                    area = Image.frombytes('RGB', (width, height), data)
+                except AttributeError:
+                    # For old versions of PIL.
+                    area = Image.fromstring('RGB', (width, height), data)
             else:
                 a = mask_ds.GetRasterBand(self.maskband).GetMaskBand().ReadRaster(0, 0, width, height)
                 data = ''.join([''.join(pixel) for pixel in zip(r, g, b, a)])
-                area = Image.fromstring('RGBA', (width, height), data)
+                try:
+                    area = Image.frombytes('RGBA', (width, height), data)
+                except AttributeError:
+                    # For old versions of PIL.
+                    area = Image.fromstring('RGBA', (width, height), data)
 
         finally:
             driver.Delete('/vsimem/output')
