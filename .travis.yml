@@ -1,38 +1,44 @@
-# This is the config file for building TileStache and running the test suite
-# with Travis-ci.org
-
 language: python
-sudo: false
 
-python:
-  - "2.7"
+dist: trusty
+sudo: false
 
 addons:
   postgresql: "9.4"
   apt:
     packages:
-      - memcached
-      - python-pip
-      - python-nose
-      - python-imaging
-      - python-memcache
-      - python-coverage
+      - proj
       - python-werkzeug
-      - python-psycopg2
-      - postgis
-      - postgresql-9.4-postgis-2.1
+
+virtualenv:
+  system_site_packages: true
 
 services:
+  - postgresql
   - memcached
 
-before_script:
-  - psql -c "drop database if exists test_tilestache"
-  - psql -c "create database test_tilestache"
-  - psql -c "create extension postgis" -d test_tilestache
+python:
+  - "2.7"
+
+before_install:
+  - wget http://download.osgeo.org/gdal/2.1.1/gdal-2.1.1.tar.gz
+  - tar xzf gdal-2.1.1.tar.gz
+  - cd gdal-2.1.1
+  - ./configure --with-python
+  - make
+  - make install
+  - ldconfig
+
 
 install:
+  - pip install nose coverage
   - pip install -r requirements.txt
 
+before_script:
+  - psql -U postgres -c "drop database if exists test_tilestache"
+  - psql -U postgres -c "create database test_tilestache"
+  - psql -U postgres -c "create extension postgis" -d test_tilestache
+  - ogr2ogr -nlt MULTIPOLYGON -f "PostgreSQL" PG:"user=postgres dbname=test_tilestache" ./examples/sample_data/world_merc.shp
 
 script:
   - nosetests -v --with-coverage --cover-package TileStache
@@ -41,5 +47,3 @@ notifications:
   email:
     recipients:
       - mike-travisci@teczno.com
-
-
