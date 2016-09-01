@@ -13,7 +13,6 @@ services:
   - memcached
 
 before_install:
-  - sudo rm /etc/apt/sources.list.d/ubuntugis-stable-source.list
   - sudo apt-get update -qq
   - sudo apt-get install -qq gdal-bin memcached python-pip
   - sudo apt-get install -qq python-nose python-imaging python-memcache python-gdal
