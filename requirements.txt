@@ -3,4 +3,8 @@ simplejson
 shapely
 pillow
 psycopg2
+<<<<<<< HEAD
 python-memcached
+=======
+python-memcached
+>>>>>>> origin/master

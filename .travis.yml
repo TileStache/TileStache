@@ -10,25 +10,28 @@ addons:
       - proj
       - python-werkzeug
 
+python:
+  - "2.7"
+
+addons:
+  postgresql: "9.4"
+  apt:
+    packages:
+      - proj
+      - python-werkzeug
+
 virtualenv:
   system_site_packages: true
 
 services:
-  - postgresql
   - memcached
+  - postgresql
 
 python:
   - "2.7"
 
 before_install:
-  - wget http://download.osgeo.org/gdal/2.1.1/gdal-2.1.1.tar.gz
-  - tar xzf gdal-2.1.1.tar.gz
-  - cd gdal-2.1.1
-  - ./configure --with-python
-  - make
-  - make install
-  - ldconfig
-
+  - (cd ~ && wget http://download.osgeo.org/gdal/2.1.1/gdal-2.1.1.tar.gz -O gdal.tar.gz && tar xzf gdal.tar.gz && cd gdal-2.1.1 && ./configure --with-python && make -j 2 && sudo make install && sudo ldconfig)
 
 install:
   - pip install nose coverage
