@@ -20,13 +20,7 @@ def is_installed(name):
         return False
 
 
-requires = ['ModestMaps >=1.3.0','simplejson', 'Werkzeug']
-
-# Soft dependency on PIL or Pillow
-if is_installed('PIL'):
-    requires.append('PIL')
-else:
-    requires.append('Pillow')
+requires = ['ModestMaps >=1.3.0','simplejson', 'Werkzeug', 'Pillow']
 
 
 setup(name='TileStache',
