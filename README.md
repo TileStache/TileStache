@@ -5,30 +5,30 @@ _a stylish alternative for caching your map tiles_
 [![Build Status](https://travis-ci.org/TileStache/TileStache.png)](https://travis-ci.org/TileStache/TileStache)
 
 **TileStache** is a Python-based server application that can serve up map tiles
-based on rendered geographic data. You might be familiar with [TileCache](http://tilecache.org), 
-the venerable open source WMS server from MetaCarta. TileStache is similar, but we hope 
+based on rendered geographic data. You might be familiar with [TileCache](http://tilecache.org),
+the venerable open source WMS server from MetaCarta. TileStache is similar, but we hope
 simpler and better-suited to the needs of designers and cartographers.
 
 ##Synopsis
 
     import TileStache
     import ModestMaps
-    
+
     config = {
       "cache": {"name": "Test"},
       "layers": {
         "example": {
             "provider": {"name": "mapnik", "mapfile": "examples/style.xml"},
             "projection": "spherical mercator"
-        } 
+        }
       }
     }
-    
+
     # like http://tile.openstreetmap.org/1/0/0.png
     coord = ModestMaps.Core.Coordinate(0, 0, 1)
     config = TileStache.Config.buildConfiguration(config)
     type, bytes = TileStache.getTile(config.layers['example'], coord, 'png')
-    
+
     open('tile.png', 'w').write(bytes)
 
 
@@ -38,7 +38,7 @@ simpler and better-suited to the needs of designers and cartographers.
 ###Required:
 
 - ModestMaps: http://modestmaps.com, http://github.com/migurski/modestmaps-py
-- Python Imaging Library (PIL): http://www.pythonware.com/products/pil
+- Python Imaging Library (Pillow): https://python-pillow.org
 
 ###Optional:
 
@@ -48,7 +48,7 @@ simpler and better-suited to the needs of designers and cartographers.
 
 Install the pure python modules with pip:
 
-    sudo pip install -U PIL modestmaps simplejson werkzeug
+    sudo pip install -U python-pil modestmaps simplejson werkzeug uuid
 
 Install pip (http://www.pip-installer.org/) like:
 
@@ -73,7 +73,7 @@ Can all be run locally like:
 To install globally do:
 
     python setup.py install
-    
+
   * Note: you may need to prefix that command with 'sudo' to have permissions
 to fully install TileStache.
 

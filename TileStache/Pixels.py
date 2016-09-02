@@ -34,7 +34,7 @@ except ImportError:
 
 def load_palette(file_href):
     """ Load colors from a Photoshop .act file, return palette info.
-    
+
         Return tuple is an array of [ (r, g, b), (r, g, b), ... ],
         bit depth of the palette, and a numeric transparency index
         or None if not defined.
@@ -42,19 +42,19 @@ def load_palette(file_href):
     bytes = urlopen(file_href).read()
     count, t_index = unpack('!HH', bytes[768:768+4])
     t_index = (t_index <= 0xff) and t_index or None
-    
+
     palette = []
-    
+
     for offset in range(0, count):
         if offset == t_index:
             rgb = 0xff, 0x99, 0x00
         else:
             rgb = unpack('!BBB', bytes[offset*3:(offset + 1)*3])
-        
+
         palette.append(rgb)
-    
+
     bits = int(ceil(log(len(palette)) / log(2)))
-    
+
     return palette, bits, t_index
 
 def palette_color(r, g, b, palette, t_index):
@@ -65,48 +65,49 @@ def palette_color(r, g, b, palette, t_index):
     """
     distances = [(r - _r)**2 + (g - _g)**2 + (b - _b)**2 for (_r, _g, _b) in palette]
     distances = map(sqrt, distances)
-    
+
     if t_index is not None:
         distances = distances[:t_index] + distances[t_index+1:]
-    
+
     return distances.index(min(distances))
 
 def apply_palette(image, palette, t_index):
     """ Apply a palette array to an image, return a new image.
     """
     image = image.convert('RGBA')
-    pixels = image.tostring()
+    pixels = image.tobytes()
+
     t_value = (t_index in range(256)) and pack('!B', t_index) or None
     mapping = {}
     indexes = []
-    
+
     for offset in range(0, len(pixels), 4):
         r, g, b, a = unpack('!BBBB', pixels[offset:offset+4])
-        
+
         if a < 0x80 and t_value is not None:
             # Sufficiently transparent
             indexes.append(t_value)
             continue
-        
+
         try:
             indexes.append(mapping[(r, g, b)])
 
         except KeyError:
             # Never seen this color
             mapping[(r, g, b)] = pack('!B', palette_color(r, g, b, palette, t_index))
-        
+
         else:
             continue
-        
+
         indexes.append(mapping[(r, g, b)])
 
-    output = Image.fromstring('P', image.size, ''.join(indexes))
+    output = Image.frombytes('P', image.size, ''.join(indexes))
     bits = int(ceil(log(len(palette)) / log(2)))
-    
+
     palette += [(0, 0, 0)] * (256 - len(palette))
     palette = reduce(add, palette)
     output.putpalette(palette)
-    
+
     return output
 
 def apply_palette256(image):

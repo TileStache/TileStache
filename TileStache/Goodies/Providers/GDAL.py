@@ -42,39 +42,39 @@ class Provider:
         """
         """
         self.layer = layer
-        
+
         fileurl = urljoin(layer.config.dirpath, filename)
         scheme, h, file_path, p, q, f = urlparse(fileurl)
-        
+
         if scheme not in ('', 'file'):
             raise Exception('GDAL file must be on the local filesystem, not: '+fileurl)
-        
+
         if resample not in resamplings:
             raise Exception('Resample must be "cubic", "linear", or "nearest", not: '+resample)
-        
+
         self.filename = file_path
         self.resample = resamplings[resample]
         self.maskband = maskband
-    
+
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """
         """
         src_ds = gdal.Open(str(self.filename))
         driver = gdal.GetDriverByName('GTiff')
-        
+
         if src_ds.GetGCPs():
             src_ds.SetProjection(src_ds.GetGCPProjection())
-        
+
         grayscale_src = (src_ds.RasterCount == 1)
 
         try:
             # Prepare output gdal datasource -----------------------------------
-            
+
             area_ds = driver.Create('/vsimem/output', width, height, 3)
-            
+
             if area_ds is None:
                 raise Exception('uh oh.')
-            
+
             # If we are using a mask band, create a data set which possesses a 'NoData' value enabling us to create a
             # mask for validity.
             mask_ds = None
@@ -83,31 +83,31 @@ class Provider:
                 # efficient way to extract a single band from a dataset which doesn't risk attempting to copy the entire
                 # dataset.
                 mask_ds = driver.Create('/vsimem/alpha', width, height, src_ds.RasterCount, gdal.GDT_Float32)
-            
+
                 if mask_ds is None:
                     raise Exception('Failed to create dataset mask.')
 
                 [mask_ds.GetRasterBand(i).SetNoDataValue(float('nan')) for i in xrange(1, src_ds.RasterCount+1)]
-            
+
             merc = osr.SpatialReference()
             merc.ImportFromProj4(srs)
             area_ds.SetProjection(merc.ExportToWkt())
             if mask_ds is not None:
                 mask_ds.SetProjection(merc.ExportToWkt())
-            
+
             # note that 900913 points north and east
             x, y = xmin, ymax
             w, h = xmax - xmin, ymin - ymax
-            
+
             gtx = [x, w/width, 0, y, 0, h/height]
             area_ds.SetGeoTransform(gtx)
             if mask_ds is not None:
                 mask_ds.SetGeoTransform(gtx)
-            
+
             # Adjust resampling method -----------------------------------------
-            
+
             resample = self.resample
-            
+
             if resample == gdal.GRA_CubicSpline:
                 #
                 # I've found through testing that when ReprojectImage is used
@@ -118,35 +118,35 @@ class Provider:
                 xscale = area_ds.GetGeoTransform()[1] / src_ds.GetGeoTransform()[1]
                 yscale = area_ds.GetGeoTransform()[5] / src_ds.GetGeoTransform()[5]
                 diff = max(abs(xscale - 1), abs(yscale - 1))
-                
+
                 if diff < .001:
                     resample = gdal.GRA_Cubic
-            
+
             # Create rendered area ---------------------------------------------
-            
+
             src_sref = osr.SpatialReference()
             src_sref.ImportFromWkt(src_ds.GetProjection())
-            
+
             gdal.ReprojectImage(src_ds, area_ds, src_ds.GetProjection(), area_ds.GetProjection(), resample)
             if mask_ds is not None:
                 # Interpolating validity makes no sense and so we can use nearest neighbour resampling here no matter
                 # what is requested.
                 gdal.ReprojectImage(src_ds, mask_ds, src_ds.GetProjection(), mask_ds.GetProjection(), gdal.GRA_NearestNeighbour)
-            
+
             channel = grayscale_src and (1, 1, 1) or (1, 2, 3)
             r, g, b = [area_ds.GetRasterBand(i).ReadRaster(0, 0, width, height) for i in channel]
 
             if mask_ds is None:
                 data = ''.join([''.join(pixel) for pixel in zip(r, g, b)])
-                area = Image.fromstring('RGB', (width, height), data)
+                area = Image.frombytes('RGB', (width, height), data)
             else:
                 a = mask_ds.GetRasterBand(self.maskband).GetMaskBand().ReadRaster(0, 0, width, height)
                 data = ''.join([''.join(pixel) for pixel in zip(r, g, b, a)])
-                area = Image.fromstring('RGBA', (width, height), data)
+                area = Image.frombytes('RGBA', (width, height), data)
 
         finally:
             driver.Delete('/vsimem/output')
             if self.maskband > 0:
                 driver.Delete('/vsimem/alpha')
-        
+
         return area
