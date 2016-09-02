@@ -151,7 +151,7 @@ class ImageProvider:
                 # always release the lock
                 global_mapnik_lock.release()
 
-        img = Image.frombytes('RGBA', (width, height), img.tobytes())
+        img = Image.frombytes('RGBA', (width, height), img.tostring())
 
         logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %dx%d in %.3f from %s', width, height, time() - start_time, self.mapfile)
 
