@@ -97,7 +97,7 @@ def parseConfig(configHandle):
         and the Core and Providers modules for more information on the
         "layers" section.
     """
-    if type(configHandle) is dict:
+    if isinstance(configHandle, dict):
         config_dict = configHandle
         dirpath = '.'
     else:
