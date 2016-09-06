@@ -27,6 +27,7 @@ from wsgiref.headers import Headers
 from urllib import urlopen
 from os import getcwd
 from time import time
+from hashlib import md5
 
 import httplib
 import logging
@@ -265,6 +266,9 @@ def requestHandler2(config_hint, path_info, query_string=None, script_name=''):
             headers.setdefault('Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT'))
             headers.setdefault('Cache-Control', 'public, max-age=%d' % layer.max_cache_age)
 
+        if layer.enable_etag:
+            headers.setdefault('Etag', md5(content).hexdigest() )
+
     except Core.KnownUnknown, e:
         out = StringIO()
         
@@ -298,7 +302,7 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     script_name = environ.get('SCRIPT_NAME', None)
     
     status_code, headers, content = requestHandler2(config, path_info, query_string, script_name)
-    
+
     headers.setdefault('Content-Length', str(len(content)))
 
     # output the status code as a header
@@ -389,7 +393,7 @@ class WSGITileServer:
 
         if content:
             headers.setdefault('Content-Length', str(len(content)))
-        
+
         start_response('%d %s' % (code, httplib.responses[code]), headers.items())
         return [content]
 
@@ -422,9 +426,13 @@ def modpythonHandler(request):
     
     mimetype, content = requestHandler(config_path, path_info, query_string)
 
+    # load the config so we can see about additional HTTP headers
+    layerconfig = requestLayer(config_path, path_info)
     request.status = apache.HTTP_OK
     request.content_type = mimetype
     request.set_content_length(len(content))
+    if layerconfig.enable_etag:
+        request.headers_out['Etag'] = md5(content).hexdigest()
     request.send_http_header()
 
     request.write(content)
