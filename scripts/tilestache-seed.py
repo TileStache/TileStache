@@ -104,25 +104,25 @@ parser.add_option('--jsonp-callback', dest='callback',
 
 def generateCoordinates(ul, lr, zooms, padding):
     """ Generate a stream of (offset, count, coordinate) tuples for seeding.
-    
+
         Flood-fill coordinates based on two corners, a list of zooms and padding.
     """
     # start with a simple total of all the coordinates we will need.
     count = 0
-    
+
     for zoom in zooms:
         ul_ = ul.zoomTo(zoom).container().left(padding).up(padding)
         lr_ = lr.zoomTo(zoom).container().right(padding).down(padding)
-        
+
         rows = lr_.row + 1 - ul_.row
         cols = lr_.column + 1 - ul_.column
-        
+
         count += int(rows * cols)
 
     # now generate the actual coordinates.
     # offset starts at zero
     offset = 0
-    
+
     for zoom in zooms:
         ul_ = ul.zoomTo(zoom).container().left(padding).up(padding)
         lr_ = lr.zoomTo(zoom).container().right(padding).down(padding)
@@ -130,51 +130,51 @@ def generateCoordinates(ul, lr, zooms, padding):
         for row in xrange(int(ul_.row), int(lr_.row + 1)):
             for column in xrange(int(ul_.column), int(lr_.column + 1)):
                 coord = Coordinate(row, column, zoom)
-                
+
                 yield (offset, count, coord)
-                
+
                 offset += 1
 
 def listCoordinates(filename):
     """ Generate a stream of (offset, count, coordinate) tuples for seeding.
-    
+
         Read coordinates from a file with one Z/X/Y coordinate per line.
     """
     coords = (line.strip().split('/') for line in open(filename, 'r'))
     coords = (map(int, (row, column, zoom)) for (zoom, column, row) in coords)
     coords = [Coordinate(*args) for args in coords]
-    
+
     count = len(coords)
-    
+
     for (offset, coord) in enumerate(coords):
         yield (offset, count, coord)
 
 def tilesetCoordinates(filename):
     """ Generate a stream of (offset, count, coordinate) tuples for seeding.
-    
+
         Read coordinates from an MBTiles tileset filename.
     """
     coords = MBTiles.list_tiles(filename)
     count = len(coords)
-    
+
     for (offset, coord) in enumerate(coords):
         yield (offset, count, coord)
 
-def parseConfigfile(configpath):
+def parseConfig(configpath):
     """ Parse a configuration file and return a raw dictionary and dirpath.
-    
+
         Return value can be passed to TileStache.Config.buildConfiguration().
     """
     config_dict = json_load(urlopen(configpath))
-    
+
     scheme, host, path, p, q, f = urlparse(configpath)
-    
+
     if scheme == '':
         scheme = 'file'
         path = realpath(path)
-    
+
     dirpath = '%s://%s%s' % (scheme, host, dirname(path).rstrip('/') + '/')
-    
+
     return config_dict, dirpath
 
 if __name__ == '__main__':
@@ -189,69 +189,69 @@ if __name__ == '__main__':
     from TileStache.Config import buildConfiguration
     from TileStache import MBTiles
     import TileStache
-    
+
     from ModestMaps.Core import Coordinate
     from ModestMaps.Geo import Location
 
     try:
         # determine if we have enough information to prep a config and layer
-        
+
         has_fake_destination = bool(options.outputdirectory or options.mbtiles_output)
         has_fake_source = bool(options.mbtiles_input)
-        
+
         if has_fake_destination and has_fake_source:
-            config_dict, config_dirpath = dict(layers={}), '' # parseConfigfile(options.config)
+            config_dict, config_dirpath = dict(layers={}), '' # parseConfig(options.config)
             layer_dict = dict()
-            
+
             config_dict['cache'] = dict(name='test')
             config_dict['layers'][options.layer or 'tiles-layer'] = layer_dict
-        
+
         elif options.config is None:
             raise KnownUnknown('Missing required configuration (--config) parameter.')
-        
+
         elif options.layer is None:
             raise KnownUnknown('Missing required layer (--layer) parameter.')
-    
+
         else:
-            config_dict, config_dirpath = parseConfigfile(options.config)
-            
+            config_dict, config_dirpath = parseConfig(options.config)
+
             if options.layer not in config_dict['layers']:
                 raise KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (options.layer, ', '.join(sorted(config_dict['layers'].keys()))))
-            
+
             layer_dict = config_dict['layers'][options.layer]
             layer_dict['write_cache'] = True # Override to make seeding guaranteed useful.
-        
+
         # override parts of the config and layer if needed
-        
+
         extension = options.extension
 
         if options.mbtiles_input:
             layer_dict['provider'] = dict(name='mbtiles', tileset=options.mbtiles_input)
             n, t, v, d, format, b = MBTiles.tileset_info(options.mbtiles_input)
             extension = format or extension
-        
+
         # determine or guess an appropriate tile extension
-        
+
         if extension is None:
             provider_name = layer_dict['provider'].get('name', '').lower()
-            
+
             if provider_name == 'mapnik grid':
                 extension = 'json'
             elif provider_name == 'vector':
                 extension = 'geojson'
             else:
                 extension = 'png'
-        
+
         # override parts of the config and layer if needed
-        
+
         tiers = []
-        
+
         if options.mbtiles_output:
             tiers.append({'class': 'TileStache.MBTiles:Cache',
                           'kwargs': dict(filename=options.mbtiles_output,
                                          format=extension,
                                          name=options.layer)})
-        
+
         if options.outputdirectory:
             tiers.append(dict(name='disk', path=options.outputdirectory,
                               dirs='portable', gzip=[]))
@@ -260,7 +260,7 @@ if __name__ == '__main__':
             access, secret, bucket = options.s3_output
             tiers.append(dict(name='S3', bucket=bucket,
                               access=access, secret=secret))
-        
+
         if len(tiers) > 1:
             config_dict['cache'] = dict(name='multi', tiers=tiers)
         elif len(tiers) == 1:
@@ -268,14 +268,14 @@ if __name__ == '__main__':
         else:
             # Leave config_dict['cache'] as-is
             pass
-        
+
         # create a real config object
-        
+
         config = buildConfiguration(config_dict, config_dirpath)
         layer = config.layers[options.layer or 'tiles-layer']
-        
+
         # do the actual work
-        
+
         lat1, lon1, lat2, lon2 = options.bbox
         south, west = min(lat1, lat2), min(lon1, lon2)
         north, east = max(lat1, lat2), max(lon1, lon2)
@@ -301,7 +301,7 @@ if __name__ == '__main__':
                 raise KnownUnknown('"%s" is not a valid numeric zoom level.' % zoom)
 
             zooms[i] = int(zoom)
-        
+
         if options.padding < 0:
             raise KnownUnknown('A negative padding will not work.')
 
@@ -318,7 +318,7 @@ if __name__ == '__main__':
         coordinates = tilesetCoordinates(options.mbtiles_input)
     else:
         coordinates = generateCoordinates(ul, lr, zooms, padding)
-    
+
     for (offset, count, coord) in coordinates:
         path = '%s/%d/%d/%d.%s' % (layer.name(), coord.zoom, coord.column, coord.row, extension)
 
@@ -329,28 +329,28 @@ if __name__ == '__main__':
         #
         # Fetch a tile.
         #
-        
+
         attempts = options.enable_retries and 3 or 1
         rendered = False
-        
+
         while not rendered:
             if options.verbose:
                 print >> stderr, '%(offset)d of %(total)d...' % progress,
-    
+
             try:
                 mimetype, content = getTile(layer, coord, extension, options.ignore_cached)
-                
+
                 if mimetype and 'json' in mimetype and options.callback:
                     js_path = '%s/%d/%d/%d.js' % (layer.name(), coord.zoom, coord.column, coord.row)
                     js_body = '%s(%s);' % (options.callback, content)
                     js_size = len(js_body) / 1024
-                    
+
                     layer.config.cache.save(js_body, layer, coord, 'JS')
                     print >> stderr, '%s (%dKB)' % (js_path, js_size),
-            
+
                 elif options.callback:
                     print >> stderr, '(callback ignored)',
-            
+
             except:
                 #
                 # Something went wrong: try again? Log the error?
@@ -359,26 +359,26 @@ if __name__ == '__main__':
 
                 if options.verbose:
                     print >> stderr, 'Failed %s, will try %s more.' % (progress['tile'], ['no', 'once', 'twice'][attempts])
-                
+
                 if attempts == 0:
                     if not error_list:
                         raise
-                    
+
                     fp = open(error_list, 'a')
                     fp.write('%(zoom)d/%(column)d/%(row)d\n' % coord.__dict__)
                     fp.close()
                     break
-            
+
             else:
                 #
                 # Successfully got the tile.
                 #
                 rendered = True
                 progress['size'] = '%dKB' % (len(content) / 1024)
-        
+
                 if options.verbose:
                     print >> stderr, '%(tile)s (%(size)s)' % progress
-                
+
         if options.progressfile:
             fp = open(options.progressfile, 'w')
             json_dump(progress, fp)
