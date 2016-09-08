@@ -19,7 +19,7 @@ if mmaps_version < (1, 3, 0):
 
 class Provider (ModestMaps.Providers.IMapProvider):
     """ Wrapper for TileStache Layer objects that makes them behave like ModestMaps Provider objects.
-    
+
         Requires ModestMaps 1.3.0 or better to support "file://" URLs.
     """
     def __init__(self, layer, verbose=False, ignore_cached=None):
@@ -30,7 +30,7 @@ class Provider (ModestMaps.Providers.IMapProvider):
         self.verbose = bool(verbose)
         self.ignore_cached = bool(ignore_cached)
         self.lock = allocate_lock()
-        
+
         #
         # It's possible that Mapnik is not thread-safe, best to be cautious.
         #
@@ -47,23 +47,23 @@ class Provider (ModestMaps.Providers.IMapProvider):
         """
         if self.threadsafe or self.lock.acquire():
             mime_type, tile_data = TileStache.getTile(self.layer, coord, 'png', self.ignore_cached)
-            
+
             handle, filename = mkstemp(prefix='tilestache-compose-', suffix='.png')
             write(handle, tile_data)
             close(handle)
-            
+
             self.files.append(filename)
-            
+
             if not self.threadsafe:
                 # must be locked, right?
                 self.lock.release()
-    
+
             if self.verbose:
                 size = len(tile_data) / 1024.
                 printlocked(self.lock, self.layer.name() + '/%(zoom)d/%(column)d/%(row)d.png' % coord.__dict__, '(%dKB)' % size)
-            
+
             return ('file://' + abspath(filename), )
-    
+
     def __del__(self):
         """ Delete any tile that was saved in self.getTileUrls().
         """
@@ -96,7 +96,7 @@ There are three ways to set a map coverage area.
 
 3) Extent and zoom: create a map at the given zoom level that covers
    the precise geographical extent, at whatever pixel size is necessary:
-   
+
    tilestache-compose.py -c config.json -l layer-name -e 36.9 -123.5 38.9 -121.2 -z 9 out.jpg""")
 
 defaults = dict(center=(37.8044, -122.2712), zoom=14, dimensions=(900, 600), verbose=True)
@@ -144,7 +144,7 @@ if __name__ == '__main__':
             path.insert(0, p)
 
     import TileStache
-    
+
     try:
         if options.config is None:
             raise TileStache.Core.KnownUnknown('Missing required configuration (--config) parameter.')
@@ -152,24 +152,24 @@ if __name__ == '__main__':
         if options.layer is None:
             raise TileStache.Core.KnownUnknown('Missing required layer (--layer) parameter.')
 
-        config = TileStache.parseConfigfile(options.config)
+        config = TileStache.parseConfig(options.config)
 
         if options.layer not in config.layers:
             raise TileStache.Core.KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (options.layer, ', '.join(sorted(config.layers.keys()))))
 
         provider = Provider(config.layers[options.layer], options.verbose, options.ignore_cached)
-        
+
         try:
             outfile = args[0]
         except IndexError:
             raise BadComposure('Error: Missing output file.')
-        
+
         if options.center and options.extent:
             raise BadComposure("Error: bad map coverage, center and extent can't both be set.")
-        
+
         elif options.extent and options.dimensions and options.zoom:
             raise BadComposure("Error: bad map coverage, dimensions and zoom can't be set together with extent.")
-        
+
         elif options.center and options.zoom and options.dimensions:
             lat, lon = options.center[0], options.center[1]
             width, height = options.dimensions[0], options.dimensions[1]
@@ -179,7 +179,7 @@ if __name__ == '__main__':
             zoom = options.zoom
 
             map = ModestMaps.mapByCenterZoom(provider, center, zoom, dimensions)
-            
+
         elif options.extent and options.dimensions:
             latA, lonA = options.extent[0], options.extent[1]
             latB, lonB = options.extent[2], options.extent[3]
@@ -190,7 +190,7 @@ if __name__ == '__main__':
             locationB = ModestMaps.Geo.Location(latB, lonB)
 
             map = ModestMaps.mapByExtent(provider, locationA, locationB, dimensions)
-    
+
         elif options.extent and options.zoom:
             latA, lonA = options.extent[0], options.extent[1]
             latB, lonB = options.extent[2], options.extent[3]
@@ -200,7 +200,7 @@ if __name__ == '__main__':
             zoom = options.zoom
 
             map = ModestMaps.mapByExtentZoom(provider, locationA, locationB, zoom)
-    
+
         else:
             raise BadComposure("Error: not really sure what's going on.")
 

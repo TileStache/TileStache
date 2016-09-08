@@ -14,22 +14,29 @@ except ImportError:
 
 
 from ModestMaps.Core import Coordinate
-from TileStache import getTile, parseConfigfile
+from TileStache import getTile, parseConfig
 from TileStache.Core import KnownUnknown
 
-def request(config_file_content, layer_name, format, row, column, zoom):
+def request(config_content, layer_name, format, row, column, zoom):
     '''
-    Helper method to write config_file_content to disk and do
+    Helper method to write config_file to disk and do
     request
     '''
 
-    absolute_file_name = create_temp_file(config_file_content)
-    config = parseConfigfile(absolute_file_name)
+    is_string = isinstance(config_content, basestring)
+    if is_string:
+        absolute_file_name = create_temp_file(config_content)
+        config = parseConfig(absolute_file_name)
+
+    else:
+        config = parseConfig(config_content)
+
     layer = config.layers[layer_name]
     coord = Coordinate(int(row), int(column), int(zoom))
     mime_type, tile_content = getTile(layer, coord, format)
 
-    os.remove(absolute_file_name)
+    if is_string:
+        os.remove(absolute_file_name)
 
     return mime_type, tile_content
 
