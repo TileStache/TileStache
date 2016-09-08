@@ -268,7 +268,7 @@ def requestHandler2(config_hint, path_info, query_string=None, script_name=''):
 
         if layer.max_cache_age is not None:
             expires = datetime.utcnow() + timedelta(seconds=layer.max_cache_age)
-            headers.setdefault('Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT'))
+            headers.setdefault('Expires', expires.strftime('%a, %d %b %Y %H:%M:%S GMT'))
             headers.setdefault('Cache-Control', 'public, max-age=%d' % layer.max_cache_age)
 
     except Core.KnownUnknown, e:
