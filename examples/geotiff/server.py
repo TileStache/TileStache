@@ -23,7 +23,8 @@ Check server.py --help to change these defaults.
 """
 
 import json
-
+from xml.etree.ElementTree import Element, tostring, fromstring
+from xmljson import badgerfish as bf
 
 if __name__ == '__main__':
     from datetime import datetime
@@ -32,24 +33,16 @@ if __name__ == '__main__':
 
     parser = OptionParser()
 
-    mapnik_config = '''<?xml version="1.0" encoding="utf-8"?>
-                        <!DOCTYPE Map[]>
-                        <Map srs="+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over" font-directory="./fonts">
-                        <Style name="raster-style">
-                          <Rule>
-                              <RasterSymbolizer/>
-                          </Rule>
-                        </Style>
+    filename = "cea.tif"
+    map_srs = "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over"
+    layer_srs = "+proj=cea +lon_0=-117.333333333333 +lat_ts=33.75 +x_0=0 +y_0=0 +datum=NAD27 +units=m +no_defs"
+    mapnik_config_json = {"Map": {"@srs": map_srs, "@font-directory": "./fonts", "Style": {"@name": "raster-style", "Rule": {"RasterSymbolizer": {}}},
+                          "Layer": {"@status": "on", "@srs": layer_srs, "@name": "raster-layer",
+                          "StyleName": {"$": "raster-style"}, "Datasource": {"Parameter": [{"@name": "type", "$": "gdal"},
+                          {"@name": "file", "$": filename}, {"@name": "format", "$": "tiff"}]}}}}
 
-                        <Layer name="raster-layer" status="on" srs="+proj=cea +lon_0=-117.333333333333 +lat_ts=33.75 +x_0=0 +y_0=0 +datum=NAD27 +units=m +no_defs">
-                        <StyleName>raster-style</StyleName>
-                        <Datasource>
-                            <Parameter name="type">gdal</Parameter>
-                            <Parameter name="file">cea.tif</Parameter>
-                            <Parameter name="format">tiff</Parameter>
-                        </Datasource>
-                        </Layer>
-                        </Map>'''
+
+    mapnik_config = tostring(bf.etree(mapnik_config_json)[0])
 
     config = {
         "cache": {
