@@ -254,8 +254,9 @@ class Proxy:
         img = None
         urls = self.provider.getTileUrls(coord)
 
-        # Explicitly tell urllib2 to get no proxies
-        proxy_support = urllib2.ProxyHandler({})
+        # Tell urllib2 get proxies if set in the environment variables <protocol>_proxy
+        # see: https://docs.python.org/2/library/urllib2.html#urllib2.ProxyHandler
+        proxy_support = urllib2.ProxyHandler()
         url_opener = urllib2.build_opener(proxy_support)
 
         for url in urls:
