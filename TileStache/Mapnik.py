@@ -114,7 +114,10 @@ class ImageProvider:
     def prepareKeywordArgs(config_dict):
         """ Convert configured parameters to keyword args for __init__().
         """
-        kwargs = {'mapnik_config': config_dict['mapconfig']}
+        try:
+            kwargs = {'mapnik_config': config_dict['mapconfig']}
+        except KeyError:
+            kwargs = {'mapnik_config': config_dict['mapfile']}
 
         if 'fonts' in config_dict:
             kwargs['fonts'] = config_dict['fonts']
