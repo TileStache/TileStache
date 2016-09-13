@@ -55,7 +55,7 @@ class ImageProvider:
 
         Arguments:
 
-        - mapnik_config (required)
+        - mapconfig (required)
             Local file path to Mapnik XML file.
 
         - fonts (optional)
@@ -74,24 +74,24 @@ class ImageProvider:
         - http://trac.mapnik.org/wiki/XMLConfigReference
     """
 
-    def __init__(self, layer, mapnik_config, fonts=None, scale_factor=None):
-        """ Initialize Mapnik provider with layer and mapnik_config.
+    def __init__(self, layer, mapconfig, fonts=None, scale_factor=None):
+        """ Initialize Mapnik provider with layer and mapconfig.
 
-            XML mapnik_config keyword arg comes from TileStache config,
+            XML mapconfig keyword arg comes from TileStache config,
             and is an absolute path by the time it gets here.
         """
-        maphref = urljoin(layer.config.dirpath, mapnik_config)
+        maphref = urljoin(layer.config.dirpath, mapconfig)
         scheme, h, path, q, p, f = urlparse(maphref)
 
-        self.mapnik_config_is_string = False
+        self.mapconfig_is_string = False
 
         if scheme in ('file', ''):
-            self.mapnik_config = path
+            self.mapconfig = path
         if scheme in ('http', 'https', 'fps'):
-            self.mapnik_config = maphref
+            self.mapconfig = maphref
         else:
-            self.mapnik_config = mapnik_config
-            self.mapnik_config_is_string = True
+            self.mapconfig = mapconfig
+            self.mapconfig_is_string = True
 
         self.layer = layer
         self.mapnik = None
@@ -115,9 +115,9 @@ class ImageProvider:
         """ Convert configured parameters to keyword args for __init__().
         """
         try:
-            kwargs = {'mapnik_config': config_dict['mapconfig']}
+            kwargs = {'mapconfig': config_dict['mapconfig']}
         except KeyError:
-            kwargs = {'mapnik_config': config_dict['mapfile']}
+            kwargs = {'mapconfig': config_dict['mapfile']}
 
         if 'fonts' in config_dict:
             kwargs['fonts'] = config_dict['fonts']
@@ -138,8 +138,8 @@ class ImageProvider:
         if global_mapnik_lock.acquire():
             try:
                 if self.mapnik is None:
-                    self.mapnik = get_mapnikMap(self.mapnik_config)
-                    logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %.3f to load %s', time() - start_time, self.mapnik_config)
+                    self.mapnik = get_mapnikMap(self.mapconfig)
+                    logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %.3f to load %s', time() - start_time, self.mapconfig)
 
                 self.mapnik.width = width
                 self.mapnik.height = height
@@ -161,7 +161,7 @@ class ImageProvider:
 
         img = Image.frombytes('RGBA', (width, height), img.tostring())
 
-        logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %dx%d in %.3f from %s', width, height, time() - start_time, self.mapnik_config)
+        logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %dx%d in %.3f from %s', width, height, time() - start_time, self.mapconfig)
 
         return img
 
@@ -177,7 +177,7 @@ class GridProvider:
           "provider":
           {
             "name": "mapnik grid",
-            "mapnik_config": "world_merc.xml",
+            "mapconfig": "world_merc.xml",
             "fields": ["NAME", "POP2005"]
           }
 
@@ -186,7 +186,7 @@ class GridProvider:
           "provider":
           {
             "name": "mapnik grid",
-            "mapnik_config": "world_merc.xml",
+            "mapconfig": "world_merc.xml",
             "layers":
             [
               [1, ["NAME"]],
@@ -198,7 +198,7 @@ class GridProvider:
 
         Arguments:
 
-        - mapnik_config (required)
+        - mapconfig (required)
           Local file path to Mapnik XML file.
 
         - fields (optional)
@@ -207,7 +207,7 @@ class GridProvider:
           equivalent to all.
 
         - layer_index (optional)
-          Which layer from the mapnik_config to render, defaults to 0 (first layer).
+          Which layer from the mapconfig to render, defaults to 0 (first layer).
 
         - layers (optional)
           Ordered list of (layer_index, fields) to combine; if provided
@@ -227,22 +227,22 @@ class GridProvider:
         - https://github.com/mapbox/utfgrid-spec/blob/master/1.2/utfgrid.md
         - http://mapbox.github.com/wax/interaction-leaf.html
     """
-    def __init__(self, layer, mapnik_config, fields=None, layers=None, layer_index=0, scale=4, layer_id_key=None):
-        """ Initialize Mapnik grid provider with layer and mapnik_config.
+    def __init__(self, layer, mapconfig, fields=None, layers=None, layer_index=0, scale=4, layer_id_key=None):
+        """ Initialize Mapnik grid provider with layer and mapconfig.
 
-            XML mapnik_config keyword arg comes from TileStache config,
+            XML mapconfig keyword arg comes from TileStache config,
             and is an absolute path by the time it gets here.
         """
         self.mapnik = None
         self.layer = layer
 
-        maphref = urljoin(layer.config.dirpath, mapnik_config)
+        maphref = urljoin(layer.config.dirpath, mapconfig)
         scheme, h, path, q, p, f = urlparse(maphref)
 
         if scheme in ('file', ''):
-            self.mapnik_config = path
+            self.mapconfig = path
         else:
-            self.mapnik_config = maphref
+            self.mapconfig = maphref
 
         self.scale = scale
         self.layer_id_key = layer_id_key
@@ -256,7 +256,7 @@ class GridProvider:
     def prepareKeywordArgs(config_dict):
         """ Convert configured parameters to keyword args for __init__().
         """
-        kwargs = {'mapnik_config': config_dict['mapnik_config']}
+        kwargs = {'mapconfig': config_dict['mapconfig']}
 
         for key in ('fields', 'layers', 'layer_index', 'scale', 'layer_id_key'):
             if key in config_dict:
@@ -275,8 +275,8 @@ class GridProvider:
         if global_mapnik_lock.acquire():
             try:
                 if self.mapnik is None:
-                    self.mapnik = get_mapnikMap(self.mapnik_config)
-                    logging.debug('TileStache.Mapnik.GridProvider.renderArea() %.3f to load %s', time() - start_time, self.mapnik_config)
+                    self.mapnik = get_mapnikMap(self.mapconfig)
+                    logging.debug('TileStache.Mapnik.GridProvider.renderArea() %.3f to load %s', time() - start_time, self.mapconfig)
 
                 self.mapnik.width = width
                 self.mapnik.height = height
@@ -316,7 +316,7 @@ class GridProvider:
             finally:
                 global_mapnik_lock.release()
 
-        logging.debug('TileStache.Mapnik.GridProvider.renderArea() %dx%d at %d in %.3f from %s', width, height, self.scale, time() - start_time, self.mapnik_config)
+        logging.debug('TileStache.Mapnik.GridProvider.renderArea() %dx%d at %d in %.3f from %s', width, height, self.scale, time() - start_time, self.mapconfig)
 
         return SaveableResponse(outgrid, self.scale)
 
@@ -421,19 +421,19 @@ def decode_char(char):
         id = id - 1
     return id - 32
 
-def get_mapnikMap(mapnik_config):
-    """ Get a new mapnik.Map instance for a mapnik_config
+def get_mapnikMap(mapconfig):
+    """ Get a new mapnik.Map instance for a mapconfig
     """
     mmap = mapnik.Map(0, 0)
 
-    if self.mapnik_config_is_string:
-        mapnik.load_map_from_string(mmap, self.mapnik_config)
+    if self.mapconfig_is_string:
+        mapnik.load_map_from_string(mmap, self.mapconfig)
     else:
-        if exists(mapnik_config):
-            mapnik.load_map(mmap, str(mapnik_config))
+        if exists(mapconfig):
+            mapnik.load_map(mmap, str(mapconfig))
         else:
             handle, filename = mkstemp()
-            os.write(handle, urlopen(mapnik_config).read())
+            os.write(handle, urlopen(mapconfig).read())
             os.close(handle)
 
             mapnik.load_map(mmap, filename)
