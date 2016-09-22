@@ -1,6 +1,8 @@
 from unittest import TestCase
 from TileStache import Core, parseConfig
 
+from . import utils
+
 class ConfigTests(TestCase):
 
     def test_config(self):
@@ -38,7 +40,7 @@ class ConfigTests(TestCase):
                 <StyleName>raster-style</StyleName>
                 <Datasource>
                     <Parameter name="type">gdal</Parameter>
-                    <Parameter name="file">cea.tif</Parameter>
+                    <Parameter name="file">tests/data/cea.tif</Parameter>
                     <Parameter name="format">tiff</Parameter>
                 </Datasource>
             </Layer>
@@ -66,3 +68,8 @@ class ConfigTests(TestCase):
         config = parseConfig(config_content)
         self.assertTrue(config.layers['geotiff'])
         self.assertTrue(isinstance(config.layers['geotiff'], Core.Layer))
+
+        tile_mimetype, tile_content = utils.request(config_content, "geotiff", "png", 0, 0, 0)
+        self.assertEqual(tile_mimetype, "image/png")
+        self.assertTrue(tile_content[:4] in '\x89\x50\x4e\x47') #check it is a png based on png magic number
+
