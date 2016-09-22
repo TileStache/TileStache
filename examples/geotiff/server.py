@@ -36,7 +36,9 @@ if __name__ == '__main__':
 
     parser = OptionParser()
     filename = "cea.tif"
-    filepath = gdal.Open(os.path.join(os.path.dirname(os.path.realpath(__file__)), filename))
+    filepath = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..',
+                   'tests', 'data', filename))
+    raster = gdal.Open(filepath)
     srs = osr.SpatialReference()
     srs.ImportFromWkt(raster.GetProjectionRef())
     layer_srs = srs.ExportToProj4()
