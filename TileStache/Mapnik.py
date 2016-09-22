@@ -83,7 +83,7 @@ class ImageProvider:
         maphref = urljoin(layer.config.dirpath, mapconfig)
         scheme, h, path, q, p, f = urlparse(maphref)
 
-        self.mapconfig_is_string = False
+        self.mapconfig_xmlstring = False
 
         if scheme in ('file', ''):
             self.mapconfig = path
@@ -91,7 +91,7 @@ class ImageProvider:
             self.mapconfig = maphref
         else:
             self.mapconfig = mapconfig
-            self.mapconfig_is_string = True
+            self.mapconfig_xmlstring = True
 
         self.layer = layer
         self.mapnik = None
@@ -138,7 +138,7 @@ class ImageProvider:
         if global_mapnik_lock.acquire():
             try:
                 if self.mapnik is None:
-                    self.mapnik = get_mapnikMap(self.mapconfig)
+                    self.mapnik = get_mapnikMap(self.mapconfig_xmlstring, self.mapconfig)
                     logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %.3f to load %s', time() - start_time, self.mapconfig)
 
                 self.mapnik.width = width
@@ -275,7 +275,7 @@ class GridProvider:
         if global_mapnik_lock.acquire():
             try:
                 if self.mapnik is None:
-                    self.mapnik = get_mapnikMap(self.mapconfig)
+                    self.mapnik = get_mapnikMap(self.mapconfig_xmlstring, self.mapconfig)
                     logging.debug('TileStache.Mapnik.GridProvider.renderArea() %.3f to load %s', time() - start_time, self.mapconfig)
 
                 self.mapnik.width = width
@@ -421,13 +421,13 @@ def decode_char(char):
         id = id - 1
     return id - 32
 
-def get_mapnikMap(mapconfig):
+def get_mapnikMap(mapconfig_inmemory_string, mapconfig):
     """ Get a new mapnik.Map instance for a mapconfig
     """
     mmap = mapnik.Map(0, 0)
 
-    if self.mapconfig_is_string:
-        mapnik.load_map_from_string(mmap, self.mapconfig)
+    if mapconfig_inmemory_string:
+        mapnik.load_map_from_string(mmap, mapconfig)
     else:
         if exists(mapconfig):
             mapnik.load_map(mmap, str(mapconfig))
