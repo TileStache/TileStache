@@ -4,3 +4,4 @@ shapely
 pillow
 psycopg2
 python-memcached
+mapbox-vector-tile==0.5.0

@@ -15,6 +15,7 @@ from os.path import exists
 try:
     from psycopg2.extras import RealDictCursor
     from psycopg2 import connect
+    from psycopg2.extensions import TransactionRollbackError
 
 except ImportError, err:
     # Still possible to build the documentation without psycopg2
@@ -22,7 +23,7 @@ except ImportError, err:
     def connect(*args, **kwargs):
         raise err
 
-from . import mvt, geojson, topojson
+from . import mvt, geojson, topojson, pbf
 from ...Geography import SphericalMercator
 from ModestMaps.Core import Point
 
@@ -179,7 +180,7 @@ class Provider:
         
         tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
         
-        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, coord.zoom, self.clip)
+        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, coord.zoom, self.clip, coord, self.layer.name())
 
     def getTypeByExtension(self, extension):
         ''' Get mime-type and format by file extension, one of "mvt", "json" or "topojson".
@@ -192,6 +193,9 @@ class Provider:
         
         elif extension.lower() == 'topojson':
             return 'application/json', 'TopoJSON'
+
+        elif extension.lower() == 'pbf':
+            return 'application/x-protobuf', 'PBF'
         
         else:
             raise ValueError(extension)
@@ -233,6 +237,9 @@ class MultiProvider:
         
         elif extension.lower() == 'topojson':
             return 'application/json', 'TopoJSON'
+
+        elif extension.lower() == 'pbf':
+            return 'application/x-protobuf', 'PBF'
         
         else:
             raise ValueError(extension)
@@ -256,7 +263,7 @@ class Connection:
 class Response:
     '''
     '''
-    def __init__(self, dbinfo, srid, subquery, columns, bounds, tolerance, zoom, clip):
+    def __init__(self, dbinfo, srid, subquery, columns, bounds, tolerance, zoom, clip, coord, layer_name=''):
         ''' Create a new response object with Postgres connection info and a query.
         
             bounds argument is a 4-tuple with (xmin, ymin, xmax, ymax).
@@ -265,11 +272,18 @@ class Response:
         self.bounds = bounds
         self.zoom = zoom
         self.clip = clip
-        
-        bbox = 'ST_MakeBox2D(ST_MakePoint(%.2f, %.2f), ST_MakePoint(%.2f, %.2f))' % bounds
-        geo_query = build_query(srid, subquery, columns, bbox, tolerance, True, clip)
-        merc_query = build_query(srid, subquery, columns, bbox, tolerance, False, clip)
-        self.query = dict(TopoJSON=geo_query, JSON=geo_query, MVT=merc_query)
+        self.coord = coord
+        self.layer_name = layer_name
+
+        geo_query = build_query(srid, subquery, columns, bounds, tolerance, True, clip)
+        merc_query = build_query(srid, subquery, columns, bounds, tolerance, False, clip)
+
+        tol_idx = coord.zoom if 0 <= coord.zoom < len(tolerances) else -1
+        tol_val = tolerances[tol_idx]
+        padding = pbf.padding * tol_val
+
+        pbf_query = build_query(srid, subquery, columns, bounds, tolerance, False, clip, padding, pbf.extents)
+        self.query = dict(TopoJSON=geo_query, JSON=geo_query, MVT=merc_query, PBF=pbf_query)
     
     def save(self, out, format):
         '''
@@ -304,6 +318,10 @@ class Response:
             ur = SphericalMercator().projLocation(Point(*self.bounds[2:4]))
             topojson.encode(out, features, (ll.lon, ll.lat, ur.lon, ur.lat), self.clip)
         
+        elif format == 'PBF':
+            pbf.encode(
+                out, features, self.coord, layer_name=self.layer_name)
+
         else:
             raise ValueError(format)
 
@@ -327,6 +345,9 @@ class EmptyResponse:
             ur = SphericalMercator().projLocation(Point(*self.bounds[2:4]))
             topojson.encode(out, [], (ll.lon, ll.lat, ur.lon, ur.lat), False)
         
+        elif format == 'PBF':
+            pbf.encode(out, [], None, self.bounds)
+
         else:
             raise ValueError(format)
 
@@ -348,7 +369,17 @@ class MultiResponse:
         
         elif format == 'JSON':
             geojson.merge(out, self.names, self.config, self.coord)
-        
+
+        elif format == 'PBF':
+            feature_layers = []
+            layers = [self.config.layers[name] for name in self.names]
+            for layer in layers:
+                width, height = layer.dim, layer.dim
+                tile = layer.provider.renderTile(width, height, layer.projection.srs, self.coord)
+                if isinstance(tile, EmptyResponse): continue
+                feature_layers.append({'name': layer.name(), 'features': get_features(tile.dbinfo, tile.query["PBF"])})
+            pbf.merge(out, feature_layers, self.coord, self.bounds)
+
         else:
             raise ValueError(format)
 
@@ -381,10 +412,40 @@ def query_columns(dbinfo, srid, subquery, bounds):
             
             column_names = set(row.keys())
             return column_names
+
+def get_features(dbinfo, query, n_try=1):
+    features = []
+
+    with Connection(dbinfo) as db:
+        try:
+            db.execute(query)
+        except TransactionRollbackError:
+            if n_try >= 5:
+                print 'TransactionRollbackError occurred 5 times'
+                raise
+            else:
+                return get_features(dbinfo, query, n_try=n_try + 1)
+        for row in db.fetchall():
+            assert '__geometry__' in row, 'Missing __geometry__ in feature result'
+            assert '__id__' in row, 'Missing __id__ in feature result'
+
+            wkb = bytes(row.pop('__geometry__'))
+            id = row.pop('__id__')
+
+            props = dict((k, v) for k, v in row.items() if v is not None)
+
+            features.append((wkb, props, id))
+
+    return features
+
         
-def build_query(srid, subquery, subcolumns, bbox, tolerance, is_geo, is_clipped):
+def build_query(srid, subquery, subcolumns, bounds, tolerance, is_geo, is_clipped, padding=0, scale=None):
     ''' Build and return an PostGIS query.
     '''
+    bbox = 'ST_MakeBox2D(ST_MakePoint(%.12f, %.12f), ST_MakePoint(%.12f, %.12f))' % (
+        bounds[0] - padding, bounds[1] - padding,
+        bounds[2] + padding, bounds[3] + padding)
+
     bbox = 'ST_SetSRID(%s, %d)' % (bbox, srid)
     geom = 'q.__geometry__'
     
@@ -396,6 +457,13 @@ def build_query(srid, subquery, subcolumns, bbox, tolerance, is_geo, is_clipped)
     
     if is_geo:
         geom = 'ST_Transform(%s, 4326)' % geom
+
+    if scale:
+        # scale applies to the un-padded bounds, e.g. geometry in the padding area "spills over" past the scale range
+        geom = ('ST_TransScale(%s, %.12f, %.12f, %.12f, %.12f)'
+                % (geom, -bounds[0], -bounds[1],
+                   scale / (bounds[2] - bounds[0]),
+                   scale / (bounds[3] - bounds[1])))
     
     subquery = subquery.replace('!bbox!', bbox)
     columns = ['q."%s"' % c for c in subcolumns if c not in ('__geometry__', )]
