@@ -256,7 +256,10 @@ class GridProvider:
     def prepareKeywordArgs(config_dict):
         """ Convert configured parameters to keyword args for __init__().
         """
-        kwargs = {'mapconfig': config_dict['mapconfig']}
+        try:
+            kwargs = {'mapconfig': config_dict['mapconfig']}
+        except KeyError:
+            kwargs = {'mapconfig': config_dict['mapfile']}
 
         for key in ('fields', 'layers', 'layer_index', 'scale', 'layer_id_key'):
             if key in config_dict:
