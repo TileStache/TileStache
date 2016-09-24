@@ -83,18 +83,22 @@ class ImageProvider:
         maphref = urljoin(layer.config.dirpath, mapconfig)
         scheme, h, path, q, p, f = urlparse(maphref)
 
-        self.mapconfig_xmlstring = False
+        self.mapnik = None
+        self.layer = layer
 
         if scheme in ('file', ''):
-            self.mapconfig = path
-        if scheme in ('http', 'https', 'fps'):
+            if os.path.isfile(path):
+                self.mapconfig = path
+            else:
+                self.mapnik = mapnik.Map(0, 0)
+                mapnik.load_map_from_string(self.mapnik, mapconfig)
+                self.mapconfig = mapconfig
+        elif scheme in ('http', 'https', 'fps'):
             self.mapconfig = maphref
         else:
-            self.mapconfig = mapconfig
-            self.mapconfig_xmlstring = True
+            raise ValueError("Invalid mapnik configuration: %s"%mapconfig)
 
-        self.layer = layer
-        self.mapnik = None
+
 
         engine = mapnik.FontEngine.instance()
 
@@ -138,7 +142,7 @@ class ImageProvider:
         if global_mapnik_lock.acquire():
             try:
                 if self.mapnik is None:
-                    self.mapnik = get_mapnikMap(self.mapconfig_xmlstring, self.mapconfig)
+                    self.mapnik = get_mapnikMap(self.mapconfig)
                     logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %.3f to load %s', time() - start_time, self.mapconfig)
 
                 self.mapnik.width = width
@@ -240,9 +244,16 @@ class GridProvider:
         scheme, h, path, q, p, f = urlparse(maphref)
 
         if scheme in ('file', ''):
-            self.mapconfig = path
-        else:
+            if os.path.isfile(path):
+                self.mapconfig = path
+            else:
+                self.mapnik = mapnik.Map(0, 0)
+                mapnik.load_map_from_string(self.mapnik, mapconfig)
+                self.mapconfig = mapconfig
+        elif scheme in ('http', 'https', 'fps'):
             self.mapconfig = maphref
+        else:
+            raise ValueError("Invalid mapnik configuration: %s"%mapconfig)
 
         self.scale = scale
         self.layer_id_key = layer_id_key
@@ -278,7 +289,7 @@ class GridProvider:
         if global_mapnik_lock.acquire():
             try:
                 if self.mapnik is None:
-                    self.mapnik = get_mapnikMap(self.mapconfig_xmlstring, self.mapconfig)
+                    self.mapnik = get_mapnikMap(self.mapconfig)
                     logging.debug('TileStache.Mapnik.GridProvider.renderArea() %.3f to load %s', time() - start_time, self.mapconfig)
 
                 self.mapnik.width = width
@@ -424,22 +435,19 @@ def decode_char(char):
         id = id - 1
     return id - 32
 
-def get_mapnikMap(mapconfig_inmemory_string, mapconfig):
+def get_mapnikMap(mapconfig):
     """ Get a new mapnik.Map instance for a mapconfig
     """
     mmap = mapnik.Map(0, 0)
 
-    if mapconfig_inmemory_string:
-        mapnik.load_map_from_string(mmap, mapconfig)
+    if exists(mapconfig):
+        mapnik.load_map(mmap, str(mapconfig))
     else:
-        if exists(mapconfig):
-            mapnik.load_map(mmap, str(mapconfig))
-        else:
-            handle, filename = mkstemp()
-            os.write(handle, urlopen(mapconfig).read())
-            os.close(handle)
+        handle, filename = mkstemp()
+        os.write(handle, urlopen(mapconfig).read())
+        os.close(handle)
 
-            mapnik.load_map(mmap, filename)
-            os.unlink(filename)
+        mapnik.load_map(mmap, filename)
+        os.unlink(filename)
 
     return mmap

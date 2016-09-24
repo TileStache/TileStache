@@ -15,7 +15,7 @@ Sample configuration:
       "class": "TileStache.Goodies.Providers.MapnikGrid:Provider",
       "kwargs":
       {
-        "mapconfig": "mymap.xml", 
+        "mapconfig": "mymap.xml",
         "fields":["name", "address"],
         "layer_index": 0,
         "wrapper": "grid",
@@ -54,12 +54,12 @@ class Provider:
 
         maphref = urljoin(layer.config.dirpath, mapconfig)
         scheme, h, path, q, p, f = urlparse(maphref)
-        
+
         if scheme in ('file', ''):
             self.mapconfig = path
         else:
             self.mapconfig = maphref
-        
+
         self.layer_index = layer_index
         self.wrapper = wrapper
         self.scale = scale
@@ -127,12 +127,14 @@ class SaveableResponse:
 
 def get_mapnikMap(mapconfig):
     """ Get a new mapnik.Map instance for a mapconfig
+
+        mapconfig is expected to a URI for this method. If it is a XML
+        string, then the code below will fail.
     """
     mmap = mapnik.Map(0, 0)
 
     if exists(mapconfig):
         mapnik.load_map(mmap, str(mapconfig))
-
     else:
         handle, filename = mkstemp()
         os.write(handle, urlopen(mapconfig).read())
