@@ -78,27 +78,29 @@ class ImageProvider:
         """ Initialize Mapnik provider with layer and mapconfig.
 
             XML mapconfig keyword arg comes from TileStache config,
-            and is an absolute path by the time it gets here.
+            and is either an absolute path by the time it gets here or a
+            XML string.
         """
-        maphref = urljoin(layer.config.dirpath, mapconfig)
-        scheme, h, path, q, p, f = urlparse(maphref)
-
         self.mapnik = None
         self.layer = layer
 
-        if scheme in ('file', ''):
-            if os.path.isfile(path):
-                self.mapconfig = path
+        try:
+            maphref = urljoin(layer.config.dirpath, mapconfig)
+            scheme, h, path, q, p, f = urlparse(maphref)
+
+            if scheme in ('file', ''):
+                if os.path.isfile(path):
+                    self.mapconfig = path
+                else:
+                    self.mapnik = get_mapnikMapFromXMLString(mapconfig)
+                    self.mapconfig = mapconfig
+            elif scheme in ('http', 'https', 'fps'):
+                self.mapconfig = maphref
             else:
-                self.mapnik = mapnik.Map(0, 0)
-                mapnik.load_map_from_string(self.mapnik, mapconfig)
-                self.mapconfig = mapconfig
-        elif scheme in ('http', 'https', 'fps'):
-            self.mapconfig = maphref
-        else:
-            raise ValueError("Invalid mapnik configuration: %s"%mapconfig)
-
-
+                raise ValueError("Invalid mapnik configuration: %s"%mapconfig)
+        except:
+            self.mapnik = get_mapnikMapFromXMLString(mapconfig)
+            self.mapconfig = mapconfig
 
         engine = mapnik.FontEngine.instance()
 
@@ -142,7 +144,7 @@ class ImageProvider:
         if global_mapnik_lock.acquire():
             try:
                 if self.mapnik is None:
-                    self.mapnik = get_mapnikMap(self.mapconfig)
+                    self.mapnik = get_mapnikMapFromUri(self.mapconfig)
                     logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %.3f to load %s', time() - start_time, self.mapconfig)
 
                 self.mapnik.width = width
@@ -235,25 +237,29 @@ class GridProvider:
         """ Initialize Mapnik grid provider with layer and mapconfig.
 
             XML mapconfig keyword arg comes from TileStache config,
-            and is an absolute path by the time it gets here.
+            and is either an absolute path by the time it gets here or
+            a XML string.
         """
         self.mapnik = None
         self.layer = layer
 
-        maphref = urljoin(layer.config.dirpath, mapconfig)
-        scheme, h, path, q, p, f = urlparse(maphref)
+        try:
+            maphref = urljoin(layer.config.dirpath, mapconfig)
+            scheme, h, path, q, p, f = urlparse(maphref)
 
-        if scheme in ('file', ''):
-            if os.path.isfile(path):
-                self.mapconfig = path
+            if scheme in ('file', ''):
+                if os.path.isfile(path):
+                    self.mapconfig = path
+                else:
+                    self.mapnik = get_mapnikMapFromXMLString(mapconfig)
+                    self.mapconfig = mapconfig
+            elif scheme in ('http', 'https', 'fps'):
+                self.mapconfig = maphref
             else:
-                self.mapnik = mapnik.Map(0, 0)
-                mapnik.load_map_from_string(self.mapnik, mapconfig)
-                self.mapconfig = mapconfig
-        elif scheme in ('http', 'https', 'fps'):
-            self.mapconfig = maphref
-        else:
-            raise ValueError("Invalid mapnik configuration: %s"%mapconfig)
+                raise ValueError("Invalid mapnik configuration: %s"%mapconfig)
+        except:
+            self.mapnik = get_mapnikMapFromXMLString(mapconfig)
+            self.mapconfig = mapconfig
 
         self.scale = scale
         self.layer_id_key = layer_id_key
@@ -289,7 +295,7 @@ class GridProvider:
         if global_mapnik_lock.acquire():
             try:
                 if self.mapnik is None:
-                    self.mapnik = get_mapnikMap(self.mapconfig)
+                    self.mapnik = get_mapnikMapFromUri(self.mapconfig)
                     logging.debug('TileStache.Mapnik.GridProvider.renderArea() %.3f to load %s', time() - start_time, self.mapconfig)
 
                 self.mapnik.width = width
@@ -435,7 +441,7 @@ def decode_char(char):
         id = id - 1
     return id - 32
 
-def get_mapnikMap(mapconfig):
+def get_mapnikMapFromUri(mapconfig):
     """ Get a new mapnik.Map instance for a mapconfig
     """
     mmap = mapnik.Map(0, 0)
@@ -449,5 +455,13 @@ def get_mapnikMap(mapconfig):
 
         mapnik.load_map(mmap, filename)
         os.unlink(filename)
+
+    return mmap
+
+def get_mapnikMapFromXMLString(mapconfig):
+    """ Get a new mapnik.Map instance for a mapconfig
+    """
+    mmap = mapnik.Map(0, 0)
+    mapnik.load_map_from_string(mmap, mapconfig)
 
     return mmap

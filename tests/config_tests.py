@@ -3,6 +3,8 @@ from TileStache import Core, parseConfig
 
 from . import utils
 
+import os
+
 class ConfigTests(TestCase):
 
     def test_config(self):
@@ -72,4 +74,32 @@ class ConfigTests(TestCase):
         tile_mimetype, tile_content = utils.request(config_content, "geotiff", "png", 0, 0, 0)
         self.assertEqual(tile_mimetype, "image/png")
         self.assertTrue(tile_content[:4] in '\x89\x50\x4e\x47') #check it is a png based on png magic number
+
+
+    def test_config_mapnik_file(self):
+            '''Test mapnik XML file based configuration'''
+
+            mapnik_config = os.path.join(os.path.dirname(os.path.realpath(__file__)), "mapnik_config.xml")
+
+            config_content = {
+                "cache": {
+                    "name": "Test",
+                    "path": "/tmp/stache",
+                    "umask": "0000"
+                },
+                "layers": {
+                    "geotiff": {
+                        "provider": {"name": "mapnik", "mapconfig": mapnik_config},
+                        "projection": "spherical mercator"
+                    }
+                }
+            }
+
+            config = parseConfig(config_content)
+            self.assertTrue(config.layers['geotiff'])
+            self.assertTrue(isinstance(config.layers['geotiff'], Core.Layer))
+
+            tile_mimetype, tile_content = utils.request(config_content, "geotiff", "png", 0, 0, 0)
+            self.assertEqual(tile_mimetype, "image/png")
+            self.assertTrue(tile_content[:4] in '\x89\x50\x4e\x47') #check it is a png based on png magic number
 
