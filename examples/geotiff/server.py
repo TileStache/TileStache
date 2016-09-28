@@ -85,7 +85,6 @@ if __name__ == '__main__':
 
 
     mapnik_config = tostring(bf.etree(mapnik_config_json)[0])
-    print mapnik_config
 
     config = {
         "cache": {

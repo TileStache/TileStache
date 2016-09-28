@@ -100,7 +100,7 @@ class ImageProvider:
                 raise ValueError("Invalid mapnik configuration: %s"%mapconfig)
         except:
             if mapconfig.lower().endswith(".xml"):
-                raise IOError("%s not found or invalid path"$mapconfig)
+                raise IOError("%s not found or invalid path"%mapconfig)
             else:
                 self.mapnik = get_mapnikMapFromXMLString(mapconfig)
                 self.mapconfig = mapconfig
@@ -262,7 +262,7 @@ class GridProvider:
                 raise ValueError("Invalid mapnik configuration: %s"%mapconfig)
         except:
             if mapconfig.lower().endswith(".xml"):
-                raise IOError("%s not found or invalid path"$mapconfig)
+                raise IOError("%s not found or invalid path"%mapconfig)
             else:
                 self.mapnik = get_mapnikMapFromXMLString(mapconfig)
                 self.mapconfig = mapconfig
