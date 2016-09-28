@@ -99,8 +99,11 @@ class ImageProvider:
             else:
                 raise ValueError("Invalid mapnik configuration: %s"%mapconfig)
         except:
-            self.mapnik = get_mapnikMapFromXMLString(mapconfig)
-            self.mapconfig = mapconfig
+            if mapconfig.lower().endswith(".xml"):
+                raise IOError("%s not found or invalid path"$mapconfig)
+            else:
+                self.mapnik = get_mapnikMapFromXMLString(mapconfig)
+                self.mapconfig = mapconfig
 
         engine = mapnik.FontEngine.instance()
 
@@ -258,8 +261,11 @@ class GridProvider:
             else:
                 raise ValueError("Invalid mapnik configuration: %s"%mapconfig)
         except:
-            self.mapnik = get_mapnikMapFromXMLString(mapconfig)
-            self.mapconfig = mapconfig
+            if mapconfig.lower().endswith(".xml"):
+                raise IOError("%s not found or invalid path"$mapconfig)
+            else:
+                self.mapnik = get_mapnikMapFromXMLString(mapconfig)
+                self.mapconfig = mapconfig
 
         self.scale = scale
         self.layer_id_key = layer_id_key
