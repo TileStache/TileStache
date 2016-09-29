@@ -1,5 +1,8 @@
 import mapbox_vector_tile
 
+# extracted from Mapzen TileStache fork version 0.9.0, more recent versions doesn't seem to work.
+# https://github.com/tilezen/TileStache/blob/089ee60f9902e85678499fe8455580a8a013be89/TileStache/Goodies/VecTiles/mvt.py
+
 # coordindates are scaled to this range within tile
 extents = 4096
 

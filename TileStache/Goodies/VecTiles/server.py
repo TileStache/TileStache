@@ -183,7 +183,7 @@ class Provider:
         return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, coord.zoom, self.clip, coord, self.layer.name())
 
     def getTypeByExtension(self, extension):
-        ''' Get mime-type and format by file extension, one of "mvt", "json" or "topojson".
+        ''' Get mime-type and format by file extension, one of "mvt", "json", "topojson" or "pbf".
         '''
         if extension.lower() == 'mvt':
             return 'application/octet-stream+mvt', 'MVT'
@@ -230,7 +230,7 @@ class MultiProvider:
         return MultiResponse(self.layer.config, self.names, coord)
 
     def getTypeByExtension(self, extension):
-        ''' Get mime-type and format by file extension, "json" or "topojson" only.
+        ''' Get mime-type and format by file extension, "json", "topojson" or "pbf" only.
         '''
         if extension.lower() == 'json':
             return 'application/json', 'JSON'
@@ -326,7 +326,7 @@ class Response:
             raise ValueError(format)
 
 class EmptyResponse:
-    ''' Simple empty response renders valid MVT or GeoJSON with no features.
+    ''' Simple empty response renders valid MVT, GeoJSON, TopoJSON or PBF with no features.
     '''
     def __init__(self, bounds):
         self.bounds = bounds
@@ -378,7 +378,7 @@ class MultiResponse:
                 tile = layer.provider.renderTile(width, height, layer.projection.srs, self.coord)
                 if isinstance(tile, EmptyResponse): continue
                 feature_layers.append({'name': layer.name(), 'features': get_features(tile.dbinfo, tile.query["PBF"])})
-            pbf.merge(out, feature_layers, self.coord, self.bounds)
+            pbf.merge(out, feature_layers, self.coord)
 
         else:
             raise ValueError(format)
