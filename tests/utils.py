@@ -23,7 +23,7 @@ def request(config_content, layer_name, format, row, column, zoom):
     request
     '''
 
-    is_string = isinstance(config_content, str)
+    is_string = isinstance(config_content, basestring)
     if is_string:
         absolute_file_name = create_temp_file(config_content)
         config = parseConfig(absolute_file_name)

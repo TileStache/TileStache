@@ -22,7 +22,7 @@ class Provider (ImageProvider):
     
         Arguments:
         
-        - mapfile (required)
+        - mapconfig (required)
             Local file path to Mapnik XML file.
     
         - fonts (optional)
@@ -31,19 +31,19 @@ class Provider (ImageProvider):
         - workdir (optional)
             Directory path for working files, tempfile.gettempdir() by default.
     """
-    def __init__(self, layer, mapfile, fonts=None, workdir=None):
-        """ Initialize Cascadenik provider with layer and mapfile.
+    def __init__(self, layer, mapconfig, fonts=None, workdir=None):
+        """ Initialize Cascadenik provider with layer and mapconfig.
         """
         self.workdir = workdir or gettempdir()
         self.mapnik = None
 
-        ImageProvider.__init__(self, layer, mapfile, fonts)
+        ImageProvider.__init__(self, layer, mapconfig, fonts)
 
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """ Mostly hand off functionality to Mapnik.ImageProvider.renderArea()
         """
         if self.mapnik is None:
             self.mapnik = mapnik.Map(0, 0)
-            load_map(self.mapnik, str(self.mapfile), self.workdir, cache_dir=self.workdir)
+            load_map(self.mapnik, str(self.mapconfig), self.workdir, cache_dir=self.workdir)
         
         return ImageProvider.renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom)
