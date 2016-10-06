@@ -60,7 +60,12 @@ class Provider:
           clip:
             Optional boolean flag determines whether geometries are clipped to
             tile boundaries or returned in full. Default true: clip geometries.
-        
+
+          padding:
+            Optional number of pixels for applying a padding in the !bbox! token.
+            Useful if you want some buffer (common areas) between the tiles.
+            Default 0.
+
           srid:
             Optional numeric SRID used by PostGIS for spherical mercator.
             Default 900913.
@@ -115,7 +120,7 @@ class Provider:
         Note that JSON requires keys to be strings, therefore the zoom levels
         must be enclosed in quotes.
     '''
-    def __init__(self, layer, dbinfo, queries, clip=True, srid=900913, simplify=1.0, simplify_until=16):
+    def __init__(self, layer, dbinfo, queries, clip=True, srid=900913, simplify=1.0, simplify_until=16, padding=0):
         '''
         '''
         self.layer = layer
@@ -127,7 +132,7 @@ class Provider:
         self.srid = int(srid)
         self.simplify = float(simplify)
         self.simplify_until = int(simplify_until)
-        
+        self.padding = int(padding)
         self.columns = {}
 
         # Each type creates an iterator yielding tuples of:
@@ -180,7 +185,7 @@ class Provider:
         
         tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
         
-        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, coord.zoom, self.clip, coord, self.layer.name())
+        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, coord.zoom, self.clip, coord, self.layer.name(), self.padding)
 
     def getTypeByExtension(self, extension):
         ''' Get mime-type and format by file extension, one of "mvt", "json", "topojson" or "pbf".
@@ -263,7 +268,7 @@ class Connection:
 class Response:
     '''
     '''
-    def __init__(self, dbinfo, srid, subquery, columns, bounds, tolerance, zoom, clip, coord, layer_name=''):
+    def __init__(self, dbinfo, srid, subquery, columns, bounds, tolerance, zoom, clip, coord, layer_name='', padding=0):
         ''' Create a new response object with Postgres connection info and a query.
         
             bounds argument is a 4-tuple with (xmin, ymin, xmax, ymax).
@@ -274,17 +279,19 @@ class Response:
         self.clip = clip
         self.coord = coord
         self.layer_name = layer_name
+        self.padding = padding
 
-        geo_query = build_query(srid, subquery, columns, bounds, tolerance, True, clip)
-        merc_query = build_query(srid, subquery, columns, bounds, tolerance, False, clip)
-
+        # convert pixel padding to meters (based on tolerances)
+        # to be applied in the bbox
         tol_idx = coord.zoom if 0 <= coord.zoom < len(tolerances) else -1
         tol_val = tolerances[tol_idx]
-        padding = pbf.padding * tol_val
+        self.padding = self.padding * tol_val
 
-        pbf_query = build_query(srid, subquery, columns, bounds, tolerance, False, clip, padding, pbf.extents)
+        geo_query = build_query(srid, subquery, columns, bounds, tolerance, True, clip, self.padding)
+        merc_query = build_query(srid, subquery, columns, bounds, tolerance, False, clip, self.padding)
+        pbf_query = build_query(srid, subquery, columns, bounds, tolerance, False, clip, self.padding, pbf.extents)
         self.query = dict(TopoJSON=geo_query, JSON=geo_query, MVT=merc_query, PBF=pbf_query)
-    
+
     def save(self, out, format):
         '''
         '''
