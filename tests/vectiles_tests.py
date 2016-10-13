@@ -5,7 +5,6 @@ import json
 
 from osgeo import ogr, osr
 from shapely.geometry import Point, LineString, Polygon, MultiPolygon, asShape
-
 import mapbox_vector_tile
 
 from TileStache.Goodies.VecTiles import pbf

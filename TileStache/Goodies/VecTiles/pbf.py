@@ -10,7 +10,7 @@ extents = 4096
 def decode(file):
     tile = file.read()
     data = mapbox_vector_tile.decode(tile)
-    return data # print data or write to file?
+    return data
 
 
 def encode(file, features, coord, layer_name=''):
