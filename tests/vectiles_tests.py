@@ -7,7 +7,6 @@ from osgeo import ogr, osr
 from shapely.geometry import Point, LineString, Polygon, MultiPolygon, asShape
 
 import mapbox_vector_tile
-# import mercantile
 
 from TileStache.Goodies.VecTiles import pbf
 
@@ -98,7 +97,6 @@ def decoded_pbf_asshape(feature, extent, srid=4326):
         coords = [
             trans_coord(3857, srid, *coord2merc(*g, extent=extent)) for g in feature['geometry']]
     elif feature['type'] == 3:
-        print feature['geometry']
         coords = [
             [trans_coord(3857, srid, *coord2merc(*g, extent=extent)) for g in feature['geometry'][0]]
         ]
@@ -610,8 +608,6 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         west_hemisphere_geometry = decoded_pbf_asshape(layer_result['features'][0], extent)
         # order of points returned are different
         expected_geometry = LineString([(180, 32), (-180, 32)])
-        print expected_geometry
-        print west_hemisphere_geometry
         for returned, expected in zip(west_hemisphere_geometry.coords, expected_geometry.coords):
             self.assertTrue(round(returned[0]) == expected[0])
             self.assertTrue(round(returned[1]) == expected[1])

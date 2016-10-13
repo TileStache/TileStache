@@ -6,9 +6,6 @@ import mapbox_vector_tile
 # coordindates are scaled to this range within tile
 extents = 4096
 
-# tiles are padded by this number of pixels for the current zoom level 
-padding = 0
-
 
 def decode(file):
     tile = file.read()

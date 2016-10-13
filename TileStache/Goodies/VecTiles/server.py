@@ -428,7 +428,6 @@ def get_features(dbinfo, query, n_try=1):
             db.execute(query)
         except TransactionRollbackError:
             if n_try >= 5:
-                print 'TransactionRollbackError occurred 5 times'
                 raise
             else:
                 return get_features(dbinfo, query, n_try=n_try + 1)
