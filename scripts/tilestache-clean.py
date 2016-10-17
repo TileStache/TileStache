@@ -65,25 +65,25 @@ parser.add_option('--tile-list', dest='tile_list',
 
 def generateCoordinates(ul, lr, zooms, padding):
     """ Generate a stream of (offset, count, coordinate) tuples for seeding.
-    
+
         Flood-fill coordinates based on two corners, a list of zooms and padding.
     """
     # start with a simple total of all the coordinates we will need.
     count = 0
-    
+
     for zoom in zooms:
         ul_ = ul.zoomTo(zoom).container().left(padding).up(padding)
         lr_ = lr.zoomTo(zoom).container().right(padding).down(padding)
-        
+
         rows = lr_.row + 1 - ul_.row
         cols = lr_.column + 1 - ul_.column
-        
+
         count += int(rows * cols)
 
     # now generate the actual coordinates.
     # offset starts at zero
     offset = 0
-    
+
     for zoom in zooms:
         ul_ = ul.zoomTo(zoom).container().left(padding).up(padding)
         lr_ = lr.zoomTo(zoom).container().right(padding).down(padding)
@@ -91,22 +91,22 @@ def generateCoordinates(ul, lr, zooms, padding):
         for row in range(int(ul_.row), int(lr_.row + 1)):
             for column in range(int(ul_.column), int(lr_.column + 1)):
                 coord = Coordinate(row, column, zoom)
-                
+
                 yield (offset, count, coord)
-                
+
                 offset += 1
 
 def listCoordinates(filename):
     """ Generate a stream of (offset, count, coordinate) tuples for seeding.
-    
+
         Read coordinates from a file with one Z/X/Y coordinate per line.
     """
     coords = (line.strip().split('/') for line in open(filename, 'r'))
     coords = (map(int, (row, column, zoom)) for (zoom, column, row) in coords)
     coords = [Coordinate(*args) for args in coords]
-    
+
     count = len(coords)
-    
+
     for (offset, coord) in enumerate(coords):
         yield (offset, count, coord)
 
@@ -117,10 +117,10 @@ if __name__ == '__main__':
         for p in options.include.split(':'):
             path.insert(0, p)
 
-    from TileStache import parseConfigfile, getTile
+    from TileStache import parseConfig, getTile
     from TileStache.Core import KnownUnknown
     from TileStache.Caches import Disk, Multi
-    
+
     from ModestMaps.Core import Coordinate
     from ModestMaps.Geo import Location
 
@@ -131,7 +131,7 @@ if __name__ == '__main__':
         if options.layer is None:
             raise KnownUnknown('Missing required layer (--layer) parameter.')
 
-        config = parseConfigfile(options.config)
+        config = parseConfig(options.config)
 
         if options.layer in ('ALL', 'ALL LAYERS') and options.layer not in config.layers:
             # clean every layer in the config
@@ -143,11 +143,11 @@ if __name__ == '__main__':
         else:
             # clean just one layer in the config
             layers = [config.layers[options.layer]]
-        
+
         verbose = options.verbose
         extension = options.extension
         progressfile = options.progressfile
-        
+
         lat1, lon1, lat2, lon2 = options.bbox
         south, west = min(lat1, lat2), min(lon1, lon2)
         north, east = max(lat1, lat2), max(lon1, lon2)
@@ -160,7 +160,7 @@ if __name__ == '__main__':
                 raise KnownUnknown('"%s" is not a valid numeric zoom level.' % zoom)
 
             zooms[i] = int(zoom)
-        
+
         if options.padding < 0:
             raise KnownUnknown('A negative padding will not work.')
 
@@ -177,19 +177,19 @@ if __name__ == '__main__':
         else:
             ul = layer.projection.locationCoordinate(northwest)
             lr = layer.projection.locationCoordinate(southeast)
-    
+
             coordinates = generateCoordinates(ul, lr, zooms, padding)
-        
+
         for (offset, count, coord) in coordinates:
             path = '%s/%d/%d/%d.%s' % (layer.name(), coord.zoom, coord.column, coord.row, extension)
-    
+
             progress = {"tile": path,
                         "offset": offset + 1,
                         "total": count}
-    
+
             if options.verbose:
                 print >> stderr, '%(offset)d of %(total)d...' % progress,
-    
+
             try:
                 mimetype, format = layer.getTypeByExtension(extension)
             except:
@@ -201,10 +201,10 @@ if __name__ == '__main__':
                 pass
             else:
                 config.cache.remove(layer, coord, format)
-    
+
             if options.verbose:
                 print >> stderr, '%(tile)s' % progress
-                    
+
             if progressfile:
                 fp = open(progressfile, 'w')
                 json_dump(progress, fp)

@@ -3,32 +3,39 @@
 
 language: python
 
+sudo: required
+dist: trusty
+
 python:
   - "2.7"
+
+addons:
+  postgresql: "9.4"
+  apt:
+    packages:
+      - postgresql-9.4-postgis-2.2
+      - python-dev
+      - libgdal1-dev
+      - python-werkzeug
 
 virtualenv:
   system_site_packages: true
 
 services:
   - memcached
-
-before_install:
-  - sudo rm /etc/apt/sources.list.d/ubuntugis-stable-source.list
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq gdal-bin memcached python-pip
-  - sudo apt-get install -qq python-nose python-imaging python-memcache python-gdal
-  - sudo apt-get install -qq python-coverage python-werkzeug python-psycopg2
-  - ogrinfo --version
-  - ogrinfo --formats
-
-before_script:
-  - sudo -u postgres psql -c "drop database if exists test_tilestache"
-  - sudo -u postgres psql -c "create database test_tilestache"
-  - sudo -u postgres psql -c "create extension postgis" -d test_tilestache
-  - sudo -u postgres ogr2ogr -nlt MULTIPOLYGON -f "PostgreSQL" PG:"user=postgres dbname=test_tilestache" ./examples/sample_data/world_merc.shp
+  - postgresql
 
 install:
-  - sudo pip install -r requirements.txt --use-mirrors --allow-external ModestMaps --allow-unverified ModestMaps
+  - export CPLUS_INCLUDE_PATH=/usr/include/gdal
+  - export C_INCLUDE_PATH=/usr/include/gdal
+  - pip install gdal==1.10
+  - pip install nose coverage
+  - pip install -r requirements.txt
+
+before_script:
+  - psql -U postgres -c "drop database if exists test_tilestache"
+  - psql -U postgres -c "create database test_tilestache"
+  - psql -U postgres -c "create extension postgis" -d test_tilestache
 
 script:
   - nosetests -v --with-coverage --cover-package TileStache
@@ -37,5 +44,3 @@ notifications:
   email:
     recipients:
       - mike-travisci@teczno.com
-
-
