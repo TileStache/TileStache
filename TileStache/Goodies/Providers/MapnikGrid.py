@@ -15,7 +15,7 @@ Sample configuration:
       "class": "TileStache.Goodies.Providers.MapnikGrid:Provider",
       "kwargs":
       {
-        "mapfile": "mymap.xml", 
+        "mapconfig": "mymap.xml",
         "fields":["name", "address"],
         "layer_index": 0,
         "wrapper": "grid",
@@ -23,7 +23,7 @@ Sample configuration:
       }
     }
 
-mapfile: the mapnik xml file to load the map from
+mapconfig: the mapnik xml file to load the map from
 fields: The fields that should be added to the resulting grid json.
 layer_index: The index of the layer you want from your map xml to be rendered
 wrapper: If not included the json will be output raw, if included the json will be wrapped in "wrapper(JSON)" (for use with wax)
@@ -46,20 +46,20 @@ except ImportError:
 
 class Provider:
 
-    def __init__(self, layer, mapfile, fields, layer_index=0, wrapper=None, scale=4, buffer=0):
+    def __init__(self, layer, mapconfig, fields, layer_index=0, wrapper=None, scale=4, buffer=0):
         """
         """
         self.mapnik = None
         self.layer = layer
 
-        maphref = urljoin(layer.config.dirpath, mapfile)
+        maphref = urljoin(layer.config.dirpath, mapconfig)
         scheme, h, path, q, p, f = urlparse(maphref)
-        
+
         if scheme in ('file', ''):
-            self.mapfile = path
+            self.mapconfig = path
         else:
-            self.mapfile = maphref
-        
+            self.mapconfig = maphref
+
         self.layer_index = layer_index
         self.wrapper = wrapper
         self.scale = scale
@@ -73,7 +73,7 @@ class Provider:
         """
         """
         if self.mapnik is None:
-            self.mapnik = get_mapnikMap(self.mapfile)
+            self.mapnik = get_mapnikMap(self.mapconfig)
 
         # buffer as fraction of tile size
         buffer = float(self.buffer) / 256
@@ -125,17 +125,19 @@ class SaveableResponse:
 
         out.write(self.content)
 
-def get_mapnikMap(mapfile):
-    """ Get a new mapnik.Map instance for a mapfile
+def get_mapnikMap(mapconfig):
+    """ Get a new mapnik.Map instance for a mapconfig
+
+        mapconfig is expected to a URI for this method. If it is a XML
+        string, then the code below will fail.
     """
     mmap = mapnik.Map(0, 0)
 
-    if exists(mapfile):
-        mapnik.load_map(mmap, str(mapfile))
-
+    if exists(mapconfig):
+        mapnik.load_map(mmap, str(mapconfig))
     else:
         handle, filename = mkstemp()
-        os.write(handle, urlopen(mapfile).read())
+        os.write(handle, urlopen(mapconfig).read())
         os.close(handle)
 
         mapnik.load_map(mmap, filename)

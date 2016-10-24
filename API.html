@@ -399,7 +399,7 @@ examples of both in this minimal sample configuration:
   "cache": {"name": "Test"},
   "layers": {
     "ex": {
-        "provider": {"name": "mapnik", "mapfile": "style.xml"},
+        "provider": {"name": "mapnik", "mapconfig": "style.xml"},
         "projection": "spherical mercator"
     } 
   }
@@ -1020,7 +1020,7 @@ Example Mapnik provider configuration:
       "provider":
       {
         "name": "mapnik", 
-        "mapfile": "style.xml"
+        "mapconfig": "style.xml"
       }
     <span class="bg">}
   }
@@ -1032,7 +1032,7 @@ Mapnik provider parameters:
 </p>
 
 <dl>
-    <dt>mapfile</dt>
+    <dt>mapconfig</dt>
     <dd>
     Required local file path to Mapnik XML file.
     </dd>
@@ -1413,7 +1413,7 @@ Example Mapnik Grid provider configurations:
       "provider":
       {
         "name": "mapnik grid", 
-        "mapfile": "style.xml",
+        "mapconfig": "style.xml",
         "layer_index": 1
       },
     <span class="bg">}
@@ -1422,7 +1422,7 @@ Example Mapnik Grid provider configurations:
       "provider":
       {
         "name": "mapnik grid", 
-        "mapfile": "style.xml",
+        "mapconfig": "style.xml",
         "layers":
         [
           [2, ["population"]],
@@ -1439,7 +1439,7 @@ Mapnik Grid provider parameters:
 </p>
 
 <dl>
-    <dt>mapfile</dt>
+    <dt>mapconfig</dt>
     <dd>
     Required local file path to Mapnik XML file.
     </dd>
@@ -1451,7 +1451,7 @@ Mapnik Grid provider parameters:
     </dd>
     <dt>layer_index</dt>
     <dd>
-    Optional layer from the mapfile to render, defaults to <samp>0</samp> (first layer).
+    Optional layer from the mapconfig to render, defaults to <samp>0</samp> (first layer).
     </dd>
     <dt>layers</dt>
     <dd>
@@ -1514,21 +1514,21 @@ Example Sandwich provider configurations:
     }<span class="bg">,
     </span>"base"<span class="bg">:
     {
-      "provider": {"name": "mapnik", "mapfile": "mapnik-base.xml"}
+      "provider": {"name": "mapnik", "mapconfig": "mapnik-base.xml"}
     },
     </span>"halos"<span class="bg">:
     {
-      "provider": {"name": "mapnik", "mapfile": "mapnik-halos.xml"},
+      "provider": {"name": "mapnik", "mapconfig": "mapnik-halos.xml"},
       "metatile": {"buffer": 128}
     },
     </span>"outlines"<span class="bg">:
     {
-      "provider": {"name": "mapnik", "mapfile": "mapnik-outlines.xml"},
+      "provider": {"name": "mapnik", "mapconfig": "mapnik-outlines.xml"},
       "metatile": {"buffer": 16}
     },
     </span>"streets"<span class="bg">:
     {
-      "provider": {"name": "mapnik", "mapfile": "mapnik-streets.xml"},
+      "provider": {"name": "mapnik", "mapconfig": "mapnik-streets.xml"},
       "metatile": {"buffer": 128}
     }
   }

@@ -23,7 +23,7 @@
     
       "example":
       {
-        "provider": {"name": "mapnik", "mapfile": "examples/style.xml"},
+        "provider": {"name": "mapnik", "mapconfig": "examples/style.xml"},
         "projection": "TileStache.Goodies.Proj4Projection:Proj4Projection('+proj=tmerc +lat_0=0 +lon_0=15.80827777777778 +k=1 +x_0=1500000 +y_0=0 +ellps=bessel +units=m +no_defs', [8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1], transformation=Transformation(1, 0, 0, 0, -1, 0))"
       }
     

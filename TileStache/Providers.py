@@ -15,7 +15,7 @@ Built-in providers:
 Example built-in provider, for JSON configuration file:
 
     "layer-name": {
-        "provider": {"name": "mapnik", "mapfile": "style.xml"},
+        "provider": {"name": "mapnik", "mapconfig": "style.xml"},
         ...
     }
 
