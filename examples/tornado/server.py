@@ -88,7 +88,8 @@ class MainHandler(tornado.web.RequestHandler):
 
 def make_app():
     return tornado.web.Application([
-        (r"/(.*)", MainHandler),
+        (r'/(favicon.ico)', tornado.web.StaticFileHandler, {'path': 'www/mustaches.jpg'}),
+        (r"/(.*)", MainHandler)
     ])
 
 if __name__ == "__main__":
