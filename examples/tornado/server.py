@@ -71,6 +71,6 @@ config = {
 
 
 if __name__ == "__main__":
-    app = TileStache.Tornado.TornadoTileServer(config=config)
+    app = TileStache.Tornado.TornadoTileApplication(config=config)
     app.listen(8080)
     tornado.ioloop.IOLoop.current().start()
