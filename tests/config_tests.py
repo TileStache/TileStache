@@ -1,9 +1,9 @@
+import os
+
 from unittest import TestCase
 from TileStache import Core, parseConfig
 
 from . import utils
-
-import os
 
 class ConfigTests(TestCase):
 
