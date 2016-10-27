@@ -1,7 +1,9 @@
-from unittest import TestCase
+from unittest import TestCase, skipIf
 from . import utils
 import memcache
+import os
 
+@skipIf('OFFLINE_TESTS' in os.environ, "Offline tests only")
 class CacheTests(TestCase):
     '''Tests various Cache configurations that reads from cfg file'''
 

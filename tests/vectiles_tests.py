@@ -1,7 +1,8 @@
-from unittest import TestCase
+from unittest import TestCase, skipIf
 from collections import namedtuple
 from math import hypot
 import json
+import os
 
 from osgeo import ogr, osr
 from shapely.geometry import Point, LineString, Polygon, MultiPolygon, asShape
@@ -144,6 +145,7 @@ class PostGISVectorTestBase(object):
         self.conn.ExecuteSQL('DROP TABLE if exists %s' % (self.testTableName,))
 
 
+@skipIf('NO_DATABASE' in os.environ, "No database tests requested")
 class VectorProviderTest(PostGISVectorTestBase, TestCase):
     '''Various vectiles tests on top of PostGIS'''
 
