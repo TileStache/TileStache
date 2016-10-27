@@ -5,4 +5,3 @@ shapely
 pillow
 psycopg2
 python-memcached
-GDAL==1.11.2
