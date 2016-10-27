@@ -1,6 +1,7 @@
 machine:
   services:
     - memcached
+
 dependencies:
   override:
     - sudo add-apt-repository -y ppa:ubuntugis
