@@ -1,4 +1,5 @@
-from unittest import TestCase
+import os
+from unittest import TestCase, skipIf
 from collections import namedtuple
 from math import hypot
 import json
@@ -144,6 +145,7 @@ class PostGISVectorTestBase(object):
         self.conn.ExecuteSQL('DROP TABLE if exists %s' % (self.testTableName,))
 
 
+@skipIf('NO_DATABASE' in os.environ, "No database tests requested")
 class VectorProviderTest(PostGISVectorTestBase, TestCase):
     '''Various vectiles tests on top of PostGIS'''
 
