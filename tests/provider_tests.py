@@ -4,6 +4,7 @@ import os
 from unittest import TestCase, skipIf
 from . import utils
 
+
 @skipIf('OFFLINE_TESTS' in os.environ, "Offline tests only")
 class ProviderTests(TestCase):
     '''Tests Proxy Provider that reads from cfg file'''

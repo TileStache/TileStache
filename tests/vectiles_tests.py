@@ -1,8 +1,8 @@
+import os
 from unittest import TestCase, skipIf
 from collections import namedtuple
 from math import hypot
 import json
-import os
 
 from osgeo import ogr, osr
 from shapely.geometry import Point, LineString, Polygon, MultiPolygon, asShape

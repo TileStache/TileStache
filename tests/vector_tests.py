@@ -12,6 +12,7 @@ from . import utils
 # If you want to run them locally, create a similar PostGIS database.
 # Look at .travis.yml for details.
 
+
 @skipIf('NO_DATABASE' in os.environ, "No database tests requested")
 class PostGISVectorTestBase(object):
     '''

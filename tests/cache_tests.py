@@ -1,7 +1,8 @@
-from unittest import TestCase, skipIf
-from . import utils
-import memcache
 import os
+from unittest import TestCase, skipIf
+import memcache
+from . import utils
+
 
 @skipIf('OFFLINE_TESTS' in os.environ, "Offline tests only")
 class CacheTests(TestCase):
