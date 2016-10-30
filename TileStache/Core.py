@@ -733,7 +733,7 @@ def _preview(layer):
 <html>
 <head>
     <title>TileStache Preview: %(layername)s</title>
-    <script src="http://code.modestmaps.com/tilestache/modestmaps.min.js" type="text/javascript"></script>
+    <script src="http://cdn.rawgit.com/stamen/modestmaps-js/v1.0.0-beta1/modestmaps.min.js" type="text/javascript"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <style type="text/css">
         html, body, #map {
@@ -761,6 +761,7 @@ def _preview(layer):
             new MM.DoubleClickHandler()
         ]);
         map.setCenterZoom(new com.modestmaps.Location(%(lat).6f, %(lon).6f), %(zoom)d);
+        new MM.Hash(map);
     //-->
     </script>
 </body>
