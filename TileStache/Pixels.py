@@ -101,7 +101,13 @@ def apply_palette(image, palette, t_index):
 
         indexes.append(mapping[(r, g, b)])
 
-    output = Image.frombytes('P', image.size, ''.join(indexes))
+    if hasattr(Image, 'frombytes'):
+        # Image.fromstring is deprecated past Pillow 2.0
+        output = Image.frombytes('P', image.size, ''.join(indexes))
+    else:
+        # PIL still uses Image.fromstring
+        output = Image.fromstring('P', image.size, ''.join(indexes))
+ 
     bits = int(ceil(log(len(palette)) / log(2)))
 
     palette += [(0, 0, 0)] * (256 - len(palette))
