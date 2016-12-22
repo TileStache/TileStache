@@ -1,9 +1,14 @@
-from unittest import TestCase
+import os
+from unittest import TestCase, skipIf
+from collections import namedtuple
 from math import hypot
 import json
 
-from osgeo import ogr
+from osgeo import ogr, osr
 from shapely.geometry import Point, LineString, Polygon, MultiPolygon, asShape
+import mapbox_vector_tile
+
+from TileStache.Goodies.VecTiles import pbf
 
 from . import utils
 
@@ -31,6 +36,77 @@ def topojson_dediff(points):
         out.append((out[-1][0] + x, out[-1][1] + y))
     
     return out
+
+
+LngLatBbox = namedtuple('LngLatBbox', 'west, south, east, north')
+# hardcoded tilebounds just for the tests
+# so that we don't need mercantile.
+TILE_BOUNDS = {
+    (0, 0, 0): LngLatBbox(
+        west=-180.0, south=-85.0511287798066,
+        east=180.0, north=85.0511287798066),
+    (0, 0, 1): LngLatBbox(
+        west=-180.0, south=0.0,
+        east=0.0, north=85.0511287798066)
+}
+
+
+def trans_coord(srid_source, srid_dest, x, y):
+    srs_source = osr.SpatialReference()
+    srs_source.ImportFromEPSG(srid_source)
+    srs_dest = osr.SpatialReference()
+    srs_dest.ImportFromEPSG(srid_dest)
+    transform = osr.CoordinateTransformation(srs_source, srs_dest)
+
+    point = ogr.CreateGeometryFromWkt("POINT ({} {})".format(x, y))
+    point.Transform(transform)
+
+    return point.GetX(), point.GetY()
+
+
+def tile_bounds_mercator(x, y, z):
+    #bds = mercantile.bounds(x, y, z)
+    #ll = mercantile.xy(bds.west, bds.south)
+    #ur = mercantile.xy(bds.east, bds.north)
+
+    bds = TILE_BOUNDS.get((x, y, z))
+
+    ll = trans_coord(4326, 3857, bds.west, bds.south)
+    ur = trans_coord(4326, 3857, bds.east, bds.north)
+
+    return (ll[0], ll[1], ur[0], ur[1])
+
+
+def coord2merc(x, y, extent):
+    (x0, y0, x_max, y_max) = extent
+    x_span = x_max - x0
+    y_span = y_max - y0
+    x_merc = ((x * x_span) / float(pbf.extents)) + x0
+    y_merc = ((y * y_span) / float(pbf.extents)) + y0
+    return x_merc, y_merc
+
+
+def decoded_pbf_asshape(feature, extent, srid=4326):
+
+    TYPES_MAP = {
+        1: "Point",
+        2: "LineString",
+        3: "Polygon"
+    }
+    if feature['type'] in (1, 2):
+        coords = [
+            trans_coord(3857, srid, *coord2merc(*g, extent=extent)) for g in feature['geometry']]
+    elif feature['type'] == 3:
+        coords = [
+            [trans_coord(3857, srid, *coord2merc(*g, extent=extent)) for g in feature['geometry'][0]]
+        ]
+    geoint = {
+        'type': TYPES_MAP.get(feature['type']),
+        'coordinates': coords,
+    }
+
+    return asShape(geoint)
+
 
 class PostGISVectorTestBase(object):
     '''
@@ -69,6 +145,7 @@ class PostGISVectorTestBase(object):
         self.conn.ExecuteSQL('DROP TABLE if exists %s' % (self.testTableName,))
 
 
+@skipIf('NO_DATABASE' in os.environ, "No database tests requested")
 class VectorProviderTest(PostGISVectorTestBase, TestCase):
     '''Various vectiles tests on top of PostGIS'''
 
@@ -450,3 +527,154 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         
         self.assertTrue('clipped' not in geom1)
         self.assertTrue(geom2['clipped'])
+
+
+    def test_points_pbf(self):
+        '''
+        Create 3 points (2 on west, 1 on east hemisphere) and retrieve as pbf.
+        2 points should be returned in western hemisphere and 1 on eastern at zoom level 1
+        (clip on)
+        '''
+        
+        self.defineGeometry('POINT')
+
+        point_sf = Point(-122.42, 37.78)
+        point_berlin = Point(13.41, 52.52)
+        point_lima = Point(-77.03, 12.04)
+
+        self.insertTestRow(point_sf.wkt, 'San Francisco')
+        self.insertTestRow(point_berlin.wkt, 'Berlin')
+        self.insertTestRow(point_lima.wkt, 'Lima')
+
+        ########
+        # northwest quadrant should return San Francisco and Lima
+
+        tile_mimetype, tile_content = utils.request(self.config_file_content, "vectile_test", "pbf", 0, 0, 1)
+        pbf_result = mapbox_vector_tile.decode(tile_content)
+
+
+        self.assertTrue(tile_mimetype.endswith('/x-protobuf'))
+        self.assertIn('vectile_test', pbf_result)
+        layer_result = pbf_result['vectile_test']
+        self.assertEqual(len(layer_result['features']), 2)
+
+        extent = tile_bounds_mercator(0, 0, 1)
+
+        cities = []
+
+        # Make sure that the right cities have been returned and that the geometries match
+
+        for feature in layer_result['features']:
+            if feature['properties']['name'] == 'San Francisco':
+                cities.append(feature['properties']['name'])
+                self.assertTrue(point_sf.almost_equals(decoded_pbf_asshape(feature, extent), decimal=1))
+
+            elif feature['properties']['name'] == 'Lima':
+                cities.append(feature['properties']['name'])
+                self.assertTrue(point_lima.almost_equals(decoded_pbf_asshape(feature, extent), decimal=1))
+
+        self.assertTrue('San Francisco' in cities)
+        self.assertTrue('Lima' in cities)
+
+        ##########
+        # northeast quadrant should return Berlin
+
+        tile_mimetype, tile_content = utils.request(self.config_file_content, "vectile_test", "pbf", 0, 1, 1)
+        pbf_result = mapbox_vector_tile.decode(tile_content)
+
+        self.assertTrue(tile_mimetype.endswith('/x-protobuf'))
+        self.assertIn('vectile_test', pbf_result)
+        layer_result = pbf_result['vectile_test']
+        self.assertEqual(len(layer_result['features']), 1)
+        self.assertTrue('Berlin' in layer_result['features'][0]['properties']['name'])
+
+
+    def test_linestring_pbf(self):
+        '''Create a line that goes from west to east (clip on) (pbf)'''
+        self.defineGeometry('LINESTRING')
+
+        geom = LineString([(-180, 32), (180, 32)])
+
+        self.insertTestRow(geom.wkt)
+
+        # we should have a line that clips at 0...
+
+        tile_mimetype, tile_content = utils.request(self.config_file_content, "vectile_test", "pbf", 0, 0, 0)
+        self.assertTrue(tile_mimetype.endswith('/x-protobuf'))
+        pbf_result = mapbox_vector_tile.decode(tile_content)
+        layer_result = pbf_result['vectile_test']
+
+        extent = tile_bounds_mercator(0, 0, 0)
+
+        west_hemisphere_geometry = decoded_pbf_asshape(layer_result['features'][0], extent)
+        # order of points returned are different
+        expected_geometry = LineString([(180, 32), (-180, 32)])
+        for returned, expected in zip(west_hemisphere_geometry.coords, expected_geometry.coords):
+            self.assertTrue(round(returned[0]) == expected[0])
+            self.assertTrue(round(returned[1]) == expected[1])
+
+    def test_polygon_pbf(self):
+        '''
+        Create a polygon to cover the world and make sure it is "similar" (clip on) (pbf)
+        '''
+        self.defineGeometry('POLYGON')
+
+        geom = Polygon([(-180, -85.05),
+                        (180, -85.05),
+                        (180, 85.05),
+                        (-180, 85.05),
+                        (-180, -85.05)])
+
+        self.insertTestRow(geom.wkt)
+
+        tile_mimetype, tile_content = utils.request(self.config_file_content, "vectile_test", "pbf", 0, 0, 0)
+        self.assertTrue(tile_mimetype.endswith('/x-protobuf'))
+        pbf_result = mapbox_vector_tile.decode(tile_content)
+        layer_result = pbf_result['vectile_test']
+
+        extent = tile_bounds_mercator(0, 0, 0)
+
+        result_geom = decoded_pbf_asshape(layer_result['features'][0], extent)
+        expected_geom = Polygon([(-180, -85.05), (180, -85.05), (180, 85.05), (-180, 85.05), (-180, -85.05)])
+
+        # What is going on here is a bit unorthodox, but let me explain. The clipping
+        # code inside TileStache relies on GEOS Intersection alongside some TileStache code
+        # that creates a clipping geometry based on the tile perimeter. The tile perimeter
+        # is made out of 17 (x,y) coordinates and not a box. Hence, the GEOS::Intersection
+        # os that perimeter with the geometry of the vector we get back from the data provider
+        # can end with extra vertices. Although it is the right shape, we cannot do a straight
+        # comparisson because the expected geometry and the returned geometry *may* have extra
+        # vertices. Simplify() will not do much because the distance of the vertices can clearly
+        # be bigger than the tolerance. 
+        #
+        # To add to this, because of double precision, the vertices may not be exact.
+        # An optional way to find out if two shapes are close enough, is to buffer the two features
+        # by just a little bit and then subtract each other like so:
+        #
+        #             geometry1.difference(geometry2) == empty set?
+        #             geometry2.difference(geometry1) == empty set?
+        # 
+        # If both geometries are empty, then they are similar. Hence what you see below
+        self.assertTrue(result_geom.difference(expected_geom.buffer(0.01)).is_empty)
+        self.assertTrue(expected_geom.difference(result_geom.buffer(0.01)).is_empty)
+
+    def test_linestring_multi_pbf(self):
+        '''Create a line that goes from west to east (clip on), and test it in MultiProvider (pbf)'''
+
+        self.defineGeometry('LINESTRING')
+
+        geom = LineString([(-180, 32), (180, 32)])
+
+        self.insertTestRow(geom.wkt)
+
+        # we should have a line that clips at 0...
+
+        tile_mimetype, tile_content = utils.request(self.config_file_content, "vectile_multi", "pbf", 0, 0, 0)
+        self.assertTrue(tile_mimetype.endswith('/x-protobuf'))
+        pbf_result = mapbox_vector_tile.decode(tile_content)
+
+        feature1, feature2 = pbf_result['vectile_test'], pbf_result['vectile_copy']
+
+        self.assertEqual(feature1['features'][0]['type'], 2)
+        self.assertEqual(feature2['features'][0]['type'], 2)
+        self.assertEqual(feature1['features'][0]['id'], feature2['features'][0]['id'])

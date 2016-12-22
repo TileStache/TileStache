@@ -1,3 +1,13 @@
+2016-12-21: 1.51.4
+- Support for GDAL 2.x types OFTInteger64 and OFTInteger64 on Vector Tiles
+
+2016-10-30: 1.51.3
+- Fixes for debian packaging
+
+2016-10-27: 1.51.2
+- Adding support for .pbf format for Mapbox Vector Tiles
+- Configuration can be passed as a dictionary in addition to path to JSON file.
+
 2016-09-01: 1.51.1
 - Bugfix on Mapnik image object
 

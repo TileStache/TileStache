@@ -323,10 +323,16 @@ def _feature_properties(feature, layer_definition, whitelist=None, skip_empty_fi
         OFTInteger (0), OFTIntegerList (1), OFTReal (2), OFTRealList (3),
         OFTString (4), OFTStringList (5), OFTWideString (6), OFTWideStringList (7),
         OFTBinary (8), OFTDate (9), OFTTime (10), OFTDateTime (11).
+
+        Extra OGR types for GDAL 2.x:
+        OFTInteger64 (12), OFTInteger64List (13)
     """
     properties = {}
-    okay_types = ogr.OFTInteger, ogr.OFTReal, ogr.OFTString, ogr.OFTWideString, ogr.OFTDate, ogr.OFTTime, ogr.OFTDateTime
-    
+    okay_types = [ogr.OFTInteger, ogr.OFTReal, ogr.OFTString,
+                  ogr.OFTWideString, ogr.OFTDate, ogr.OFTTime, ogr.OFTDateTime]
+    if hasattr(ogr, 'OFTInteger64'):
+        okay_types.extend([ogr.OFTInteger64, ogr.OFTInteger64List])
+
     for index in range(layer_definition.GetFieldCount()):
         field_definition = layer_definition.GetFieldDefn(index)
         field_type = field_definition.GetType()

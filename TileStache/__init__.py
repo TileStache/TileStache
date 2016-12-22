@@ -75,6 +75,7 @@ def getPreview(layer):
     """
     return 200, Headers([('Content-Type', 'text/html')]), Core._preview(layer)
 
+
 def parseConfig(configHandle):
     """ Parse a configuration file and return a Configuration object.
 
@@ -111,6 +112,9 @@ def parseConfig(configHandle):
         dirpath = '%s://%s%s' % (scheme, host, dirname(path).rstrip('/') + '/')
 
     return Config.buildConfiguration(config_dict, dirpath)
+
+parseConfigfile = parseConfig  # Deprecated function
+
 
 def splitPathInfo(pathinfo):
     """ Converts a PATH_INFO string to layer name, coordinate, and extension parts.
@@ -268,7 +272,7 @@ def requestHandler2(config_hint, path_info, query_string=None, script_name=''):
 
         if layer.max_cache_age is not None:
             expires = datetime.utcnow() + timedelta(seconds=layer.max_cache_age)
-            headers.setdefault('Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT'))
+            headers.setdefault('Expires', expires.strftime('%a, %d %b %Y %H:%M:%S GMT'))
             headers.setdefault('Cache-Control', 'public, max-age=%d' % layer.max_cache_age)
 
     except Core.KnownUnknown, e:
