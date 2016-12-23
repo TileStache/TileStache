@@ -1,0 +1,58 @@
+.TH TILESTACHE-COMPOSE 1 "Nov 10, 2010"
+.SH NAME
+tilestache-compose \- set a map coverage area
+.SH SYNOPSIS
+.B tilestache-compose
+.RI [ options ] " file" ...
+.SH DESCRIPTION
+This manual page documents briefly the \fBtilestache-compose\fR command.
+.PP
+There are three ways to set a map coverage area.
+.PP
+1) Center, zoom, and dimensions: create a map of the specified size,
+centered on a given geographical point at a given zoom level:
+.PP
+   tilestache-compose.py \-c config.json \-l layer-name \-d 800 800 \-n 37.8 \-122.3 \-z 11 out.jpg
+.PP
+2) Extent and dimensions: create a map of the specified size that
+adequately covers the given geographical extent:
+.PP
+   tilestache-compose.py \-c config.json \-l layer-name \-d 800 800 \-e 36.9 \-123.5 38.9 \-121.2 out.png
+.PP
+3) Extent and zoom: create a map at the given zoom level that covers
+the precise geographical extent, at whatever pixel size is necessary:
+.PP
+   tilestache-compose.py \-c config.json \-l layer-name \-e 36.9 \-123.5 38.9 \-121.2 \-z 9 out.jpg
+.SH OPTIONS
+.TP
+\fB-c\fR, \fB\-\-config\fR \fIfile\fR
+Path to configuration file.
+.TP
+\fB-l\fR, \fB\-\-layer\fR \fIlayer\fR
+Layer name from configuration.
+.TP
+\fB-n\fR, \fB\-\-center\fR \fIlat lon\fR
+Geographic center of map.
+.TP
+\fB-e\fR, \fB\-\-extent\fR \fIlat lon lat lon\fR
+Geographic extent of map.
+.TP
+\fB-z\fR, \fB\-\-zoom\fR \fIlevel\fR
+Zoom level.
+.TP
+\fB-d\fR, \fB\-\-dimensions\fR \fIwidth height\fR
+Pixel width, height of output image.
+.TP
+\fB-v\fR, \fB\-\-verbose\fR
+Make a bunch of noise.
+.TP
+\fB-i\fR, \fB\-\-include-paths\fR \fIpaths\fR
+Add the following colon-separated list of paths to Python's include path (aka sys.path)
+.TP
+\fB-x\fR, \fB\-\-ignore-cached\fR
+Re-render every tile, whether it is in the cache already or not.
+.TP
+\fB-h\fR, \fB\-\-help\fR
+Show summary of options.
+.SH AUTHOR
+\fBTileStache\fR was written by Michal Migurski <mike@stamen.com>.

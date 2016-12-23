@@ -1,0 +1,40 @@
+.TH TILESTACHE-LIST 1 "Nov 10, 2010"
+.SH NAME
+tilestache-list \- generates list of tiles based on geographic or other criteria
+.SH SYNOPSIS
+.B tilestache-list
+.RI [ options ]
+.RI [ zoom... ]
+.SH DESCRIPTION
+This manual page documents briefly the \fBtilestache-list\fR command.
+.PP
+\fBtilestache\-list\fP generates a list of tiles based on geographic or
+other criteria.
+.PP
+No images are created and no Tilestache configuration is read, but a list
+of tile coordinates in Z/X/Y form compatible with
+\fBtilestache-seed \-\-tile-list\fP output.
+.PP
+Example:
+.PP
+    tilestache\-list.py \-b 52.55 13.28 52.46 13.51 11 12 13
+.PP
+Protip: seed a cache in parallel on 8 CPUs with split and xargs like this:
+.PP
+    tilestache\-list.py 12 13 14 15 | split \-l 20 \- tiles/list\-
+    ls \-1 tiles/list\-* | xargs \-n1 \-P8 tilestache\-seed.py \-c tilestache.cfg \-l osm \-\-tile\-list
+.SH OPTIONS
+.TP
+\fB-b\fR, \fB\-\-bbox\fR \fIlat lon lat lon\fR
+Bounding box in floating point geographic coordinates:
+south west north east.
+.TP
+\fB-p\fR, \fB\-\-padding\fR \fInumber\fR
+Extra margin of tiles to add around bounded area.
+.TP
+\fB\-\-from\-mbtiles\fR \fIfile\fR
+Optional input file for tiles, will be read as an MBTiles 1.1 tileset.
+See http://mbtiles.org for more information.
+Overrides \-\-bbox and \-\-padding.
+.SH AUTHOR
+\fBTileStache\fR was written by Michal Migurski <mike@stamen.com>.

@@ -1,5 +1,6 @@
-from unittest import TestCase
+from unittest import TestCase, skipIf
 import json
+import os
 
 from osgeo import ogr
 from shapely.geometry import Point, LineString, Polygon, MultiPolygon, asShape
@@ -11,6 +12,8 @@ from . import utils
 # If you want to run them locally, create a similar PostGIS database.
 # Look at .travis.yml for details.
 
+
+@skipIf('NO_DATABASE' in os.environ, "No database tests requested")
 class PostGISVectorTestBase(object):
     '''
     Base Class for PostGIS Vector tests. Has methods to:
