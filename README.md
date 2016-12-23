@@ -2,7 +2,7 @@
 
 _a stylish alternative for caching your map tiles_
 
-[![CircleCI](https://circleci.com/gh/OpenGeoscience/KTile.svg?style=shield)](https://circleci.com/gh/OpenGeoscience/KTile)
+[![CircleCI](https://circleci.com/gh/OpenGeoscience/ktile.svg?style=shield)](https://circleci.com/gh/OpenGeoscience/KTile)
 
 **TileStache** is a Python-based server application that can serve up map tiles
 based on rendered geographic data. You might be familiar with [TileCache](http://tilecache.org),
