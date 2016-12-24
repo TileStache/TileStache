@@ -4,54 +4,14 @@ tests package
 Submodules
 ----------
 
-tests.cache_tests module
-------------------------
+.. toctree::
 
-.. automodule:: tests.cache_tests
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-tests.config_tests module
--------------------------
-
-.. automodule:: tests.config_tests
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-tests.provider_tests module
----------------------------
-
-.. automodule:: tests.provider_tests
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-tests.utils module
-------------------
-
-.. automodule:: tests.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-tests.vectiles_tests module
----------------------------
-
-.. automodule:: tests.vectiles_tests
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-tests.vector_tests module
--------------------------
-
-.. automodule:: tests.vector_tests
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
+   tests.cache_tests
+   tests.config_tests
+   tests.provider_tests
+   tests.utils
+   tests.vectiles_tests
+   tests.vector_tests
 
 Module contents
 ---------------

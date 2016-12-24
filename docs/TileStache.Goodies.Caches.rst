@@ -4,22 +4,10 @@ TileStache.Goodies.Caches package
 Submodules
 ----------
 
-TileStache.Goodies.Caches.GoogleCloud module
---------------------------------------------
+.. toctree::
 
-.. automodule:: TileStache.Goodies.Caches.GoogleCloud
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-TileStache.Goodies.Caches.LimitedDisk module
---------------------------------------------
-
-.. automodule:: TileStache.Goodies.Caches.LimitedDisk
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
+   TileStache.Goodies.Caches.GoogleCloud
+   TileStache.Goodies.Caches.LimitedDisk
 
 Module contents
 ---------------

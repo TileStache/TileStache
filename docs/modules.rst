@@ -5,5 +5,4 @@ src.git
    :maxdepth: 4
 
    TileStache
-   setup
    tests

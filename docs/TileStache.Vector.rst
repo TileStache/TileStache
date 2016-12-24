@@ -4,14 +4,9 @@ TileStache.Vector package
 Submodules
 ----------
 
-TileStache.Vector.Arc module
-----------------------------
+.. toctree::
 
-.. automodule:: TileStache.Vector.Arc
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
+   TileStache.Vector.Arc
 
 Module contents
 ---------------

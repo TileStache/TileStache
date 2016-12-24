@@ -13,38 +13,12 @@ Subpackages
 Submodules
 ----------
 
-TileStache.Goodies.AreaServer module
-------------------------------------
+.. toctree::
 
-.. automodule:: TileStache.Goodies.AreaServer
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-TileStache.Goodies.ExternalConfigServer module
-----------------------------------------------
-
-.. automodule:: TileStache.Goodies.ExternalConfigServer
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-TileStache.Goodies.Proj4Projection module
------------------------------------------
-
-.. automodule:: TileStache.Goodies.Proj4Projection
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-TileStache.Goodies.StatusServer module
---------------------------------------
-
-.. automodule:: TileStache.Goodies.StatusServer
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
+   TileStache.Goodies.AreaServer
+   TileStache.Goodies.ExternalConfigServer
+   TileStache.Goodies.Proj4Projection
+   TileStache.Goodies.StatusServer
 
 Module contents
 ---------------

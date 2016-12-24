@@ -10,8 +10,8 @@ Welcome to TileStache's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-
-
+   TileStache.Cache
+   
 TileStache API
 ==============
 
@@ -24,7 +24,7 @@ better-suited to the needs of designers and cartographers.
 **This document covers TileStache version N.N.N**.
 
 See also `detailed module and class
-reference <http://tilestache.org/doc/TileStache.html>`__.
+reference <TileStache.html>`__.
 
 -  `Requesting Tiles <#requesting-tiles>`__
 
@@ -111,7 +111,7 @@ such as "image/png" and a complete byte string representing the rendered
 tile.
 
 See
-`TileStache.getTile <http://tilestache.org/doc/TileStache.html#-getTile>`__
+`TileStache.getTile <TileStache.html#-getTile>`__
 documentation for more information.
 
 ``TileStache.requestHandler`` `¶ <#tilestache-requesthandler>`__
@@ -126,7 +126,7 @@ config
     Required file path string for a JSON configuration file or a
     configuration object with cache, layers, and dirpath properties,
     such as
-    ```TileStache.Config.Configuration`` <http://tilestache.org/doc/TileStache.Config.html#Configuration>`__.
+    ```TileStache.Config.Configuration`` <TileStache.Config.html#Configuration>`__.
 path\_info
     Required end portion of a request URL including the layer name and
     tile coordinate, e.g. "/roads/12/656/1582.png".
@@ -141,7 +141,7 @@ string such as "image/png" and a complete byte string representing the
 rendered tile.
 
 See
-`TileStache.requestHandler <http://tilestache.org/doc/TileStache.html#-requestHandler>`__
+`TileStache.requestHandler <TileStache.html#-requestHandler>`__
 documentation for more information.
 
 Serving Tiles `¶ <#serving-tiles>`__
@@ -180,7 +180,7 @@ support argument passing:
     application = TileStache.WSGITileServer("/path/to/tilestache.cfg")'
 
 See
-```TileStache.WSGITileServer`` <http://tilestache.org/doc/TileStache.html#WSGITileServer>`__
+```TileStache.WSGITileServer`` <TileStache.html#WSGITileServer>`__
 documentation for more information.
 
 CGI `¶ <#cgi>`__
@@ -198,7 +198,7 @@ file called ``tilestache.cfg``:
     TileStache.cgiHandler(os.environ, 'tilestache.cfg', debug=True)
 
 See
-```TileStache.cgiHandler`` <http://tilestache.org/doc/TileStache.html#-cgiHandler>`__
+```TileStache.cgiHandler`` <TileStache.html#-cgiHandler>`__
 documentation for more information.
 
 mod\_python `¶ <#mod-python>`__
@@ -218,7 +218,7 @@ publishing tiles configured by a file in ``/etc``:
     </Directory>
 
 See
-```TileStache.modPythonHandler`` <http://tilestache.org/doc/TileStache.html#-modPythonHandler>`__
+```TileStache.modPythonHandler`` <TileStache.html#-modPythonHandler>`__
 documentation for more information.
 
 Configuring TileStache `¶ <#configuring-tilestache>`__
@@ -246,7 +246,7 @@ Caches `¶ <#caches>`__
 A Cache is the part of TileStache that stores static files to speed up
 future requests. A few default caches are shown here, with additional
 cache classes defined in
-```TileStache.Goodies.Caches`` <http://tilestache.org/doc/TileStache.Goodies.Caches.html>`__.
+```TileStache.Goodies.Caches`` <TileStache.Goodies.Caches.html>`__.
 
 Jump to `Test <#test-cache>`__, `Disk <#disk-cache>`__,
 `Multi <#multi-cache>`__, `Memcache <#memcache-cache>`__,
@@ -278,7 +278,7 @@ verbose
     function, defaults to False if omitted.
 
 See
-`TileStache.Caches.Test <http://tilestache.org/doc/TileStache.Caches.html#Test>`__
+`TileStache.Caches.Test <TileStache.Caches.html#Test>`__
 documentation for more information.
 
 Disk `¶ <#disk-cache>`__
@@ -323,7 +323,7 @@ http://example.com/tilestache.cfg, the path **must** be an unambiguous
 filesystem path, e.g. "file:///tmp/cache".
 
 See
-`TileStache.Caches.Disk <http://tilestache.org/doc/TileStache.Caches.html#Disk>`__
+`TileStache.Caches.Disk <TileStache.Caches.html#Disk>`__
 documentation for more information.
 
 Multi `¶ <#multi-cache>`__
@@ -368,7 +368,7 @@ tiers
     great pair.
 
 See
-`TileStache.Caches.Multi <http://tilestache.org/doc/TileStache.Caches.html#Multi>`__
+`TileStache.Caches.Multi <TileStache.Caches.html#Multi>`__
 documentation for more information.
 
 Memcache `¶ <#memcache-cache>`__
@@ -406,7 +406,7 @@ key prefix
     prepended to the key name. Defaults to "".
 
 See
-`TileStache.Memcache.Cache <http://tilestache.org/doc/TileStache.Memcache.html#Cache>`__
+`TileStache.Memcache.Cache <TileStache.Memcache.html#Cache>`__
 documentation for more information.
 
 Redis `¶ <#redis-cache>`__
@@ -448,7 +448,7 @@ key prefix
     name. Defaults to "".
 
 See
-`TileStache.Redis.Cache <http://tilestache.org/doc/TileStache.Redis.html#Cache>`__
+`TileStache.Redis.Cache <TileStache.Redis.html#Cache>`__
 documentation for more information.
 
 S3 `¶ <#s3-cache>`__
@@ -504,7 +504,7 @@ documentation <http://docs.pythonboto.org/en/latest/s3_tut.html#creating-a-conne
 for more information.
 
 See
-`TileStache.S3.Cache <http://tilestache.org/doc/TileStache.S3.html#Cache>`__
+`TileStache.S3.Cache <TileStache.S3.html#Cache>`__
 documentation for more information.
 
 Additional Caches `¶ <#additional-caches>`__
@@ -512,7 +512,7 @@ Additional Caches `¶ <#additional-caches>`__
 
 New caches with functionality that’s not strictly core to TileStache
 first appear in
-`TileStache.Goodies.Caches <http://tilestache.org/doc/TileStache.Goodies.Caches.html>`__.
+`TileStache.Goodies.Caches <TileStache.Goodies.Caches.html>`__.
 
 LimitedDisk
 '''''''''''
@@ -521,7 +521,7 @@ Cache that stores a limited amount of data. This is an example cache
 that uses a SQLite database to track sizes and last-read times for
 cached tiles, and removes least-recently-used tiles whenever the total
 size of the cache exceeds a set limit. See
-`TileStache.Goodies.Caches.LimitedDisk <http://tilestache.org/doc/TileStache.Goodies.Caches.LimitedDisk.html>`__
+`TileStache.Goodies.Caches.LimitedDisk <TileStache.Goodies.Caches.LimitedDisk.html>`__
 for more information.
 
 Layers `¶ <#layers>`__
@@ -657,7 +657,7 @@ Providers `¶ <#providers>`__
 A Provider is the part of TileStache that stores static files to speed
 up future requests. A few default providers are shown here, with
 additional provider classes defined in
-```TileStache.Goodies.Providers`` <http://tilestache.org/doc/TileStache.Goodies.Providers.html>`__
+```TileStache.Goodies.Providers`` <TileStache.Goodies.Providers.html>`__
 
 Jump to `Mapnik (image) <#mapnik-provider>`__,
 `Proxy <#proxy-provider>`__, `Vector <#vector-provider>`__, `URL
@@ -697,7 +697,7 @@ fonts
     Optional relative directory path to *\*.ttf* font files
 
 See
-`TileStache.Mapnik.ImageProvider <http://tilestache.org/doc/TileStache.Mapnik.html#ImageProvider>`__
+`TileStache.Mapnik.ImageProvider <TileStache.Mapnik.html#ImageProvider>`__
 for more information.
 
 Proxy `¶ <#proxy-provider>`__
@@ -743,7 +743,7 @@ Defines a timeout in seconds for the request. If not defined, the global
 default timeout setting will be used.
 
 See
-`TileStache.Providers.Proxy <http://tilestache.org/doc/TileStache.Providers.html#Proxy>`__
+`TileStache.Providers.Proxy <TileStache.Providers.html#Proxy>`__
 for more information.
 
 Vector `¶ <#vector-provider>`__
@@ -875,7 +875,7 @@ skip\_empty\_fields
     the GEOJSON feature's properties dictionary.
 
 See
-`TileStache.Vector <http://tilestache.org/doc/TileStache.Vector.html>`__
+`TileStache.Vector <TileStache.Vector.html>`__
 for more information.
 
 URL Template `¶ <#url-template-provider>`__
@@ -932,7 +932,7 @@ Defines a timeout in seconds for the request. If not defined, the global
 default timeout setting will be used.
 
 See
-`TileStache.Providers.UrlTemplate <http://tilestache.org/doc/TileStache.Providers.html#UrlTemplate>`__
+`TileStache.Providers.UrlTemplate <TileStache.Providers.html#UrlTemplate>`__
 for more information.
 
 MBTiles `¶ <#mbtiles-provider>`__
@@ -967,7 +967,7 @@ tileset
     database file.
 
 See
-`TileStache.MBTiles.Provider <http://tilestache.org/doc/TileStache.MBTiles.html#Provider>`__
+`TileStache.MBTiles.Provider <TileStache.MBTiles.html#Provider>`__
 for more information.
 
 Mapnik Grid `¶ <#mapnik-grid-provider>`__
@@ -1032,7 +1032,7 @@ layer\_id\_key
     distingushing between data items.
 
 See
-`TileStache.Mapnik.GridProvider <http://tilestache.org/doc/TileStache.Mapnik.html#GridProvider>`__
+`TileStache.Mapnik.GridProvider <TileStache.Mapnik.html#GridProvider>`__
 for more information.
 
 Pixel Sandwich `¶ <#sandwich-provider>`__
@@ -1096,10 +1096,10 @@ stack
     output. The stack is a list, with solid color or raster layers from
     elsewhere in the configuration, and is described in detail in the
     dedicated `Sandwich
-    documentation <http://tilestache.org/doc/TileStache.Sandwich.html>`__.
+    documentation <TileStache.Sandwich.html>`__.
 
 See
-`TileStache.Sandwich <http://tilestache.org/doc/TileStache.Sandwich.html>`__
+`TileStache.Sandwich <TileStache.Sandwich.html>`__
 for more information.
 
 Additional Providers `¶ <#additional-providers>`__
@@ -1107,14 +1107,14 @@ Additional Providers `¶ <#additional-providers>`__
 
 New providers with functionality that’s not strictly core to TileStache
 first appear in
-`TileStache.Goodies.Providers <http://tilestache.org/doc/TileStache.Goodies.Providers.html>`__.
+`TileStache.Goodies.Providers <TileStache.Goodies.Providers.html>`__.
 
 Grid
 ''''
 
 Grid rendering for TileStache. UTM provider draws gridlines in tiles, in
 transparent images suitable for use as map overlays. See
-`TileStache.Goodies.Providers.Grid <http://tilestache.org/doc/TileStache.Goodies.Providers.Grid.html>`__
+`TileStache.Goodies.Providers.Grid <TileStache.Goodies.Providers.Grid.html>`__
 for more information.
 
 PostGeoJSON
@@ -1126,7 +1126,7 @@ queries a database for raw data and replies with a string of GeoJSON.
 For example, it’s possible to retrieve data for locations of
 OpenStreetMap points of interest based on a query with a bounding box
 intersection. See
-`TileStache.Goodies.Providers.PostGeoJSON <http://tilestache.org/doc/TileStache.Goodies.Providers.PostGeoJSON.html>`__
+`TileStache.Goodies.Providers.PostGeoJSON <TileStache.Goodies.Providers.PostGeoJSON.html>`__
 for more information.
 
 SolrGeoJSON
@@ -1136,14 +1136,14 @@ Provider that returns GeoJSON data responses from Solr spatial queries.
 This is an example of a provider that does not return an image, but
 rather queries a Solr instance for raw data and replies with a string of
 GeoJSON. See
-`TileStache.Goodies.Providers.SolrGeoJSON <http://tilestache.org/doc/TileStache.Goodies.Providers.SolrGeoJSON.html>`__
+`TileStache.Goodies.Providers.SolrGeoJSON <TileStache.Goodies.Providers.SolrGeoJSON.html>`__
 for more information.
 
 Composite
 '''''''''
 
 Layered, composite rendering for TileStache. See
-`TileStache.Goodies.Providers.Composite <http://tilestache.org/doc/TileStache.Goodies.Providers.Composite.html>`__
+`TileStache.Goodies.Providers.Composite <TileStache.Goodies.Providers.Composite.html>`__
 for more information.
 
 MirrorOSM
@@ -1155,7 +1155,7 @@ a PostGIS database of OpenStreetMap data from a remote API source. It
 would be normal to use this provider outside the regular confines of a
 web server, perhaps with a call to ``tilestache-seed.py`` governed by a
 cron job or some other out-of-band process. See
-`TileStache.Goodies.Providers.MirrorOSM <http://tilestache.org/doc/TileStache.Goodies.Providers.MirrorOSM.html>`__
+`TileStache.Goodies.Providers.MirrorOSM <TileStache.Goodies.Providers.MirrorOSM.html>`__
 for more information.
 
 Projections `¶ <#projections>`__
@@ -1199,7 +1199,7 @@ using this syntax:
     }
 
 See
-`TileStache.Geography <http://tilestache.org/doc/TileStache.Geography.html>`__
+`TileStache.Geography <TileStache.Geography.html>`__
 for more information.
 
 Metatiles `¶ <#metatiles>`__
@@ -1411,7 +1411,7 @@ A minimal provider stub class:
 
 In cases where a provider generates a response that should not be
 cached, ``renderTile`` and ``renderArea`` may raise the
-`Core.NoTileLeftBehind <http://tilestache.org/doc/TileStache.Core.html#NoTileLeftBehind>`__
+`Core.NoTileLeftBehind <TileStache.Core.html#NoTileLeftBehind>`__
 exception in lieu of a normal response. The exception is constructed
 using the intended response object, but nothing will be written to
 cache. This feature might useful in cases where a full tileset is being
@@ -1419,9 +1419,9 @@ rendered for static hosting, and you don’t want millions of identical
 ocean tiles.
 
 See
-`TileStache.Providers <http://tilestache.org/doc/TileStache.Providers.html>`__
+`TileStache.Providers <TileStache.Providers.html>`__
 for more information on custom providers and
-`TileStache.Goodies.Providers <http://tilestache.org/doc/TileStache.Goodies.Providers.html>`__
+`TileStache.Goodies.Providers <TileStache.Goodies.Providers.html>`__
 for examples of custom providers.
 
 ``provider.renderTile`` `¶ <#provider-rendertile>`__
@@ -1438,7 +1438,7 @@ height
 srs
     Projection as Proj4 string. "+proj=longlat +ellps=WGS84
     +datum=WGS84" is an example, see
-    `TileStache.Geography <http://tilestache.org/doc/TileStache.Geography.html>`__
+    `TileStache.Geography <TileStache.Geography.html>`__
     for actual values.
 coord
     Coordinate object representing a single tile.
@@ -1469,7 +1469,7 @@ height
 srs
     Projection as Proj4 string. "+proj=longlat +ellps=WGS84
     +datum=WGS84" is an example, see
-    `TileStache.Geography <http://tilestache.org/doc/TileStache.Geography.html>`__
+    `TileStache.Geography <TileStache.Geography.html>`__
     for actual values.
 xmin
     Minimum x boundary of rendered area in projected coordinates.
@@ -1569,9 +1569,9 @@ A minimal cache stub class:
         raise NotImplementedError
 
 See
-`TileStache.Caches <http://tilestache.org/doc/TileStache.Caches.html>`__
+`TileStache.Caches <TileStache.Caches.html>`__
 for more information on custom caches and
-`TileStache.Goodies.Caches <http://tilestache.org/doc/TileStache.Goodies.Caches.html>`__
+`TileStache.Goodies.Caches <TileStache.Goodies.Caches.html>`__
 for examples of custom caches.
 
 Configuration `¶ <#custom-configuration>`__
@@ -1582,7 +1582,7 @@ properties and optional index property:
 
 cache
     Cache instance, e.g. ``TileStache.Caches.Disk`` etc. See
-    `TileStache.Caches <http://tilestache.org/doc/TileStache.Caches.html>`__
+    `TileStache.Caches <TileStache.Caches.html>`__
     for details on what makes a usable cache.
 layers
     Dictionary of layers keyed by name.
