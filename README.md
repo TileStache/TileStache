@@ -4,7 +4,9 @@ _a stylish alternative for caching your map tiles_
 
 [![CircleCI](https://circleci.com/gh/OpenGeoscience/ktile.svg?style=shield)](https://circleci.com/gh/OpenGeoscience/KTile)
 
-**TileStache** is a Python-based server application that can serve up map tiles
+**KTile** is fork of [TileStache](https://github.com/TileStache/TileStache),
+maintained by [Kitware](http://www.kitware.com), a leading open-source scientific
+computing company. KTile is a Python-based server application that can serve up map tiles
 based on rendered geographic data. You might be familiar with [TileCache](http://tilecache.org),
 the venerable open source WMS server from MetaCarta. TileStache is similar, but we hope
 simpler and better-suited to the needs of designers and cartographers.
@@ -96,7 +98,7 @@ http://tile.osm.org as defined in the default config file 'tilestache.cfg'
 
 The next step is to learn how build custom layers and serve them.
 
-See the [docs](http://tilestache.org/doc/) for details.
+See the [docs](http://ktile.readthedocs.io/) for details.
 
 
 ##Features
@@ -146,7 +148,3 @@ Yahoo! and others. It should be possible to make TileStache do whatever is
 necessary to support any external system, but we eschew complex, impenetrable
 standards in favor of pragmatic, fast utility with basic web clients.
 
-
-##License
-
-BSD, see LICENSE file.
