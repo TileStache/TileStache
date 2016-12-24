@@ -4,9 +4,7 @@ _a stylish alternative for caching your map tiles_
 
 [![CircleCI](https://circleci.com/gh/OpenGeoscience/ktile.svg?style=shield)](https://circleci.com/gh/OpenGeoscience/KTile)
 
-**KTile** is fork of [TileStache](https://github.com/TileStache/TileStache),
-maintained by [Kitware](http://www.kitware.com), a leading open-source scientific
-computing company. KTile is a Python-based server application that can serve up map tiles
+**TileStache** is a Python-based server application that can serve up map tiles
 based on rendered geographic data. You might be familiar with [TileCache](http://tilecache.org),
 the venerable open source WMS server from MetaCarta. TileStache is similar, but we hope
 simpler and better-suited to the needs of designers and cartographers.
@@ -32,52 +30,6 @@ simpler and better-suited to the needs of designers and cartographers.
     type, bytes = TileStache.getTile(config.layers['example'], coord, 'png')
 
     open('tile.png', 'w').write(bytes)
-
-
-
-##Dependencies
-
-###Required:
-
-- ModestMaps: http://modestmaps.com, http://github.com/migurski/modestmaps-py
-- Python Imaging Library (Pillow): https://python-pillow.org
-
-###Optional:
-
-- Simplejson: https://github.com/simplejson/simplejson (optional if using >= python 2.6)
-- mapnik: http://mapnik.org (optional)
-- werkzeug: http://werkzeug.pocoo.org/ (optional)
-
-Install the pure python modules with pip:
-
-    sudo pip install -U python-pil modestmaps simplejson werkzeug uuid
-
-Install pip (http://www.pip-installer.org/) like:
-
-    curl -O -L https://raw.github.com/pypa/pip/master/contrib/get-pip.py
-    sudo python get-pip.py
-
-Install Mapnik via instructions at:
-
-    http://mapnik.org/pages/downloads.html
-
-
-##Installation
-
-TileStache can be run from the download directory as is. For example the scripts:
-
-    tilestache-render.py tilestache-seed.py tilestache-server.py
-
-Can all be run locally like:
-
-    ./scripts/tilestache-server.py
-
-To install globally do:
-
-    python setup.py install
-
-  * Note: you may need to prefix that command with 'sudo' to have permissions
-to fully install TileStache.
 
 
 ##Quickstart
@@ -148,3 +100,7 @@ Yahoo! and others. It should be possible to make TileStache do whatever is
 necessary to support any external system, but we eschew complex, impenetrable
 standards in favor of pragmatic, fast utility with basic web clients.
 
+
+##License
+
+BSD, see LICENSE file.
