@@ -1,16 +1,5 @@
-Usage
-=====
-
-TileStache is a Python-based server application that can serve up map
-tiles based on rendered geographic data. You might be familiar with
-`TileCache <http://tilecache.org>`__ the venerable open source WMS
-server from MetaCarta. TileStache is similar, but we hope simpler and
-better-suited to the needs of designers and cartographers.
-
-**This document covers TileStache version N.N.N**.
-
-See also `detailed module and class
-reference <TileStache.html>`__.
+User Documentation
+==================
 
 -  `Requesting Tiles <#requesting-tiles>`__
 
@@ -39,6 +28,9 @@ reference <TileStache.html>`__.
    -  `Custom Providers <#custom-providers>`__
    -  `Custom Caches <#custom-caches>`__
    -  `Configuration <#custom-configuration>`__
+
+See also `detailed module and class
+reference <TileStache.html>`__.
 
 `Requesting Tiles <#requesting-tiles>`__
 ------------------------------------------
