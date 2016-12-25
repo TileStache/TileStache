@@ -36,15 +36,15 @@ reference <TileStache.html>`__.
 
 -  `Extending TileStache <#extending-tilestache>`__
 
-   -  `Providers <#custom-providers>`__
-   -  `Caches <#custom-caches>`__
+   -  `Custom Providers <#custom-providers>`__
+   -  `Custom Caches <#custom-caches>`__
    -  `Configuration <#custom-configuration>`__
 
-Requesting Tiles `¶ <#requesting-tiles>`__
+`Requesting Tiles <#requesting-tiles>`__
 ------------------------------------------
 
-Over HTTP `¶ <#over-http>`__
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`Over HTTP <#over-http>`__
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 TileStache URLs are based on a Google Maps-like scheme:
 
@@ -59,7 +59,7 @@ An example tile URL might look like this:
     http://example.org/path/tile.cgi/streets/12/656/1582.png
 
 For JSON responses such as those from the `Vector
-provider <#vector-provider>`__, URLs can include an optional callback
+provider <#vector>`__, URLs can include an optional callback
 for `JSONP <http://en.wikipedia.org/wiki/JSONP>`__ support:
 
 ::
@@ -72,11 +72,11 @@ Interactive, slippy-map previews of tiles are also available:
 
     /{layer name}/preview.html
 
-In Code `¶ <#in-code>`__
-~~~~~~~~~~~~~~~~~~~~~~~~
+`In Code <#in-code>`__
+~~~~~~~~~~~~~~~~~~~~~~
 
-``TileStache.getTile`` `¶ <#tilestache-gettile>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`TileStache.getTile <#tilestache-gettile>`__
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Get a type string and tile binary for a given request layer tile.
 
@@ -97,11 +97,11 @@ such as "image/png" and a complete byte string representing the rendered
 tile.
 
 See
-`TileStache.getTile <TileStache.html#-getTile>`__
+`TileStache.getTile <TileStache.html#TileStache.getTile>`__
 documentation for more information.
 
-``TileStache.requestHandler`` `¶ <#tilestache-requesthandler>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`TileStache.requestHandler <#tilestache-requesthandler>`__
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Generate a mime-type and response body for a given request. This is the
 function to use when creating new HTTP interfaces to TileStache.
@@ -112,7 +112,7 @@ config
     Required file path string for a JSON configuration file or a
     configuration object with cache, layers, and dirpath properties,
     such as
-    ```TileStache.Config.Configuration`` <TileStache.Config.html#Configuration>`__.
+    `TileStache.Config.Configuration <TileStache.Config.html#TileStache.Config.Configuration>`__.
 path\_info
     Required end portion of a request URL including the layer name and
     tile coordinate, e.g. "/roads/12/656/1582.png".
@@ -127,18 +127,18 @@ string such as "image/png" and a complete byte string representing the
 rendered tile.
 
 See
-`TileStache.requestHandler <TileStache.html#-requestHandler>`__
+`TileStache.requestHandler <TileStache.html#TileStache.requestHandler>`__
 documentation for more information.
 
-Serving Tiles `¶ <#serving-tiles>`__
+`Serving Tiles <#serving-tiles>`__
 ------------------------------------
 
 We currently provide three scripts for serving tiles: one for a
 WSGI-based webserver, one for a CGI-based webserver, and one for Apache
 ``mod_python``.
 
-WSGI `¶ <#wsgi>`__
-^^^^^^^^^^^^^^^^^^
+`WSGI <#wsgi>`__
+~~~~~~~~~~~~~~~~
 
 TileStache comes with a WSGI application and a
 `Werkzeug <http://werkzeug.pocoo.org/>`__ web server. To use the
@@ -166,11 +166,11 @@ support argument passing:
     application = TileStache.WSGITileServer("/path/to/tilestache.cfg")'
 
 See
-```TileStache.WSGITileServer`` <TileStache.html#WSGITileServer>`__
+`TileStache.WSGITileServer <TileStache.html#TileStache.WSGITileServer>`__
 documentation for more information.
 
-CGI `¶ <#cgi>`__
-^^^^^^^^^^^^^^^^
+`CGI <#cgi>`__
+^^^^^^^^^^^^^^
 
 Using TileStache through CGI supports basic tile serving, and is useful
 for simple testing and low-to-medium traffic websites. This is a
@@ -184,11 +184,11 @@ file called ``tilestache.cfg``:
     TileStache.cgiHandler(os.environ, 'tilestache.cfg', debug=True)
 
 See
-```TileStache.cgiHandler`` <TileStache.html#-cgiHandler>`__
+`TileStache.cgiHandler <TileStache.html#TileStache.cgiHandler>`__
 documentation for more information.
 
-mod\_python `¶ <#mod-python>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`mod\_python <#mod-python>`__
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Using TileStache through ``mod_python`` improves performance by caching
 imported modules, but must be configured via the Apache webserver
@@ -204,10 +204,10 @@ publishing tiles configured by a file in ``/etc``:
     </Directory>
 
 See
-```TileStache.modPythonHandler`` <TileStache.html#-modPythonHandler>`__
+`TileStache.modpythonHandler <TileStache.html#TileStache.modpythonHandler>`__
 documentation for more information.
 
-Configuring TileStache `¶ <#configuring-tilestache>`__
+`Configuring TileStache <#configuring-tilestache>`__
 ------------------------------------------------------
 
 TileStache configuration is stored in JSON files, and is composed of two
@@ -226,20 +226,20 @@ both in this minimal sample configuration:
       }
     }
 
-Caches `¶ <#caches>`__
-~~~~~~~~~~~~~~~~~~~~~~
+`Caches <#caches>`__
+~~~~~~~~~~~~~~~~~~~~
 
 A Cache is the part of TileStache that stores static files to speed up
 future requests. A few default caches are shown here, with additional
 cache classes defined in
-```TileStache.Goodies.Caches`` <TileStache.Goodies.Caches.html>`__.
+`TileStache.Goodies.Caches <TileStache.Goodies.Caches.html>`__.
 
 Jump to `Test <#test-cache>`__, `Disk <#disk-cache>`__,
 `Multi <#multi-cache>`__, `Memcache <#memcache-cache>`__,
 `Redis <#redis-cache>`__, or `S3 <#s3-cache>`__ cache.
 
-Test `¶ <#test-cache>`__
-^^^^^^^^^^^^^^^^^^^^^^^^
+`Test <#test-cache>`__
+^^^^^^^^^^^^^^^^^^^^^^
 
 Simple cache that doesn’t actually cache anything.
 
@@ -264,11 +264,11 @@ verbose
     function, defaults to False if omitted.
 
 See
-`TileStache.Caches.Test <TileStache.Caches.html#Test>`__
+`TileStache.Caches.Test <TileStache.Caches.html#TileStache.Caches.Test>`__
 documentation for more information.
 
-Disk `¶ <#disk-cache>`__
-^^^^^^^^^^^^^^^^^^^^^^^^
+`Disk <#disk-cache>`__
+^^^^^^^^^^^^^^^^^^^^^^
 
 Caches files to disk.
 
@@ -309,11 +309,11 @@ http://example.com/tilestache.cfg, the path **must** be an unambiguous
 filesystem path, e.g. "file:///tmp/cache".
 
 See
-`TileStache.Caches.Disk <TileStache.Caches.html#Disk>`__
+`TileStache.Caches.Disk <TileStache.Caches.html#TileStache.Cache.Disk>`__
 documentation for more information.
 
-Multi `¶ <#multi-cache>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+`Multi <#multi-cache>`__
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Caches tiles to multiple, ordered caches.
 
@@ -354,11 +354,11 @@ tiers
     great pair.
 
 See
-`TileStache.Caches.Multi <TileStache.Caches.html#Multi>`__
+`TileStache.Caches.Multi <TileStache.Caches.html#TileStache.Caches.Multi>`__
 documentation for more information.
 
-Memcache `¶ <#memcache-cache>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`Memcache <#memcache-cache>`__
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Caches tiles to `Memcache <http://memcached.org/>`__, requires
 `python-memcached <http://www.tummy.com/Community/software/python-memcached/>`__.
@@ -392,11 +392,11 @@ key prefix
     prepended to the key name. Defaults to "".
 
 See
-`TileStache.Memcache.Cache <TileStache.Memcache.html#Cache>`__
+`TileStache.Memcache.Cache <TileStache.Memcache.html#TileStache.Memcache.Cache>`__
 documentation for more information.
 
-Redis `¶ <#redis-cache>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+`Redis <#redis-cache>`__
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Caches tiles to `Redis <http://redis.io/>`__, requires
 `redis-py <https://pypi.python.org/pypi/redis/>`__ and `redis
@@ -434,11 +434,11 @@ key prefix
     name. Defaults to "".
 
 See
-`TileStache.Redis.Cache <TileStache.Redis.html#Cache>`__
+`TileStache.Redis.Cache <TileStache.Redis.html#TileStache.Redis.Cache>`__
 documentation for more information.
 
-S3 `¶ <#s3-cache>`__
-^^^^^^^^^^^^^^^^^^^^
+`S3 <#s3-cache>`__
+^^^^^^^^^^^^^^^^^^
 
 Caches tiles to `Amazon S3 <https://s3.amazonaws.com/>`__, requires
 `boto <http://pypi.python.org/pypi/boto>`__ (2.0+).
@@ -490,11 +490,11 @@ documentation <http://docs.pythonboto.org/en/latest/s3_tut.html#creating-a-conne
 for more information.
 
 See
-`TileStache.S3.Cache <TileStache.S3.html#Cache>`__
+`TileStache.S3.Cache <TileStache.S3.html#TileStache.S3.Cache>`__
 documentation for more information.
 
-Additional Caches `¶ <#additional-caches>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`Additional Caches <#additional-caches>`__
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 New caches with functionality that’s not strictly core to TileStache
 first appear in
@@ -510,8 +510,8 @@ size of the cache exceeds a set limit. See
 `TileStache.Goodies.Caches.LimitedDisk <TileStache.Goodies.Caches.LimitedDisk.html>`__
 for more information.
 
-Layers `¶ <#layers>`__
-~~~~~~~~~~~~~~~~~~~~~~
+`Layers <#layers>`__
+~~~~~~~~~~~~~~~~~~~~
 
 A Layer represents a set of tiles in TileStache. It keeps references to
 providers, projections, a Configuration instance, and other details
@@ -637,22 +637,22 @@ pixel effect
     tiles of this layer. Pixel effect can be any of these: blackwhite,
     greyscale, desaturate, pixelate, halftone, or blur.
 
-Providers `¶ <#providers>`__
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`Providers <#providers>`__
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A Provider is the part of TileStache that stores static files to speed
 up future requests. A few default providers are shown here, with
 additional provider classes defined in
-```TileStache.Goodies.Providers`` <TileStache.Goodies.Providers.html>`__
+`TileStache.Goodies.Providers <TileStache.Goodies.Providers.html>`__
 
 Jump to `Mapnik (image) <#mapnik-provider>`__,
-`Proxy <#proxy-provider>`__, `Vector <#vector-provider>`__, `URL
+`Proxy <#proxy-provider>`__, `Vector <#vector>`__, `URL
 Template <#url-template-provider>`__, `MBTiles <#mbtiles-provider>`__,
 `Mapnik (grid) <#mapnik-grid-provider>`__, or `Pixel
 Sandwich <#sandwich-provider>`__ provider.
 
-Mapnik `¶ <#mapnik-provider>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`Mapnik <#mapnik-provider>`__
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Built-in Mapnik provider, renders map images from Mapnik XML files.
 
@@ -683,11 +683,11 @@ fonts
     Optional relative directory path to *\*.ttf* font files
 
 See
-`TileStache.Mapnik.ImageProvider <TileStache.Mapnik.html#ImageProvider>`__
+`TileStache.Mapnik.ImageProvider <TileStache.Mapnik.html#TileStache.Mapnik.ImageProvider>`__
 for more information.
 
-Proxy `¶ <#proxy-provider>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`Proxy <#proxy-provider>`__
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Proxy provider, to pass through and cache tiles from other places.
 
@@ -729,11 +729,11 @@ Defines a timeout in seconds for the request. If not defined, the global
 default timeout setting will be used.
 
 See
-`TileStache.Providers.Proxy <TileStache.Providers.html#Proxy>`__
+`TileStache.Providers.Proxy <TileStache.Providers.html#TileStache.Providers.Proxy>`__
 for more information.
 
-Vector `¶ <#vector-provider>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`Vector <#vector>`__
+^^^^^^^^^^^^^^^^^^^^
 
 Provider that returns vector representation of features in a data
 source.
@@ -864,8 +864,8 @@ See
 `TileStache.Vector <TileStache.Vector.html>`__
 for more information.
 
-URL Template `¶ <#url-template-provider>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`URL Template <#url-template-provider>`__
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Templated URL provider, to pass through and cache tiles from WMS
 servers.
@@ -918,11 +918,11 @@ Defines a timeout in seconds for the request. If not defined, the global
 default timeout setting will be used.
 
 See
-`TileStache.Providers.UrlTemplate <TileStache.Providers.html#UrlTemplate>`__
+`TileStache.Providers.UrlTemplate <TileStache.Providers.html#TileStache.Providers.UrlTemplate>`__
 for more information.
 
-MBTiles `¶ <#mbtiles-provider>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`MBTiles <#mbtiles-provider>`__
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Provider that reads stored images from `MBTiles
 tilesets <http://mbtiles.org/>`__.
@@ -953,11 +953,11 @@ tileset
     database file.
 
 See
-`TileStache.MBTiles.Provider <TileStache.MBTiles.html#Provider>`__
+`TileStache.MBTiles.Provider <TileStache.MBTiles.html#TileStache.MBTiles.Provider>`__
 for more information.
 
-Mapnik Grid `¶ <#mapnik-grid-provider>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`Mapnik Grid <#mapnik-grid-provider>`__
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Built-in Mapnik `UTF
 Grid <https://github.com/mapbox/utfgrid-spec/blob/master/1.2/utfgrid.md>`__
@@ -1018,11 +1018,11 @@ layer\_id\_key
     distingushing between data items.
 
 See
-`TileStache.Mapnik.GridProvider <TileStache.Mapnik.html#GridProvider>`__
+`TileStache.Mapnik.GridProvider <TileStache.Mapnik.html#GTileStache.Mapnik.GridProvider>`__
 for more information.
 
-Pixel Sandwich `¶ <#sandwich-provider>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`Pixel Sandwich <#sandwich-provider>`__
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The Sandwich Provider supplies a Photoshop-like rendering pipeline,
 making it possible to use the output of other configured tile layers as
@@ -1088,8 +1088,8 @@ See
 `TileStache.Sandwich <TileStache.Sandwich.html>`__
 for more information.
 
-Additional Providers `¶ <#additional-providers>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`Additional Providers <#additional-providers>`__
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 New providers with functionality that’s not strictly core to TileStache
 first appear in
@@ -1144,8 +1144,8 @@ cron job or some other out-of-band process. See
 `TileStache.Goodies.Providers.MirrorOSM <TileStache.Goodies.Providers.MirrorOSM.html>`__
 for more information.
 
-Projections `¶ <#projections>`__
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`Projections <#projections>`__
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A Projection defines the relationship between the rendered tiles and the
 underlying geographic data. Generally, just one popular projection is
@@ -1188,8 +1188,8 @@ See
 `TileStache.Geography <TileStache.Geography.html>`__
 for more information.
 
-Metatiles `¶ <#metatiles>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`Metatiles <#metatiles>`__
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Metatiles are larger areas to be rendered at one time, often used
 because it’s more efficient to render a large number of contiguous tiles
@@ -1231,8 +1231,8 @@ buffer
     for providers with labels or icons, where it’s necessary to draw a
     bit extra around the edges to ensure that text is not cut off.
 
-Preview `¶ <#preview>`__
-^^^^^^^^^^^^^^^^^^^^^^^^
+`Preview <#preview>`__
+^^^^^^^^^^^^^^^^^^^^^^
 
 TileStache includes a built-in slippy map preview, that can be viewed in
 a browser using the URL /{layer name}/preview.html, e.g.
@@ -1276,8 +1276,8 @@ zoom
 ext
     Filename extension, e.g. "png".
 
-Index Page `¶ <#index-page>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`Index Page <#index-page>`__
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 TileStache supports configurable index pages for the front page of an
 instance. A custom index can be specified as a filename relative to the
@@ -1309,8 +1309,8 @@ Example index page configuration using a remote image:
       }
     }
 
-Logging `¶ <#logging>`__
-^^^^^^^^^^^^^^^^^^^^^^^^
+`Logging <#logging>`__
+^^^^^^^^^^^^^^^^^^^^^^
 
 TileStache includes basic support for Python’s built-in `logging
 system <http://docs.python.org/library/logging.html>`__, with a logging
@@ -1330,8 +1330,8 @@ Example logging configuration:
       }
     }
 
-Extending TileStache `¶ <#extending-tilestache>`__
---------------------------------------------------
+`Extending TileStache <#extending-tilestache>`__
+------------------------------------------------
 
 TileStache relies on `duck
 typing <http://en.wikipedia.org/wiki/Duck_typing>`__ rather than
@@ -1339,8 +1339,8 @@ inheritance for extensibility, so all guidelines for customization below
 explain what methods and properties must be defined on objects for them
 to be valid as providers, caches, and configurations.
 
-Providers `¶ <#custom-providers>`__
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`Custom Providers <#custom-providers>`__
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Example external provider configuration:
 
@@ -1410,8 +1410,8 @@ for more information on custom providers and
 `TileStache.Goodies.Providers <TileStache.Goodies.Providers.html>`__
 for examples of custom providers.
 
-``provider.renderTile`` `¶ <#provider-rendertile>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`provider.renderTile <#provider-rendertile>`__
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Draws a single tile at a time.
 
@@ -1430,15 +1430,15 @@ coord
     Coordinate object representing a single tile.
 
 Return value of ``renderTile`` is a
-```PIL.Image`` <http://effbot.org/imagingbook/image.htm#Image.save>`__
+`PIL.Image <http://effbot.org/imagingbook/image.htm#Image.save>`__
 or other saveable object, used like this:
 
 ::
 
     provider.renderTile(…).save(file, "XML")
 
-``provider.renderArea`` `¶ <#provider-renderarea>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`provider.renderArea <#provider-renderarea>`__
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Draws a variably-sized area, and is used when drawing metatiles.
 
@@ -1470,15 +1470,15 @@ zoom
     other arguments, but that’s a hassle so we’ll pass it in explicitly.
 
 Return value of ``renderArea`` is a
-```PIL.Image`` <http://effbot.org/imagingbook/image.htm#Image.save>`__
+`PIL.Image <http://effbot.org/imagingbook/image.htm#Image.save>`__
 or other saveable object, used like this:
 
 ::
 
     provider.renderArea(…).save(file, "PNG")
 
-``provider.getTypeByExtension`` `¶ <#provider-gettypebyextension>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`provider.getTypeByExtension <#provider-gettypebyextension>`__
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A provider may offer a method for custom response types,
 ``getTypeByExtension``. This method returns a tuple with two strings: a
@@ -1489,8 +1489,8 @@ Arguments to ``getTypeByExtension``:
 extension
     Filename extension string, e.g. "png", "json", etc.
 
-Caches `¶ <#custom-caches>`__
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`Custom Caches <#custom-caches>`__
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Example external provider configuration:
 
@@ -1560,8 +1560,8 @@ for more information on custom caches and
 `TileStache.Goodies.Caches <TileStache.Goodies.Caches.html>`__
 for examples of custom caches.
 
-Configuration `¶ <#custom-configuration>`__
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`Custom Configuration <#custom-configuration>`__
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A complete configuration object includes cache, layers, and dirpath
 properties and optional index property:
