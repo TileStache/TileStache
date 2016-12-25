@@ -32,52 +32,6 @@ simpler and better-suited to the needs of designers and cartographers.
     open('tile.png', 'w').write(bytes)
 
 
-
-##Dependencies
-
-###Required:
-
-- ModestMaps: http://modestmaps.com, http://github.com/migurski/modestmaps-py
-- Python Imaging Library (Pillow): https://python-pillow.org
-
-###Optional:
-
-- Simplejson: https://github.com/simplejson/simplejson (optional if using >= python 2.6)
-- mapnik: http://mapnik.org (optional)
-- werkzeug: http://werkzeug.pocoo.org/ (optional)
-
-Install the pure python modules with pip:
-
-    sudo pip install -U python-pil modestmaps simplejson werkzeug uuid
-
-Install pip (http://www.pip-installer.org/) like:
-
-    curl -O -L https://raw.github.com/pypa/pip/master/contrib/get-pip.py
-    sudo python get-pip.py
-
-Install Mapnik via instructions at:
-
-    http://mapnik.org/pages/downloads.html
-
-
-##Installation
-
-TileStache can be run from the download directory as is. For example the scripts:
-
-    tilestache-render.py tilestache-seed.py tilestache-server.py
-
-Can all be run locally like:
-
-    ./scripts/tilestache-server.py
-
-To install globally do:
-
-    python setup.py install
-
-  * Note: you may need to prefix that command with 'sudo' to have permissions
-to fully install TileStache.
-
-
 ##Quickstart
 
 To make sure TileStache is working start the development server:
@@ -96,7 +50,7 @@ http://tile.osm.org as defined in the default config file 'tilestache.cfg'
 
 The next step is to learn how build custom layers and serve them.
 
-See the [docs](http://tilestache.org/doc/) for details.
+See the [docs](http://ktile.readthedocs.io/) for details.
 
 
 ##Features
