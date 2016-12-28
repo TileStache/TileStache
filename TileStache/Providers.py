@@ -95,7 +95,7 @@ except ImportError:
 import ModestMaps
 from ModestMaps.Core import Point, Coordinate
 
-import Geography
+from . import Geography
 
 # This import should happen inside getProviderByName(), but when testing
 # on Mac OS X features are missing from output. Wierd-ass C libraries...

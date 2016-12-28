@@ -60,8 +60,8 @@ from ModestMaps.Core import Coordinate
 # dictionary of configuration objects for requestLayer().
 _previous_configs = {}
 
-import Core
-import Config
+from . import Core
+from . import Config
 
 # regular expression for PATH_INFO
 _pathinfo_pat = re.compile(r'^/?(?P<l>\w.+)/(?P<z>\d+)/(?P<x>-?\d+)/(?P<y>-?\d+)\.(?P<e>\w+)$')

@@ -157,7 +157,7 @@ except ImportError:
     from urlparse import urljoin
 from time import time
 
-from Pixels import load_palette, apply_palette, apply_palette256
+from .Pixels import load_palette, apply_palette, apply_palette256
 
 try:
     from PIL import Image

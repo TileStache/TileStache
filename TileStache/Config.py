@@ -83,11 +83,11 @@ except ImportError:
 from ModestMaps.Geo import Location
 from ModestMaps.Core import Coordinate
 
-import Core
-import Caches
-import Providers
-import Geography
-import PixelEffects
+from . import Core
+from . import Caches
+from . import Providers
+from . import Geography
+from . import PixelEffects
 
 class Configuration:
     """ A complete site configuration, with a collection of Layer objects.
