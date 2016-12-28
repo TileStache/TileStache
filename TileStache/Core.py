@@ -145,8 +145,16 @@ The preview can be accessed through a URL like /<layer name>/preview.html:
 
 import logging
 from wsgiref.headers import Headers
-from StringIO import StringIO
-from urlparse import urljoin
+try:
+    from io import StringIO
+except ImportError:
+    # Python 2
+    from StringIO import StringIO
+try:
+    from urllib.parse import urljoin
+except ImportError:
+    # Python 2
+    from urlparse import urljoin
 from time import time
 
 from Pixels import load_palette, apply_palette, apply_palette256
@@ -382,7 +390,7 @@ class Layer:
             # Start by checking for a tile in the cache.
             try:
                 body = cache.read(self, coord, format)
-            except TheTileLeftANote, e:
+            except TheTileLeftANote as e:
                 headers = e.headers
                 status_code = e.status_code
                 body = e.content
@@ -422,7 +430,7 @@ class Layer:
                     try:
                         tile = self.render(coord, format)
                         save = True
-                    except NoTileLeftBehind, e:
+                    except NoTileLeftBehind as e:
                         tile = e.tile
                         save = False
                         status_code = 404
@@ -445,7 +453,7 @@ class Layer:
 
                     tile_from = 'layer.render()'
 
-            except TheTileLeftANote, e:
+            except TheTileLeftANote as e:
                 headers = e.headers
                 status_code = e.status_code
                 body = e.content

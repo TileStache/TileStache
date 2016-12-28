@@ -154,7 +154,11 @@ you can save yourself a world of trouble by using this definition:
 """
 
 from re import compile
-from urlparse import urlparse, urljoin
+try:
+    from urllib.parse import urljoin, urlparse
+except ImportError:
+    # Python 2
+    from urlparse import urljoin, urlparse
 
 try:
     from json import JSONEncoder, loads as json_loads

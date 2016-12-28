@@ -32,10 +32,22 @@ See also:
 '''
 from math import pi, log as _log
 from threading import Thread, Lock as _Lock
-from httplib import HTTPConnection
+try:
+    from http.client import HTTPConnection
+except ImportError:
+    # Python 2
+    from httplib import HTTPConnection
 from itertools import product
-from StringIO import StringIO
-from urlparse import urlparse
+try:
+    from io import StringIO
+except ImportError:
+    # Python 2
+    from StringIO import StringIO
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    # Python 2
+    from urlparse import urlparse
 from gzip import GzipFile
 
 import logging
@@ -259,7 +271,7 @@ class Datasource (PythonDatasource):
             
         if self.sort:
             logging.debug('Sorting by %s %s' % (self.sort, 'descending' if self.reverse else 'ascending'))
-            key_func = lambda (wkb, props): props.get(self.sort, None)
+            key_func = lambda wkb_props: wkb_props[1].get(self.sort, None)
             features.sort(reverse=self.reverse, key=key_func)
         
         if len(features) == 0:

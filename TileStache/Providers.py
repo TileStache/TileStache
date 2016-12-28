@@ -73,9 +73,17 @@ For an example of a non-image provider, see TileStache.Vector.Provider.
 import os
 import logging
 
-from StringIO import StringIO
+try:
+    from io import StringIO
+except ImportError:
+    # Python 2
+    from StringIO import StringIO
 from string import Template
-import urllib2
+try:
+    import urllib.request as urllib2
+except ImportError:
+    # Python 2
+    import urllib2
 import urllib
 
 try:

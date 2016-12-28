@@ -144,5 +144,5 @@ def getProjectionByName(name):
     else:
         try:
             return Config.loadClassPath(name)
-        except Exception, e:
+        except Exception as e:
             raise Core.KnownUnknown('Failed projection in configuration: "%s" - %s' % (name, e))

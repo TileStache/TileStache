@@ -22,8 +22,11 @@ def request(config_content, layer_name, format, row, column, zoom):
     Helper method to write config_file to disk and do
     request
     '''
+    if sys.version_info.major == 2:
+        is_string = isinstance(config_content, basestring)
+    else:
+        is_string = type(config_content) in (str, bytes)
 
-    is_string = isinstance(config_content, basestring)
     if is_string:
         absolute_file_name = create_temp_file(config_content)
         config = parseConfig(absolute_file_name)
@@ -46,7 +49,7 @@ def create_temp_file(buffer):
     for deleting file once done
     '''
     fd, absolute_file_name = mkstemp(text=True)
-    file = os.fdopen(fd, 'w+b')
+    file = os.fdopen(fd, 'w')
     file.write(buffer)
     file.close()
     return absolute_file_name

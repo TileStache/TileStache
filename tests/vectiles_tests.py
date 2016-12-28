@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 from unittest import TestCase, skipIf
 from collections import namedtuple
@@ -19,7 +21,8 @@ from . import utils
 def get_topo_transform(topojson):
     '''
     '''
-    def xform((x, y)):
+    def xform(xy):
+        x, y = xy
         lon = topojson['transform']['scale'][0] * x + topojson['transform']['translate'][0]
         lat = topojson['transform']['scale'][1] * y + topojson['transform']['translate'][1]
         
@@ -385,7 +388,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         topojson_result = json.loads(tile_content)
 
         self.assertTrue(tile_mimetype.endswith('/json'))
-        print topojson_result
+        print(topojson_result)
         self.assertEqual(topojson_result['type'], 'Topology')
         self.assertEqual(len(topojson_result['objects']['vectile']['geometries']), 2)
 
@@ -404,7 +407,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
 
             elif feature['properties']['name'] == 'Lima':
                 cities.append(feature['properties']['name'])
-                print feature['coordinates']
+                print(feature['coordinates'])
                 self.assertTrue(hypot(point_lima.x - lon, point_lima.y - lat) < 1)
 
         self.assertTrue('San Francisco' in cities)
