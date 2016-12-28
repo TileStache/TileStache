@@ -84,7 +84,7 @@ def create_dummy_server(file_with_content, mimetype):
     t.daemon = True # thread dies with the program
     t.start()
 
-    server_output = ''
+    server_output = b''
 
     # read line and enter busy loop until the server says it is ok
     while True:
@@ -100,7 +100,7 @@ def create_dummy_server(file_with_content, mimetype):
             continue
         else: # got line
             server_output += line
-            if "Running on http://" in server_output:
+            if b"Running on http://" in server_output:
                 break; #server is running, get out of here
             else:
                 continue

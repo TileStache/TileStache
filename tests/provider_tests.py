@@ -30,7 +30,7 @@ class ProviderTests(TestCase):
 
         tile_mimetype, tile_content = utils.request(config_file_content, "osm", "png", 0, 0, 0)
         self.assertEqual(tile_mimetype, "image/png")
-        self.assertTrue(tile_content[:4] in '\x89\x50\x4e\x47') #check it is a png based on png magic number
+        self.assertTrue(tile_content[:4] in b'\x89\x50\x4e\x47') #check it is a png based on png magic number
 
 
     def test_url_template_wgs84(self):
@@ -55,12 +55,12 @@ class ProviderTests(TestCase):
 
         tile_mimetype, tile_content = utils.request(config_file_content, "osgeo_wms", "png", 0, 0, 0)
         self.assertEqual(tile_mimetype, "image/png")
-        self.assertTrue(tile_content[:4] in '\x89\x50\x4e\x47') #check it is a png based on png magic number
+        self.assertTrue(tile_content[:4] in b'\x89\x50\x4e\x47') #check it is a png based on png magic number
 
         #in WGS84 we typically have two tiles at zoom level 0. Get the second tile
         tile_mimetype, tile_content = utils.request(config_file_content, "osgeo_wms", "png", 0, 1, 0)
         self.assertEqual(tile_mimetype, "image/png")
-        self.assertTrue(tile_content[:4] in '\x89\x50\x4e\x47') #check it is a png based on png magic number
+        self.assertTrue(tile_content[:4] in b'\x89\x50\x4e\x47') #check it is a png based on png magic number
 
 
 class ProviderWithDummyResponseServer(TestCase):
