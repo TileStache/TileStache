@@ -20,7 +20,7 @@
       {
         "expensive-layer":
         {
-          "provider": {"name": "Mapnik", "mapfile": "style.xml"}
+          "provider": {"name": "Mapnik", "mapconfig": "style.xml"}
         }
       }
     }
