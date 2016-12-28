@@ -1,5 +1,6 @@
 import os
 from unittest import TestCase, skipIf
+from base64 import b64decode
 import memcache
 from . import utils
 
@@ -36,8 +37,10 @@ class CacheTests(TestCase):
         tile_mimetype, tile_content = utils.request(config_file_content, "memcache_osm", "png", 0, 0, 0)
         self.assertEqual(tile_mimetype, "image/png")
 
-        self.assertEqual(self.mc.get('/4/memcache_osm/0/0/0.PNG'), tile_content,
-            'Contents of memcached and value returned from TileStache do not match')
+        memcache_content = b64decode(self.mc.get('/4/memcache_osm/0/0/0.PNG').encode('ascii'))
+        
+        self.assertEqual(memcache_content, tile_content,
+            'Contents of memcached and value returned from TileStache should match')
 
     def test_memcache_keyprefix(self):
         '''Fetch tile and check the existence of key with prefix in memcached'''
@@ -64,8 +67,10 @@ class CacheTests(TestCase):
         tile_mimetype, tile_content = utils.request(config_file_content, "memcache_osm", "png", 0, 0, 0)
         self.assertEqual(tile_mimetype, "image/png")
 
-        self.assertEqual(self.mc.get('cool_prefix/1/memcache_osm/0/0/0.PNG'), tile_content,
-            'Contents of memcached and value returned from TileStache do not match')
+        memcache_content = b64decode(self.mc.get('cool_prefix/1/memcache_osm/0/0/0.PNG').encode('ascii'))
+        
+        self.assertEqual(memcache_content, tile_content,
+            'Contents of memcached and value returned from TileStache should match')
 
-        self.assertEqual(self.mc.get('/1/memcache_osm/0/0/0.PNG'), None,
-            'Memcache returned a value even though it should have been empty')
+        self.assertIsNone(self.mc.get('/1/memcache_osm/0/0/0.PNG'),
+            'Memcache value should be empty')
