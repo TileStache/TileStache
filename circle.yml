@@ -1,0 +1,25 @@
+machine:
+  services:
+    - memcached
+
+dependencies:
+  override:
+    - sudo add-apt-repository -y ppa:ubuntugis
+    - sudo apt-get update -y
+    - sudo apt-get install gdal-bin libgdal-dev postgresql-9.4-postgis-2.2 python-dev python-werkzeug
+    - pip install tox tox-pyenv
+    - pyenv local 2.7.12
+
+database:
+  override:
+    - psql -U postgres -c "drop database if exists test_tilestache"
+    - psql -U postgres -c "create database test_tilestache"
+    - psql -U postgres -c "create extension postgis" -d test_tilestache
+
+test:
+  override:
+    - tox --result-json /tmp/tox-result.json
+
+general:
+  artifacts:
+    - "/tmp/tox-result.json"

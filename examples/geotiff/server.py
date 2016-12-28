@@ -23,7 +23,11 @@ Check server.py --help to change these defaults.
 """
 
 import json
+import gdal, osr
+import os
 
+from xml.etree.ElementTree import Element, tostring, fromstring
+from xmljson import badgerfish as bf
 
 if __name__ == '__main__':
     from datetime import datetime
@@ -31,6 +35,56 @@ if __name__ == '__main__':
     import os, sys
 
     parser = OptionParser()
+    filename = "cea.tif"
+    filepath = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..',
+                   'tests', 'data', filename))
+    raster = gdal.Open(filepath)
+    srs = osr.SpatialReference()
+    srs.ImportFromWkt(raster.GetProjectionRef())
+    layer_srs = srs.ExportToProj4()
+    map_srs = "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over"
+
+    mapnik_config_json = {
+       "Map":{
+          "@srs":map_srs,
+          "@font-directory":"./fonts",
+          "Style":{
+             "@name":"raster-style",
+             "Rule":{
+                "RasterSymbolizer":{
+
+                }
+             }
+          },
+          "Layer":{
+             "@status":"on",
+             "@srs":layer_srs,
+             "@name":"raster-layer",
+             "StyleName":{
+                "$":"raster-style"
+             },
+             "Datasource":{
+                "Parameter":[
+                   {
+                      "@name":"type",
+                      "$":"gdal"
+                   },
+                   {
+                      "@name":"file",
+                      "$":filepath
+                   },
+                   {
+                      "@name":"format",
+                      "$":"tiff"
+                   }
+                ]
+             }
+          }
+       }
+    }
+
+
+    mapnik_config = tostring(bf.etree(mapnik_config_json)[0])
 
     config = {
         "cache": {
@@ -40,7 +94,7 @@ if __name__ == '__main__':
         },
         "layers": {
             "geotiff": {
-                "provider": {"name": "mapnik", "mapfile": "mapnik.xml"},
+                "provider": {"name": "mapnik", "mapconfig": mapnik_config},
                 "projection": "spherical mercator"
             }
         }
