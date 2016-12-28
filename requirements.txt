@@ -1,4 +1,4 @@
-ModestMaps
+ModestMaps==1.4.7
 simplejson
 shapely
 pillow
