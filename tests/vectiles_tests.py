@@ -97,12 +97,11 @@ def decoded_pbf_asshape(feature, extent, srid=4326):
         3: "Polygon"
     }
     if feature['type'] in (1, 2):
-        coords = [
-            trans_coord(3857, srid, *coord2merc(*g, extent=extent)) for g in feature['geometry']]
+        coords = [trans_coord(3857, srid, *coord2merc(x, y, extent=extent))
+            for (x, y) in feature['geometry']]
     elif feature['type'] == 3:
-        coords = [
-            [trans_coord(3857, srid, *coord2merc(*g, extent=extent)) for g in feature['geometry'][0]]
-        ]
+        coords = [[trans_coord(3857, srid, *coord2merc(x, y, extent=extent))
+            for (x, y) in feature['geometry'][0]]]
     geoint = {
         'type': TYPES_MAP.get(feature['type']),
         'coordinates': coords,
@@ -596,7 +595,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         '''Create a line that goes from west to east (clip on) (pbf)'''
         self.defineGeometry('LINESTRING')
 
-        geom = LineString([(-180, 32), (180, 32)])
+        geom = LineString([(-179, 32), (179, 32)])
 
         self.insertTestRow(geom.wkt)
 
@@ -610,11 +609,10 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         extent = tile_bounds_mercator(0, 0, 0)
 
         west_hemisphere_geometry = decoded_pbf_asshape(layer_result['features'][0], extent)
-        # order of points returned are different
-        expected_geometry = LineString([(180, 32), (-180, 32)])
+        expected_geometry = LineString([(-179, 32), (179, 32)])
         for returned, expected in zip(west_hemisphere_geometry.coords, expected_geometry.coords):
-            self.assertTrue(round(returned[0]) == expected[0])
-            self.assertTrue(round(returned[1]) == expected[1])
+            self.assertEqual(round(returned[0]), expected[0])
+            self.assertEqual(round(returned[1]), expected[1])
 
     def test_polygon_pbf(self):
         '''
