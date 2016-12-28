@@ -74,10 +74,10 @@ import os
 import logging
 
 try:
-    from io import StringIO
+    from io import BytesIO
 except ImportError:
     # Python 2
-    from StringIO import StringIO
+    from StringIO import StringIO as BytesIO
 from string import Template
 try:
     import urllib.request as urllib2
@@ -148,7 +148,7 @@ class Verbatim:
     ''' Wrapper for PIL.Image that saves raw input bytes if modes and formats match.
     '''
     def __init__(self, bytes):
-        self.buffer = StringIO(bytes)
+        self.buffer = BytesIO(bytes)
         self.format = None
         self._image = None
         

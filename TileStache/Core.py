@@ -146,10 +146,10 @@ The preview can be accessed through a URL like /<layer name>/preview.html:
 import logging
 from wsgiref.headers import Headers
 try:
-    from io import StringIO
+    from io import BytesIO
 except ImportError:
     # Python 2
-    from StringIO import StringIO
+    from StringIO import StringIO as BytesIO
 try:
     from urllib.parse import urljoin
 except ImportError:
@@ -425,7 +425,7 @@ class Layer:
 
                 if body is None:
                     # No one else wrote the tile, do it here.
-                    buff = StringIO()
+                    buff = BytesIO()
 
                     try:
                         tile = self.render(coord, format)
