@@ -50,7 +50,7 @@ def create_temp_file(buffer):
     for deleting file once done
     '''
     fd, absolute_file_name = mkstemp(text=True)
-    file = os.fdopen(fd, 'w')
+    file = os.fdopen(fd, 'wb' if (type(buffer) is bytes) else 'w')
     file.write(buffer)
     file.close()
     return absolute_file_name
