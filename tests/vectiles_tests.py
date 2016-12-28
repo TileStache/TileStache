@@ -238,7 +238,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         # northwest quadrant should return San Francisco and Lima
 
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vectile_test", "json", 0, 0, 1)
-        geojson_result = json.loads(tile_content)
+        geojson_result = json.loads(tile_content.decode('utf8'))
 
         self.assertTrue(tile_mimetype.endswith('/json'))
         self.assertEqual(geojson_result['type'], 'FeatureCollection')
@@ -264,7 +264,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         # northeast quadrant should return Berlin
 
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vectile_test", "json", 0, 1, 1)
-        geojson_result = json.loads(tile_content)
+        geojson_result = json.loads(tile_content.decode('utf8'))
 
         self.assertTrue(tile_mimetype.endswith('/json'))
         self.assertEqual(geojson_result['type'], 'FeatureCollection')
@@ -285,7 +285,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
 
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vectile_test", "json", 0, 0, 0)
         self.assertTrue(tile_mimetype.endswith('/json'))
-        geojson_result = json.loads(tile_content)
+        geojson_result = json.loads(tile_content.decode('utf8'))
         west_hemisphere_geometry = asShape(geojson_result['features'][0]['geometry'])
         expected_geometry = LineString([(-180, 32), (180, 32)])
         self.assertTrue(expected_geometry.almost_equals(west_hemisphere_geometry))
@@ -308,7 +308,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vectile_test", "json", 0, 0, 0)
         self.assertTrue(tile_mimetype.endswith('/json'))
-        geojson_result = json.loads(tile_content)
+        geojson_result = json.loads(tile_content.decode('utf8'))
         
         result_geom = asShape(geojson_result['features'][0]['geometry'])
         expected_geom = Polygon( [(-180, -85.05), (180, -85.05), (180, 85.05), (-180, 85.05), (-180, -85.05)])
@@ -349,7 +349,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
 
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vectile_multi", "json", 0, 0, 0)
         self.assertTrue(tile_mimetype.endswith('/json'))
-        geojson_result = json.loads(tile_content)
+        geojson_result = json.loads(tile_content.decode('utf8'))
         
         feature1, feature2 = geojson_result['vectile_test'], geojson_result['vectile_copy']
         self.assertEqual(feature1['type'], 'FeatureCollection')
@@ -385,7 +385,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         # northwest quadrant should return San Francisco and Lima
 
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vectile_test", "topojson", 0, 0, 1)
-        topojson_result = json.loads(tile_content)
+        topojson_result = json.loads(tile_content.decode('utf8'))
 
         self.assertTrue(tile_mimetype.endswith('/json'))
         print(topojson_result)
@@ -417,7 +417,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         # northeast quadrant should return Berlin
 
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vectile_test", "topojson", 0, 1, 1)
-        topojson_result = json.loads(tile_content)
+        topojson_result = json.loads(tile_content.decode('utf8'))
 
         self.assertTrue(tile_mimetype.endswith('/json'))
         self.assertEqual(topojson_result['type'], 'Topology')
@@ -438,7 +438,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
 
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vectile_test", "topojson", 0, 0, 0)
         self.assertTrue(tile_mimetype.endswith('/json'))
-        topojson_result = json.loads(tile_content)
+        topojson_result = json.loads(tile_content.decode('utf8'))
         topojson_xform = get_topo_transform(topojson_result)
         
         parts = [topojson_result['arcs'][arc] for arc in topojson_result['objects']['vectile']['geometries'][0]['arcs']]
@@ -470,7 +470,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vectile_test", "topojson", 0, 0, 0)
         self.assertTrue(tile_mimetype.endswith('/json'))
-        topojson_result = json.loads(tile_content)
+        topojson_result = json.loads(tile_content.decode('utf8'))
         topojson_xform = get_topo_transform(topojson_result)
         
         parts = [topojson_result['arcs'][arc[0]] for arc in topojson_result['objects']['vectile']['geometries'][0]['arcs']]
@@ -516,7 +516,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
 
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vectile_multi", "topojson", 0, 0, 0)
         self.assertTrue(tile_mimetype.endswith('/json'))
-        topojson_result = json.loads(tile_content)
+        topojson_result = json.loads(tile_content.decode('utf8'))
         
         self.assertEqual(topojson_result['type'], 'Topology')
         self.assertEqual(topojson_result['objects']['vectile_test']['type'], 'GeometryCollection')

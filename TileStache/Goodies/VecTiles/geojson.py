@@ -34,7 +34,7 @@ def get_tiles(names, config, coord):
     if bad_mimes:
         raise KnownUnknown('%s.get_tiles encountered a non-JSON mime-type in %s sub-layer: "%s"' % ((__name__, ) + bad_mimes[0]))
     
-    geojsons = map(json.loads, bodies)
+    geojsons = [json.loads(body.decode('utf8')) for body in bodies]
     bad_types = [(name, topo['type']) for (topo, name) in zip(geojsons, names) if topo['type'] != 'FeatureCollection']
     
     if bad_types:
@@ -99,14 +99,13 @@ def encode(file, features, zoom, is_clipped):
     for token in encoded:
         if charfloat_pat.match(token):
             # in python 2.7, we see a character followed by a float literal
-            file.write(token[0] + flt_fmt % float(token[1:]))
-        
+            piece = token[0] + flt_fmt % float(token[1:])
         elif float_pat.match(token):
             # in python 2.6, we see a simple float literal
-            file.write(flt_fmt % float(token))
-        
+            piece = flt_fmt % float(token)
         else:
-            file.write(token)
+            piece = token
+        file.write(piece.encode('utf8'))
 
 def merge(file, names, config, coord):
     ''' Retrieve a list of GeoJSON tile responses and merge them into one.
@@ -123,11 +122,10 @@ def merge(file, names, config, coord):
     for token in encoded:
         if charfloat_pat.match(token):
             # in python 2.7, we see a character followed by a float literal
-            file.write(token[0] + flt_fmt % float(token[1:]))
-        
+            piece = token[0] + flt_fmt % float(token[1:])
         elif float_pat.match(token):
             # in python 2.6, we see a simple float literal
-            file.write(flt_fmt % float(token))
-        
+            piece = flt_fmt % float(token)
         else:
-            file.write(token)
+            piece = token
+        file.write(piece.encode('utf8'))

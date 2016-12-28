@@ -224,9 +224,10 @@ class VectorResponse:
     
             for atom in encoded:
                 if float_pat.match(atom):
-                    out.write(('%%.%if' % self.precision) % float(atom))
+                    piece = ('%%.%if' % self.precision) % float(atom)
                 else:
-                    out.write(atom)
+                    piece = atom
+                out.write(piece.encode('utf8'))
         
         elif format in ('GeoBSON', 'ArcBSON'):
             import bson
