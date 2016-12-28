@@ -144,6 +144,7 @@ The preview can be accessed through a URL like /<layer name>/preview.html:
 """
 
 import logging
+from sys import modules
 from wsgiref.headers import Headers
 try:
     from io import BytesIO
@@ -826,3 +827,45 @@ def _rummy():
             '##Mh@M  .    ...:;;,:@A#@@@@@@@@@@@#@@@@@@#MMHAB@@@@#G#@@#: i@@       r@@#MMM#######@@@@#@@@@@@#####M#####@@',
             '#H3#@3. ,.    ...  :@@&@@@@@@@@@@@@@#@@#@@@MMBHGA@H&;:@@i :B@@@B     .@@#MM####@@@##@@@#@@@@@#######M##M#@@@',
             'M&AM5i;.,.   ..,,rA@@MH@@@@@@@@@@@@@##@@@@@MMMBB#@h9hH#s;3######,   .A@#MMM#####@@@@@##@@@#@@#####M#####M39B']
+
+def loadClassPath(classpath):
+    """ Load external class based on a path.
+
+        Example classpath: "Module.Submodule:Classname".
+
+        Equivalent soon-to-be-deprecated classpath: "Module.Submodule.Classname".
+    """
+    if ':' in classpath:
+        #
+        # Just-added support for "foo:blah"-style classpaths.
+        #
+        modname, objname = classpath.split(':', 1)
+
+        try:
+            __import__(modname)
+            module = modules[modname]
+            _class = eval(objname, module.__dict__)
+
+            if _class is None:
+                raise Exception('eval(%(objname)s) in %(modname)s came up None' % locals())
+
+        except Exception as e:
+            raise KnownUnknown('Tried to import %s, but: %s' % (classpath, e))
+
+    else:
+        #
+        # Support for "foo.blah"-style classpaths, TODO: deprecate this in v2.
+        #
+        classpath = classpath.split('.')
+
+        try:
+            module = __import__('.'.join(classpath[:-1]), fromlist=str(classpath[-1]))
+        except ImportError as e:
+            raise KnownUnknown('Tried to import %s, but: %s' % ('.'.join(classpath), e))
+
+        try:
+            _class = getattr(module, classpath[-1])
+        except AttributeError as e:
+            raise KnownUnknown('Tried to import %s, but: %s' % ('.'.join(classpath), e))
+
+    return _class
