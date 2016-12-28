@@ -1,3 +1,4 @@
+from __future__ import print_function
 import argparse
 from werkzeug.wrappers import Request, Response
 
@@ -17,14 +18,14 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     #read file into buffer
-    print 'Response Content: ' + args.response_file
+    print('Response Content:', args.response_file)
     global response_content
     f = open(args.response_file, 'rb')
     response_content = f.read()
     f.close()
 
     #set mimetype
-    print 'Response Mimetype: ' + args.response_mimetype
+    print('Response Mimetype:', args.response_mimetype)
     global response_mimetype
     response_mimetype = args.response_mimetype
 

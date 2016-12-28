@@ -1,3 +1,4 @@
+from __future__ import print_function
 from tempfile import mkstemp
 import os
 import inspect
@@ -61,8 +62,7 @@ def create_dummy_server(file_with_content, mimetype):
     mimetype specified
     '''
 
-    # see http://stackoverflow.com/questions/50499/in-python-how-do-i-get-the-path-and-name-of-the-file-that-is-currently-executin
-    current_script_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    current_script_dir = os.path.dirname(os.path.abspath(__file__))
 
     #start new process using our dummy-response-server.py script
     dummy_server_file = os.path.join(current_script_dir, 'servers', 'dummy-response-server.py')
