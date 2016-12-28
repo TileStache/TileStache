@@ -167,9 +167,9 @@ except ImportError:
 
 from osgeo import ogr, osr
 
-from TileStache.Core import KnownUnknown
-from TileStache.Geography import getProjectionByName
-from Arc import reserialize_to_arc, pyamf_classes
+from ..Core import KnownUnknown
+from ..Geography import getProjectionByName
+from .Arc import reserialize_to_arc, pyamf_classes
 
 class VectorResponse:
     """ Wrapper class for Vector response that makes it behave like a PIL.Image object.
