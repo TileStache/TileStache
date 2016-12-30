@@ -26,7 +26,7 @@ def request(config_content, layer_name, format, row, column, zoom):
     if sys.version_info.major == 2:
         is_string = isinstance(config_content, basestring)
     else:
-        is_string = type(config_content) in (str, bytes)
+        is_string = isinstance(config_content, (str, bytes))
 
     if is_string:
         absolute_file_name = create_temp_file(config_content)
