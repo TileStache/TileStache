@@ -1,3 +1,4 @@
+from __future__ import print_function
 from tempfile import mkstemp
 import os
 import inspect
@@ -22,8 +23,11 @@ def request(config_content, layer_name, format, row, column, zoom):
     Helper method to write config_file to disk and do
     request
     '''
+    if sys.version_info.major == 2:
+        is_string = isinstance(config_content, basestring)
+    else:
+        is_string = isinstance(config_content, (str, bytes))
 
-    is_string = isinstance(config_content, basestring)
     if is_string:
         absolute_file_name = create_temp_file(config_content)
         config = parseConfig(absolute_file_name)
@@ -46,7 +50,7 @@ def create_temp_file(buffer):
     for deleting file once done
     '''
     fd, absolute_file_name = mkstemp(text=True)
-    file = os.fdopen(fd, 'w+b')
+    file = os.fdopen(fd, 'wb' if (type(buffer) is bytes) else 'w')
     file.write(buffer)
     file.close()
     return absolute_file_name
@@ -58,8 +62,7 @@ def create_dummy_server(file_with_content, mimetype):
     mimetype specified
     '''
 
-    # see http://stackoverflow.com/questions/50499/in-python-how-do-i-get-the-path-and-name-of-the-file-that-is-currently-executin
-    current_script_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    current_script_dir = os.path.dirname(os.path.abspath(__file__))
 
     #start new process using our dummy-response-server.py script
     dummy_server_file = os.path.join(current_script_dir, 'servers', 'dummy-response-server.py')
@@ -81,7 +84,7 @@ def create_dummy_server(file_with_content, mimetype):
     t.daemon = True # thread dies with the program
     t.start()
 
-    server_output = ''
+    server_output = b''
 
     # read line and enter busy loop until the server says it is ok
     while True:
@@ -97,7 +100,7 @@ def create_dummy_server(file_with_content, mimetype):
             continue
         else: # got line
             server_output += line
-            if "Running on http://" in server_output:
+            if b"Running on http://" in server_output:
                 break; #server is running, get out of here
             else:
                 continue

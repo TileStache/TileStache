@@ -23,7 +23,7 @@ def get_tiles(names, config, coord):
     if bad_mimes:
         raise KnownUnknown('%s.get_tiles encountered a non-JSON mime-type in %s sub-layer: "%s"' % ((__name__, ) + bad_mimes[0]))
     
-    topojsons = map(json.loads, bodies)
+    topojsons = [json.loads(body.decode('utf8')) for body in bodies]
     bad_types = [(name, topo['type']) for (topo, name) in zip(topojsons, names) if topo['type'] != 'Topology']
     
     if bad_types:
@@ -188,7 +188,7 @@ def encode(file, features, bounds, is_clipped):
         'arcs': arcs
         }
     
-    json.dump(result, file, separators=(',', ':'))
+    file.write(json.dumps(result, separators=(',', ':')).encode('utf8'))
 
 def merge(file, names, config, coord):
     ''' Retrieve a list of TopoJSON tile responses and merge them into one.
@@ -214,4 +214,4 @@ def merge(file, names, config, coord):
             for geometry in object['geometries']:
                 update_arc_indexes(geometry, output['arcs'], input['arcs'])
     
-    json.dump(output, file, separators=(',', ':'))
+    file.write(json.dumps(output, separators=(',', ':')).encode('utf8'))

@@ -103,7 +103,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         # western hemisphere should return San Francisco and Lima
 
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vector_test", "geojson", 0, 0, 0)
-        geojson_result = json.loads(tile_content)
+        geojson_result = json.loads(tile_content.decode('utf8'))
 
         self.assertTrue(tile_mimetype.endswith('/json'))
         self.assertEqual(geojson_result['type'], 'FeatureCollection')
@@ -129,7 +129,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         # eastern hemisphere should return Berlin
 
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vector_test", "geojson", 0, 1, 0)
-        geojson_result = json.loads(tile_content)
+        geojson_result = json.loads(tile_content.decode('utf8'))
 
         self.assertTrue(tile_mimetype.endswith('/json'))
         self.assertEqual(geojson_result['type'], 'FeatureCollection')
@@ -151,7 +151,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         # for western hemisphere....
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vector_test", "geojson", 0, 0, 0)
         self.assertTrue(tile_mimetype.endswith('/json'))
-        geojson_result = json.loads(tile_content)
+        geojson_result = json.loads(tile_content.decode('utf8'))
         west_hemisphere_geometry = asShape(geojson_result['features'][0]['geometry'])
         expected_geometry = LineString([(-180, 32), (0, 32)])
         self.assertTrue(expected_geometry.almost_equals(west_hemisphere_geometry))
@@ -159,7 +159,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         # for eastern hemisphere....
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vector_test", "geojson", 0, 1, 0)
         self.assertTrue(tile_mimetype.endswith('/json'))
-        geojson_result = json.loads(tile_content)
+        geojson_result = json.loads(tile_content.decode('utf8'))
         east_hemisphere_geometry = asShape(geojson_result['features'][0]['geometry'])
         expected_geometry = LineString([(0, 32), (180, 32)])
         self.assertTrue(expected_geometry.almost_equals(east_hemisphere_geometry))
@@ -182,7 +182,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vector_test", "geojson", 0, 0, 0)
         self.assertTrue(tile_mimetype.endswith('/json'))
-        geojson_result = json.loads(tile_content)
+        geojson_result = json.loads(tile_content.decode('utf8'))
         
         result_geom = asShape(geojson_result['features'][0]['geometry'])
         expected_geom = Polygon( [(-180, -90), (0, -90), (0, 90), (-180, 90), (-180, -90)])

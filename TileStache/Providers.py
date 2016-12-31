@@ -73,9 +73,17 @@ For an example of a non-image provider, see TileStache.Vector.Provider.
 import os
 import logging
 
-from StringIO import StringIO
+try:
+    from io import BytesIO
+except ImportError:
+    # Python 2
+    from StringIO import StringIO as BytesIO
 from string import Template
-import urllib2
+try:
+    import urllib.request as urllib2
+except ImportError:
+    # Python 2
+    import urllib2
 import urllib
 
 try:
@@ -87,7 +95,7 @@ except ImportError:
 import ModestMaps
 from ModestMaps.Core import Point, Coordinate
 
-import Geography
+from . import Geography
 
 # This import should happen inside getProviderByName(), but when testing
 # on Mac OS X features are missing from output. Wierd-ass C libraries...
@@ -140,7 +148,7 @@ class Verbatim:
     ''' Wrapper for PIL.Image that saves raw input bytes if modes and formats match.
     '''
     def __init__(self, bytes):
-        self.buffer = StringIO(bytes)
+        self.buffer = BytesIO(bytes)
         self.format = None
         self._image = None
         

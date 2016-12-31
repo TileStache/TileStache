@@ -2,7 +2,7 @@
 """
 from operator import add
 
-from TileStache.Core import KnownUnknown
+from ..Core import KnownUnknown
 
 geometry_types = {
     'Point': 'esriGeometryPoint',

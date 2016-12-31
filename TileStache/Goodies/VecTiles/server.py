@@ -8,8 +8,16 @@ For a more general implementation, try the Vector provider:
     http://tilestache.org/doc/#vector-provider
 '''
 from math import pi
-from urlparse import urljoin, urlparse
-from urllib import urlopen
+try:
+    from urllib.parse import urljoin, urlparse
+except ImportError:
+    # Python 2
+    from urlparse import urljoin, urlparse
+try:
+    from urllib.request import urlopen
+except ImportError:
+    # Python 2
+    from urllib import urlopen
 from os.path import exists
 
 try:
@@ -17,7 +25,7 @@ try:
     from psycopg2 import connect
     from psycopg2.extensions import TransactionRollbackError
 
-except ImportError, err:
+except ImportError as err:
     # Still possible to build the documentation without psycopg2
 
     def connect(*args, **kwargs):
