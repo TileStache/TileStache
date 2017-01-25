@@ -285,8 +285,9 @@ class GridProvider:
                     for (index, fields) in self.layers:
                         datasource = self.mapnik.layers[index].datasource
                         fields = (type(fields) is list) and map(str, fields) or datasource.fields()
-
-                        grid = mapnik.render_grid(self.mapnik, index, resolution=self.scale, fields=fields)
+                        grid = mapnik.Grid(width, height)
+                        mapnik.render_layer(self.mapnik, grid, layer=index, fields=fields)
+                        grid = grid.encode('utf', resolution=self.scale, features=True)
 
                         for key in grid['data']:
                             grid['data'][key][self.layer_id_key] = self.mapnik.layers[index].name
