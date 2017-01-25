@@ -742,7 +742,7 @@ def _preview(layer):
 <html>
 <head>
     <title>TileStache Preview: %(layername)s</title>
-    <script src="http://cdn.rawgit.com/stamen/modestmaps-js/v1.0.0-beta1/modestmaps.min.js" type="text/javascript"></script>
+    <script src="//cdn.rawgit.com/stamen/modestmaps-js/v1.0.0-beta1/modestmaps.min.js" type="text/javascript"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <style type="text/css">
         html, body, #map {
