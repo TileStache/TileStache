@@ -554,7 +554,7 @@ class Layer:
             tile, surtile = None, tile
 
             for (other, x, y) in subtiles:
-                buff = StringIO()
+                buff = BytesIO()
                 bbox = (x, y, x + self.dim, y + self.dim)
                 subtile = surtile.crop(bbox)
                 if self.palette256:
