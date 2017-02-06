@@ -58,11 +58,11 @@ def transform(shape, func):
         return construct(parts)
     
     if shape.type in ('Point', 'LineString'):
-        return construct(map(func, shape.coords))
+        return construct(list(map(func, shape.coords)))
         
     if shape.type == 'Polygon':
-        exterior = map(func, shape.exterior.coords)
-        rings = [map(func, ring.coords) for ring in shape.interiors]
+        exterior = list(map(func, shape.exterior.coords))
+        rings = [list(map(func, ring.coords)) for ring in shape.interiors]
         return construct(exterior, rings)
     
     if shape.type == 'GeometryCollection':

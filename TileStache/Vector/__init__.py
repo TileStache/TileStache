@@ -158,7 +158,7 @@ try:
     from urllib.parse import urljoin, urlparse
 except ImportError:
     # Python 2
-    from urlparse import urljoin, urlparse
+    from urllib.parse import urljoin, urlparse
 
 try:
     from json import JSONEncoder, loads as json_loads
@@ -238,7 +238,7 @@ class VectorResponse:
         elif format in ('GeoAMF', 'ArcAMF'):
             import pyamf
             
-            for class_name in pyamf_classes.items():
+            for class_name in list(pyamf_classes.items()):
                 pyamf.register_class(*class_name)
 
             encoded = pyamf.encode(content, 0).read()
@@ -380,7 +380,7 @@ def _open_layer(driver_name, parameters, dirpath):
                     'geojson': 'GeoJSON', 'spatialite': 'SQLite', 'oracle': 'OCI', 'mysql': 'MySQL'}
     
     if driver_name.lower() not in okay_drivers:
-        raise KnownUnknown('Got a driver type Vector doesn\'t understand: "%s". Need one of %s.' % (driver_name, ', '.join(okay_drivers.keys())))
+        raise KnownUnknown('Got a driver type Vector doesn\'t understand: "%s". Need one of %s.' % (driver_name, ', '.join(list(okay_drivers.keys()))))
 
     driver_name = okay_drivers[driver_name.lower()]
     driver = ogr.GetDriverByName(str(driver_name))

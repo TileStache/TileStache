@@ -20,7 +20,7 @@ is 0 (the default), do not create an alpha channel.
 With a bit more work, this provider will be ready for fully-supported inclusion
 in TileStache proper. Until then, it will remain here in the Goodies package.
 """
-from urlparse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin
 
 try:
     from PIL import Image
@@ -87,7 +87,7 @@ class Provider:
                 if mask_ds is None:
                     raise Exception('Failed to create dataset mask.')
 
-                [mask_ds.GetRasterBand(i).SetNoDataValue(float('nan')) for i in xrange(1, src_ds.RasterCount+1)]
+                [mask_ds.GetRasterBand(i).SetNoDataValue(float('nan')) for i in range(1, src_ds.RasterCount+1)]
 
             merc = osr.SpatialReference()
             merc.ImportFromProj4(srs)

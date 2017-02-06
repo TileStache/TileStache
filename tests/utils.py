@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 from tempfile import mkstemp
 import os
 import inspect
@@ -9,7 +9,7 @@ import sys
 from time import sleep
 from threading  import Thread
 try:
-    from Queue import Queue, Empty
+    from queue import Queue, Empty
 except ImportError:
     from queue import Queue, Empty  # python 3.x
 
@@ -24,7 +24,7 @@ def request(config_content, layer_name, format, row, column, zoom):
     request
     '''
     if sys.version_info.major == 2:
-        is_string = isinstance(config_content, basestring)
+        is_string = isinstance(config_content, str)
     else:
         is_string = isinstance(config_content, (str, bytes))
 

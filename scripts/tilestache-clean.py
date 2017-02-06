@@ -102,7 +102,7 @@ def listCoordinates(filename):
         Read coordinates from a file with one Z/X/Y coordinate per line.
     """
     coords = (line.strip().split('/') for line in open(filename, 'r'))
-    coords = (map(int, (row, column, zoom)) for (zoom, column, row) in coords)
+    coords = (list(map(int, (row, column, zoom))) for (zoom, column, row) in coords)
     coords = [Coordinate(*args) for args in coords]
 
     count = len(coords)
@@ -135,7 +135,7 @@ if __name__ == '__main__':
 
         if options.layer in ('ALL', 'ALL LAYERS') and options.layer not in config.layers:
             # clean every layer in the config
-            layers = config.layers.values()
+            layers = list(config.layers.values())
 
         elif options.layer not in config.layers:
             raise KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (options.layer, ', '.join(sorted(config.layers.keys()))))
@@ -167,7 +167,7 @@ if __name__ == '__main__':
         padding = options.padding
         tile_list = options.tile_list
 
-    except KnownUnknown, e:
+    except KnownUnknown as e:
         parser.error(str(e))
 
     for layer in layers:
@@ -188,7 +188,7 @@ if __name__ == '__main__':
                         "total": count}
 
             if options.verbose:
-                print >> stderr, '%(offset)d of %(total)d...' % progress,
+                print('%(offset)d of %(total)d...' % progress, end=' ', file=stderr)
 
             try:
                 mimetype, format = layer.getTypeByExtension(extension)
@@ -203,7 +203,7 @@ if __name__ == '__main__':
                 config.cache.remove(layer, coord, format)
 
             if options.verbose:
-                print >> stderr, '%(tile)s' % progress
+                print('%(tile)s' % progress, file=stderr)
 
             if progressfile:
                 fp = open(progressfile, 'w')

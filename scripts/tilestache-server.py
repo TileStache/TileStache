@@ -49,7 +49,7 @@ if __name__ == '__main__':
     import TileStache
 
     if not os.path.exists(options.file):
-        print >> sys.stderr, "Config file not found. Use -c to pick a tilestache config file."
+        print("Config file not found. Use -c to pick a tilestache config file.", file=sys.stderr)
         sys.exit(1)
 
     app = TileStache.WSGITileServer(config=options.file, autoreload=True)

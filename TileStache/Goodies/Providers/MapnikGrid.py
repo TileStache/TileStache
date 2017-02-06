@@ -34,9 +34,9 @@ import json
 from os.path import exists
 from TileStache.Core import KnownUnknown
 from TileStache.Geography import getProjectionByName
-from urlparse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin
 from tempfile import mkstemp
-from urllib import urlopen
+from urllib.request import urlopen
 import os
 
 try:

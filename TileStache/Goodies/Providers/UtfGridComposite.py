@@ -78,9 +78,9 @@ class Provider:
 
 		#init resultGrid based on given layers (if required)
 		if len(resultGrid) == 0:
-			for i in xrange(gridSize):
+			for i in range(gridSize):
 				resultGrid.append([])
-				for j in xrange(gridSize):
+				for j in range(gridSize):
 					resultGrid[i].append(-1)
 	
 		keys = layer['keys']
@@ -88,7 +88,7 @@ class Provider:
 		keyRemap = {}
 		for k in keys:
 			if k in gridKeys:
-				for ext in xrange(ord('a'), ord('z')+1):
+				for ext in range(ord('a'), ord('z')+1):
 					if not k+chr(ext) in gridKeys:
 						keyRemap[k] = (k+chr(ext))
 						break
@@ -97,9 +97,9 @@ class Provider:
 		
 		addedKeys = [] #FIXME: HashSet<string>?
 		
-		for y in xrange(gridSize):
+		for y in range(gridSize):
 			line = layer['grid'][y]
-			for x in xrange(gridSize):
+			for x in range(gridSize):
 				idNo = self.decodeId(line[x])
 				
 				if keys[idNo] == "":
@@ -127,14 +127,14 @@ class Provider:
 		finalKeys = []
 		finalData = {}
 		finalGrid = []
-		for i in xrange(gridSize):
+		for i in range(gridSize):
 			finalGrid.append("")
 		
 		finalIdCounter = 0
 		idToFinalId = {}
 		
-		for y in xrange(gridSize):
-			for x in xrange(gridSize):
+		for y in range(gridSize):
+			for x in range(gridSize):
 				id = resultGrid[x][y]
 				
 				if not id in idToFinalId:
@@ -151,7 +151,7 @@ class Provider:
 				finalGrid[y] = finalGrid[y] + self.encodeId(finalId)
 	
 		result = "{\"keys\": ["
-		for i in xrange(len(finalKeys)):
+		for i in range(len(finalKeys)):
 			if i > 0:
 				result += ","
 			result += "\"" + finalKeys[i] + "\""
@@ -167,7 +167,7 @@ class Provider:
 		
 		result += "}, \"grid\": ["
 		
-		for i in xrange(gridSize):
+		for i in range(gridSize):
 			line = finalGrid[i]
 			result += json.dumps(line)
 			if i < gridSize - 1:
@@ -185,7 +185,7 @@ class Provider:
 		if id >= 92:
 			id = id + 1
 		if id > 127:
-			return unichr(id)
+			return chr(id)
 		return chr(id)
 
 	def decodeId( self, id ):

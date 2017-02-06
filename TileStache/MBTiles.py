@@ -35,7 +35,7 @@ MBTiles provider parameters:
   tileset:
     Required local file path to MBTiles tileset file, a SQLite 3 database file.
 """
-from urlparse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin
 from os.path import exists
 
 # Heroku is missing standard python's sqlite3 package, so this will ImportError.

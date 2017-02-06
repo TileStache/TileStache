@@ -12,7 +12,7 @@ from tempfile import gettempdir
 
 try:
     from ...Mapnik import ImageProvider, mapnik
-    from cascadenik import load_map
+    from .cascadenik import load_map
 except ImportError:
     # can still build documentation
     pass

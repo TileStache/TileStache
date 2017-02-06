@@ -118,10 +118,10 @@ A complete example configuration might look like this:
     }
 """
 from re import search
-from StringIO import StringIO
+from io import StringIO
 from itertools import product
-from urlparse import urljoin
-from urllib import urlopen
+from urllib.parse import urljoin
+from urllib.request import urlopen
 
 from . import Core
 
@@ -268,7 +268,7 @@ def local_bitmap(source, config, coord, dim):
     
     output = Image.new('RGBA', (dim, dim))
     
-    for (x, y) in product(range(x, dim, w), range(y, dim, h)):
+    for (x, y) in product(list(range(x, dim, w)), list(range(y, dim, h))):
         # crop the top-left if needed
         xmin = 0 if x > 0 else -x
         ymin = 0 if y > 0 else -y
@@ -326,7 +326,7 @@ def make_color(color):
           orange: "#f90", "#ff9900", "#ff9900ff"
           transparent orange: "#f908", "#ff990088"
     """
-    if type(color) not in (str, unicode):
+    if type(color) not in (str, str):
         raise Core.KnownUnknown('Color must be a string: %s' % repr(color))
 
     if color[0] != '#':

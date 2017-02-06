@@ -6,7 +6,7 @@
       gunicorn --bind localhost:8888 "TileStache.Goodies.ExternalConfigServer:WSGIServer(url)"
 """
 
-from urllib import urlopen
+from urllib.request import urlopen
 import logging
 
 try:
@@ -27,10 +27,10 @@ class DynamicLayers:
 		self.lookup_failures = set()
 
 	def keys(self):
-		return self.seen_layers.keys()
+		return list(self.seen_layers.keys())
 
 	def items(self):
-		return self.seen_layers.items()
+		return list(self.seen_layers.items())
 
 	def parse_layer(self, layer_json):
 		layer_dict = json_load(layer_json)

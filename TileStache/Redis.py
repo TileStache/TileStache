@@ -39,7 +39,7 @@ Redis cache parameters:
     
 
 """
-from __future__ import absolute_import
+
 from time import time as _time, sleep as _sleep
 
 # We enabled absolute_import because case insensitive filesystems

@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 
 import os
 from unittest import TestCase, skipIf
@@ -441,7 +441,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         topojson_xform = get_topo_transform(topojson_result)
         
         parts = [topojson_result['arcs'][arc] for arc in topojson_result['objects']['vectile']['geometries'][0]['arcs']]
-        parts = [map(topojson_xform, topojson_dediff(part)) for part in parts]
+        parts = [list(map(topojson_xform, topojson_dediff(part))) for part in parts]
         
         west_hemisphere_geometry = LineString(*parts)
         
@@ -473,7 +473,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         topojson_xform = get_topo_transform(topojson_result)
         
         parts = [topojson_result['arcs'][arc[0]] for arc in topojson_result['objects']['vectile']['geometries'][0]['arcs']]
-        parts = [map(topojson_xform, topojson_dediff(part)) for part in parts]
+        parts = [list(map(topojson_xform, topojson_dediff(part))) for part in parts]
         
         result_geom = Polygon(*parts)
         expected_geom = Polygon( [(-180, -85.0511), (180, -85.0511), (180, 85.0511), (-180, 85.0511), (-180, -85.0511)])

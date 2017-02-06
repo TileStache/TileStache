@@ -150,12 +150,12 @@ try:
     from io import BytesIO
 except ImportError:
     # Python 2
-    from StringIO import StringIO as BytesIO
+    from io import StringIO as BytesIO
 try:
     from urllib.parse import urljoin
 except ImportError:
     # Python 2
-    from urlparse import urljoin
+    from urllib.parse import urljoin
 from time import time
 
 from .Pixels import load_palette, apply_palette, apply_palette256
@@ -359,7 +359,7 @@ class Layer:
             Layer names are stored in the Configuration object, so
             config.layers must be inspected to find a matching name.
         """
-        for (name, layer) in self.config.layers.items():
+        for (name, layer) in list(self.config.layers.items()):
             if layer is self:
                 return name
 
