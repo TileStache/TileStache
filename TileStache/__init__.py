@@ -39,14 +39,8 @@ except ImportError:
     # Python 2
     from urllib.request import urlopen
 from os import getcwd
-from time import time
 
-try:
-    import http.client as httplib
-except ImportError:
-    # Python 2
-    import http.client
-import logging
+import http.client
 
 try:
     from json import load as json_load
