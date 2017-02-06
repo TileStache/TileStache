@@ -18,7 +18,7 @@ try:
     from io import StringIO
 except ImportError:
     # Python 2
-    from StringIO import StringIO
+    from io import StringIO
 
 #
 # wkbByteOrder

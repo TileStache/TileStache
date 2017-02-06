@@ -17,7 +17,7 @@ def get_tiles(names, config, coord):
         raise KnownUnknown("%s.get_tiles didn't recognize %s when trying to load %s." % (__name__, ', '.join(unknown_layers), ', '.join(names)))
     
     layers = [config.layers[name] for name in names]
-    mimes, bodies = zip(*[getTile(layer, coord, 'topojson') for layer in layers])
+    mimes, bodies = list(zip(*[getTile(layer, coord, 'topojson') for layer in layers]))
     bad_mimes = [(name, mime) for (mime, name) in zip(mimes, names) if not mime.endswith('/json')]
     
     if bad_mimes:
@@ -92,7 +92,7 @@ def diff_encode(line, transform):
     '''
     coords = [transform(x, y) for (x, y) in line.coords]
     
-    pairs = zip(coords[:], coords[1:])
+    pairs = list(zip(coords[:], coords[1:]))
     diffs = [(x2 - x1, y2 - y1) for ((x1, y1), (x2, y2)) in pairs]
     
     return coords[:1] + [(x, y) for (x, y) in diffs if (x, y) != (0, 0)]

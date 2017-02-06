@@ -8,7 +8,7 @@ designers and cartographers.
 
 Documentation available at http://tilestache.org/doc/
 """
-from __future__ import print_function
+
 import os.path
 
 __version__ = open(os.path.join(os.path.dirname(__file__), 'VERSION')).read().strip()
@@ -17,27 +17,27 @@ import re
 
 from sys import stdout
 try:
-    from urlparse import parse_qs
+    from urllib.parse import parse_qs
 except ImportError:
     from cgi import parse_qs
 try:
     from io import StringIO
 except ImportError:
     # Python 2
-    from StringIO import StringIO
+    from io import StringIO
 from os.path import dirname, join as pathjoin, realpath
 from datetime import datetime, timedelta
 try:
     from urllib.parse import urljoin, urlparse
 except ImportError:
     # Python 2
-    from urlparse import urljoin, urlparse
+    from urllib.parse import urljoin, urlparse
 from wsgiref.headers import Headers
 try:
     from urllib.request import urlopen
 except ImportError:
     # Python 2
-    from urllib import urlopen
+    from urllib.request import urlopen
 from os import getcwd
 from time import time
 
@@ -45,7 +45,7 @@ try:
     import http.client as httplib
 except ImportError:
     # Python 2
-    import httplib
+    import http.client
 import logging
 
 try:
@@ -180,7 +180,7 @@ def requestLayer(config, path_info):
         Config parameter can be a file path string for a JSON configuration file
         or a configuration object with 'cache', 'layers', and 'dirpath' properties.
     """
-    if type(config) in (str, unicode):
+    if type(config) in (str, str):
         #
         # Should be a path to a configuration file we can load;
         # build a tuple key into previously-seen config objects.
@@ -337,7 +337,7 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     stdout.write('Status: %d\n' % status_code)
 
     # output gathered headers
-    for k, v in headers.items():
+    for k, v in list(headers.items()):
         stdout.write('%s: %s\n' % (k, v))
 
     stdout.write('\n')
@@ -366,7 +366,7 @@ class WSGITileServer:
             on each request, applicable only when config is a JSON file.
         """
 
-        if type(config) in (str, unicode, dict):
+        if type(config) in (str, str, dict):
             self.autoreload = autoreload
             self.config_path = config
 
@@ -422,7 +422,7 @@ class WSGITileServer:
         if content:
             headers.setdefault('Content-Length', str(len(content)))
 
-        start_response('%d %s' % (code, httplib.responses[code]), headers.items())
+        start_response('%d %s' % (code, http.client.responses[code]), list(headers.items()))
         return [content]
 
 def modpythonHandler(request):

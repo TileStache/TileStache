@@ -12,12 +12,12 @@ try:
     from urllib.parse import urljoin, urlparse
 except ImportError:
     # Python 2
-    from urlparse import urljoin, urlparse
+    from urllib.parse import urljoin, urlparse
 try:
     from urllib.request import urlopen
 except ImportError:
     # Python 2
-    from urllib import urlopen
+    from urllib.request import urlopen
 from os.path import exists
 
 try:
@@ -134,7 +134,7 @@ class Provider:
         self.layer = layer
         
         keys = 'host', 'user', 'password', 'database', 'port', 'dbname'
-        self.dbinfo = dict([(k, v) for (k, v) in dbinfo.items() if k in keys])
+        self.dbinfo = dict([(k, v) for (k, v) in list(dbinfo.items()) if k in keys])
 
         self.clip = bool(clip)
         self.srid = int(srid)
@@ -148,7 +148,7 @@ class Provider:
         if isinstance(queries, dict):
             # Add 1 to include space for zoom level 0
             n_zooms = max(int(z) for z in queries) + 1
-            queryiter = ((int(z), q) for z, q in queries.iteritems())
+            queryiter = ((int(z), q) for z, q in queries.items())
         else:  # specified as array
             n_zooms = len(queries)
             queryiter = enumerate(queries)
@@ -316,7 +316,7 @@ class Response:
                     continue
             
                 wkb = bytes(row['__geometry__'])
-                prop = dict([(k, v) for (k, v) in row.items()
+                prop = dict([(k, v) for (k, v) in list(row.items())
                              if k not in ('__geometry__', '__id__')])
                 
                 if '__id__' in row:
@@ -449,7 +449,7 @@ def get_features(dbinfo, query, n_try=1):
             wkb = bytes(row.pop('__geometry__'))
             id = row.pop('__id__')
 
-            props = dict((k, v) for k, v in row.items() if v is not None)
+            props = dict((k, v) for k, v in list(row.items()) if v is not None)
 
             features.append((wkb, props, id))
 

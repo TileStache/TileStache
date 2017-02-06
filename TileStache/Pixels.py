@@ -23,11 +23,12 @@ in the lookup table. If the final byte is 0xFFFF, there is no transparency.
 """
 from struct import unpack, pack
 from math import sqrt, ceil, log
+from functools import reduce
 try:
     from urllib.request import urlopen
 except ImportError:
     # Python 2
-    from urllib import urlopen
+    from urllib.request import urlopen
 from operator import add
 
 try:
@@ -68,7 +69,7 @@ def palette_color(r, g, b, palette, t_index):
         assign its index in the palette to a mapping from 24-bit color tuples.
     """
     distances = [(r - _r)**2 + (g - _g)**2 + (b - _b)**2 for (_r, _g, _b) in palette]
-    distances = map(sqrt, distances)
+    distances = list(map(sqrt, distances))
 
     if t_index is not None:
         distances = distances[:t_index] + distances[t_index+1:]

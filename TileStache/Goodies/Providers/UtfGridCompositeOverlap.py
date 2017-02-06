@@ -43,16 +43,16 @@ class Provider:
 
     # Init resultGrid based on given layers (if required)
     if len(self.resultGrid) == 0:
-      for i in xrange(grid_size):
+      for i in range(grid_size):
         self.resultGrid.append([])
-        for j in xrange(grid_size):
+        for j in range(grid_size):
           self.resultGrid[i].append(-1)
 
     layer_keys = layer['keys']
 
-    for y in xrange(grid_size):
+    for y in range(grid_size):
       line = layer['grid'][y]
-      for x in xrange(grid_size):
+      for x in range(grid_size):
         src_id = self.decodeId(line[x])
         
         if layer_keys[src_id] == "":
@@ -84,7 +84,7 @@ class Provider:
 
   def writeResult( self ):
     result = "{\"keys\": ["
-    for i in xrange(len(self.gridKeys)):
+    for i in range(len(self.gridKeys)):
       if i > 0:
         result += ","
       result += "\"" + self.gridKeys[i] + "\""
@@ -102,10 +102,10 @@ class Provider:
     
     grid_size = len(self.resultGrid)
     first = True
-    for y in xrange(grid_size):
+    for y in range(grid_size):
       line = ""
 
-      for x in xrange(grid_size):
+      for x in range(grid_size):
         if self.resultGrid[x][y] == -1:
           self.resultGrid[x][y] = ' '
 
@@ -129,7 +129,7 @@ class Provider:
     if id >= 92:
       id = id + 1
     if id > 127:
-      return unichr(id)
+      return chr(id)
     return chr(id)
 
   def decodeId( self, id ):

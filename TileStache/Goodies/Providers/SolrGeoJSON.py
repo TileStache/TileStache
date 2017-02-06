@@ -193,7 +193,7 @@ class Provider:
                 # context does not actually limit the fields returned
 
                 if len(rsp_fields):
-                    for key, ignore in row.items():
+                    for key, ignore in list(row.items()):
                         if not key in rsp_fields:
                             del(row[key])
 

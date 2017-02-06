@@ -4,19 +4,20 @@ ImageProvider is known as "mapnik" in TileStache config, GridProvider is
 known as "mapnik grid". Both require Mapnik to be installed; Grid requires
 Mapnik 2.0.0 and above.
 """
-from __future__ import absolute_import
+
 from time import time
 from os.path import exists
-from thread import allocate_lock
-from urlparse import urlparse, urljoin
+from _thread import allocate_lock
+from urllib.parse import urlparse, urljoin
 from itertools import count
 from glob import glob
 from tempfile import mkstemp
-from urllib import urlopen
+from urllib.request import urlopen
 
 import os
 import logging
 import json
+from functools import reduce
 
 # We enabled absolute_import because case insensitive filesystems
 # cause this file to be loaded twice (the name of this file
@@ -284,7 +285,7 @@ class GridProvider:
 
                     for (index, fields) in self.layers:
                         datasource = self.mapnik.layers[index].datasource
-                        fields = (type(fields) is list) and map(str, fields) or datasource.fields()
+                        fields = (type(fields) is list) and list(map(str, fields)) or datasource.fields()
                         grid = mapnik.Grid(width, height)
                         mapnik.render_layer(self.mapnik, grid, layer=index, fields=fields)
                         grid = grid.encode('utf', resolution=self.scale, features=True)
@@ -302,7 +303,7 @@ class GridProvider:
 
                     for (index, fields) in self.layers:
                         datasource = self.mapnik.layers[index].datasource
-                        fields = (type(fields) is list) and map(str, fields) or datasource.fields()
+                        fields = (type(fields) is list) and list(map(str, fields)) or datasource.fields()
 
                         mapnik.render_layer(self.mapnik, grid, layer=index, fields=fields)
 
@@ -370,7 +371,7 @@ def merge_grids(grid1, grid2):
                 outkeys.append('')
                 continue
 
-            outkey = '%d' % keygen.next()
+            outkey = '%d' % next(keygen)
             outkeys.append(outkey)
 
             datum = ingrid['data'][key]
@@ -408,7 +409,7 @@ def encode_id(id):
     if id >= 92:
         id = id + 1
     if id > 127:
-        return unichr(id)
+        return chr(id)
     return chr(id)
 
 def decode_char(char):

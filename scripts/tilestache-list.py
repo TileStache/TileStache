@@ -125,4 +125,4 @@ if __name__ == '__main__':
         coordinates = generateCoordinates(ul, lr, zooms, options.padding)
     
     for coord in coordinates:
-        print '%(zoom)d/%(column)d/%(row)d' % coord.__dict__
+        print('%(zoom)d/%(column)d/%(row)d' % coord.__dict__)

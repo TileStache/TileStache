@@ -31,7 +31,7 @@ Memcache cache parameters:
     
 
 """
-from __future__ import absolute_import
+
 from time import time as _time, sleep as _sleep
 from base64 import b64encode, b64decode
 

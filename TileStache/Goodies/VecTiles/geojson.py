@@ -28,7 +28,7 @@ def get_tiles(names, config, coord):
         raise KnownUnknown("%s.get_tiles didn't recognize %s when trying to load %s." % (__name__, ', '.join(unknown_layers), ', '.join(names)))
     
     layers = [config.layers[name] for name in names]
-    mimes, bodies = zip(*[getTile(layer, coord, 'json') for layer in layers])
+    mimes, bodies = list(zip(*[getTile(layer, coord, 'json') for layer in layers]))
     bad_mimes = [(name, mime) for (mime, name) in zip(mimes, names) if not mime.endswith('/json')]
     
     if bad_mimes:
@@ -113,7 +113,7 @@ def merge(file, names, config, coord):
         get_tiles() retrieves data and performs basic integrity checks.
     '''
     inputs = get_tiles(names, config, coord)
-    output = dict(zip(names, inputs))
+    output = dict(list(zip(names, inputs)))
 
     encoder = json.JSONEncoder(separators=(',', ':'))
     encoded = encoder.iterencode(output)

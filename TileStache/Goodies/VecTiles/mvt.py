@@ -40,7 +40,7 @@ try:
     from io import StringIO
 except ImportError:
     # Python 2
-    from StringIO import StringIO
+    from io import StringIO
 from zlib import decompress as _decompress, compress as _compress
 from struct import unpack as _unpack, pack as _pack
 import json
