@@ -416,6 +416,9 @@ class WSGITileServer:
         if content:
             headers.setdefault('Content-Length', str(len(content)))
 
+        if type(content) is not bytes:
+            content = content.encode('utf-8')
+
         start_response('%d %s' % (code, http.client.responses[code]), list(headers.items()))
         return [content]
 
