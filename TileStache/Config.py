@@ -60,8 +60,7 @@ documentation for TileStache.Providers, TileStache.Core, and TileStache.Geograph
 
 import sys
 import logging
-from sys import modules
-from os.path import realpath, join as pathjoin
+from os.path import join as pathjoin
 try:
     from urllib.parse import urljoin, urlparse
 except ImportError:
@@ -290,7 +289,7 @@ def _parseConfigCache(cache_dict, dirpath):
 
         if _class is Caches.Test:
             if cache_dict.get('verbose', False):
-                kwargs['logfunc'] = lambda msg: stderr.write(msg + '\n')
+                kwargs['logfunc'] = lambda msg: sys.stderr.write(msg + '\n')
 
         elif _class is Caches.Disk:
             kwargs['path'] = enforcedLocalPath(cache_dict['path'], dirpath, 'Disk cache path')
