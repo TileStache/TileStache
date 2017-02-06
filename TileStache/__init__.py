@@ -413,9 +413,14 @@ class WSGITileServer:
         """
         headers = headers or Headers([])
 
+        # TODO: find out why does "content" start with b'...
+        content = re.sub(r"^b'(.+)'$", r"\1", content)
+
+        # dummy JSON linting
+        content = re.sub(r"\\", r"", content)
+
         if type(content) not in (bytes, bytearray):
-            # TODO: find out why does "content" start with b'...
-            content = re.sub(r"^b'(.+)'$", r"\1", content).encode('utf-8')
+            content = content.encode('utf-8')
 
         if content:
             headers.setdefault('Content-Length', str(len(content)))
