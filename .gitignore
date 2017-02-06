@@ -13,3 +13,4 @@ TileStache.egg-info/
 *.shx
 .coverage
 .idea/
+*.bak
