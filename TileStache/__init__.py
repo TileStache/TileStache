@@ -8,7 +8,7 @@ designers and cartographers.
 
 Documentation available at http://tilestache.org/doc/
 """
-
+import bz2
 import os.path
 
 __version__ = open(os.path.join(os.path.dirname(__file__), 'VERSION')).read().strip()
@@ -413,11 +413,12 @@ class WSGITileServer:
         """
         headers = headers or Headers([])
 
+        if type(content) not in (bytes, bytearray):
+            # TODO: find out why does "content" start with b'...
+            content = re.sub(r"^b'(.+)'$", r"\1", content).encode('utf-8')
+
         if content:
             headers.setdefault('Content-Length', str(len(content)))
-
-        if type(content) is not bytes:
-            content = content.encode('utf-8')
 
         start_response('%d %s' % (code, http.client.responses[code]), list(headers.items()))
         return [content]
