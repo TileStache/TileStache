@@ -18,7 +18,7 @@ You are expected to use these files and then dispose of them.
 
 See `tilestache-render.py --help` for more information.
 """
-
+from __future__ import print_function
 
 import re
 import os
@@ -76,7 +76,7 @@ if __name__ == '__main__':
 
             coords.append(coord)
 
-    except KnownUnknown, e:
+    except KnownUnknown as e:
         parser.error(str(e))
 
     for coord in coords:
@@ -89,4 +89,4 @@ if __name__ == '__main__':
         os.close(handle)
 
         # inform
-        print filename
+        print(filename)

@@ -24,6 +24,7 @@ tile proxied from http://tile.osm.org/0/0/0.png
    
 Check tilestache-server.py --help to change these defaults.
 """
+from __future__ import print_function
 
 if __name__ == '__main__':
     from datetime import datetime
@@ -49,7 +50,7 @@ if __name__ == '__main__':
     import TileStache
 
     if not os.path.exists(options.file):
-        print >> sys.stderr, "Config file not found. Use -c to pick a tilestache config file."
+        print("Config file not found. Use -c to pick a tilestache config file.", file=sys.stderr)
         sys.exit(1)
 
     app = TileStache.WSGITileServer(config=options.file, autoreload=True)

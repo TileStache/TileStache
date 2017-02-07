@@ -8,6 +8,7 @@ West Oakland (http://sta.mn/ck) in the "osm" layer, for zoom levels 12-15:
 
 See `tilestache-clean.py --help` for more information.
 """
+from __future__ import print_function
 
 from sys import stderr, path
 from optparse import OptionParser
@@ -167,7 +168,7 @@ if __name__ == '__main__':
         padding = options.padding
         tile_list = options.tile_list
 
-    except KnownUnknown, e:
+    except KnownUnknown as e:
         parser.error(str(e))
 
     for layer in layers:
@@ -188,7 +189,7 @@ if __name__ == '__main__':
                         "total": count}
 
             if options.verbose:
-                print >> stderr, '%(offset)d of %(total)d...' % progress,
+                print('%(offset)d of %(total)d...' % progress, end=' ', file=stderr)
 
             try:
                 mimetype, format = layer.getTypeByExtension(extension)
@@ -203,7 +204,7 @@ if __name__ == '__main__':
                 config.cache.remove(layer, coord, format)
 
             if options.verbose:
-                print >> stderr, '%(tile)s' % progress
+                print('%(tile)s' % progress, file=stderr)
 
             if progressfile:
                 fp = open(progressfile, 'w')
