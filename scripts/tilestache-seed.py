@@ -9,7 +9,7 @@ West Oakland (http://sta.mn/ck) in the "osm" layer, for zoom levels 12-15:
 See `tilestache-seed.py --help` for more information.
 """
 
-from sys import stderr, path
+from sys import stderr, path, version
 from os.path import realpath, dirname
 from optparse import OptionParser
 
@@ -26,6 +26,8 @@ try:
 except ImportError:
     from simplejson import dump as json_dump
     from simplejson import load as json_load
+
+PY2 = bool(version.startswith('2.'))
 
 #
 # Most imports can be found below, after the --include-path option is known.
@@ -131,9 +133,11 @@ def generateCoordinates(ul, lr, zooms, padding):
     for zoom in zooms:
         ul_ = ul.zoomTo(zoom).container().left(padding).up(padding)
         lr_ = lr.zoomTo(zoom).container().right(padding).down(padding)
+        
+        range_ = xrange if PY2 else range
 
-        for row in xrange(int(ul_.row), int(lr_.row + 1)):
-            for column in xrange(int(ul_.column), int(lr_.column + 1)):
+        for row in range_(int(ul_.row), int(lr_.row + 1)):
+            for column in range_(int(ul_.column), int(lr_.column + 1)):
                 coord = Coordinate(row, column, zoom)
 
                 yield (offset, count, coord)
@@ -170,7 +174,11 @@ def parseConfig(configpath):
 
         Return value can be passed to TileStache.Config.buildConfiguration().
     """
-    config_dict = json_load(urlopen(configpath))
+    if urlparse(configpath).scheme in ('', 'file'):
+        with open(urlparse(configpath).path) as file:
+            config_dict = json_load(file)
+    else:
+        config_dict = json_load(urlopen(configpath))
 
     scheme, host, path, p, q, f = urlparse(configpath)
 
