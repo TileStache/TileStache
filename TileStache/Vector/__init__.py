@@ -220,10 +220,16 @@ class VectorResponse:
             indent = self.verbose and 2 or None
             
             encoded = JSONEncoder(indent=indent).iterencode(content)
+            charfloat_pat = compile(r'^([\[,\,] ?)(-?\d+\.\d+(e-?\d+)?)$')
             float_pat = compile(r'^-?\d+\.\d+$')
     
             for atom in encoded:
-                if float_pat.match(atom):
+                charmatch = charfloat_pat.match(atom)
+                if charmatch:
+                    # in python 2.7+, we see a character followed by a float literal
+                    piece = charmatch.group(1) + ('%%.%if' % self.precision) % float(charmatch.group(2))
+                elif float_pat.match(atom):
+                    # in python 2.6, we see a simple float literal
                     piece = ('%%.%if' % self.precision) % float(atom)
                 else:
                     piece = atom
