@@ -9,11 +9,16 @@ West Oakland (http://sta.mn/ck) in the "osm" layer, for zoom levels 12-15:
 See `tilestache-seed.py --help` for more information.
 """
 
-from sys import stderr, path
+from sys import stderr, path, version
 from os.path import realpath, dirname
 from optparse import OptionParser
-from urlparse import urlparse
-from urllib import urlopen
+
+try:
+    from urllib.parse import urlparse
+    from urllib.request import urlopen
+except ImportError:
+    from urlparse import urlparse
+    from urllib import urlopen
 
 try:
     from json import dump as json_dump
@@ -21,6 +26,8 @@ try:
 except ImportError:
     from simplejson import dump as json_dump
     from simplejson import load as json_load
+
+PY2 = bool(version.startswith('2.'))
 
 #
 # Most imports can be found below, after the --include-path option is known.
@@ -126,9 +133,11 @@ def generateCoordinates(ul, lr, zooms, padding):
     for zoom in zooms:
         ul_ = ul.zoomTo(zoom).container().left(padding).up(padding)
         lr_ = lr.zoomTo(zoom).container().right(padding).down(padding)
+        
+        range_ = xrange if PY2 else range
 
-        for row in xrange(int(ul_.row), int(lr_.row + 1)):
-            for column in xrange(int(ul_.column), int(lr_.column + 1)):
+        for row in range_(int(ul_.row), int(lr_.row + 1)):
+            for column in range_(int(ul_.column), int(lr_.column + 1)):
                 coord = Coordinate(row, column, zoom)
 
                 yield (offset, count, coord)
@@ -165,7 +174,11 @@ def parseConfig(configpath):
 
         Return value can be passed to TileStache.Config.buildConfiguration().
     """
-    config_dict = json_load(urlopen(configpath))
+    if urlparse(configpath).scheme in ('', 'file'):
+        with open(urlparse(configpath).path) as file:
+            config_dict = json_load(file)
+    else:
+        config_dict = json_load(urlopen(configpath))
 
     scheme, host, path, p, q, f = urlparse(configpath)
 
@@ -309,7 +322,7 @@ if __name__ == '__main__':
         tile_list = options.tile_list
         error_list = options.error_list
 
-    except KnownUnknown, e:
+    except KnownUnknown as e:
         parser.error(str(e))
 
     if tile_list:
@@ -335,7 +348,7 @@ if __name__ == '__main__':
 
         while not rendered:
             if options.verbose:
-                print >> stderr, '%(offset)d of %(total)d...' % progress,
+                print('%(offset)d of %(total)d...' % progress, end=' ', file=stderr)
 
             try:
                 mimetype, content = getTile(layer, coord, extension, options.ignore_cached)
@@ -346,10 +359,10 @@ if __name__ == '__main__':
                     js_size = len(js_body) / 1024
 
                     layer.config.cache.save(js_body, layer, coord, 'JS')
-                    print >> stderr, '%s (%dKB)' % (js_path, js_size),
+                    print('%s (%dKB)' % (js_path, js_size), end=' ', file=stderr)
 
                 elif options.callback:
-                    print >> stderr, '(callback ignored)',
+                    print('(callback ignored)', end=' ', file=stderr)
 
             except:
                 #
@@ -358,7 +371,7 @@ if __name__ == '__main__':
                 attempts -= 1
 
                 if options.verbose:
-                    print >> stderr, 'Failed %s, will try %s more.' % (progress['tile'], ['no', 'once', 'twice'][attempts])
+                    print('Failed %s, will try %s more.' % (progress['tile'], ['no', 'once', 'twice'][attempts]), file=stderr)
 
                 if attempts == 0:
                     if not error_list:
@@ -377,7 +390,7 @@ if __name__ == '__main__':
                 progress['size'] = '%dKB' % (len(content) / 1024)
 
                 if options.verbose:
-                    print >> stderr, '%(tile)s (%(size)s)' % progress
+                    print('%(tile)s (%(size)s)' % progress, file=stderr)
 
         if options.progressfile:
             fp = open(options.progressfile, 'w')

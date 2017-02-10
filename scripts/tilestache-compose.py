@@ -1,10 +1,16 @@
 #!/usr/bin/env python
+from __future__ import print_function
+
 from sys import stderr, path
 from tempfile import mkstemp
-from thread import allocate_lock
 from os import close, write, unlink
 from optparse import OptionParser
 from os.path import abspath
+
+try:
+    from _thread import allocate_lock
+except ImportError:
+    from thread import allocate_lock
 
 import ModestMaps
 
@@ -77,7 +83,7 @@ def printlocked(lock, *stuff):
     """
     """
     if lock.acquire():
-        print ' '.join([str(thing) for thing in stuff])
+        print(' '.join([str(thing) for thing in stuff]))
         lock.release()
 
 parser = OptionParser(usage="""tilestache-compose.py [options] file
@@ -204,15 +210,15 @@ if __name__ == '__main__':
         else:
             raise BadComposure("Error: not really sure what's going on.")
 
-    except BadComposure, e:
-        print >> stderr, parser.usage
-        print >> stderr, ''
-        print >> stderr, '%s --help for possible options.' % __file__
-        print >> stderr, ''
-        print >> stderr, e
+    except BadComposure as e:
+        print(parser.usage, file=stderr)
+        print('', file=stderr)
+        print('%s --help for possible options.' % __file__, file=stderr)
+        print('', file=stderr)
+        print(e, file=stderr)
         exit(1)
 
     if options.verbose:
-        print map.coordinate, map.offset, '->', outfile, (map.dimensions.x, map.dimensions.y)
+        print(map.coordinate, map.offset, '->', outfile, (map.dimensions.x, map.dimensions.y))
 
     map.draw(False).save(outfile)
