@@ -30,7 +30,7 @@ class ProviderTests(TestCase):
 
         tile_mimetype, tile_content = utils.request(config_file_content, "osm", "png", 0, 0, 0)
         self.assertEqual(tile_mimetype, "image/png")
-        self.assertTrue(tile_content[:4] in '\x89\x50\x4e\x47') #check it is a png based on png magic number
+        self.assertTrue(tile_content[:4] in b'\x89\x50\x4e\x47') #check it is a png based on png magic number
 
 
     def test_url_template_wgs84(self):
@@ -55,12 +55,12 @@ class ProviderTests(TestCase):
 
         tile_mimetype, tile_content = utils.request(config_file_content, "osgeo_wms", "png", 0, 0, 0)
         self.assertEqual(tile_mimetype, "image/png")
-        self.assertTrue(tile_content[:4] in '\x89\x50\x4e\x47') #check it is a png based on png magic number
+        self.assertTrue(tile_content[:4] in b'\x89\x50\x4e\x47') #check it is a png based on png magic number
 
         #in WGS84 we typically have two tiles at zoom level 0. Get the second tile
         tile_mimetype, tile_content = utils.request(config_file_content, "osgeo_wms", "png", 0, 1, 0)
         self.assertEqual(tile_mimetype, "image/png")
-        self.assertTrue(tile_content[:4] in '\x89\x50\x4e\x47') #check it is a png based on png magic number
+        self.assertTrue(tile_content[:4] in b'\x89\x50\x4e\x47') #check it is a png based on png magic number
 
 
 class ProviderWithDummyResponseServer(TestCase):
@@ -71,8 +71,9 @@ class ProviderWithDummyResponseServer(TestCase):
     '''
 
     def setUp(self):
-        #create custom binary file that pretends to be a png and a server that always returns the same response
-        self.response_content = '\x89\x50\x4e\x47Meh, I am a custom file that loves utf8 chars like éøæ®!!!'
+        # Create custom binary file that pretends to be a png and a server that always returns the same response
+        # Smallest PNG from http://garethrees.org/2007/11/14/pngcrush/
+        self.response_content = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x01\x00\x00\x00\x007n\xf9$\x00\x00\x00\nIDATx\x9cc`\x00\x00\x00\x02\x00\x01H\xaf\xa4q\x00\x00\x00\x00IEND\xaeB`\x82'
         self.response_mimetype = 'image/png'
 
         self.temp_file_name = utils.create_temp_file(self.response_content)

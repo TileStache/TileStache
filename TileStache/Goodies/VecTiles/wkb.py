@@ -14,7 +14,11 @@ See also:
 '''
 
 from struct import unpack
-from StringIO import StringIO
+try:
+    from io import StringIO
+except ImportError:
+    # Python 2
+    from StringIO import StringIO
 
 #
 # wkbByteOrder

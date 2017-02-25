@@ -60,11 +60,18 @@ documentation for TileStache.Providers, TileStache.Core, and TileStache.Geograph
 
 import sys
 import logging
-from sys import stderr, modules
-from os.path import realpath, join as pathjoin
-from urlparse import urljoin, urlparse
+from os.path import join as pathjoin
+try:
+    from urllib.parse import urljoin, urlparse
+except ImportError:
+    # Python 2
+    from urlparse import urljoin, urlparse
 from mimetypes import guess_type
-from urllib import urlopen
+try:
+    from urllib.request import urlopen
+except ImportError:
+    # Python 2
+    from urllib import urlopen
 from json import dumps
 
 try:
@@ -75,11 +82,11 @@ except ImportError:
 from ModestMaps.Geo import Location
 from ModestMaps.Core import Coordinate
 
-import Core
-import Caches
-import Providers
-import Geography
-import PixelEffects
+from . import Core
+from . import Caches
+from . import Providers
+from . import Geography
+from . import PixelEffects
 
 class Configuration:
     """ A complete site configuration, with a collection of Layer objects.
@@ -282,7 +289,7 @@ def _parseConfigCache(cache_dict, dirpath):
 
         if _class is Caches.Test:
             if cache_dict.get('verbose', False):
-                kwargs['logfunc'] = lambda msg: stderr.write(msg + '\n')
+                kwargs['logfunc'] = lambda msg: sys.stderr.write(msg + '\n')
 
         elif _class is Caches.Disk:
             kwargs['path'] = enforcedLocalPath(cache_dict['path'], dirpath, 'Disk cache path')
@@ -315,7 +322,7 @@ def _parseConfigCache(cache_dict, dirpath):
             raise Exception('Unknown cache: %s' % cache_dict['name'])
 
     elif 'class' in cache_dict:
-        _class = loadClassPath(cache_dict['class'])
+        _class = Core.loadClassPath(cache_dict['class'])
         kwargs = cache_dict.get('kwargs', {})
         kwargs = dict( [(str(k), v) for (k, v) in kwargs.items()] )
 
@@ -449,7 +456,7 @@ def _parseConfigLayer(layer_dict, config, dirpath):
         provider_kwargs = _class.prepareKeywordArgs(provider_dict)
 
     elif 'class' in provider_dict:
-        _class = loadClassPath(provider_dict['class'])
+        _class = Core.loadClassPath(provider_dict['class'])
         provider_kwargs = provider_dict.get('kwargs', {})
         provider_kwargs = dict( [(str(k), v) for (k, v) in provider_kwargs.items()] )
 
@@ -467,45 +474,3 @@ def _parseConfigLayer(layer_dict, config, dirpath):
     layer.pixel_effect = pixel_effect
 
     return layer
-
-def loadClassPath(classpath):
-    """ Load external class based on a path.
-
-        Example classpath: "Module.Submodule:Classname".
-
-        Equivalent soon-to-be-deprecated classpath: "Module.Submodule.Classname".
-    """
-    if ':' in classpath:
-        #
-        # Just-added support for "foo:blah"-style classpaths.
-        #
-        modname, objname = classpath.split(':', 1)
-
-        try:
-            __import__(modname)
-            module = modules[modname]
-            _class = eval(objname, module.__dict__)
-
-            if _class is None:
-                raise Exception('eval(%(objname)s) in %(modname)s came up None' % locals())
-
-        except Exception, e:
-            raise Core.KnownUnknown('Tried to import %s, but: %s' % (classpath, e))
-
-    else:
-        #
-        # Support for "foo.blah"-style classpaths, TODO: deprecate this in v2.
-        #
-        classpath = classpath.split('.')
-
-        try:
-            module = __import__('.'.join(classpath[:-1]), fromlist=str(classpath[-1]))
-        except ImportError, e:
-            raise Core.KnownUnknown('Tried to import %s, but: %s' % ('.'.join(classpath), e))
-
-        try:
-            _class = getattr(module, classpath[-1])
-        except AttributeError, e:
-            raise Core.KnownUnknown('Tried to import %s, but: %s' % ('.'.join(classpath), e))
-
-    return _class

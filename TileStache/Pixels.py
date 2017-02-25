@@ -23,7 +23,11 @@ in the lookup table. If the final byte is 0xFFFF, there is no transparency.
 """
 from struct import unpack, pack
 from math import sqrt, ceil, log
-from urllib import urlopen
+try:
+    from urllib.request import urlopen
+except ImportError:
+    # Python 2
+    from urllib import urlopen
 from operator import add
 
 try:

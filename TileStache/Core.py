@@ -144,12 +144,21 @@ The preview can be accessed through a URL like /<layer name>/preview.html:
 """
 
 import logging
+from sys import modules
 from wsgiref.headers import Headers
-from StringIO import StringIO
-from urlparse import urljoin
+try:
+    from io import BytesIO
+except ImportError:
+    # Python 2
+    from StringIO import StringIO as BytesIO
+try:
+    from urllib.parse import urljoin
+except ImportError:
+    # Python 2
+    from urlparse import urljoin
 from time import time
 
-from Pixels import load_palette, apply_palette, apply_palette256
+from .Pixels import load_palette, apply_palette, apply_palette256
 
 try:
     from PIL import Image
@@ -382,7 +391,7 @@ class Layer:
             # Start by checking for a tile in the cache.
             try:
                 body = cache.read(self, coord, format)
-            except TheTileLeftANote, e:
+            except TheTileLeftANote as e:
                 headers = e.headers
                 status_code = e.status_code
                 body = e.content
@@ -417,12 +426,12 @@ class Layer:
 
                 if body is None:
                     # No one else wrote the tile, do it here.
-                    buff = StringIO()
+                    buff = BytesIO()
 
                     try:
                         tile = self.render(coord, format)
                         save = True
-                    except NoTileLeftBehind, e:
+                    except NoTileLeftBehind as e:
                         tile = e.tile
                         save = False
                         status_code = 404
@@ -445,7 +454,7 @@ class Layer:
 
                     tile_from = 'layer.render()'
 
-            except TheTileLeftANote, e:
+            except TheTileLeftANote as e:
                 headers = e.headers
                 status_code = e.status_code
                 body = e.content
@@ -545,7 +554,7 @@ class Layer:
             tile, surtile = None, tile
 
             for (other, x, y) in subtiles:
-                buff = StringIO()
+                buff = BytesIO()
                 bbox = (x, y, x + self.dim, y + self.dim)
                 subtile = surtile.crop(bbox)
                 if self.palette256:
@@ -733,7 +742,7 @@ def _preview(layer):
 <html>
 <head>
     <title>TileStache Preview: %(layername)s</title>
-    <script src="http://cdn.rawgit.com/stamen/modestmaps-js/v1.0.0-beta1/modestmaps.min.js" type="text/javascript"></script>
+    <script src="//cdn.rawgit.com/stamen/modestmaps-js/v1.0.0-beta1/modestmaps.min.js" type="text/javascript"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <style type="text/css">
         html, body, #map {
@@ -818,3 +827,45 @@ def _rummy():
             '##Mh@M  .    ...:;;,:@A#@@@@@@@@@@@#@@@@@@#MMHAB@@@@#G#@@#: i@@       r@@#MMM#######@@@@#@@@@@@#####M#####@@',
             '#H3#@3. ,.    ...  :@@&@@@@@@@@@@@@@#@@#@@@MMBHGA@H&;:@@i :B@@@B     .@@#MM####@@@##@@@#@@@@@#######M##M#@@@',
             'M&AM5i;.,.   ..,,rA@@MH@@@@@@@@@@@@@##@@@@@MMMBB#@h9hH#s;3######,   .A@#MMM#####@@@@@##@@@#@@#####M#####M39B']
+
+def loadClassPath(classpath):
+    """ Load external class based on a path.
+
+        Example classpath: "Module.Submodule:Classname".
+
+        Equivalent soon-to-be-deprecated classpath: "Module.Submodule.Classname".
+    """
+    if ':' in classpath:
+        #
+        # Just-added support for "foo:blah"-style classpaths.
+        #
+        modname, objname = classpath.split(':', 1)
+
+        try:
+            __import__(modname)
+            module = modules[modname]
+            _class = eval(objname, module.__dict__)
+
+            if _class is None:
+                raise Exception('eval(%(objname)s) in %(modname)s came up None' % locals())
+
+        except Exception as e:
+            raise KnownUnknown('Tried to import %s, but: %s' % (classpath, e))
+
+    else:
+        #
+        # Support for "foo.blah"-style classpaths, TODO: deprecate this in v2.
+        #
+        classpath = classpath.split('.')
+
+        try:
+            module = __import__('.'.join(classpath[:-1]), fromlist=str(classpath[-1]))
+        except ImportError as e:
+            raise KnownUnknown('Tried to import %s, but: %s' % ('.'.join(classpath), e))
+
+        try:
+            _class = getattr(module, classpath[-1])
+        except AttributeError as e:
+            raise KnownUnknown('Tried to import %s, but: %s' % ('.'.join(classpath), e))
+
+    return _class

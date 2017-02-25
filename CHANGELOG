@@ -1,3 +1,11 @@
+2017-01-26: 1.51.6
+- Fix on tile generation
+
+2017-01-25: 1.51.5
+- Fix to be compliant with mapnik 3 grid renderer
+- Fix of preview protocol
+- Moving towards python 3 compliance
+
 2016-12-21: 1.51.4
 - Support for GDAL 2.x types OFTInteger64 and OFTInteger64 on Vector Tiles
 

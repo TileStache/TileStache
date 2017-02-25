@@ -154,7 +154,11 @@ you can save yourself a world of trouble by using this definition:
 """
 
 from re import compile
-from urlparse import urlparse, urljoin
+try:
+    from urllib.parse import urljoin, urlparse
+except ImportError:
+    # Python 2
+    from urlparse import urljoin, urlparse
 
 try:
     from json import JSONEncoder, loads as json_loads
@@ -163,9 +167,9 @@ except ImportError:
 
 from osgeo import ogr, osr
 
-from TileStache.Core import KnownUnknown
-from TileStache.Geography import getProjectionByName
-from Arc import reserialize_to_arc, pyamf_classes
+from ..Core import KnownUnknown
+from ..Geography import getProjectionByName
+from .Arc import reserialize_to_arc, pyamf_classes
 
 class VectorResponse:
     """ Wrapper class for Vector response that makes it behave like a PIL.Image object.
@@ -220,9 +224,10 @@ class VectorResponse:
     
             for atom in encoded:
                 if float_pat.match(atom):
-                    out.write(('%%.%if' % self.precision) % float(atom))
+                    piece = ('%%.%if' % self.precision) % float(atom)
                 else:
-                    out.write(atom)
+                    piece = atom
+                out.write(piece.encode('utf8'))
         
         elif format in ('GeoBSON', 'ArcBSON'):
             import bson

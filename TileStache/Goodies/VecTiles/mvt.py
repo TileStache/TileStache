@@ -36,7 +36,11 @@ By default, encode() approximates the floating point precision of WKB geometry
 to 26 bits for a significant compression improvement and no visible impact on
 rendering at zoom 18 and lower.
 '''
-from StringIO import StringIO
+try:
+    from io import StringIO
+except ImportError:
+    # Python 2
+    from StringIO import StringIO
 from zlib import decompress as _decompress, compress as _compress
 from struct import unpack as _unpack, pack as _pack
 import json

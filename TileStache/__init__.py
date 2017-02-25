@@ -8,6 +8,7 @@ designers and cartographers.
 
 Documentation available at http://tilestache.org/doc/
 """
+from __future__ import print_function
 import os.path
 
 __version__ = open(os.path.join(os.path.dirname(__file__), 'VERSION')).read().strip()
@@ -19,16 +20,32 @@ try:
     from urlparse import parse_qs
 except ImportError:
     from cgi import parse_qs
-from StringIO import StringIO
+try:
+    from io import StringIO
+except ImportError:
+    # Python 2
+    from StringIO import StringIO
 from os.path import dirname, join as pathjoin, realpath
 from datetime import datetime, timedelta
-from urlparse import urljoin, urlparse
+try:
+    from urllib.parse import urljoin, urlparse
+except ImportError:
+    # Python 2
+    from urlparse import urljoin, urlparse
 from wsgiref.headers import Headers
-from urllib import urlopen
+try:
+    from urllib.request import urlopen
+except ImportError:
+    # Python 2
+    from urllib import urlopen
 from os import getcwd
 from time import time
 
-import httplib
+try:
+    import http.client as httplib
+except ImportError:
+    # Python 2
+    import httplib
 import logging
 
 try:
@@ -43,8 +60,8 @@ from ModestMaps.Core import Coordinate
 # dictionary of configuration objects for requestLayer().
 _previous_configs = {}
 
-import Core
-import Config
+from . import Core
+from . import Config
 
 # regular expression for PATH_INFO
 _pathinfo_pat = re.compile(r'^/?(?P<l>\w.+)/(?P<z>\d+)/(?P<x>-?\d+)/(?P<y>-?\d+)\.(?P<e>\w+)$')
@@ -102,12 +119,17 @@ def parseConfig(configHandle):
         config_dict = configHandle
         dirpath = '.'
     else:
-        config_dict = json_load(urlopen(configHandle))
         scheme, host, path, p, q, f = urlparse(configHandle)
-
+        
         if scheme == '':
             scheme = 'file'
             path = realpath(path)
+
+        if scheme == 'file':
+            with open(path) as file:
+                config_dict = json_load(file)
+        else:
+            config_dict = json_load(urlopen(configHandle))
 
         dirpath = '%s://%s%s' % (scheme, host, dirname(path).rstrip('/') + '/')
 
@@ -275,7 +297,7 @@ def requestHandler2(config_hint, path_info, query_string=None, script_name=''):
             headers.setdefault('Expires', expires.strftime('%a, %d %b %Y %H:%M:%S GMT'))
             headers.setdefault('Cache-Control', 'public, max-age=%d' % layer.max_cache_age)
 
-    except Core.KnownUnknown, e:
+    except Core.KnownUnknown as e:
         out = StringIO()
 
         print >> out, 'Known unknown!'
@@ -351,7 +373,7 @@ class WSGITileServer:
             try:
                 self.config = parseConfig(config)
             except:
-                print "Error loading Tilestache config:"
+                print("Error loading Tilestache config:")
                 raise
 
         else:
@@ -369,12 +391,12 @@ class WSGITileServer:
         if self.autoreload: # re-parse the config file on every request
             try:
                 self.config = parseConfig(self.config_path)
-            except Exception, e:
+            except Exception as e:
                 raise Core.KnownUnknown("Error loading Tilestache config file:\n%s" % str(e))
 
         try:
             layer, coord, ext = splitPathInfo(environ['PATH_INFO'])
-        except Core.KnownUnknown, e:
+        except Core.KnownUnknown as e:
             return self._response(start_response, 400, str(e))
 
         #

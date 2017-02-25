@@ -33,6 +33,7 @@ Memcache cache parameters:
 """
 from __future__ import absolute_import
 from time import time as _time, sleep as _sleep
+from base64 import b64encode, b64decode
 
 # We enabled absolute_import because case insensitive filesystems
 # cause this file to be loaded twice (the name of this file
@@ -109,13 +110,19 @@ class Cache:
         value = mem.get(key)
         mem.disconnect_all()
         
-        return value
+        if value is None:
+            return None
+        
+        return b64decode(value.encode('ascii'))
         
     def save(self, body, layer, coord, format):
         """ Save a cached tile.
         """
         mem = Client(self.servers)
         key = tile_key(layer, coord, format, self.revision, self.key_prefix)
+        
+        if body is not None:
+            body = b64encode(body).decode('ascii')
         
         mem.set(key, body, layer.cache_lifespan or 0)
         mem.disconnect_all()
