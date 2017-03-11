@@ -473,7 +473,7 @@ def build_query(srid, subquery, subcolumns, bounds, tolerance, is_geo, is_clippe
         geom = 'ST_SimplifyPreserveTopology(%s, %.2f)' % (geom, tolerance)
     
     if is_geo:
-        geom = 'ST_Transform(%s, 4326)' % geom
+        geom = 'ST_Transform(%s, %d)' % (geom, srid)
 
     if scale:
         # scale applies to the un-padded bounds, e.g. geometry in the padding area "spills over" past the scale range
