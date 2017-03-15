@@ -24,6 +24,7 @@ try:
     from psycopg2.extras import RealDictCursor
     from psycopg2 import connect
     from psycopg2.extensions import TransactionRollbackError
+    from psycopg2.pool import ThreadedConnectionPool
 
 except ImportError as err:
     # Still possible to build the documentation without psycopg2
@@ -266,15 +267,20 @@ class Connection:
         See http://www.python.org/dev/peps/pep-0343/
         and http://effbot.org/zone/python-with-statement.htm
     '''
+    pool = False
+
     def __init__(self, dbinfo):
         self.dbinfo = dbinfo
     
     def __enter__(self):
-        self.db = connect(**self.dbinfo).cursor(cursor_factory=RealDictCursor)
-        return self.db
+        if not Connection.pool:
+            Connection.pool = ThreadedConnectionPool(1, 16, **self.dbinfo)
+        self.key = hash(self)
+        self.db = Connection.pool.getconn(self.key)
+        return self.db.cursor(cursor_factory=RealDictCursor)
     
     def __exit__(self, type, value, traceback):
-        self.db.connection.close()
+        Connection.pool.putconn(self.db, self.key)
 
 class Response:
     '''
