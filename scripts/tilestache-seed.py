@@ -8,6 +8,7 @@ West Oakland (http://sta.mn/ck) in the "osm" layer, for zoom levels 12-15:
 
 See `tilestache-seed.py --help` for more information.
 """
+from __future__ import print_function
 
 from sys import stderr, path, version
 from os.path import realpath, dirname
@@ -26,6 +27,7 @@ try:
 except ImportError:
     from simplejson import dump as json_dump
     from simplejson import load as json_load
+
 
 PY2 = bool(version.startswith('2.'))
 
@@ -133,7 +135,7 @@ def generateCoordinates(ul, lr, zooms, padding):
     for zoom in zooms:
         ul_ = ul.zoomTo(zoom).container().left(padding).up(padding)
         lr_ = lr.zoomTo(zoom).container().right(padding).down(padding)
-        
+
         range_ = xrange if PY2 else range
 
         for row in range_(int(ul_.row), int(lr_.row + 1)):
