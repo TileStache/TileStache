@@ -90,9 +90,8 @@ class Proj4Projection(LinearProjection):
         return p
 
     def unproject(self, point, scale):
-        p = LinearProjection.unproject(self, point)
-        p.x = p.x / scale
-        p.y = p.y / scale
+        unscale = Point(point.x / scale, point.y / scale)
+        p = LinearProjection.unproject(self, unscale)
         return p
 
     def locationCoordinate(self, location):
