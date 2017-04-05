@@ -1,0 +1,26 @@
+machine:
+  services:
+    - memcached
+
+dependencies:
+  override:
+    - sudo apt-get -q install gdal-bin=1.10.1+dfsg-5ubuntu1 -y
+    - sudo apt-get -q install libgdal-dev=1.10.1+dfsg-5ubuntu1 -y
+    - sudo apt-get install postgresql-9.5-postgis-2.2 python-werkzeug
+    - pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==1.10.0
+    - pip install tox tox-pyenv
+    - pyenv local 2.7.12
+
+database:
+  override:
+    - psql -U postgres -c "drop database if exists test_tilestache"
+    - psql -U postgres -c "create database test_tilestache"
+    - psql -U postgres -c "create extension postgis" -d test_tilestache
+
+test:
+  override:
+    - tox --result-json /tmp/tox-result.json
+
+general:
+  artifacts:
+    - "/tmp/tox-result.json"
