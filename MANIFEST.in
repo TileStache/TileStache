@@ -1,1 +1,7 @@
+include API.html CHANGELOG LICENSE Makefile README.md requirements.txt runtests.sh tilestache.*
 include TileStache/Goodies/Providers/DejaVuSansMono-alphanumeric.ttf
+include Vagrantfile Vagrant/setup.sh
+recursive-include examples *.*
+recursive-include man *.1
+recursive-include tests *.*
+recursive-include www *.*
