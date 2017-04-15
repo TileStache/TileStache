@@ -24,7 +24,8 @@ import json
 # Forcing absolute imports fixes the issue.
 
 try:
-    import mapnik
+    from importlib import import_module
+    mapnik = import_module('mapnik')
 except ImportError:
     # can still build documentation
     pass
