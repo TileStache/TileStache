@@ -494,7 +494,6 @@ class Layer:
         width, height = self.dim, self.dim
 
         provider = self.provider
-        metatile = self.metatile
         pass_through = provider.pass_through if hasattr(provider, 'pass_through') else False
 
 
