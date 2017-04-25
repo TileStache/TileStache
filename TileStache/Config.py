@@ -88,6 +88,8 @@ from . import Providers
 from . import Geography
 from . import PixelEffects
 
+from . import reduce
+
 class Configuration:
     """ A complete site configuration, with a collection of Layer objects.
 

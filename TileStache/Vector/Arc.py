@@ -4,6 +4,8 @@ from operator import add
 
 from ..Core import KnownUnknown
 
+from TileStache import reduce
+
 geometry_types = {
     'Point': 'esriGeometryPoint',
     'LineString': 'esriGeometryPolyline',

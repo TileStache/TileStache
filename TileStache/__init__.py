@@ -63,6 +63,13 @@ try:
     unicode = unicode
 except NameError:
     unicode = str
+    
+try:
+    # python3
+    from functools import reduce
+except NameError:
+    pass
+reduce = reduce
 
 # dictionary of configuration objects for requestLayer().
 _previous_configs = {}
@@ -164,7 +171,7 @@ def splitPathInfo(pathinfo):
         coord = None
 
     else:
-        raise Core.KnownUnknown('Bad path: "%s". I was expecting something more like "/example/0/0/0.png"' % pathinfo)
+        raise Core.KnownUnknown('Bad path: "{}". I was expecting something more like "/example/0/0/0.png"'.format(pathinfo))
 
     return layer, coord, extension
 
@@ -217,7 +224,7 @@ def requestLayer(config, path_info):
     layername = splitPathInfo(path_info)[0]
 
     if layername not in config.layers:
-        raise Core.KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (layername, ', '.join(sorted(config.layers.keys()))))
+        raise Core.KnownUnknown('"{}" is not a layer I know about. Here are some that I do know about: {}.'.format(layername, ', '.join(sorted(config.layers.keys()))))
 
     return config.layers[layername]
 
@@ -307,10 +314,10 @@ def requestHandler2(config_hint, path_info, query_string=None, script_name=''):
     except Core.KnownUnknown as e:
         out = StringIO()
 
-        print >> out, 'Known unknown!'
-        print >> out, e
-        print >> out, ''
-        print >> out, '\n'.join(Core._rummy())
+        print('Known unknown!', out)
+        print(e, out)
+        print('', out)
+        print('\n'.join(Core._rummy()), out)
 
         headers['Content-Type'] = 'text/plain'
         status_code, content = 500, out.getvalue()

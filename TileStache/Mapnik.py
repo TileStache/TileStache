@@ -22,6 +22,8 @@ import os
 import logging
 import json
 
+from . import reduce
+
 # We enabled absolute_import because case insensitive filesystems
 # cause this file to be loaded twice (the name of this file
 # conflicts with the name of the module we want to import).

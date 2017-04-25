@@ -35,6 +35,8 @@ try:
 except ImportError:
     # On some systems, PIL.Image is known as Image.
     import Image
+    
+from . import reduce
 
 def load_palette(file_href):
     """ Load colors from a Photoshop .act file, return palette info.
@@ -68,7 +70,7 @@ def palette_color(r, g, b, palette, t_index):
         assign its index in the palette to a mapping from 24-bit color tuples.
     """
     distances = [(r - _r)**2 + (g - _g)**2 + (b - _b)**2 for (_r, _g, _b) in palette]
-    distances = map(sqrt, distances)
+    distances = list(map(sqrt, distances))
 
     if t_index is not None:
         distances = distances[:t_index] + distances[t_index+1:]
@@ -107,10 +109,10 @@ def apply_palette(image, palette, t_index):
 
     if hasattr(Image, 'frombytes'):
         # Image.fromstring is deprecated past Pillow 2.0
-        output = Image.frombytes('P', image.size, ''.join(indexes))
+        output = Image.frombytes('P', image.size, b''.join(indexes))
     else:
         # PIL still uses Image.fromstring
-        output = Image.fromstring('P', image.size, ''.join(indexes))
+        output = Image.fromstring('P', image.size, b''.join(indexes))
  
     bits = int(ceil(log(len(palette)) / log(2)))
 

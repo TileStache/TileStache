@@ -50,6 +50,7 @@ from time import time as _time, sleep as _sleep
 from mimetypes import guess_type
 from time import strptime, time
 from calendar import timegm
+from . import reduce
 
 try:
     from boto.s3.bucket import Bucket as S3Bucket
