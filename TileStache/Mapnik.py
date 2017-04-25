@@ -8,7 +8,11 @@ from __future__ import absolute_import
 from time import time
 from os.path import exists
 from thread import allocate_lock
-from urlparse import urlparse, urljoin
+try:
+    from urllib.parse import urljoin, urlparse
+except ImportError:
+    # Python 2
+    from urlparse import urljoin, urlparse
 from itertools import count
 from glob import glob
 from tempfile import mkstemp

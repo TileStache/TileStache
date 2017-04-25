@@ -150,8 +150,16 @@ This complete example can be found in the included examples directory.
 import sys
 import re
 
-from urllib import urlopen
-from urlparse import urljoin
+try:
+    from urllib.parse import urljoin
+except ImportError:
+    # Python 2
+    from urlparse import urljoin
+try:
+    from urllib.request import urlopen
+except ImportError:
+    # Python 2
+    from urllib import urlopen
 from os.path import join as pathjoin
 from xml.dom.minidom import parse as parseXML
 try:
@@ -159,7 +167,6 @@ try:
 except ImportError:
     # Python 2
     from StringIO import StringIO
-
 try:
     from json import loads as jsonload
 except ImportError:

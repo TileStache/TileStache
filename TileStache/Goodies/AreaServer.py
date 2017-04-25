@@ -20,7 +20,11 @@
       http://localhost:8888/layer-name?width=600&height=600&xmin=-100&ymin=-100&xmax=100&ymax=100
 """
 
-from urlparse import parse_qsl
+try:
+    from urllib.parse import parse_qsl
+except ImportError:
+    # Python 2
+    from urlparse import parse_qsl
 from datetime import timedelta
 from datetime import datetime
 try:

@@ -20,8 +20,12 @@ is 0 (the default), do not create an alpha channel.
 With a bit more work, this provider will be ready for fully-supported inclusion
 in TileStache proper. Until then, it will remain here in the Goodies package.
 """
-from urlparse import urlparse, urljoin
 
+try:
+    from urllib.parse import urljoin, urlparse
+except ImportError:
+    # Python 2
+    from urlparse import urljoin, urlparse
 try:
     from PIL import Image
 except ImportError:
