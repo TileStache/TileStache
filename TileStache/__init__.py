@@ -57,6 +57,13 @@ except ImportError:
 
 from ModestMaps.Core import Coordinate
 
+# python3 compatibity while retaining checking
+# for both str and unicode in python2
+try:
+    unicode = unicode
+except NameError:
+    unicode = str
+
 # dictionary of configuration objects for requestLayer().
 _previous_configs = {}
 
@@ -120,7 +127,7 @@ def parseConfig(configHandle):
         dirpath = '.'
     else:
         scheme, host, path, p, q, f = urlparse(configHandle)
-        
+
         if scheme == '':
             scheme = 'file'
             path = realpath(path)

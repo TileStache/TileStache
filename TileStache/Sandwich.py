@@ -118,7 +118,11 @@ A complete example configuration might look like this:
     }
 """
 from re import search
-from StringIO import StringIO
+try:
+    from io import StringIO
+except ImportError:
+    # Python 2
+    from StringIO import StringIO
 from itertools import product
 from urlparse import urljoin
 from urllib import urlopen
@@ -154,6 +158,9 @@ try:
 except ImportError:
     # Well, this will not work.
     pass
+    
+# only need to check for py3 once: import unicode from .
+from . import unicode
 
 class Provider:
     """ Sandwich Provider.

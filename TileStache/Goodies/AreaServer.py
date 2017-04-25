@@ -23,7 +23,11 @@
 from urlparse import parse_qsl
 from datetime import timedelta
 from datetime import datetime
-from StringIO import StringIO
+try:
+    from io import StringIO
+except ImportError:
+    # Python 2
+    from StringIO import StringIO
 
 from TileStache import WSGITileServer
 from TileStache.Core import KnownUnknown
