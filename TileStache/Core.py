@@ -497,7 +497,6 @@ class Layer:
         metatile = self.metatile
         pass_through = provider.pass_through if hasattr(provider, 'pass_through') else False
 
-
         if self.doMetatile():
 
             if pass_through:
@@ -634,7 +633,7 @@ class Layer:
         return subtiles
 
     def getTypeByExtension(self, extension):
-        """ Get mime-type and PIL format by file extension.
+        """ Get mime-type and format by file extension.
         """
         if hasattr(self.provider, 'getTypeByExtension'):
             return self.provider.getTypeByExtension(extension)
@@ -644,6 +643,9 @@ class Layer:
 
         elif extension.lower() == 'jpg':
             return 'image/jpeg', 'JPEG'
+
+        elif extension.lower() == 'json':
+            return 'application/json', 'JSON'
 
         else:
             raise KnownUnknown('Unknown extension in configuration: "%s"' % extension)

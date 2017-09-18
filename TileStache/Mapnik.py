@@ -13,10 +13,8 @@ from itertools import count
 from glob import glob
 from tempfile import mkstemp
 from urllib import urlopen
-
 import os
 import logging
-import json
 
 # We enabled absolute_import because case insensitive filesystems
 # cause this file to be loaded twice (the name of this file
@@ -28,15 +26,14 @@ try:
 except ImportError:
     # can still build documentation
     pass
-
-from TileStache.Core import KnownUnknown
-from TileStache.Geography import getProjectionByName
-
 try:
     from PIL import Image
 except ImportError:
     # On some systems, PIL.Image is known as Image.
     import Image
+
+from TileStache.Core import KnownUnknown
+from TileStache.SaveableResponse import GridSaveableResponse
 
 if 'mapnik' in locals():
     _version = hasattr(mapnik, 'mapnik_version') and mapnik.mapnik_version() or 701
@@ -47,6 +44,7 @@ if 'mapnik' in locals():
         Box2d = mapnik.Envelope
 
 global_mapnik_lock = allocate_lock()
+
 
 class ImageProvider:
     """ Built-in Mapnik provider. Renders map images from Mapnik XML files.
@@ -161,6 +159,7 @@ class ImageProvider:
         logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %dx%d in %.3f from %s', width, height, time() - start_time, self.mapfile)
 
         return img
+
 
 class GridProvider:
     """ Built-in UTF Grid provider. Renders JSON raster objects from Mapnik.
@@ -316,7 +315,7 @@ class GridProvider:
 
         logging.debug('TileStache.Mapnik.GridProvider.renderArea() %dx%d at %d in %.3f from %s', width, height, self.scale, time() - start_time, self.mapfile)
 
-        return SaveableResponse(outgrid, self.scale)
+        return GridSaveableResponse(outgrid, self.scale)
 
     def getTypeByExtension(self, extension):
         """ Get mime-type and format by file extension.
@@ -328,32 +327,6 @@ class GridProvider:
 
         return 'application/json; charset=utf-8', 'JSON'
 
-class SaveableResponse:
-    """ Wrapper class for JSON response that makes it behave like a PIL.Image object.
-
-        TileStache.getTile() expects to be able to save one of these to a buffer.
-    """
-    def __init__(self, content, scale):
-        self.content = content
-        self.scale = scale
-
-    def save(self, out, format):
-        if format != 'JSON':
-            raise KnownUnknown('MapnikGrid only saves .json tiles, not "%s"' % format)
-
-        bytes = json.dumps(self.content, ensure_ascii=False).encode('utf-8')
-        out.write(bytes)
-
-    def crop(self, bbox):
-        """ Return a cropped grid response.
-        """
-        minchar, minrow, maxchar, maxrow = [v/self.scale for v in bbox]
-
-        keys, data = self.content['keys'], self.content.get('data', None)
-        grid = [row[minchar:maxchar] for row in self.content['grid'][minrow:maxrow]]
-
-        cropped = dict(keys=keys, data=data, grid=grid)
-        return SaveableResponse(cropped, self.scale)
 
 def merge_grids(grid1, grid2):
     """ Merge two UTF Grid objects.

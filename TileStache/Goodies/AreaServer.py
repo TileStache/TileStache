@@ -70,7 +70,7 @@ class WSGIServer (WSGITileServer):
             
             output = StringIO()
             image = provider.renderArea(width, height, None, xmin, ymin, xmax, ymax, None)
-            image.save(output, format='PNG')
+            image.save(output, format_='PNG')
             
             headers = [('Content-Type', 'image/png')]
             

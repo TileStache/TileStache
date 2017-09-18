@@ -20,11 +20,6 @@ try:
     from urlparse import parse_qs
 except ImportError:
     from cgi import parse_qs
-try:
-    from io import StringIO
-except ImportError:
-    # Python 2
-    from StringIO import StringIO
 from os.path import dirname, join as pathjoin, realpath
 from datetime import datetime, timedelta
 try:
@@ -298,17 +293,15 @@ def requestHandler2(config_hint, path_info, query_string=None, script_name=''):
             headers.setdefault('Cache-Control', 'public, max-age=%d' % layer.max_cache_age)
 
     except Core.KnownUnknown as e:
-        out = StringIO()
-
-        print >> out, 'Known unknown!'
-        print >> out, e
-        print >> out, ''
-        print >> out, '\n'.join(Core._rummy())
+        content = ("Known unknown!\n"
+                   "%s\n\n"
+                   "%s") % (e, "\n".join(Core._rummy()))
 
         headers['Content-Type'] = 'text/plain'
-        status_code, content = 500, out.getvalue()
+        status_code = 500
 
     return status_code, headers, content
+
 
 def cgiHandler(environ, config='./tilestache.cfg', debug=False):
     """ Read environment PATH_INFO, load up configuration, talk to stdout by CGI.

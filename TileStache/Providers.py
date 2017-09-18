@@ -70,46 +70,43 @@ Non-image providers and metatiles do not mix.
 For an example of a non-image provider, see TileStache.Vector.Provider.
 """
 
-import os
-import logging
-
 try:
     from io import BytesIO
 except ImportError:
     # Python 2
     from StringIO import StringIO as BytesIO
+import json
 from string import Template
 try:
     import urllib.request as urllib2
 except ImportError:
     # Python 2
     import urllib2
-import urllib
 
 try:
     from PIL import Image
 except ImportError:
     # On some systems, PIL.Image is known as Image.
     import Image
-
 import ModestMaps
 from ModestMaps.Core import Point, Coordinate
 
-from . import Geography
-
+from TileStache import Geography
 # This import should happen inside getProviderByName(), but when testing
 # on Mac OS X features are missing from output. Wierd-ass C libraries...
 try:
-    from . import Vector
+    from TileStache import Vector
 except ImportError:
     pass
-
+from TileStache.SaveableResponse import (ImageSaveableResponse,
+                                         GridSaveableResponse)
 # Already deprecated; provided for temporary backward-compatibility with
 # old location of Mapnik provider. TODO: remove in next major version.
 try:
-    from .Mapnik import ImageProvider as Mapnik
+    from Tilestache.Mapnik import ImageProvider as Mapnik
 except ImportError:
     pass
+
 
 def getProviderByName(name):
     """ Retrieve a provider object by name.
@@ -144,55 +141,6 @@ def getProviderByName(name):
 
     raise Exception('Unknown provider name: "%s"' % name)
 
-class Verbatim:
-    ''' Wrapper for PIL.Image that saves raw input bytes if modes and formats match.
-    '''
-    def __init__(self, bytes):
-        self.buffer = BytesIO(bytes)
-        self.format = None
-        self._image = None
-        
-        #
-        # Guess image format based on magic number, if possible.
-        # http://www.astro.keele.ac.uk/oldusers/rno/Computing/File_magic.html
-        #
-        magic = {
-            '\x89\x50\x4e\x47': 'PNG',
-            '\xff\xd8\xff\xe0': 'JPEG',
-            '\x47\x49\x46\x38': 'GIF',
-            '\x47\x49\x46\x38': 'GIF',
-            '\x4d\x4d\x00\x2a': 'TIFF',
-            '\x49\x49\x2a\x00': 'TIFF'
-            }
-        
-        if bytes[:4] in magic:
-            self.format = magic[bytes[:4]]
-
-        else:
-            self.format = self.image().format
-    
-    def image(self):
-        ''' Return a guaranteed instance of PIL.Image.
-        '''
-        if self._image is None:
-            self._image = Image.open(self.buffer)
-        
-        return self._image
-    
-    def convert(self, mode):
-        if mode == self.image().mode:
-            return self
-        else:
-            return self.image().convert(mode)
-
-    def crop(self, bbox):
-        return self.image().crop(bbox)
-    
-    def save(self, output, format):
-        if format == self.format:
-            output.write(self.buffer.getvalue())
-        else:
-            self.image().save(output, format)
 
 class Proxy:
     """ Proxy provider, to pass through and cache tiles from other places.
@@ -269,7 +217,7 @@ class Proxy:
 
         for url in urls:
             body = url_opener.open(url, timeout=self.timeout).read()
-            tile = Verbatim(body)
+            tile = ImageSaveableResponse(body)
 
             if len(urls) == 1:
                 #
@@ -286,6 +234,7 @@ class Proxy:
             img.paste(tile, (0, 0), tile)
 
         return img
+
 
 class UrlTemplate:
     """ Built-in URL Template provider. Proxies map images from WMS servers.
@@ -310,14 +259,15 @@ class UrlTemplate:
         - http://docs.python.org/library/string.html#template-strings
     """
 
-    def __init__(self, layer, template, referer=None, source_projection=None,
-                 timeout=None):
+    def __init__(self, layer, template, type_='image', referer=None,
+                 source_projection=None, timeout=None):
         """ Initialize a UrlTemplate provider with layer and template string.
         
             http://docs.python.org/library/string.html#template-strings
         """
         self.layer = layer
         self.template = Template(template)
+        self.type = type_
         self.referer = referer
         self.source_projection = source_projection
         self.timeout = timeout
@@ -336,6 +286,9 @@ class UrlTemplate:
 
         if 'timeout' in config_dict:
             kwargs['timeout'] = config_dict['timeout']
+
+        if 'type' in config_dict:
+            kwargs['type_'] = config_dict['type']
 
         return kwargs
 
@@ -365,6 +318,11 @@ class UrlTemplate:
             req.add_header('Referer', self.referer)
 
         body = urllib2.urlopen(req, timeout=self.timeout).read()
-        tile = Verbatim(body)
+        if self.type == 'image':
+            tile = ImageSaveableResponse(body)
+        elif self.type == 'grid':
+            tile = GridSaveableResponse(json.loads(body, encoding='utf'))
+        else:
+            raise Exception('Unknown type "%s" for URLTemplate' % self.type)
 
         return tile

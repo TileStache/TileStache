@@ -458,7 +458,8 @@ def _parseConfigLayer(layer_dict, config, dirpath):
     elif 'class' in provider_dict:
         _class = Core.loadClassPath(provider_dict['class'])
         provider_kwargs = provider_dict.get('kwargs', {})
-        provider_kwargs = dict( [(str(k), v) for (k, v) in provider_kwargs.items()] )
+        provider_kwargs = dict([(str(k), v)
+                                for k, v in provider_kwargs.items()])
 
     else:
         raise Exception('Missing required provider name or class: %s' % json_dumps(provider_dict))
