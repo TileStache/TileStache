@@ -90,20 +90,19 @@ def coord2merc(x, y, extent):
 
 
 def decoded_pbf_asshape(feature, extent, srid=4326):
-
-    TYPES_MAP = {
-        1: "Point",
-        2: "LineString",
-        3: "Polygon"
-    }
-    if feature['type'] in (1, 2):
+    geometry = feature['geometry']
+    coords = []
+    if geometry['type'] == "Point":
+        x, y = geometry['coordinates']
+        coords = [trans_coord(3857, srid, *coord2merc(x, y, extent=extent))]
+    if geometry['type'] == "LineString":
         coords = [trans_coord(3857, srid, *coord2merc(x, y, extent=extent))
-            for (x, y) in feature['geometry']]
-    elif feature['type'] == 3:
+                  for (x, y) in geometry['coordinates']]
+    elif geometry['type'] == "Polygon":
         coords = [[trans_coord(3857, srid, *coord2merc(x, y, extent=extent))
-            for (x, y) in feature['geometry'][0]]]
+                   for (x, y) in geometry['coordinates'][0]]]
     geoint = {
-        'type': TYPES_MAP.get(feature['type']),
+        'type': geometry['type'],
         'coordinates': coords,
     }
 
@@ -120,7 +119,8 @@ class PostGISVectorTestBase(object):
     '''
 
     def initTestTable(self, testTableName):
-        self.conn = ogr.Open("PG: dbname='test_tilestache' user='postgres'")
+        self.conn = ogr.Open(
+            "PG: dbname='test_tilestache' user='postgres' host='localhost'")
         self.testTableName = testTableName
         
         self.cleanTestTable()
@@ -169,7 +169,8 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
                          {
                              "user": "postgres",
                              "password": "",
-                             "database": "test_tilestache"
+                             "database": "test_tilestache",
+                             "host": "localhost"
                          },
                          "queries":
                          [
@@ -189,7 +190,8 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
                          {
                              "user": "postgres",
                              "password": "",
-                             "database": "test_tilestache"
+                             "database": "test_tilestache",
+                             "host": "localhost"
                          },
                          "queries":
                          [

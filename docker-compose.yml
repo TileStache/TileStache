@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+    postgres:
+        image: mdillon/postgis:9.6
+        environment:
+            - POSTGRES_DB=test_tilestache
+        ports:
+            - "5432:5432"
+
+    memcached:
+        image: memcached:1.5
+        ports:
+            - "11211:11211"
