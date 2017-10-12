@@ -4,5 +4,5 @@ shapely
 pillow
 psycopg2
 python-memcached
-mapbox-vector-tile==0.5.0
+mapbox-vector-tile==1.2.0
 Werkzeug==0.11.13
