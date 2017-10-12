@@ -23,11 +23,7 @@ in the lookup table. If the final byte is 0xFFFF, there is no transparency.
 """
 from struct import unpack, pack
 from math import sqrt, ceil, log
-try:
-    from urllib.request import urlopen
-except ImportError:
-    # Python 2
-    from urllib import urlopen
+from .py3_compat import urlopen, reduce
 from operator import add
 
 try:
@@ -35,8 +31,6 @@ try:
 except ImportError:
     # On some systems, PIL.Image is known as Image.
     import Image
-    
-from . import reduce
 
 def load_palette(file_href):
     """ Load colors from a Photoshop .act file, return palette info.
@@ -113,7 +107,7 @@ def apply_palette(image, palette, t_index):
     else:
         # PIL still uses Image.fromstring
         output = Image.fromstring('P', image.size, b''.join(indexes))
- 
+
     bits = int(ceil(log(len(palette)) / log(2)))
 
     palette += [(0, 0, 0)] * (256 - len(palette))

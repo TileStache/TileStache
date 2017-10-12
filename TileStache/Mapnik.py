@@ -8,21 +8,15 @@ from __future__ import absolute_import
 from time import time
 from os.path import exists
 from thread import allocate_lock
-try:
-    from urllib.parse import urljoin, urlparse
-except ImportError:
-    # Python 2
-    from urlparse import urljoin, urlparse
 from itertools import count
 from glob import glob
 from tempfile import mkstemp
-from urllib import urlopen
 
 import os
 import logging
 import json
 
-from . import reduce
+from .py3_compat import reduce, urlopen, urljoin, urlparse
 
 # We enabled absolute_import because case insensitive filesystems
 # cause this file to be loaded twice (the name of this file
@@ -163,7 +157,7 @@ class ImageProvider:
         else:
             # PIL still uses Image.fromstring
             img = Image.fromstring('RGBA', (width, height), img.tostring())
-        
+
         logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %dx%d in %.3f from %s', width, height, time() - start_time, self.mapfile)
 
         return img

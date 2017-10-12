@@ -61,17 +61,7 @@ documentation for TileStache.Providers, TileStache.Core, and TileStache.Geograph
 import sys
 import logging
 from os.path import join as pathjoin
-try:
-    from urllib.parse import urljoin, urlparse
-except ImportError:
-    # Python 2
-    from urlparse import urljoin, urlparse
 from mimetypes import guess_type
-try:
-    from urllib.request import urlopen
-except ImportError:
-    # Python 2
-    from urllib import urlopen
 from json import dumps
 
 try:
@@ -88,7 +78,7 @@ from . import Providers
 from . import Geography
 from . import PixelEffects
 
-from . import reduce
+from .py3_compat import reduce, urljoin, urlparse, urlopen
 
 class Configuration:
     """ A complete site configuration, with a collection of Layer objects.
