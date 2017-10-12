@@ -7,7 +7,6 @@ Mapnik 2.0.0 and above.
 from __future__ import absolute_import
 from time import time
 from os.path import exists
-from thread import allocate_lock
 from itertools import count
 from glob import glob
 from tempfile import mkstemp
@@ -16,7 +15,7 @@ import os
 import logging
 import json
 
-from .py3_compat import reduce, urlopen, urljoin, urlparse
+from .py3_compat import reduce, urlopen, urljoin, urlparse, allocate_lock
 
 # We enabled absolute_import because case insensitive filesystems
 # cause this file to be loaded twice (the name of this file

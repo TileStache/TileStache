@@ -13,14 +13,16 @@ except NameError:
 reduce = reduce
 
 try:
+    import urllib.request as urllib2
+    import http.client as httplib
     from urllib.parse import urlparse, urljoin, parse_qsl
     from urllib.request import urlopen
-    import urllib.request as urllib2
     from cgi import parse_qs
-    import http.client as httplib
+    from _thread import allocate_lock
 except ImportError:
     # Python 2
-    from urlparse import urlparse, urljoin, parse_qs, parse_qsl
-    from urllib import urlopen
     import httplib
     import urllib2
+    from urlparse import urlparse, urljoin, parse_qs, parse_qsl
+    from urllib import urlopen
+    from thread import allocate_lock
