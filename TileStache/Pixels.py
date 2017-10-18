@@ -23,11 +23,7 @@ in the lookup table. If the final byte is 0xFFFF, there is no transparency.
 """
 from struct import unpack, pack
 from math import sqrt, ceil, log
-try:
-    from urllib.request import urlopen
-except ImportError:
-    # Python 2
-    from urllib import urlopen
+from .py3_compat import urlopen, reduce
 from operator import add
 
 try:
@@ -43,8 +39,8 @@ def load_palette(file_href):
         bit depth of the palette, and a numeric transparency index
         or None if not defined.
     """
-    bytes = urlopen(file_href).read()
-    count, t_index = unpack('!HH', bytes[768:768+4])
+    bytes_ = urlopen(file_href).read()
+    count, t_index = unpack('!HH', bytes_[768:768+4])
     t_index = (t_index <= 0xff) and t_index or None
 
     palette = []
@@ -68,7 +64,7 @@ def palette_color(r, g, b, palette, t_index):
         assign its index in the palette to a mapping from 24-bit color tuples.
     """
     distances = [(r - _r)**2 + (g - _g)**2 + (b - _b)**2 for (_r, _g, _b) in palette]
-    distances = map(sqrt, distances)
+    distances = list(map(sqrt, distances))
 
     if t_index is not None:
         distances = distances[:t_index] + distances[t_index+1:]
@@ -107,11 +103,11 @@ def apply_palette(image, palette, t_index):
 
     if hasattr(Image, 'frombytes'):
         # Image.fromstring is deprecated past Pillow 2.0
-        output = Image.frombytes('P', image.size, ''.join(indexes))
+        output = Image.frombytes('P', image.size, b''.join(indexes))
     else:
         # PIL still uses Image.fromstring
-        output = Image.fromstring('P', image.size, ''.join(indexes))
- 
+        output = Image.fromstring('P', image.size, b''.join(indexes))
+
     bits = int(ceil(log(len(palette)) / log(2)))
 
     palette += [(0, 0, 0)] * (256 - len(palette))

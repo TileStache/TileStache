@@ -68,9 +68,17 @@ from tempfile import mkstemp
 from subprocess import Popen, PIPE
 from httplib import HTTPConnection
 from os.path import basename, join
-from StringIO import StringIO
+try:
+    from io import StringIO
+except ImportError:
+    # Python 2
+    from StringIO import StringIO
 from datetime import datetime
-from urlparse import urlparse
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    # Python 2
+    from urlparse import urlparse
 from base64 import b16encode
 from urllib import urlopen
 from gzip import GzipFile

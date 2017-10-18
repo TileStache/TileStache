@@ -6,13 +6,14 @@
       gunicorn --bind localhost:8888 "TileStache.Goodies.ExternalConfigServer:WSGIServer(url)"
 """
 
-from urllib import urlopen
 import logging
 
 try:
 	from json import load as json_load
 except ImportError:
 	from simplejson import load as json_load
+
+from TileStache.py3_compat import urlopen
 
 import TileStache
 

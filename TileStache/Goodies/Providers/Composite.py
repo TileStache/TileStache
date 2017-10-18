@@ -150,12 +150,23 @@ This complete example can be found in the included examples directory.
 import sys
 import re
 
-from urllib import urlopen
-from urlparse import urljoin
+try:
+    from urllib.parse import urljoin
+except ImportError:
+    # Python 2
+    from urlparse import urljoin
+try:
+    from urllib.request import urlopen
+except ImportError:
+    # Python 2
+    from urllib import urlopen
 from os.path import join as pathjoin
 from xml.dom.minidom import parse as parseXML
-from StringIO import StringIO
-
+try:
+    from io import StringIO
+except ImportError:
+    # Python 2
+    from StringIO import StringIO
 try:
     from json import loads as jsonload
 except ImportError:
@@ -177,6 +188,9 @@ except ImportError:
     import Image
 
 from TileStache.Core import KnownUnknown
+
+# only need to check for py3 once
+from TileStache import unicode
 
 class Provider:
     """ Provides a Photoshop-like rendering pipeline, making it possible to use

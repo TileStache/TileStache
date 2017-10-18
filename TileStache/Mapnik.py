@@ -7,16 +7,15 @@ Mapnik 2.0.0 and above.
 from __future__ import absolute_import
 from time import time
 from os.path import exists
-from thread import allocate_lock
-from urlparse import urlparse, urljoin
 from itertools import count
 from glob import glob
 from tempfile import mkstemp
-from urllib import urlopen
 
 import os
 import logging
 import json
+
+from .py3_compat import reduce, urlopen, urljoin, urlparse, allocate_lock
 
 # We enabled absolute_import because case insensitive filesystems
 # cause this file to be loaded twice (the name of this file
@@ -157,7 +156,7 @@ class ImageProvider:
         else:
             # PIL still uses Image.fromstring
             img = Image.fromstring('RGBA', (width, height), img.tostring())
-        
+
         logging.debug('TileStache.Mapnik.ImageProvider.renderArea() %dx%d in %.3f from %s', width, height, time() - start_time, self.mapfile)
 
         return img
@@ -341,8 +340,8 @@ class SaveableResponse:
         if format != 'JSON':
             raise KnownUnknown('MapnikGrid only saves .json tiles, not "%s"' % format)
 
-        bytes = json.dumps(self.content, ensure_ascii=False).encode('utf-8')
-        out.write(bytes)
+        bytes_ = json.dumps(self.content, ensure_ascii=False).encode('utf-8')
+        out.write(bytes_)
 
     def crop(self, bbox):
         """ Return a cropped grid response.

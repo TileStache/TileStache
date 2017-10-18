@@ -39,7 +39,7 @@ The renderTile() method draws a single tile at a time, and has these arguments:
 
 - width, height: in pixels
 - srs: projection as Proj4 string.
-  "+proj=longlat +ellps=WGS84 +datum=WGS84" is an example, 
+  "+proj=longlat +ellps=WGS84 +datum=WGS84" is an example,
   see http://spatialreference.org for more.
 - coord: Coordinate object representing a single tile.
 
@@ -48,19 +48,19 @@ metatiles. It has these arguments:
 
 - width, height: in pixels
 - srs: projection as Proj4 string.
-  "+proj=longlat +ellps=WGS84 +datum=WGS84" is an example, 
+  "+proj=longlat +ellps=WGS84 +datum=WGS84" is an example,
   see http://spatialreference.org for more.
 - xmin, ymin, xmax, ymax: coordinates of bounding box in projected coordinates.
 - zoom: zoom level of final map. Technically this can be derived from the other
   arguments, but that's a hassle so we'll pass it in explicitly.
-  
+
 A provider may offer a method for custom response type, getTypeByExtension().
 This method accepts a single argument, a filename extension string (e.g. "png",
 "json", etc.) and returns a tuple with twon strings: a mime-type and a format.
 Note that for image and non-image tiles alike, renderArea() and renderTile()
 methods on a provider class must return a object with a save() method that
 can accept a file-like object and a format name, e.g. this should word:
-    
+
     provder.renderArea(...).save(fp, "TEXT")
 
 ... if "TEXT" is a valid response format according to getTypeByExtension().
@@ -73,18 +73,10 @@ For an example of a non-image provider, see TileStache.Vector.Provider.
 import os
 import logging
 
-try:
-    from io import BytesIO
-except ImportError:
-    # Python 2
-    from StringIO import StringIO as BytesIO
+from io import BytesIO
 from string import Template
-try:
-    import urllib.request as urllib2
-except ImportError:
-    # Python 2
-    import urllib2
-import urllib
+
+from .py3_compat import urllib2
 
 try:
     from PIL import Image
@@ -113,7 +105,7 @@ except ImportError:
 
 def getProviderByName(name):
     """ Retrieve a provider object by name.
-    
+
         Raise an exception if the name doesn't work out.
     """
     if name.lower() == 'mapnik':
@@ -147,11 +139,11 @@ def getProviderByName(name):
 class Verbatim:
     ''' Wrapper for PIL.Image that saves raw input bytes if modes and formats match.
     '''
-    def __init__(self, bytes):
-        self.buffer = BytesIO(bytes)
+    def __init__(self, bytes_):
+        self.buffer = BytesIO(bytes_)
         self.format = None
         self._image = None
-        
+
         #
         # Guess image format based on magic number, if possible.
         # http://www.astro.keele.ac.uk/oldusers/rno/Computing/File_magic.html
@@ -164,21 +156,21 @@ class Verbatim:
             '\x4d\x4d\x00\x2a': 'TIFF',
             '\x49\x49\x2a\x00': 'TIFF'
             }
-        
-        if bytes[:4] in magic:
-            self.format = magic[bytes[:4]]
+
+        if bytes_[:4] in magic:
+            self.format = magic[bytes_[:4]]
 
         else:
             self.format = self.image().format
-    
+
     def image(self):
         ''' Return a guaranteed instance of PIL.Image.
         '''
         if self._image is None:
             self._image = Image.open(self.buffer)
-        
+
         return self._image
-    
+
     def convert(self, mode):
         if mode == self.image().mode:
             return self
@@ -187,7 +179,7 @@ class Verbatim:
 
     def crop(self, bbox):
         return self.image().crop(bbox)
-    
+
     def save(self, output, format):
         if format == self.format:
             output.write(self.buffer.getvalue())
@@ -196,11 +188,11 @@ class Verbatim:
 
 class Proxy:
     """ Proxy provider, to pass through and cache tiles from other places.
-    
+
         This provider is identified by the name "proxy" in the TileStache config.
-        
+
         Additional arguments:
-        
+
         - url (optional)
             URL template for remote tiles, for example:
             "http://tile.openstreetmap.org/{Z}/{X}/{Y}.png"
@@ -214,9 +206,9 @@ class Proxy:
 
 
         Either url or provider is required. When both are present, url wins.
-        
+
         Example configuration:
-        
+
         {
             "name": "proxy",
             "url": "http://tile.openstreetmap.org/{Z}/{X}/{Y}.png"
@@ -289,11 +281,11 @@ class Proxy:
 
 class UrlTemplate:
     """ Built-in URL Template provider. Proxies map images from WMS servers.
-        
+
         This provider is identified by the name "url template" in the TileStache config.
-        
+
         Additional arguments:
-        
+
         - template (required)
             String with substitutions suitable for use in string.Template.
 
@@ -313,7 +305,7 @@ class UrlTemplate:
     def __init__(self, layer, template, referer=None, source_projection=None,
                  timeout=None):
         """ Initialize a UrlTemplate provider with layer and template string.
-        
+
             http://docs.python.org/library/string.html#template-strings
         """
         self.layer = layer
@@ -341,7 +333,7 @@ class UrlTemplate:
 
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """ Return an image for an area.
-        
+
             Each argument (width, height, etc.) is substituted into the template.
         """
         if self.source_projection is not None:

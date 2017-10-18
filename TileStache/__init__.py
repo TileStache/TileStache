@@ -16,36 +16,16 @@ __version__ = open(os.path.join(os.path.dirname(__file__), 'VERSION')).read().st
 import re
 
 from sys import stdout
-try:
-    from urlparse import parse_qs
-except ImportError:
-    from cgi import parse_qs
-try:
-    from io import StringIO
-except ImportError:
-    # Python 2
-    from StringIO import StringIO
+from io import StringIO
 from os.path import dirname, join as pathjoin, realpath
 from datetime import datetime, timedelta
-try:
-    from urllib.parse import urljoin, urlparse
-except ImportError:
-    # Python 2
-    from urlparse import urljoin, urlparse
+
+from .py3_compat import urljoin, urlparse, urlopen, parse_qs, httplib, is_string_type, reduce
+
 from wsgiref.headers import Headers
-try:
-    from urllib.request import urlopen
-except ImportError:
-    # Python 2
-    from urllib import urlopen
 from os import getcwd
 from time import time
 
-try:
-    import http.client as httplib
-except ImportError:
-    # Python 2
-    import httplib
 import logging
 
 try:
@@ -120,7 +100,7 @@ def parseConfig(configHandle):
         dirpath = '.'
     else:
         scheme, host, path, p, q, f = urlparse(configHandle)
-        
+
         if scheme == '':
             scheme = 'file'
             path = realpath(path)
@@ -157,7 +137,7 @@ def splitPathInfo(pathinfo):
         coord = None
 
     else:
-        raise Core.KnownUnknown('Bad path: "%s". I was expecting something more like "/example/0/0/0.png"' % pathinfo)
+        raise Core.KnownUnknown('Bad path: "{}". I was expecting something more like "/example/0/0/0.png"'.format(pathinfo))
 
     return layer, coord, extension
 
@@ -180,7 +160,7 @@ def requestLayer(config, path_info):
         Config parameter can be a file path string for a JSON configuration file
         or a configuration object with 'cache', 'layers', and 'dirpath' properties.
     """
-    if type(config) in (str, unicode):
+    if is_string_type(config):
         #
         # Should be a path to a configuration file we can load;
         # build a tuple key into previously-seen config objects.
@@ -210,7 +190,7 @@ def requestLayer(config, path_info):
     layername = splitPathInfo(path_info)[0]
 
     if layername not in config.layers:
-        raise Core.KnownUnknown('"%s" is not a layer I know about. Here are some that I do know about: %s.' % (layername, ', '.join(sorted(config.layers.keys()))))
+        raise Core.KnownUnknown('"{}" is not a layer I know about. Here are some that I do know about: {}.'.format(layername, ', '.join(sorted(config.layers.keys()))))
 
     return config.layers[layername]
 
@@ -300,10 +280,10 @@ def requestHandler2(config_hint, path_info, query_string=None, script_name=''):
     except Core.KnownUnknown as e:
         out = StringIO()
 
-        print >> out, 'Known unknown!'
-        print >> out, e
-        print >> out, ''
-        print >> out, '\n'.join(Core._rummy())
+        print('Known unknown!', out)
+        print(e, out)
+        print('', out)
+        print('\n'.join(Core._rummy()), out)
 
         headers['Content-Type'] = 'text/plain'
         status_code, content = 500, out.getvalue()
@@ -366,7 +346,7 @@ class WSGITileServer:
             on each request, applicable only when config is a JSON file.
         """
 
-        if type(config) in (str, unicode, dict):
+        if is_string_type(config):
             self.autoreload = autoreload
             self.config_path = config
 
