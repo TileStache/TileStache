@@ -340,8 +340,8 @@ class SaveableResponse:
         if format != 'JSON':
             raise KnownUnknown('MapnikGrid only saves .json tiles, not "%s"' % format)
 
-        bytes = json.dumps(self.content, ensure_ascii=False).encode('utf-8')
-        out.write(bytes)
+        bytes_ = json.dumps(self.content, ensure_ascii=False).encode('utf-8')
+        out.write(bytes_)
 
     def crop(self, bbox):
         """ Return a cropped grid response.

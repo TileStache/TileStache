@@ -139,8 +139,8 @@ def getProviderByName(name):
 class Verbatim:
     ''' Wrapper for PIL.Image that saves raw input bytes if modes and formats match.
     '''
-    def __init__(self, bytes):
-        self.buffer = BytesIO(bytes)
+    def __init__(self, bytes_):
+        self.buffer = BytesIO(bytes_)
         self.format = None
         self._image = None
 
@@ -157,8 +157,8 @@ class Verbatim:
             '\x49\x49\x2a\x00': 'TIFF'
             }
 
-        if bytes[:4] in magic:
-            self.format = magic[bytes[:4]]
+        if bytes_[:4] in magic:
+            self.format = magic[bytes_[:4]]
 
         else:
             self.format = self.image().format

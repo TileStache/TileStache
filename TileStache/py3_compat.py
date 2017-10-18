@@ -1,9 +1,12 @@
 # python3 compatibity while retaining checking
 # for both str and unicode in python2
 try:
-    unicode = unicode
+    string_types = (str, unicode)
 except NameError:
-    unicode = str
+    string_types = (str,)
+
+def is_string_type(val):
+    return isinstance(val, string_types)
 
 try:
     # python3

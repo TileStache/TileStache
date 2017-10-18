@@ -121,7 +121,7 @@ from re import search
 from io import BytesIO
 from itertools import product
 
-from .py3_compat import urljoin, urlopen, unicode
+from .py3_compat import urljoin, urlopen, is_string_type
 
 from . import Core
 
@@ -257,8 +257,8 @@ def local_bitmap(source, config, coord, dim):
     """ Return Blit.Bitmap representation of a raw image.
     """
     address = urljoin(config.dirpath, source)
-    bytes = urlopen(address).read()
-    image = Image.open(BytesIO(bytes)).convert('RGBA')
+    bytes_ = urlopen(address).read()
+    image = Image.open(BytesIO(bytes_)).convert('RGBA')
 
     coord = coord.zoomBy(8)
     w, h, col, row = image.size[0], image.size[1], int(coord.column), int(coord.row)
@@ -326,7 +326,7 @@ def make_color(color):
           orange: "#f90", "#ff9900", "#ff9900ff"
           transparent orange: "#f908", "#ff990088"
     """
-    if type(color) not in (str, unicode):
+    if not is_string_type(color):
         raise Core.KnownUnknown('Color must be a string: %s' % repr(color))
 
     if color[0] != '#':

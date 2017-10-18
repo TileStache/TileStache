@@ -39,8 +39,8 @@ def load_palette(file_href):
         bit depth of the palette, and a numeric transparency index
         or None if not defined.
     """
-    bytes = urlopen(file_href).read()
-    count, t_index = unpack('!HH', bytes[768:768+4])
+    bytes_ = urlopen(file_href).read()
+    count, t_index = unpack('!HH', bytes_[768:768+4])
     t_index = (t_index <= 0xff) and t_index or None
 
     palette = []
