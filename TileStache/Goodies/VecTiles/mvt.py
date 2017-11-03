@@ -83,9 +83,9 @@ def encode(file, features):
         
         parts.extend([_pack('>I', len(wkb)), wkb, _pack('>I', len(prop)), prop])
     
-    body = _compress(_pack('>I', len(features)) + ''.join(parts))
+    body = _compress(_pack('>I', len(features)) + b''.join(parts))
     
-    file.write('\x89MVT')
+    file.write(b'\x89MVT')
     file.write(_pack('>I', len(body)))
     file.write(body)
 
