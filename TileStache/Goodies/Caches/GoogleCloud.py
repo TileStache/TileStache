@@ -1,17 +1,14 @@
 #!/usr/bin/env python
 """ Caches tiles to Google Cloud Storage.
 
-Requires boto (2.0+):
-  http://pypi.python.org/pypi/boto
+Requires google-cloud-storage==1.3.1
 
 Example configuration:
 
   "cache": {
-    "name": "TileStache.Goodies.Caches.GoogleCloud:Cache",
+    "class": "TileStache.Goodies.Caches.GoogleCloud:Cache",
     "kwargs": {
       "bucket": "<bucket name>",
-      "access": "<access key>",
-      "secret": "<secret key>"
     }
   }
 
@@ -20,14 +17,9 @@ cache parameters:
   bucket
     Required bucket name for GS. If it doesn't exist, it will be created.
 
-  access
-    Required access key ID for your GS account.
-
-  secret
-    Required secret access key for your GS account.
-
 """
-from time import time
+
+from time import time, sleep as _sleep
 from mimetypes import guess_type
 
 
@@ -37,7 +29,7 @@ GOOGLE_STORAGE = 'gs'
 LOCAL_FILE = 'file'
 
 try:
-    import boto
+    import google.cloud.storage
 except ImportError:
     # at least we can build the documentation
     pass
@@ -54,74 +46,68 @@ def tile_key(layer, coord, format):
 class Cache:
     """
     """
-    def __init__(self, bucket, access, secret):
-        config = boto.config
-        config.add_section('Credentials')
-        config.set('Credentials', 'gs_access_key_id', access)
-        config.set('Credentials', 'gs_secret_access_key', secret)
+    def __init__(self, bucket):
+        self.storage_client = google.cloud.storage.Client()
+        self.bucket = bucket
 
-        uri = boto.storage_uri('', GOOGLE_STORAGE)
-        for b in uri.get_all_buckets():
-          if b.name == bucket:
-            self.bucket = b
-        #TODO: create bucket if not found
+    def get_blob(self, path):
+        return self.storage_client.bucket(self.bucket).blob(path)
 
     def lock(self, layer, coord, format):
         """ Acquire a cache lock for this tile.
-        
+
             Returns nothing, but blocks until the lock has been acquired.
         """
         key_name = tile_key(layer, coord, format)
         due = time() + layer.stale_lock_timeout
-        
+
         while time() < due:
-            if not self.bucket.get_key(key_name+'-lock'):
+            if not self.get_blob(key_name+'-lock').exists():
                 break
-            
+
             _sleep(.2)
-        
-        key = self.bucket.new_key(key_name+'-lock')
-        key.set_contents_from_string('locked.', {'Content-Type': 'text/plain'})
-        
+
+        blob = self.get_blob(key_name + '-lock')
+        blob.upload_from_string('locked.', content_type='text/plain')
+
     def unlock(self, layer, coord, format):
         """ Release a cache lock for this tile.
         """
         key_name = tile_key(layer, coord, format)
         try:
-          self.bucket.delete_key(key_name+'-lock')
+          self.get_blob(key_name).delete()
         except:
           pass
-        
+
     def remove(self, layer, coord, format):
         """ Remove a cached tile.
         """
         key_name = tile_key(layer, coord, format)
-        self.bucket.delete_key(key_name)
-        
+        self.get_blob(key_name).delete()
+
     def read(self, layer, coord, format):
         """ Read a cached tile.
         """
         key_name = tile_key(layer, coord, format)
-        key = self.bucket.get_key(key_name)
-        
-        if key is None:
+        blob = self.get_blob(key_name)
+
+        if blob.exists() is False:
             return None
-        
+
         if layer.cache_lifespan:
             t = timegm(strptime(key.last_modified, '%a, %d %b %Y %H:%M:%S %Z'))
 
             if (time() - t) > layer.cache_lifespan:
                 return None
-        
-        return key.get_contents_as_string()
-        
+
+        return blob.download_as_string()
+
     def save(self, body, layer, coord, format):
         """ Save a cached tile.
         """
         key_name = tile_key(layer, coord, format)
-        key = self.bucket.new_key(key_name)
-        
-        content_type, encoding = guess_type('example.'+format)
-        headers = content_type and {'Content-Type': content_type} or {}
-        
-        key.set_contents_from_string(body, headers, policy='public-read')
+        blob = self.get_blob(key_name)
+
+        content_type, encoding = guess_type('example.' + format)
+        blob.upload_from_string(body, content_type=content_type)
+        blob.make_public()
