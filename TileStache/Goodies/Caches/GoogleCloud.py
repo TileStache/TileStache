@@ -75,7 +75,7 @@ class Cache:
         """
         key_name = tile_key(layer, coord, format)
         try:
-          self.get_blob(key_name).delete()
+          self.get_blob(key_name+'-lock').delete()
         except:
           pass
 
