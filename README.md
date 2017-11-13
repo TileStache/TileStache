@@ -52,7 +52,7 @@ Install the pure python modules with pip:
 
 Install pip (http://www.pip-installer.org/) like:
 
-    curl -O -L https://raw.github.com/pypa/pip/master/contrib/get-pip.py
+    curl -O -L https://bootstrap.pypa.io/get-pip.py
     sudo python get-pip.py
 
 Install Mapnik via instructions at:
