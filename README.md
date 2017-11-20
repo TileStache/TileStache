@@ -45,10 +45,12 @@ simpler and better-suited to the needs of designers and cartographers.
 - Simplejson: https://github.com/simplejson/simplejson (optional if using >= python 2.6)
 - mapnik: http://mapnik.org (optional)
 - werkzeug: http://werkzeug.pocoo.org/ (optional)
+- shapely: https://pypi.python.org/pypi/Shapely (optional if using GeoJSON data responses from PostGIS queries)
+- gdal: https://pypi.python.org/pypi/GDAL (optional if loading tiles directly from shapefiles)
 
 Install the pure python modules with pip:
 
-    sudo pip install -U pillow modestmaps simplejson werkzeug uuid
+    sudo pip install -U pillow modestmaps simplejson werkzeug uuid Shapely gdal
 
 Install pip (http://www.pip-installer.org/) like:
 
