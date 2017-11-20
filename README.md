@@ -45,10 +45,11 @@ simpler and better-suited to the needs of designers and cartographers.
 - Simplejson: https://github.com/simplejson/simplejson (optional if using >= python 2.6)
 - mapnik: http://mapnik.org (optional)
 - werkzeug: http://werkzeug.pocoo.org/ (optional)
+- mapbox-vector-tile: https://github.com/tilezen/mapbox-vector-tile (optional if using TileStache.Goodies.VecTiles:Provider)
 
 Install the pure python modules with pip:
 
-    sudo pip install -U pillow modestmaps simplejson werkzeug uuid
+    sudo pip install -U pillow modestmaps simplejson werkzeug uuid mapbox-vector-tile
 
 Install pip (http://www.pip-installer.org/) like:
 
