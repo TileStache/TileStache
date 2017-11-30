@@ -49,7 +49,7 @@ def load_palette(file_href):
         if offset == t_index:
             rgb = 0xff, 0x99, 0x00
         else:
-            rgb = unpack('!BBB', bytes[offset*3:(offset + 1)*3])
+            rgb = unpack('!BBB', bytes_[offset*3:(offset + 1)*3])
 
         palette.append(rgb)
 
