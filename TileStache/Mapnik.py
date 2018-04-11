@@ -90,7 +90,11 @@ class ImageProvider:
         self.layer = layer
         self.mapnik = None
 
-        engine = mapnik.FontEngine.instance()
+        # Maintain compatiblity between old and new Mapnik FontEngine API
+        try:
+            engine = mapnik.FontEngine.instance()
+        except AttributeError:
+            engine = mapnik.FontEngine
 
         if fonts:
             fontshref = urljoin(layer.config.dirpath, fonts)
