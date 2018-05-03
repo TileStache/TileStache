@@ -20,6 +20,7 @@ is 0 (the default), do not create an alpha channel.
 With a bit more work, this provider will be ready for fully-supported inclusion
 in TileStache proper. Until then, it will remain here in the Goodies package.
 """
+import struct
 
 try:
     from urllib.parse import urljoin, urlparse
@@ -141,11 +142,11 @@ class Provider:
             r, g, b = [area_ds.GetRasterBand(i).ReadRaster(0, 0, width, height) for i in channel]
 
             if mask_ds is None:
-                data = ''.join([''.join(pixel) for pixel in zip(r, g, b)])
+                data = b''.join([struct.pack('BBB', *pixel) for pixel in zip(r, g, b)])
                 area = Image.frombytes('RGB', (width, height), data)
             else:
                 a = mask_ds.GetRasterBand(self.maskband).GetMaskBand().ReadRaster(0, 0, width, height)
-                data = ''.join([''.join(pixel) for pixel in zip(r, g, b, a)])
+                data = b''.join([struct.pack('BBBB', *pixel) for pixel in zip(r, g, b, a)])
                 area = Image.frombytes('RGBA', (width, height), data)
 
         finally:
