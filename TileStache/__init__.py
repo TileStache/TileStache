@@ -314,13 +314,13 @@ def requestHandler2(config_hint, path_info, query_string=None, script_name=''):
     except Core.KnownUnknown as e:
         out = StringIO()
 
-        print('Known unknown!', out)
-        print(e, out)
-        print('', out)
-        print('\n'.join(Core._rummy()), out)
+        print('Known unknown!', file=out)
+        print(e, file=out)
+        print('', file=out)
+        print('\n'.join(Core._rummy()), file=out)
 
         headers['Content-Type'] = 'text/plain'
-        status_code, content = 500, out.getvalue()
+        status_code, content = 500, out.getvalue().encode('ascii')
 
     return status_code, headers, content
 
