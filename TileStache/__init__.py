@@ -16,36 +16,16 @@ __version__ = open(os.path.join(os.path.dirname(__file__), 'VERSION')).read().st
 import re
 
 from sys import stdout
-try:
-    from urlparse import parse_qs
-except ImportError:
-    from cgi import parse_qs
-try:
-    from io import StringIO
-except ImportError:
-    # Python 2
-    from StringIO import StringIO
+from io import StringIO
 from os.path import dirname, join as pathjoin, realpath
 from datetime import datetime, timedelta
-try:
-    from urllib.parse import urljoin, urlparse
-except ImportError:
-    # Python 2
-    from urlparse import urljoin, urlparse
+
+from .py3_compat import urljoin, urlparse, urlopen, parse_qs, httplib, is_string_type, reduce
+
 from wsgiref.headers import Headers
-try:
-    from urllib.request import urlopen
-except ImportError:
-    # Python 2
-    from urllib import urlopen
 from os import getcwd
 from time import time
 
-try:
-    import http.client as httplib
-except ImportError:
-    # Python 2
-    import httplib
 import logging
 
 try:
@@ -56,20 +36,6 @@ except ImportError:
     from simplejson import loads as json_loads
 
 from ModestMaps.Core import Coordinate
-
-# python3 compatibity while retaining checking
-# for both str and unicode in python2
-try:
-    unicode = unicode
-except NameError:
-    unicode = str
-    
-try:
-    # python3
-    from functools import reduce
-except NameError:
-    pass
-reduce = reduce
 
 # dictionary of configuration objects for requestLayer().
 _previous_configs = {}
@@ -194,7 +160,7 @@ def requestLayer(config, path_info):
         Config parameter can be a file path string for a JSON configuration file
         or a configuration object with 'cache', 'layers', and 'dirpath' properties.
     """
-    if type(config) in (str, unicode):
+    if is_string_type(config):
         #
         # Should be a path to a configuration file we can load;
         # build a tuple key into previously-seen config objects.
@@ -380,7 +346,7 @@ class WSGITileServer:
             on each request, applicable only when config is a JSON file.
         """
 
-        if type(config) in (str, unicode, dict):
+        if is_string_type(config):
             self.autoreload = autoreload
             self.config_path = config
 

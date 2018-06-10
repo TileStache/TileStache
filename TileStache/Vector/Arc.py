@@ -4,7 +4,7 @@ from operator import add
 
 from ..Core import KnownUnknown
 
-from TileStache import reduce
+from ..py3_compat import reduce
 
 geometry_types = {
     'Point': 'esriGeometryPoint',
@@ -17,7 +17,7 @@ geometry_types = {
 
 class _amfFeatureSet(dict):
     """ Registered PyAMF class for com.esri.ags.tasks.FeatureSet
-    
+
         http://help.arcgis.com/en/webapi/flex/apiref/com/esri/ags/FeatureSet.html
     """
     def __init__(self, spatial_reference, geometry_type, features):
@@ -30,7 +30,7 @@ class _amfFeatureSet(dict):
 
 class _amfSpatialReference(dict):
     """ Registered PyAMF class for com.esri.ags.SpatialReference
-    
+
         http://help.arcgis.com/en/webapi/flex/apiref/com/esri/ags/SpatialReference.html
     """
     def __init__(self, wkid, wkt):
@@ -43,7 +43,7 @@ class _amfSpatialReference(dict):
 
 class _amfFeature(dict):
     """ Registered PyAMF class for com.esri.ags.Feature
-    
+
         No URL for class information - this class shows up in AMF responses
         from ESRI webservices but does not seem to be otherwise documented.
     """
@@ -54,7 +54,7 @@ class _amfFeature(dict):
 
 class _amfGeometryMapPoint(dict):
     """ Registered PyAMF class for com.esri.ags.geometry.MapPoint
-    
+
         http://help.arcgis.com/en/webapi/flex/apiref/com/esri/ags/geometry/MapPoint.html
     """
     def __init__(self, sref, x, y):
@@ -65,7 +65,7 @@ class _amfGeometryMapPoint(dict):
 
 class _amfGeometryPolyline(dict):
     """ Registered PyAMF class for com.esri.ags.geometry.Polyline
-    
+
         http://help.arcgis.com/en/webapi/flex/apiref/com/esri/ags/geometry/Polyline.html
     """
     def __init__(self, sref, paths):
@@ -75,7 +75,7 @@ class _amfGeometryPolyline(dict):
 
 class _amfGeometryPolygon(dict):
     """ Registered PyAMF class for com.esri.ags.geometry.Polygon
-    
+
         http://help.arcgis.com/en/webapi/flex/apiref/com/esri/ags/geometry/Polygon.html
     """
     def __init__(self, sref, rings):
@@ -94,33 +94,33 @@ pyamf_classes = {
 
 def reserialize_to_arc(content, point_objects):
     """ Convert from "geo" (GeoJSON) to ESRI's GeoServices REST serialization.
-    
+
         Second argument is a boolean flag for whether to use the class
         _amfGeometryMapPoint for points in ring and path arrays, or tuples.
         The formal class is needed for AMF responses, plain tuples otherwise.
-        
+
         Much of this cribbed from sample server queries and page 191+ of:
           http://www.esri.com/library/whitepapers/pdfs/geoservices-rest-spec.pdf
     """
     mapPointList = point_objects and _amfGeometryMapPoint or (lambda s, x, y: (x, y))
     mapPointDict = point_objects and _amfGeometryMapPoint or (lambda s, x, y: {'x': x, 'y': y})
-    
+
     found_geometry_types = set([feat['geometry']['type'] for feat in content['features']])
     found_geometry_types = set([geometry_types.get(type) for type in found_geometry_types])
-    
+
     if len(found_geometry_types) > 1:
         raise KnownUnknown('Arc serialization needs a single geometry type, not ' + ', '.join(found_geometry_types))
-    
+
     crs = content['crs']
     sref = _amfSpatialReference(crs.get('wkid', None), crs.get('wkt', None))
     geometry_type, features = None, []
-    
+
     for feature in content['features']:
         geometry = feature['geometry']
 
         if geometry['type'] == 'Point':
             arc_geometry = mapPointDict(sref, *geometry['coordinates'])
-        
+
         elif geometry['type'] == 'LineString':
             path = geometry['coordinates']
             paths = [[mapPointList(sref, *xy) for xy in path]]
@@ -148,9 +148,9 @@ def reserialize_to_arc(content, point_objects):
 
         else:
             raise Exception(geometry['type'])
-        
+
         arc_feature = _amfFeature(feature['properties'], arc_geometry)
         geometry_type = geometry_types[geometry['type']]
         features.append(arc_feature)
-    
+
     return _amfFeatureSet(sref, geometry_type, features)
