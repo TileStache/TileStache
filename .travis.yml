@@ -22,9 +22,6 @@ addons:
       - libgdal1-dev
       - python-werkzeug
 
-virtualenv:
-  system_site_packages: true
-
 services:
   - memcached
   - postgresql
