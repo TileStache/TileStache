@@ -3,7 +3,7 @@ DOCROOT=tilestache.org:public_html/tilestache/www
 
 live: doc
 	rsync -Cr doc/ $(DOCROOT)/doc/
-	python setup.py sdist upload
+	# python setup.py sdist upload
 
 doc:
 	mkdir doc
