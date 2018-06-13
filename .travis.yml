@@ -45,3 +45,12 @@ notifications:
   email:
     recipients:
       - mike-travisci@teczno.com
+
+deploy:
+  on:
+    branch: master
+    condition: $TRAVIS_PYTHON_VERSION = 3.6
+  provider: pypi
+  user: "migurski"
+  password:
+    secure: "vMyyKeRwbEJByHKjhmoLAmDB0PXnSgdpEsIx0E44yjWlWUsSN2v9tgMyJlc69wnCOGlxL3eMuyGR10dMvQWaZU5gwxJ4QJC1nLr0F76khTFPZtcgusjkiMwFjKB5TGChdpu4Vyc6hTeLWeH9LKdUA85qTY3vGp2fot89R0FqhoU="
