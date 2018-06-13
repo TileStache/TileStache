@@ -1,3 +1,6 @@
+2018-06-12: 1.51.7
+- Various Python 3.x compatibility fixes
+
 2017-01-26: 1.51.6
 - Fix on tile generation
 
