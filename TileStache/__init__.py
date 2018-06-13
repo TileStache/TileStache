@@ -280,13 +280,13 @@ def requestHandler2(config_hint, path_info, query_string=None, script_name=''):
     except Core.KnownUnknown as e:
         out = StringIO()
 
-        print('Known unknown!', out)
-        print(e, out)
-        print('', out)
-        print('\n'.join(Core._rummy()), out)
+        print('Known unknown!', file=out)
+        print(e, file=out)
+        print('', file=out)
+        print('\n'.join(Core._rummy()), file=out)
 
         headers['Content-Type'] = 'text/plain'
-        status_code, content = 500, out.getvalue()
+        status_code, content = 500, out.getvalue().encode('ascii')
 
     return status_code, headers, content
 
@@ -392,10 +392,7 @@ class WSGITileServer:
 
         status_code, headers, content = requestHandler2(self.config, path_info, query_string, script_name)
 
-        if not isinstance(content, bytes) and not is_string_type(content):
-            content = str(content)
-
-        return self._response(start_response, status_code, content, headers)
+        return self._response(start_response, status_code, bytes(content), headers)
 
     def _response(self, start_response, code, content='', headers=None):
         """
