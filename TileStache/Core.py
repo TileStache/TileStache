@@ -732,18 +732,26 @@ def _preview(layer):
     zoom = layer.preview_zoom
     ext = layer.preview_ext
 
+    try:
+        mimetype, _ = layer.provider.getTypeByExtension(layer.preview_ext)
+    except AttributeError:
+        mimetype = 'image/'
+
     return """<!DOCTYPE html>
 <html>
 <head>
     <title>TileStache Preview: %(layername)s</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css"
-       integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ=="
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@0.7.7/dist/leaflet.css"
+       integrity="sha512-BjUcsqlmxCfopFFJpQr57VRWk3/N+csTp8cwWSNeOmBnz8QriGor88ZiHlLKPvutKvTpRU7HRT08E0y/FM0TCA=="
        crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"
-       integrity="sha512-/Nsx9X4HebavoBvEBuyp3I7od5tA0UzAxs+j83KgC8PU0kgB4XiK4Lfe4y4cgBtaRJQEIFCW+oC506aPT2L1zw=="
+    <script src="https://unpkg.com/leaflet@0.7.7/dist/leaflet.js"
+       integrity="sha512-e+JSf1UWuoLdiGeXXi5byQqIN7ojQLLgvC+aV0w9rnKNwNDBAz99sCgS20+PjT/r+yitmU7kpGVZJQDDgevhoA=="
        crossorigin=""></script>
     <script src="https://raw.githubusercontent.com/mlevans/leaflet-hash/431bff5c6/leaflet-hash.js"
        integrity="sha512-2KBa5eJPxTH3HX7jCWrbO+NYNLV8xrnX5lDB7FTs9HFJ8jpO1MTV6MkmNNaia79k+xOk8q965FkqAjwEYCfDAA==">
+       </script>
+    <script src="https://raw.githubusercontent.com/glenrobertson/leaflet-tilelayer-geojson/68b6030a6/TileLayer.GeoJSON.js"
+       integrity="sha512-Ryw/zIuShF0cScpLNLvdbx25oq4ZybL7LXwkfD3dJ++I61D494wmVlf7DjstJn6earWQwpqfGfLioCJ4UT2qVw==">
        </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <style type="text/css">
@@ -767,11 +775,22 @@ def _preview(layer):
     <!--
         var map = L.map('map').setView([%(lat).6f, %(lon).6f], %(zoom)d),
             hash = new L.Hash(map);
+        
+        if('%(mimetype)s'.match(/^application\/json/))
+        {
+            L.tileLayer('https://tile-{s}.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+                attribution: '...',
+                maxZoom: 20
+            }).addTo(map);
 
-        L.tileLayer('{z}/{x}/{y}.%(ext)s', {
-            attribution: '...',
-            maxZoom: 20
-        }).addTo(map);
+            map.addLayer(new L.TileLayer.GeoJSON('{z}/{x}/{y}.%(ext)s', {}, {}));
+        } else {
+            L.tileLayer('{z}/{x}/{y}.%(ext)s', {
+                attribution: '...',
+                maxZoom: 20
+            }).addTo(map);
+        }
+
     //-->
     </script>
 </body>
