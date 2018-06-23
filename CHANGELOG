@@ -1,3 +1,6 @@
+2018-06-22: 1.51.8
+- Updated layer previews with Leaflet and GeoJSON
+
 2018-06-12: 1.51.7
 - Various Python 3.x compatibility fixes
 
