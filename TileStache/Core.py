@@ -736,7 +736,15 @@ def _preview(layer):
 <html>
 <head>
     <title>TileStache Preview: %(layername)s</title>
-    <script src="//cdn.rawgit.com/stamen/modestmaps-js/v1.0.0-beta1/modestmaps.min.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css"
+       integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ=="
+       crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"
+       integrity="sha512-/Nsx9X4HebavoBvEBuyp3I7od5tA0UzAxs+j83KgC8PU0kgB4XiK4Lfe4y4cgBtaRJQEIFCW+oC506aPT2L1zw=="
+       crossorigin=""></script>
+    <script src="https://raw.githubusercontent.com/mlevans/leaflet-hash/431bff5c6/leaflet-hash.js"
+       integrity="sha512-2KBa5eJPxTH3HX7jCWrbO+NYNLV8xrnX5lDB7FTs9HFJ8jpO1MTV6MkmNNaia79k+xOk8q965FkqAjwEYCfDAA==">
+       </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <style type="text/css">
         html, body, #map {
@@ -757,14 +765,13 @@ def _preview(layer):
     <div id="map"></div>
     <script type="text/javascript" defer>
     <!--
-        var template = '{Z}/{X}/{Y}.%(ext)s';
-        var map = new MM.Map('map', new MM.TemplatedLayer(template), null, [
-            new MM.TouchHandler(),
-            new MM.DragHandler(),
-            new MM.DoubleClickHandler()
-        ]);
-        map.setCenterZoom(new com.modestmaps.Location(%(lat).6f, %(lon).6f), %(zoom)d);
-        new MM.Hash(map);
+        var map = L.map('map').setView([%(lat).6f, %(lon).6f], %(zoom)d),
+            hash = new L.Hash(map);
+
+        L.tileLayer('{z}/{x}/{y}.%(ext)s', {
+            attribution: '...',
+            maxZoom: 20
+        }).addTo(map);
     //-->
     </script>
 </body>
