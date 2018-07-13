@@ -224,8 +224,8 @@ class Provider:
         """
         mime_type, content = get_tile(self.tileset, coord)
         formats = {
-            'image/png': 'png',
-            'image/jpeg': 'jpg',
+            'image/png': 'PNG',
+            'image/jpeg': 'JPG',
             None: None
         }
         return TileResponse(formats[mime_type], content)
