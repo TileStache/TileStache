@@ -264,7 +264,7 @@ class TileResponse:
         self.content = content
 
     def save(self, out, format):
-        if self.format is not None and format != self.format:
+        if self.format is not None and format.lower() != self.format:
             raise Exception('Requested format "%s" does not match tileset format "%s"' % (format, self.format))
 
         out.write(self.content)
