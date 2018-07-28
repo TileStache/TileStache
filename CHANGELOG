@@ -1,3 +1,6 @@
+2018-07-28: 1.51.9
+- Fixed preview HTML cross-origin bug
+
 2018-06-22: 1.51.8
 - Updated layer previews with Leaflet and GeoJSON
 
