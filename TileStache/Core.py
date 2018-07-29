@@ -747,12 +747,12 @@ def _preview(layer):
     <script src="https://unpkg.com/leaflet@0.7.7/dist/leaflet.js"
        integrity="sha512-e+JSf1UWuoLdiGeXXi5byQqIN7ojQLLgvC+aV0w9rnKNwNDBAz99sCgS20+PjT/r+yitmU7kpGVZJQDDgevhoA=="
        crossorigin=""></script>
-    <script src="https://raw.githubusercontent.com/mlevans/leaflet-hash/431bff5c6/leaflet-hash.js"
-       integrity="sha512-2KBa5eJPxTH3HX7jCWrbO+NYNLV8xrnX5lDB7FTs9HFJ8jpO1MTV6MkmNNaia79k+xOk8q965FkqAjwEYCfDAA==">
-       </script>
-    <script src="https://raw.githubusercontent.com/glenrobertson/leaflet-tilelayer-geojson/68b6030a6/TileLayer.GeoJSON.js"
-       integrity="sha512-Ryw/zIuShF0cScpLNLvdbx25oq4ZybL7LXwkfD3dJ++I61D494wmVlf7DjstJn6earWQwpqfGfLioCJ4UT2qVw==">
-       </script>
+    <script src="http://tilestache.org/preview/leaflet-hash-431bff5c6.js"
+       integrity="sha512-2KBa5eJPxTH3HX7jCWrbO+NYNLV8xrnX5lDB7FTs9HFJ8jpO1MTV6MkmNNaia79k+xOk8q965FkqAjwEYCfDAA=="
+       crossorigin=""></script>
+    <script src="http://tilestache.org/preview/TileLayer.GeoJSON-68b6030a6.js"
+       integrity="sha512-Ryw/zIuShF0cScpLNLvdbx25oq4ZybL7LXwkfD3dJ++I61D494wmVlf7DjstJn6earWQwpqfGfLioCJ4UT2qVw=="
+       crossorigin=""></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <style type="text/css">
         html, body, #map {
