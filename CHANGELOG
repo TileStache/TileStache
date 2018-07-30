@@ -1,3 +1,6 @@
+2018-07-30: 1.51.10
+- Fixed two compatibility bugs for Python 3 and Mapnik
+
 2018-07-28: 1.51.9
 - Fixed preview HTML cross-origin bug
 
