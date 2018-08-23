@@ -30,4 +30,4 @@ except ImportError:
     from urlparse import urlparse, urljoin, parse_qs, parse_qsl
     from urllib import urlopen
     from thread import allocate_lock
-    import unichar
+    unichar = unichar
