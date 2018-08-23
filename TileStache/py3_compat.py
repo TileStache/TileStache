@@ -11,8 +11,9 @@ def is_string_type(val):
 try:
     # python3
     from functools import reduce
+    unichar = char
 except NameError:
-    pass
+    unichar = unichar
 reduce = reduce
 
 try:
@@ -22,7 +23,6 @@ try:
     from urllib.request import urlopen
     from cgi import parse_qs
     from _thread import allocate_lock
-    unichar = char
 except ImportError:
     # Python 2
     import httplib
@@ -30,4 +30,3 @@ except ImportError:
     from urlparse import urlparse, urljoin, parse_qs, parse_qsl
     from urllib import urlopen
     from thread import allocate_lock
-    unichar = unichar
