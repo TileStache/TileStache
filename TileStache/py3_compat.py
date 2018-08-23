@@ -22,7 +22,7 @@ try:
     from urllib.request import urlopen
     from cgi import parse_qs
     from _thread import allocate_lock
-    import char as unichar
+    unichar = char
 except ImportError:
     # Python 2
     import httplib
