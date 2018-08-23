@@ -16,6 +16,7 @@ import logging
 import json
 
 from .py3_compat import reduce, urlopen, urljoin, urlparse, allocate_lock
+from .py3_compat import unichar
 
 # We enabled absolute_import because case insensitive filesystems
 # cause this file to be loaded twice (the name of this file
@@ -414,7 +415,7 @@ def encode_id(id):
     if id >= 92:
         id = id + 1
     if id > 127:
-        return unichr(id)
+        return unichar(id)
     return chr(id)
 
 def decode_char(char):
