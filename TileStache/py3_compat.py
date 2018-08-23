@@ -22,6 +22,7 @@ try:
     from urllib.request import urlopen
     from cgi import parse_qs
     from _thread import allocate_lock
+    unichr = chr
 except ImportError:
     # Python 2
     import httplib
@@ -29,3 +30,4 @@ except ImportError:
     from urlparse import urlparse, urljoin, parse_qs, parse_qsl
     from urllib import urlopen
     from thread import allocate_lock
+    unichr = unichr
