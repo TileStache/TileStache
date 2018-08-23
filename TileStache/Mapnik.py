@@ -16,6 +16,7 @@ import logging
 import json
 
 from .py3_compat import reduce, urlopen, urljoin, urlparse, allocate_lock
+from .py3_compat import unichr
 
 # We enabled absolute_import because case insensitive filesystems
 # cause this file to be loaded twice (the name of this file
