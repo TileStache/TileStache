@@ -34,6 +34,7 @@ Memcache cache parameters:
 from __future__ import absolute_import
 from time import time as _time, sleep as _sleep
 from base64 import b64encode, b64decode
+import hashlib
 
 # We enabled absolute_import because case insensitive filesystems
 # cause this file to be loaded twice (the name of this file
@@ -51,7 +52,13 @@ def tile_key(layer, coord, format, rev, key_prefix):
     """
     name = layer.name()
     tile = '%(zoom)d/%(column)d/%(row)d' % coord.__dict__
-    return str('%(key_prefix)s/%(rev)s/%(name)s/%(tile)s.%(format)s' % locals())
+    key = str('%(key_prefix)s/%(rev)s/%(name)s/%(tile)s.%(format)s' % locals())
+    
+    if len(key) < 250:
+        return key
+    
+    prefix, infix, suffix = key[:100], key[100:-100], key[-100:]
+    return prefix + hashlib.sha1(infix.encode('utf8')).hexdigest() + suffix
 
 class Cache:
     """
