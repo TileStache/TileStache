@@ -1,3 +1,6 @@
+2018-09-17: 1.51.12
+- Fixed Memcache bug with very long layer names
+
 2018-08-23: 1.51.11
 - Moved preview resources to SSL-enabled URL on S3
 
