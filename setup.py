@@ -20,7 +20,7 @@ def is_installed(name):
         return False
 
 
-requires = ['ModestMaps >=1.3.0','simplejson', 'Werkzeug == 0.11.13', 'Pillow']
+requires = ['ModestMaps >=1.3.0','simplejson', 'Werkzeug', 'Pillow']
 
 
 setup(name='TileStache',
