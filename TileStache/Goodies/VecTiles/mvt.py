@@ -36,11 +36,7 @@ By default, encode() approximates the floating point precision of WKB geometry
 to 26 bits for a significant compression improvement and no visible impact on
 rendering at zoom 18 and lower.
 '''
-try:
-    from io import StringIO
-except ImportError:
-    # Python 2
-    from StringIO import StringIO
+from io import BytesIO
 from zlib import decompress as _decompress, compress as _compress
 from struct import unpack as _unpack, pack as _pack
 import json
@@ -57,7 +53,7 @@ def decode(file):
     if head != '\x89MVT':
         raise Exception('Bad head: "%s"' % head)
     
-    body = StringIO(_decompress(file.read(_next_int(file))))
+    body = BytesIO(_decompress(file.read(_next_int(file))))
     features = []
     
     for i in range(_next_int(body)):
