@@ -364,7 +364,7 @@ class EmptyResponse:
             topojson.encode(out, [], (ll.lon, ll.lat, ur.lon, ur.lat), False)
         
         elif format == 'PBF':
-            pbf.encode(out, [], None, self.bounds)
+            pbf.encode(out, [], None, layer_name='')
 
         else:
             raise ValueError(format)

@@ -14,11 +14,7 @@ See also:
 '''
 
 from struct import unpack
-try:
-    from io import StringIO
-except ImportError:
-    # Python 2
-    from StringIO import StringIO
+from io import BytesIO
 
 #
 # wkbByteOrder
@@ -139,7 +135,7 @@ def approx_geometry(src, dest):
 def approximate_wkb(wkb_in):
     ''' Return an approximation of the input WKB with lower-precision geometry.
     '''
-    input, output = StringIO(wkb_in), StringIO()
+    input, output = BytesIO(wkb_in), BytesIO()
     approx_geometry(input, output)
     wkb_out = output.getvalue()
 
