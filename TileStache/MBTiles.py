@@ -224,10 +224,10 @@ class Provider:
         """
         mime_type, content = get_tile(self.tileset, coord)
         formats = {
-            'png': 'image/png',
-            'jpg': 'image/jpeg',
-            'json': 'application/json',
-            'pbf': 'application/x-protobuf',
+            'image/png': 'png',
+            'image/jpeg': 'jpg',
+            'application/json': 'json',
+            'application/x-protobuf': 'pbf',
             None: None
         }
         return TileResponse(formats[mime_type], content)
@@ -247,7 +247,7 @@ class Provider:
             return 'image/jpg', 'JPEG'
 
         elif extension.lower() == 'pbf':
-            return 'application/x-protobuf', 'PBF'
+            return 'application/x-protobuf', 'pbf'
 
         else:
             raise KnownUnknown('MBTiles only makes .png, .jpg, .json and .pbf tiles, not "%s"' % extension)
