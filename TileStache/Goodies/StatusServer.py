@@ -216,7 +216,7 @@ class WSGIServer (TileStache.WSGITileServer):
             update_status('Finished %s in %.3f seconds' % (environ['PATH_INFO'], time() - start), **self.redis_kwargs)
             return response
         
-        except Exception, e:
+        except Exception as e:
             update_status('Error: %s after %.3f seconds' % (str(e), time() - start), **self.redis_kwargs)
             raise
         

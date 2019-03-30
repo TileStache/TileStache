@@ -169,7 +169,7 @@ def create_tables(db, prefix, tmp_prefix):
         try:
             db.execute('CREATE TABLE %(prefix)s_%(table)s ( LIKE %(tmp_prefix)s_%(table)s )' % locals())
 
-        except ProgrammingError, e:
+        except ProgrammingError as e:
             db.execute('ROLLBACK')
 
             if e.pgcode != '42P07':
@@ -343,7 +343,7 @@ class Provider:
 
             return ConfirmationResponse(coord, message, True)
         
-        except Exception, e:
+        except Exception as e:
             message = 'Error in tile %d/%d/%d: %s' % (coord.zoom, coord.column, coord.row, e)
             
             raise NoTileLeftBehind(ConfirmationResponse(coord, message, False))

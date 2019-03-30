@@ -46,7 +46,7 @@ _create_tables = """
 
 class Cache:
 
-    def __init__(self, path, limit, umask=0022):
+    def __init__(self, path, limit, umask=0o022):
         self.cachepath = path
         self.dbpath = pathjoin(self.cachepath, 'stache.db')
         self.umask = umask
@@ -167,8 +167,8 @@ class Cache:
 
         try:
             umask_old = os.umask(self.umask)
-            os.makedirs(dirname(fullpath), 0777&~self.umask)
-        except OSError, e:
+            os.makedirs(dirname(fullpath), 0o777&~self.umask)
+        except OSError as e:
             if e.errno != 17:
                 raise
         finally:
@@ -184,7 +184,7 @@ class Cache:
             os.unlink(fullpath)
             os.rename(tmp_path, fullpath)
 
-        os.chmod(fullpath, 0666&~self.umask)
+        os.chmod(fullpath, 0o666&~self.umask)
         
         stat = os.stat(fullpath)
         size = stat.st_size

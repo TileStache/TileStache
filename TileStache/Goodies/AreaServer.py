@@ -86,6 +86,6 @@ class WSGIServer (WSGITileServer):
             start_response('200 OK', headers)
             return output.getvalue()
 
-        except KnownUnknown, e:
+        except KnownUnknown as e:
             start_response('400 Bad Request', [('Content-Type', 'text/plain')])
             return str(e)
