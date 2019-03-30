@@ -1,3 +1,6 @@
+2019-03-29: 1.51.14
+- Fixed key/value order typos in MBTiles
+
 2018-09-24: 1.51.13
 - Loosened requirement version constraints to make TileStache play nicely in pip
 
