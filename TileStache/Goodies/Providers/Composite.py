@@ -186,7 +186,7 @@ except ImportError:
 from TileStache.Core import KnownUnknown
 
 # only need to check for py3 once
-from TileStache import unicode
+from TileStache.py3_compat import string_types
 
 class Provider:
     """ Provides a Photoshop-like rendering pipeline, making it possible to use
@@ -210,7 +210,7 @@ class Provider:
         """
         self.layer = layer
 
-        if type(stack) in (str, unicode):
+        if type(stack) in string_types:
             stack = jsonload(urlopen(urljoin(layer.config.dirpath, stack)).read())
 
         if type(stack) in (list, dict):
@@ -432,7 +432,7 @@ def make_color(color):
           orange: "#f90", "#ff9900", "#ff9900ff"
           transparent orange: "#f908", "#ff990088"
     """
-    if type(color) not in (str, unicode):
+    if type(color) not in string_types:
         raise KnownUnknown('Color must be a string: %s' % repr(color))
 
     if color[0] != '#':
