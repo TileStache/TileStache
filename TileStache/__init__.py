@@ -321,7 +321,14 @@ def cgiHandler(environ, config='./tilestache.cfg', debug=False):
         stdout.write('%s: %s\n' % (k, v))
 
     stdout.write('\n')
-    stdout.write(content)
+    stdout.flush()
+
+    # if content is actually a string, emit it as text using stdout.write
+    # else write it directly to the buffer as byte data
+    if isinstance(content, str):
+        stdout.write(content)
+    else:
+        stdout.buffer.write(content)
 
 class WSGITileServer:
     """ Create a WSGI application that can handle requests from any server that talks WSGI.
