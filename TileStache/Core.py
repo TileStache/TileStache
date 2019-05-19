@@ -740,7 +740,7 @@ def _preview(layer):
     return """<!DOCTYPE html>
 <html>
 <head>
-    <title>TileStache Preview: %(layername)s</title>
+    <title>TileStache Preview: {layername}</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@0.7.7/dist/leaflet.css"
        integrity="sha512-BjUcsqlmxCfopFFJpQr57VRWk3/N+csTp8cwWSNeOmBnz8QriGor88ZiHlLKPvutKvTpRU7HRT08E0y/FM0TCA=="
        crossorigin=""/>
@@ -755,47 +755,47 @@ def _preview(layer):
        crossorigin=""></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <style type="text/css">
-        html, body, #map {
+        html, body, #map {{
             position: absolute;
-            width: 100%%;
-            height: 100%%;
+            width: 100%;
+            height: 100%;
             margin: 0;
             padding: 0;
-        }
+        }}
 
-        #map img {
+        #map img {{
             width: 256px;
             height: 256px;
-        }
+        }}
     </style>
 </head>
 <body>
     <div id="map"></div>
     <script type="text/javascript" defer>
     <!--
-        var map = L.map('map').setView([%(lat).6f, %(lon).6f], %(zoom)d),
+        var map = L.map('map').setView([{lat:.6}, {lon:.6}], {zoom}),
             hash = new L.Hash(map);
         
-        if('%(mimetype)s'.match(/^application\/json/))
-        {
-            L.tileLayer('https://tile-{s}.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+        if('{mimetype}'.match(/^application\/json/))
+        {{
+            L.tileLayer('https://tile-{{s}}.openstreetmap.fr/hot/{{z}}/{{x}}/{{y}}.png', {{
                 attribution: '...',
                 maxZoom: 20
-            }).addTo(map);
+            }}).addTo(map);
 
-            map.addLayer(new L.TileLayer.GeoJSON('{z}/{x}/{y}.%(ext)s', {}, {}));
-        } else {
-            L.tileLayer('{z}/{x}/{y}.%(ext)s', {
+            map.addLayer(new L.TileLayer.GeoJSON('{{z}}/{{x}}/{{y}}.{ext}', {{}}, {{}}));
+        }} else {{
+            L.tileLayer('{{z}}/{{x}}/{{y}}.{ext}', {{
                 attribution: '...',
                 maxZoom: 20
-            }).addTo(map);
-        }
+            }}).addTo(map);
+        }}
 
     //-->
     </script>
 </body>
 </html>
-""" % locals()
+""".format(**locals()).encode('utf8')
 
 def _rummy():
     """ Draw Him.

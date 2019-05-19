@@ -240,7 +240,7 @@ def requestHandler2(config_hint, path_info, query_string=None, script_name=''):
         # Special case for index page.
         #
         if path_info == '/':
-            mimetype, content = getattr(layer.config, 'index', ('text/plain', 'TileStache says hello.'))
+            mimetype, content = getattr(layer.config, 'index', ('text/plain', b'TileStache says hello.'))
             return 200, Headers([('Content-Type', mimetype)]), content
 
         coord, extension = splitPathInfo(path_info)[1:]
