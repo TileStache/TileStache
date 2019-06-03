@@ -214,7 +214,7 @@ class Proxy:
             "url": "http://tile.openstreetmap.org/{Z}/{X}/{Y}.png"
         }
     """
-    def __init__(self, layer, url=None, provider_name=None, timeout=None):
+    def __init__(self, layer, url=None, provider_name=None, timeout=None, user_agent=None):
         """ Initialize Proxy provider with layer and url.
         """
         if url:
@@ -228,6 +228,11 @@ class Proxy:
 
         else:
             raise Exception('Missing required url or provider parameter to Proxy provider')
+
+        if user_agent:
+            self.user_agent = user_agent
+        else:
+            self.user_agent = None
 
         self.timeout = timeout
 
@@ -246,6 +251,9 @@ class Proxy:
         if 'timeout' in config_dict:
             kwargs['timeout'] = config_dict['timeout']
 
+        if 'user-agent' in config_dict:
+            kwargs['user_agent'] = config_dict['user-agent']
+
         return kwargs
 
     def renderTile(self, width, height, srs, coord):
@@ -260,6 +268,8 @@ class Proxy:
         url_opener = urllib2.build_opener(proxy_support)
 
         for url in urls:
+            if self.user_agent:
+                url_opener.addheaders = [("User-Agent", self.user_agent)]
             body = url_opener.open(url, timeout=self.timeout).read()
             tile = Verbatim(body)
 
