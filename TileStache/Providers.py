@@ -214,7 +214,7 @@ class Proxy:
             "url": "http://tile.openstreetmap.org/{Z}/{X}/{Y}.png"
         }
     """
-    def __init__(self, layer, url=None, provider_name=None, timeout=None):
+    def __init__(self, layer, url=None, provider_name=None, timeout=None, user_agent=None):
         """ Initialize Proxy provider with layer and url.
         """
         if url:
@@ -228,6 +228,9 @@ class Proxy:
 
         else:
             raise Exception('Missing required url or provider parameter to Proxy provider')
+
+        if user_agent:
+            self.user_agent = user_agent
 
         self.timeout = timeout
 
@@ -246,6 +249,9 @@ class Proxy:
         if 'timeout' in config_dict:
             kwargs['timeout'] = config_dict['timeout']
 
+        if 'user-agent' in config_dict:
+            kwargs['user_agent'] = config_dict['user-agent']
+
         return kwargs
 
     def renderTile(self, width, height, srs, coord):
@@ -257,6 +263,8 @@ class Proxy:
         # Tell urllib2 get proxies if set in the environment variables <protocol>_proxy
         # see: https://docs.python.org/2/library/urllib2.html#urllib2.ProxyHandler
         proxy_support = urllib2.ProxyHandler()
+        if self.user_agent:
+            proxy_support.add_header("User-Agent", self.user_agent)
         url_opener = urllib2.build_opener(proxy_support)
 
         for url in urls:
