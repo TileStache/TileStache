@@ -231,6 +231,8 @@ class Proxy:
 
         if user_agent:
             self.user_agent = user_agent
+        else:
+            self.user_agent = None
 
         self.timeout = timeout
 
