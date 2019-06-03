@@ -263,11 +263,11 @@ class Proxy:
         # Tell urllib2 get proxies if set in the environment variables <protocol>_proxy
         # see: https://docs.python.org/2/library/urllib2.html#urllib2.ProxyHandler
         proxy_support = urllib2.ProxyHandler()
-        if self.user_agent:
-            proxy_support.add_header("User-Agent", self.user_agent)
         url_opener = urllib2.build_opener(proxy_support)
 
         for url in urls:
+            if self.user_agent:
+                url_opener.addheaders = [("User-Agent", self.user_agent)]
             body = url_opener.open(url, timeout=self.timeout).read()
             tile = Verbatim(body)
 
