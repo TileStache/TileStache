@@ -776,7 +776,7 @@ def _preview(layer):
         var map = L.map('map').setView([%(lat).6f, %(lon).6f], %(zoom)d),
             hash = new L.Hash(map);
         
-        if('%(mimetype)s'.match(/^application\/json/))
+        if('%(mimetype)s'.match(/^application\\/json/))
         {
             L.tileLayer('https://tile-{s}.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
                 attribution: '...',
