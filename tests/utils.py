@@ -67,7 +67,7 @@ def create_dummy_server(file_with_content, mimetype):
     #start new process using our dummy-response-server.py script
     dummy_server_file = os.path.join(current_script_dir, 'servers', 'dummy-response-server.py')
     port = find_open_port()
-    cmd = 'python %s %s "%s" "%s" ' % (dummy_server_file, str(port), file_with_content, mimetype)
+    cmd = '%s %s %s "%s" "%s" ' % (sys.executable, dummy_server_file, str(port), file_with_content, mimetype)
 
     ON_POSIX = 'posix' in sys.builtin_module_names
 
