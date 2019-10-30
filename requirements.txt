@@ -5,4 +5,4 @@ pillow
 psycopg2
 python-memcached
 mapbox-vector-tile==1.2.0
-Werkzeug==0.11.13
+Werkzeug==0.15.3
