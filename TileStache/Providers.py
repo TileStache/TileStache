@@ -87,6 +87,8 @@ except ImportError:
 import ModestMaps
 from ModestMaps.Core import Point, Coordinate
 
+from .Core import TheServerLeftANote, TheTileLeftANote, NoTileLeftBehind
+
 from . import Geography
 
 # This import should happen inside getProviderByName(), but when testing
@@ -260,8 +262,11 @@ class Proxy:
         url_opener = urllib2.build_opener(proxy_support)
 
         for url in urls:
-            body = url_opener.open(url, timeout=self.timeout).read()
-            tile = Verbatim(body)
+            try:
+                body = url_opener.open(url, timeout=self.timeout).read()
+                tile = Verbatim(body)
+            except urllib2.HTTPError as e:
+                raise TheServerLeftANote(headers=e.hdrs, status_code=e.code, content=e.msg)
 
             if len(urls) == 1:
                 #

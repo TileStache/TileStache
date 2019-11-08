@@ -448,7 +448,7 @@ class Layer:
 
                     tile_from = 'layer.render()'
 
-            except TheTileLeftANote as e:
+            except (TheTileLeftANote, TheServerLeftANote) as e:
                 headers = e.headers
                 status_code = e.status_code
                 body = e.content
@@ -707,14 +707,8 @@ class NoTileLeftBehind(Exception):
         self.tile = tile
         Exception.__init__(self, tile)
 
-class TheTileLeftANote(Exception):
-    """ A tile exists, but it shouldn't be returned to the client. Headers
-        and/or a status code are provided in its stead.
-
-        This exception can be thrown in a provider or a cache to signal to
-        upstream servers where a tile can be found or to clients that a tile
-        is empty (or solid).
-    """
+class SomeoneLeftANote(Exception):
+    """ Base Exception for 'note-leaving' exceptions."""
     def __init__(self, headers=None, status_code=200, content='', emit_content_type=True):
         self.headers = headers or Headers([])
         self.status_code = status_code
@@ -723,6 +717,23 @@ class TheTileLeftANote(Exception):
 
         Exception.__init__(self, self.headers, self.status_code,
                            self.content, self.emit_content_type)
+
+class TheTileLeftANote(SomeoneLeftANote):
+    """ A tile exists, but it shouldn't be returned to the client. Headers
+        and/or a status code are provided in its stead.
+
+        This exception can be thrown in a provider or a cache to signal to
+        upstream servers where a tile can be found or to clients that a tile
+        is empty (or solid).
+    """
+
+class TheServerLeftANote(SomeoneLeftANote):
+    """ A tile couldn't not be retrieved, but the updtreamserver has information
+        about why and it should be passed to the client.
+
+        This exception can be thrown in a provider to signal to clients why a
+        tile is not retrievable.
+    """
 
 def _preview(layer):
     """ Get an HTML response for a given named layer.
@@ -775,7 +786,7 @@ def _preview(layer):
     <!--
         var map = L.map('map').setView([%(lat).6f, %(lon).6f], %(zoom)d),
             hash = new L.Hash(map);
-        
+
         if('%(mimetype)s'.match(/^application\/json/))
         {
             L.tileLayer('https://tile-{s}.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
