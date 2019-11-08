@@ -406,8 +406,9 @@ class WSGITileServer:
 
         print("HEADERS!!")
         print(headers)
+        print(type(headers))
 
-        start_response('%d %s' % (code, responses[code]), headers.items() if headers else None)
+        start_response('%d %s' % (code, responses[code]), headers.items())
         return [content]
 
 def modpythonHandler(request):
