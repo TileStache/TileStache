@@ -78,7 +78,7 @@ def create_tileset(filename, name, type, version, description, format, bounds=No
 
     if format not in ('png', 'jpg', 'json', 'pbf'):
         raise Exception('Format must be one of "png", "jpg", "json" or "pbf", not "%s"' % format)
-    
+
     db = _connect(filename)
 
     db.execute('CREATE TABLE metadata (name TEXT, value TEXT, PRIMARY KEY (name))')
@@ -153,7 +153,7 @@ def get_tile(filename, coord):
     """
     db = _connect(filename)
     db.text_factory = bytes
-    
+
     formats = {
         'png': 'image/png',
         'jpg': 'image/jpeg',
@@ -266,7 +266,7 @@ class TileResponse:
         self.content = content
 
     def save(self, out, format):
-        if self.format is not None and format != self.format:
+        if self.format is not None and format.lower() != self.format.lower():
             raise Exception('Requested format "%s" does not match tileset format "%s"' % (format, self.format))
 
         out.write(self.content)
