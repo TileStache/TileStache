@@ -405,10 +405,6 @@ class WSGITileServer:
         responses = httplib.responses
         responses.update({422: 'Unprocessable Entity'})
 
-        print("HEADERS!!")
-        print(headers)
-        print(type(headers))
-
         start_response('%d %s' % (code, responses[code]), headers.items())
         return [content]
 
