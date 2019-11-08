@@ -404,7 +404,10 @@ class WSGITileServer:
 
         responses = httplib.responses.update({422: 'Unprocessable Entity'})
 
-        start_response('%d %s' % (code, responses[code]), headers.items())
+        print("HEADERS!!")
+        print(headers)
+
+        start_response('%d %s' % (code, responses[code]), headers.items() if headers else None)
         return [content]
 
 def modpythonHandler(request):
