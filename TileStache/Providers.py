@@ -263,13 +263,9 @@ class Proxy:
 
         for url in urls:
             try:
-                print("URL!!")
-                print(url)
                 body = url_opener.open(url, timeout=self.timeout).read()
                 tile = Verbatim(body)
             except urllib2.HTTPError as e:
-                print("E!!")
-                print(e)
                 raise TheServerLeftANote(headers=e.hdrs, status_code=e.code, content=e.msg)
 
             if len(urls) == 1:
