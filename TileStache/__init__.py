@@ -402,7 +402,8 @@ class WSGITileServer:
         if content:
             headers.setdefault('Content-Length', str(len(content)))
 
-        responses = httplib.responses.update({422: 'Unprocessable Entity'})
+        responses = httplib.responses
+        responses.update({422: 'Unprocessable Entity'})
 
         print("HEADERS!!")
         print(headers)
