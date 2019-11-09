@@ -428,7 +428,7 @@ class Layer:
                     except NoTileLeftBehind as e:
                         tile = e.tile
                         save = False
-                        status_code = 404
+                        headers['Cache-Control'] = 'no-cache'
 
                     if not self.write_cache:
                         save = False
