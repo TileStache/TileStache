@@ -33,9 +33,7 @@ except ImportError as err:
 
 from . import mvt, geojson, topojson, pbf
 from ...Geography import SphericalMercator
-from ModestMaps.Core import Point
-
-tolerances = [6378137 * 2 * pi / (2 ** (zoom + 8)) for zoom in range(20)]
+from ModestMaps.Core import Coordinate, Point
 
 class Provider:
     ''' VecTiles provider for PostGIS data sources.
@@ -143,6 +141,14 @@ class Provider:
         self.padding = int(padding)
         self.columns = {}
 
+        # Size in projection units of 0/0/0 pyramid
+        coord = Coordinate(0, 0, 0)
+        ul = self.layer.projection.coordinateProj(coord)
+        lr = self.layer.projection.coordinateProj(coord.down().right())
+        self.z0_width = abs(lr.x - ul.x)
+
+        self.unitsPerTileAtZoom = [self.z0_width / (2**zoom) for zoom in range(20)]
+
         # Each type creates an iterator yielding tuples of:
         # (zoom level (int), query (string))
         if isinstance(queries, dict):
@@ -194,9 +200,16 @@ class Provider:
         if not self.columns[query]:
             return EmptyResponse(bounds)
 
-        tolerance = self.simplify * tolerances[coord.zoom] if coord.zoom < self.simplify_until else None
-        
-        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, coord.zoom, self.clip, coord, self.layer.name(), self.padding)
+        # When self.simplify = 1.0, tolerance should be the length of one pixel in projection units
+        tolerance = self.simplify * self.unitsPerTileAtZoom[coord.zoom] / width if coord.zoom < self.simplify_until else None
+
+        # convert pixel padding to projection units (e.g. meters/degrees)
+        # to be applied in the bbox
+        tol_idx = coord.zoom if 0 <= coord.zoom < len(self.unitsPerTileAtZoom) else -1
+        tol_val = self.unitsPerTileAtZoom[tol_idx] / width
+        padding = self.padding * tol_val
+
+        return Response(self.dbinfo, self.srid, query, self.columns[query], bounds, tolerance, coord.zoom, self.clip, coord, self.layer.name(), padding)
 
     def getTypeByExtension(self, extension):
         ''' Get mime-type and format by file extension, one of "mvt", "json", "topojson" or "pbf".
@@ -291,12 +304,6 @@ class Response:
         self.coord = coord
         self.layer_name = layer_name
         self.padding = padding
-
-        # convert pixel padding to meters (based on tolerances)
-        # to be applied in the bbox
-        tol_idx = coord.zoom if 0 <= coord.zoom < len(tolerances) else -1
-        tol_val = tolerances[tol_idx]
-        self.padding = self.padding * tol_val
 
         geo_query = build_query(srid, subquery, columns, bounds, tolerance, True, clip, self.padding)
         merc_query = build_query(srid, subquery, columns, bounds, tolerance, False, clip, self.padding)
