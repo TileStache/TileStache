@@ -224,9 +224,9 @@ class Provider:
         """
         mime_type, content = get_tile(self.tileset, coord)
         formats = {
-            'image/png': 'png',
-            'image/jpeg': 'jpg',
-            'application/json': 'json',
+            'image/png': 'PNG',
+            'image/jpeg': 'JPEG',
+            'application/json': 'JSON',
             'application/x-protobuf': 'pbf',
             None: None
         }
