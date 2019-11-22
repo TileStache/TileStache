@@ -64,7 +64,7 @@ def create_tileset(filename, name, type, version, description, format, bounds=No
             A description of the layer as plain text.
 
           format:
-            The image file format of the tile data: png or jpg or json
+            The image file format of the tile data: png or jpg or json or pbf
 
         One row in metadata is suggested and, if provided, may enhance performance:
 
@@ -224,10 +224,10 @@ class Provider:
         """
         mime_type, content = get_tile(self.tileset, coord)
         formats = {
-            'image/png': 'png',
-            'image/jpeg': 'jpg',
-            'application/json': 'json',
-            'application/x-protobuf': 'pbf',
+            'image/png': 'PNG',
+            'image/jpeg': 'JPEG',
+            'application/json': 'JSON',
+            'application/x-protobuf': 'PBF',
             None: None
         }
         return TileResponse(formats[mime_type], content)
@@ -247,7 +247,7 @@ class Provider:
             return 'image/jpg', 'JPEG'
 
         elif extension.lower() == 'pbf':
-            return 'application/x-protobuf', 'pbf'
+            return 'application/x-protobuf', 'PBF'
 
         else:
             raise KnownUnknown('MBTiles only makes .png, .jpg, .json and .pbf tiles, not "%s"' % extension)
@@ -258,7 +258,7 @@ class TileResponse:
         TileStache.getTile() expects to be able to save one of these to a buffer.
 
         Constructor arguments:
-        - format: 'PNG' or 'JPEG'.
+        - format: 'PNG' or 'JPEG' or 'PBF'.
         - content: Raw response bytes.
     """
     def __init__(self, format, content):
