@@ -1,7 +1,7 @@
 ModestMaps==1.4.7
 simplejson
 shapely
-Pillow==8.3
+Pillow==8.2
 psycopg2
 python-memcached
 mapbox-vector-tile==1.2.0
