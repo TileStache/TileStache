@@ -258,6 +258,8 @@ class Proxy:
         # see: https://docs.python.org/2/library/urllib2.html#urllib2.ProxyHandler
         proxy_support = urllib2.ProxyHandler()
         url_opener = urllib2.build_opener(proxy_support)
+        url_opener.addheaders = [('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3')]
+
 
         for url in urls:
             body = url_opener.open(url, timeout=self.timeout).read()

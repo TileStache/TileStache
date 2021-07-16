@@ -15,19 +15,10 @@ except NameError:
     pass
 reduce = reduce
 
-try:
-    import urllib.request as urllib2
-    import http.client as httplib
-    from urllib.parse import urlparse, urljoin, parse_qsl
-    from urllib.request import urlopen
-    from cgi import parse_qs
-    from _thread import allocate_lock
-    unichr = chr
-except ImportError:
-    # Python 2
-    import httplib
-    import urllib2
-    from urlparse import urlparse, urljoin, parse_qs, parse_qsl
-    from urllib import urlopen
-    from thread import allocate_lock
-    unichr = unichr
+import urllib.request as urllib2
+import http.client as httplib
+from urllib.parse import urlparse, urljoin, parse_qsl, parse_qs
+from urllib.request import urlopen
+# from cgi import parse_qs
+from _thread import allocate_lock
+unichr = chr
