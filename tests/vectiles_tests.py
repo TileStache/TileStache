@@ -7,7 +7,7 @@ from math import hypot
 import json
 
 from osgeo import ogr, osr
-from shapely.geometry import Point, LineString, Polygon, MultiPolygon, asShape
+from shapely.geometry import Point, LineString, Polygon, MultiPolygon, shape
 import mapbox_vector_tile
 
 from TileStache.Goodies.VecTiles import pbf
@@ -106,7 +106,7 @@ def decoded_pbf_asshape(feature, extent, srid=4326):
         'coordinates': coords,
     }
 
-    return asShape(geoint)
+    return shape(geoint)
 
 
 class PostGISVectorTestBase(object):
@@ -252,11 +252,11 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         for feature in geojson_result['features']:
             if feature['properties']['name'] == 'San Francisco':
                 cities.append(feature['properties']['name'])
-                self.assertTrue(point_sf.almost_equals(asShape(feature['geometry'])))
+                self.assertTrue(point_sf.almost_equals(shape(feature['geometry'])))
 
             elif feature['properties']['name'] == 'Lima':
                 cities.append(feature['properties']['name'])
-                self.assertTrue(point_lima.almost_equals(asShape(feature['geometry'])))
+                self.assertTrue(point_lima.almost_equals(shape(feature['geometry'])))
 
         self.assertTrue('San Francisco' in cities)
         self.assertTrue('Lima' in cities)
@@ -287,7 +287,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         tile_mimetype, tile_content = utils.request(self.config_file_content, "vectile_test", "json", 0, 0, 0)
         self.assertTrue(tile_mimetype.endswith('/json'))
         geojson_result = json.loads(tile_content.decode('utf8'))
-        west_hemisphere_geometry = asShape(geojson_result['features'][0]['geometry'])
+        west_hemisphere_geometry = shape(geojson_result['features'][0]['geometry'])
         expected_geometry = LineString([(-180, 32), (180, 32)])
         self.assertTrue(expected_geometry.almost_equals(west_hemisphere_geometry))
 
@@ -311,7 +311,7 @@ class VectorProviderTest(PostGISVectorTestBase, TestCase):
         self.assertTrue(tile_mimetype.endswith('/json'))
         geojson_result = json.loads(tile_content.decode('utf8'))
         
-        result_geom = asShape(geojson_result['features'][0]['geometry'])
+        result_geom = shape(geojson_result['features'][0]['geometry'])
         expected_geom = Polygon( [(-180, -85.05), (180, -85.05), (180, 85.05), (-180, 85.05), (-180, -85.05)])
 
         # What is going on here is a bit unorthodox, but let me explain. The clipping
