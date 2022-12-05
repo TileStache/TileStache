@@ -4,7 +4,7 @@ from math import pi, log, tan, ceil
 import json
 
 from shapely.wkb import loads
-from shapely.geometry import asShape
+from shapely.geometry import shape
 
 from ... import getTile
 from ...Core import KnownUnknown
@@ -66,7 +66,7 @@ def decode(file):
             continue
         
         prop = feature['properties']
-        geom = transform(asShape(feature['geometry']), mercator)
+        geom = transform(shape(feature['geometry']), mercator)
         features.append((geom.wkb, prop))
     
     return features
