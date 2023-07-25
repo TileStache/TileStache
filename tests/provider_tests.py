@@ -104,5 +104,5 @@ class ProviderWithDummyResponseServer(TestCase):
 
         tile_mimetype, tile_content = utils.request(config_file_content, "local_layer", "png", 0, 0, 0)
 
-        self.assertEquals(tile_mimetype, self.response_mimetype)
-        self.assertEquals(tile_content, self.response_content)
+        self.assertEqual(tile_mimetype, self.response_mimetype)
+        self.assertEqual(tile_content, self.response_content)
